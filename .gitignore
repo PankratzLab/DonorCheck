@@ -1,0 +1,12 @@
+*.swp
+*~
+.~*
+target/
+**/bin/
+**/.project
+**/.settings
+**/.classpath
+.db/
+.freq/
+.hla/
+*.DS_Store
