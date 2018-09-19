@@ -1,0 +1,9 @@
+.row-labels.table-cell {
+	-fx-text-weight: bold;
+	-fx-background-color: linear-gradient(to bottom, #ffffff, #dfdfdf);
+	-fx-font-weight: bold;
+}
+
+.table-column {
+	-fx-alignment: CENTER;
+}

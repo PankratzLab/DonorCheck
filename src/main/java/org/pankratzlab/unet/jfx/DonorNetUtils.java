@@ -1,0 +1,68 @@
+/*
+ * #%L
+ * DonorCheck
+ * %%
+ * Copyright (C) 2018 - 2019 Computational Pathology - University of Minnesota
+ * %%
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/gpl-2.0.html>.
+ * #L%
+ */
+package org.pankratzlab.unet.jfx;
+
+import java.io.File;
+import java.util.Objects;
+import java.util.Optional;
+import javax.annotation.Nullable;
+import org.pankratzlab.hla.CurrentDirectoryProvider;
+import javafx.event.ActionEvent;
+import javafx.scene.Node;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Window;
+
+/**
+ * Utility class with shared methods for use with the DonorNet application
+ */
+public final class DonorNetUtils {
+
+  private DonorNetUtils() {
+    // prevent instantiation of static utility class
+  }
+
+  /**
+   * Helper method to get a file from a user in a consistent way
+   *
+   * @param event Source {@link ActionEvent}, e.g. if called from a button
+   * @param title File chooser title
+   * @param initialName Initial file name
+   * @param extensionDescription Description to show in the file filter
+   * @param extension File extension to filter on
+   * @return An {@link Optional} wrapper around the file selected by the user
+   */
+  public static Optional<File> getFile(@Nullable ActionEvent event, String title,
+      String initialName, String extensionDescription, String extension) {
+    CurrentDirectoryProvider.setInitialFileName(initialName);
+    FileChooser fileChooser = CurrentDirectoryProvider.getFileChooser();
+    fileChooser.setTitle(title);
+    fileChooser.getExtensionFilters().add(new ExtensionFilter(extensionDescription, extension));
+    Window owner = null;
+    if (Objects.nonNull(event)) {
+      owner = ((Node) event.getSource()).getScene().getWindow();
+    }
+    File selectedFile = fileChooser.showOpenDialog(owner);
+
+    return Optional.ofNullable(selectedFile);
+  }
+}
