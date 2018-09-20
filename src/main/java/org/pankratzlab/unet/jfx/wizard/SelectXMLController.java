@@ -52,7 +52,7 @@ public class SelectXMLController extends AbstractFileSelectController {
   private static final String FILE_CHOOSER_HEADER = "Select DonorNet XML";
   private static final String EXTENSION_DESC = "DonorNet Web Page";
   private static final String WIZARD_PANE_TITLE = "Step 2 of 4";
-  private static final String INITIAL_NAME = "myXML";
+  private static final String INITIAL_NAME = "";
   private static final String EXTENSION = "*.xml";
   private static final String XML_ATTR = "value";
   private static final String XML_TAG = "option";
