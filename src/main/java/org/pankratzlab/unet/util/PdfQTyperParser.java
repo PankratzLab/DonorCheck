@@ -177,6 +177,18 @@ public final class PdfQTyperParser {
       if (tokens.length >= 3) {
         specList.add(clean(typePrefix, tokens[2]));
       }
+
+      // For DQA we have to remove the high-resolution typing
+      if (line.contains(HLA_DQA1)) {
+        List<String> tmpList = new ArrayList<>();
+        for (String s : specList) {
+          if (s.contains(":")) {
+            s = s.substring(0, s.indexOf(":"));
+          }
+          tmpList.add(s);
+        }
+        specList = tmpList;
+      }
     } else if (line.contains(HETERO_TOKEN)) {
       // Other loci have a serological equivalent section, heterozygotes separated by a ;
       specList.add(clean(typePrefix, tokens[3]));
@@ -192,7 +204,13 @@ public final class PdfQTyperParser {
    * @return the base input string striped off the exclusion string + {@link #HETERO_TOKEN}
    */
   private static String clean(String exclusion, String base) {
-    return base.replaceAll(HETERO_TOKEN, "").replaceAll(exclusion, "");
+    // Remove heterozygous token
+    String tmp = base.replaceAll(HETERO_TOKEN, "");
+
+    // Remove prefix text
+    tmp = tmp.replaceAll(exclusion, "");
+
+    return tmp;
   }
 
   /**
