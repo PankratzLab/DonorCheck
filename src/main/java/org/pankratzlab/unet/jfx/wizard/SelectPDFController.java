@@ -45,7 +45,7 @@ public class SelectPDFController extends AbstractFileSelectController {
   private static final String WIZARD_PANE_TITLE = "Step 3 of 4";
   private static final String INITIAL_NAME = "";
   private static final String EXTENSION = "*.pdf";
-  private static final String QTYPER = "QuantStudio";
+  private static final String QTYPER = "QTYPE";
   private static final String SURETYPER = "SureTyper";
 
   @Override

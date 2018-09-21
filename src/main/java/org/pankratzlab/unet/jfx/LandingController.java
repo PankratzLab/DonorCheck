@@ -86,9 +86,9 @@ public class LandingController {
     // show wizard and wait for response
     validationWizard.showAndWait().ifPresent(result -> {
       if (result == ButtonType.FINISH) {
-        Alert alert = new Alert(AlertType.CONFIRMATION);
+        Alert alert = new Alert(AlertType.CONFIRMATION, "", ButtonType.YES, ButtonType.NO);
         alert.setHeaderText("Would you like to save the validation results?");
-        alert.showAndWait().filter(response -> response == ButtonType.OK)
+        alert.showAndWait().filter(response -> response == ButtonType.YES)
             .ifPresent(response -> saveResult(table));
       }
     });

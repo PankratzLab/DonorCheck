@@ -33,6 +33,8 @@ import com.google.common.collect.ImmutableMap.Builder;
  */
 public final class PdfQTyperParser {
 
+  private static final String CHILD_TOKEN = "/";
+
   private PdfQTyperParser() {
     // no-op
   }
@@ -210,6 +212,19 @@ public final class PdfQTyperParser {
     // Remove prefix text
     tmp = tmp.replaceAll(exclusion, "");
 
+    // The child token character is sometimes used to desginate relationships between types
+    if (tmp.contains(CHILD_TOKEN)) {
+      String[] split = tmp.split(CHILD_TOKEN);
+
+      // Take the first option with fewer than 3 positions of specificity
+      for (int i = 0; i < split.length; i++) {
+        if (split[i].length() < 3) {
+          tmp = split[i];
+          break;
+        }
+      }
+    }
+
     return tmp;
   }
 
@@ -221,21 +236,45 @@ public final class PdfQTyperParser {
     for (String spec : getSpecs(exclusion, line)) {
       setter.accept(builder, spec);
     }
-    if (line.contains("Bw4")) {
-      builder.bw4(true);
+
+    if (line.startsWith(HLA_B)) {
+      // NB: B*27:08 is actually Bw6, not Bw4
+      if (line.contains("Bw4")
+          && (!line.contains("B*27:08") || countOccurrance("Bw4", line) >= 2)) {
+        builder.bw4(true);
+      }
+      if (line.contains("Bw6")) {
+        builder.bw6(true);
+      }
     }
-    if (line.contains("Bw6")) {
-      builder.bw6(true);
+
+    if (line.startsWith(HLA_DRB1)) {
+      if (line.contains("DR51")) {
+        builder.dr51(true);
+      }
+      if (line.contains("DR52")) {
+        builder.dr52(true);
+      }
+      if (line.contains("DR53")) {
+        builder.dr53(true);
+      }
     }
-    if (line.contains("DR51")) {
-      builder.dr51(true);
+  }
+
+  private static int countOccurrance(String base, String query) {
+    int lastIndex = 0;
+    int count = 0;
+
+    while (lastIndex != -1) {
+
+      lastIndex = base.indexOf(query, lastIndex);
+
+      if (lastIndex != -1) {
+        count++;
+        lastIndex += query.length();
+      }
     }
-    if (line.contains("DR52")) {
-      builder.dr52(true);
-    }
-    if (line.contains("DR53")) {
-      builder.dr53(true);
-    }
+    return count;
   }
 
   /**
