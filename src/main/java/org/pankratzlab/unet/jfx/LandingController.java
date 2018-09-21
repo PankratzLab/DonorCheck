@@ -27,7 +27,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
+import javax.imageio.ImageIO;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
@@ -39,11 +41,15 @@ import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
+import javafx.scene.layout.BorderPane;
 
 /**
  * Controller instance for the main user page. Validation wizards can be launched from here.
@@ -55,6 +61,9 @@ public class LandingController {
 
   @FXML
   private URL location;
+
+  @FXML
+  private BorderPane rootPane;
 
   @FXML
   void fileQuitAction(ActionEvent event) {
@@ -77,10 +86,31 @@ public class LandingController {
     // show wizard and wait for response
     validationWizard.showAndWait().ifPresent(result -> {
       if (result == ButtonType.FINISH) {
-        // FIXME offer to save the results of the validation.
-        System.out.println("Wizard finished, settings: " + validationWizard.getSettings());
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setHeaderText("Would you like to save the validation results?");
+        alert.showAndWait().filter(response -> response == ButtonType.OK)
+            .ifPresent(response -> saveResult(table));
       }
     });
+  }
+
+  private void saveResult(ValidationTable table) {
+    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
+        table.getId() + "_donor_valid", "PNG", ".png", false);
+
+    if (destination.isPresent()) {
+      try {
+        ImageIO.write(SwingFXUtils.fromFXImage(table.getValidationImage(), null), "png",
+            destination.get());
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setHeaderText("Saved validation image to: " + destination.get().getName());
+        alert.showAndWait();
+      } catch (IOException e) {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setHeaderText("Failed to save results to file: " + destination.get().getName());
+        alert.showAndWait();
+      }
+    }
   }
 
   /**
@@ -110,6 +140,8 @@ public class LandingController {
 
   @FXML
   void initialize() {
+    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
+
     CurrentDirectoryProvider.setBaseDir(new File(System.getProperty("user.home")));
   }
 

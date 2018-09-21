@@ -42,6 +42,20 @@ public final class DonorNetUtils {
   }
 
   /**
+   * Convenience method which unwraps an input {@link ActionEvent}
+   *
+   * @see #getFile(Node, String, String, String, String, boolean)
+   */
+  public static Optional<File> getFile(@Nullable ActionEvent event, String title,
+      String initialName, String extensionDescription, String extension, boolean open) {
+    Node source = null;
+    if (Objects.nonNull(event)) {
+      source = (Node) event.getSource();
+    }
+    return getFile(source, title, initialName, extensionDescription, extension, open);
+  }
+
+  /**
    * Helper method to get a file from a user in a consistent way
    *
    * @param event Source {@link ActionEvent}, e.g. if called from a button
@@ -49,19 +63,21 @@ public final class DonorNetUtils {
    * @param initialName Initial file name
    * @param extensionDescription Description to show in the file filter
    * @param extension File extension to filter on
+   * @param open Whether to show the open or save dialog
    * @return An {@link Optional} wrapper around the file selected by the user
    */
-  public static Optional<File> getFile(@Nullable ActionEvent event, String title,
-      String initialName, String extensionDescription, String extension) {
+  public static Optional<File> getFile(Node node, String title, String initialName,
+      String extensionDescription, String extension, boolean open) {
     CurrentDirectoryProvider.setInitialFileName(initialName);
     FileChooser fileChooser = CurrentDirectoryProvider.getFileChooser();
     fileChooser.setTitle(title);
     fileChooser.getExtensionFilters().add(new ExtensionFilter(extensionDescription, extension));
     Window owner = null;
-    if (Objects.nonNull(event)) {
-      owner = ((Node) event.getSource()).getScene().getWindow();
+    if (Objects.nonNull(node)) {
+      owner = node.getScene().getWindow();
     }
-    File selectedFile = fileChooser.showOpenDialog(owner);
+    File selectedFile =
+        open ? fileChooser.showOpenDialog(owner) : fileChooser.showSaveDialog(owner);
 
     return Optional.ofNullable(selectedFile);
   }

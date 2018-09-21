@@ -33,6 +33,7 @@ import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
+import javafx.scene.image.WritableImage;
 
 /**
  * Backing model for a validation, wrapping a PDF and XML donor typing model. Use {@link #getRows()}
@@ -44,6 +45,7 @@ public class ValidationTable {
   private final ReadOnlyObjectWrapper<ValidationModel> pdfModelWrapper;
   private final ReadOnlyObjectWrapper<ValidationModel> xmlModelWrapper;
   private final ReadOnlyListWrapper<ValidationRow<?>> validationRows;
+  private WritableImage validationImage = null;
 
   public ValidationTable() {
     isValidWrapper = new ReadOnlyBooleanWrapper();
@@ -57,10 +59,30 @@ public class ValidationTable {
   }
 
   /**
-   * @return The {@link ValidationRow}s for this model, e.g. for display
+   * @return The donor ID for this validation (if available)
    */
-  public ReadOnlyListProperty<ValidationRow<?>> getRows() {
-    return validationRows.getReadOnlyProperty();
+  public String getId() {
+    if (pdfModelWrapper != null) {
+      return pdfModelWrapper.get().getDonorId();
+    }
+    if (xmlModelWrapper != null) {
+      return xmlModelWrapper.get().getDonorId();
+    }
+    return "";
+  }
+
+  /**
+   * @return An image of the validation state
+   */
+  public WritableImage getValidationImage() {
+    return validationImage;
+  }
+
+  /**
+   * @param validationImage An image representation of the validation state
+   */
+  public void setValidationImage(WritableImage validationImage) {
+    this.validationImage = validationImage;
   }
 
   /**
@@ -75,6 +97,20 @@ public class ValidationTable {
    */
   public void setPdfModel(ValidationModel pdfModel) {
     pdfModelWrapper.set(pdfModel);
+  }
+
+  /**
+   * @return A {@link BooleanProperty} tracking the validity of the complete table
+   */
+  public ReadOnlyBooleanProperty isValidProperty() {
+    return isValidWrapper.getReadOnlyProperty();
+  }
+
+  /**
+   * @return The {@link ValidationRow}s for this model, e.g. for display
+   */
+  public ReadOnlyListProperty<ValidationRow<?>> getRows() {
+    return validationRows.getReadOnlyProperty();
   }
 
   /**
@@ -157,12 +193,5 @@ public class ValidationTable {
       return null;
     }
     return getter.apply(wrapper.get());
-  }
-
-  /**
-   * @return A {@link BooleanProperty} tracking the validity of the complete table
-   */
-  public ReadOnlyBooleanProperty isValidProperty() {
-    return isValidWrapper.getReadOnlyProperty();
   }
 }

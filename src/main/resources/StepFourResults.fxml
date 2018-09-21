@@ -22,7 +22,7 @@
    <content>
       <VBox alignment="TOP_RIGHT">
          <children>
-            <TableView fx:id="resultsTable" prefHeight="560.0">
+            <TableView fx:id="resultsTable" fixedCellSize="30.0" prefHeight="635.0">
               <columns>
                   <TableColumn fx:id="rowLabelCol" editable="false" prefWidth="125.0" sortable="false" styleClass="row-labels" />
                 <TableColumn editable="false" prefWidth="125.0" sortable="false" text="DonorNet XML" fx:id="xmlValueCol" />

@@ -53,6 +53,9 @@ public class ValidatingWizardPane extends WizardPane {
     }
 
     wizard.setTitle(getUserData().toString());
+
+    // Notify any listeners that we are active
+    fireEvent(new PageActivatedEvent());
   }
 
 }

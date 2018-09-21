@@ -62,7 +62,7 @@ public abstract class AbstractFileSelectController extends AbstractValidatingWiz
   @FXML
   void selectDonorFile(ActionEvent event) {
     Optional<File> optionalFile = DonorNetUtils.getFile(event, fileChooserHeader(), initialName(),
-        extensionDesc(), extension());
+        extensionDesc(), extension(), true);
 
     if (optionalFile.isPresent()) {
       File selectedFile = optionalFile.get();

@@ -25,7 +25,11 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -41,6 +45,7 @@ import javafx.util.Callback;
 public class ValidationResultsController extends AbstractValidatingWizardController {
 
   private static final String WIZARD_PANE_TITLE = "Step 4 of 4";
+  private EventHandler<Event> handler;
 
   @FXML
   private ResourceBundle resources;
@@ -90,6 +95,10 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     isEqualCol.setCellFactory(new PassFailCellFactory());
 
     rootPane.setUserData(WIZARD_PANE_TITLE);
+
+    // Record an image of the validation state when entering this page
+    rootPane.addEventHandler(PageActivatedEvent.PAGE_ACTIVE, e -> addFinishHandler());
+
   }
 
   @Override
@@ -98,6 +107,17 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     rootPane.setInvalidBinding(table.isValidProperty().not());
     resultsTable.setItems(table.getRows());
     table.isValidProperty().addListener(e -> updateDisplay(table.isValidProperty().get()));
+  }
+
+  /**
+   * Add an event handler to save the validation image when the Finish button is clicked
+   */
+  private void addFinishHandler() {
+    if (handler == null) {
+      handler = (e) -> getTable().setValidationImage(rootPane.snapshot(null, null));
+      Button finishButton = (Button) rootPane.lookupButton(ButtonType.FINISH);
+      finishButton.addEventHandler(Event.ANY, handler);
+    }
   }
 
   /**
