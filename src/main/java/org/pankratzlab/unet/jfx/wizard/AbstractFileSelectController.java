@@ -23,10 +23,12 @@ package org.pankratzlab.unet.jfx.wizard;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.BiConsumer;
+import org.jsoup.select.Elements;
 import org.pankratzlab.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
@@ -36,6 +38,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.TextField;
@@ -61,8 +64,8 @@ public abstract class AbstractFileSelectController extends AbstractValidatingWiz
 
   @FXML
   void selectDonorFile(ActionEvent event) {
-    Optional<File> optionalFile = DonorNetUtils.getFile(event, fileChooserHeader(), initialName(),
-        extensionDesc(), extension(), true);
+    Optional<File> optionalFile = DonorNetUtils.getFile(((Node) event.getSource()),
+        fileChooserHeader(), initialName(), extensionMap(), true);
 
     if (optionalFile.isPresent()) {
       File selectedFile = optionalFile.get();
@@ -75,7 +78,9 @@ public abstract class AbstractFileSelectController extends AbstractValidatingWiz
         selectedFileProperty.set(selectedFile);
       } catch (Exception e) {
         Alert alert = new Alert(AlertType.ERROR);
-        alert.setHeaderText("Error reading donor typing: " + selectedFile.getName());
+        alert.setHeaderText(getErrorText()
+            + "\nPlease notify the developers as this may indicate the data has changed."
+            + "\nOffending file: " + selectedFile.getName());
         alert.showAndWait();
       }
 
@@ -97,6 +102,22 @@ public abstract class AbstractFileSelectController extends AbstractValidatingWiz
     rootPane.setUserData(wizardPaneTitle());
   }
 
+  /**
+   * Helper method to extract the text value of an element, with a null value if the element is not
+   * present or empty
+   */
+  protected Optional<String> getText(Elements elements) {
+    String val = null;
+    if (!elements.isEmpty()) {
+      String text = elements.get(0).text();
+      if (!text.isEmpty()) {
+        val = text;
+      }
+    }
+
+    return Optional.ofNullable(val);
+  }
+
   private String getName(File file) {
     if (Objects.isNull(file)) {
       return "";
@@ -108,11 +129,6 @@ public abstract class AbstractFileSelectController extends AbstractValidatingWiz
    * @return The string to set as the Wizard title
    */
   protected abstract String wizardPaneTitle();
-
-  /**
-   * @return File filter description when selecting a file
-   */
-  protected abstract String extensionDesc();
 
   /**
    * @return Display header when selecting a file
@@ -127,7 +143,13 @@ public abstract class AbstractFileSelectController extends AbstractValidatingWiz
   /**
    * @return File filter extension. Used to restrict file types.
    */
-  protected abstract String extension();
+  protected abstract Map<String, String> extensionMap();
+
+  /**
+   * @param fileName Name of the file that was used
+   * @return String to display to user when parsing fails
+   */
+  protected abstract String getErrorText();
 
   /**
    * @return {@link ValidationTable} method to call after parsing the model (e.g.

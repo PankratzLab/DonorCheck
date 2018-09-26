@@ -25,9 +25,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -45,15 +47,18 @@ import com.google.common.collect.ImmutableMap.Builder;
  */
 public class SelectXMLController extends AbstractFileSelectController {
 
-  private static final String BOOL_FALSE = "96";
-  private static final String BOOL_TRUE = "95";
+  private static final String XML_FALSE = "96";
+  private static final String XML_TRUE = "95";
   private static final String DQA_MAP_PATH = "/DqaMap.xml";
   private static final String DPB_MAP_PATH = "/DpbMap.xml";
-  private static final String FILE_CHOOSER_HEADER = "Select DonorNet XML";
-  private static final String EXTENSION_DESC = "DonorNet Web Page";
+  private static final String FILE_CHOOSER_HEADER = "Select DonorNet Web Source";
   private static final String WIZARD_PANE_TITLE = "Step 2 of 4";
   private static final String INITIAL_NAME = "";
-  private static final String EXTENSION = "*.xml";
+  private static final String EXTENSION_XML_DESC = "DonorNet XML";
+  private static final String EXTENSION_NAME_XML = "*.xml";
+  private static final String EXTENSION_XML = "*." + EXTENSION_NAME_XML;
+  private static final Map<String, String> EXTENSION_MAP =
+      ImmutableMap.of(EXTENSION_XML_DESC, EXTENSION_XML);
   private static final String XML_ATTR = "value";
   private static final String XML_TAG = "option";
   private static ImmutableMap<String, String> dqaMap;
@@ -94,8 +99,8 @@ public class SelectXMLController extends AbstractFileSelectController {
   }
 
   @Override
-  protected String extensionDesc() {
-    return EXTENSION_DESC;
+  protected Map<String, String> extensionMap() {
+    return EXTENSION_MAP;
   }
 
   @Override
@@ -114,8 +119,8 @@ public class SelectXMLController extends AbstractFileSelectController {
   }
 
   @Override
-  protected String extension() {
-    return EXTENSION;
+  protected String getErrorText() {
+    return "Invalid DonorNet XML file. Try downloading as HTML.";
   }
 
   @Override
@@ -125,11 +130,14 @@ public class SelectXMLController extends AbstractFileSelectController {
 
   @Override
   protected void parseModel(ValidationModelBuilder builder, File file) {
+
     try (FileInputStream xmlStream = new FileInputStream(file)) {
-
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
-      buildModel(builder, parsed);
-
+      if (FilenameUtils.isExtension(file.getName(), EXTENSION_NAME_XML)) {
+        buildModelFromXML(builder, parsed);
+      } else {
+        throw new InvalidParameterException("Unknown File Type: " + file.getName());
+      }
     } catch (IOException e) {
       throw new IllegalStateException("Invalid XML file: " + file);
     }
@@ -138,39 +146,40 @@ public class SelectXMLController extends AbstractFileSelectController {
   /**
    * Helper method to translate the parsed XML to a {@link ValidationModel}
    */
-  private void buildModel(ValidationModelBuilder builder, Document doc) {
+  private void buildModelFromXML(ValidationModelBuilder builder, Document doc) {
     Element donorRoot = doc.getElementsByTag("donor_edit_crossmatchhla").get(0);
 
-    getTagVal(donorRoot, "don_id").ifPresent(builder::donorId);
-    getTagVal(donorRoot, "a1").ifPresent(builder::a);
-    getTagVal(donorRoot, "a2").ifPresent(builder::a);
-    getTagVal(donorRoot, "b1").ifPresent(builder::b);
-    getTagVal(donorRoot, "b2").ifPresent(builder::b);
-    getTagVal(donorRoot, "c1").ifPresent(builder::c);
-    getTagVal(donorRoot, "c2").ifPresent(builder::c);
-    getTagVal(donorRoot, "dr1").ifPresent(builder::drb);
-    getTagVal(donorRoot, "dr2").ifPresent(builder::drb);
-    getTagVal(donorRoot, "dq1").ifPresent(builder::dqb);
-    getTagVal(donorRoot, "dq2").ifPresent(builder::dqb);
-    getTagVal(donorRoot, "dqa1").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
-    getTagVal(donorRoot, "dqa2").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
-    getTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
-    getTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
+    // TODO these could be stored in a map of String to Consumer<String> and done in a general way
+    getXMLTagVal(donorRoot, "don_id").ifPresent(builder::donorId);
+    getXMLTagVal(donorRoot, "a1").ifPresent(builder::a);
+    getXMLTagVal(donorRoot, "a2").ifPresent(builder::a);
+    getXMLTagVal(donorRoot, "b1").ifPresent(builder::b);
+    getXMLTagVal(donorRoot, "b2").ifPresent(builder::b);
+    getXMLTagVal(donorRoot, "c1").ifPresent(builder::c);
+    getXMLTagVal(donorRoot, "c2").ifPresent(builder::c);
+    getXMLTagVal(donorRoot, "dr1").ifPresent(builder::drb);
+    getXMLTagVal(donorRoot, "dr2").ifPresent(builder::drb);
+    getXMLTagVal(donorRoot, "dq1").ifPresent(builder::dqb);
+    getXMLTagVal(donorRoot, "dq2").ifPresent(builder::dqb);
+    getXMLTagVal(donorRoot, "dqa1").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
+    getXMLTagVal(donorRoot, "dqa2").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
+    getXMLTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
+    getXMLTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
 
-    getTagVal(donorRoot, "bw4").ifPresent(s -> builder.bw4(decodeBoolean(s)));
-    getTagVal(donorRoot, "bw6").ifPresent(s -> builder.bw6(decodeBoolean(s)));
-    getTagVal(donorRoot, "dr51").ifPresent(s -> builder.dr51(decodeBoolean(s)));
-    getTagVal(donorRoot, "dr52").ifPresent(s -> builder.dr52(decodeBoolean(s)));
-    getTagVal(donorRoot, "dr53").ifPresent(s -> builder.dr53(decodeBoolean(s)));
+    getXMLTagVal(donorRoot, "bw4").ifPresent(s -> builder.bw4(decodeXMLBoolean(s)));
+    getXMLTagVal(donorRoot, "bw6").ifPresent(s -> builder.bw6(decodeXMLBoolean(s)));
+    getXMLTagVal(donorRoot, "dr51").ifPresent(s -> builder.dr51(decodeXMLBoolean(s)));
+    getXMLTagVal(donorRoot, "dr52").ifPresent(s -> builder.dr52(decodeXMLBoolean(s)));
+    getXMLTagVal(donorRoot, "dr53").ifPresent(s -> builder.dr53(decodeXMLBoolean(s)));
   }
 
   /**
    * Booleans are exported as a linear value which we have to translate to true/false
    */
-  private boolean decodeBoolean(String boolCode) {
-    if (boolCode.equals(BOOL_TRUE)) {
+  private boolean decodeXMLBoolean(String boolCode) {
+    if (boolCode.equals(XML_TRUE)) {
       return true;
-    } else if (boolCode.equals(BOOL_FALSE)) {
+    } else if (boolCode.equals(XML_FALSE)) {
       return false;
     }
     throw new IllegalArgumentException("Unrecognized boolean code: " + boolCode);
@@ -192,17 +201,10 @@ public class SelectXMLController extends AbstractFileSelectController {
    * @return An {@link Optional} containing either the text value of the tag, or {@code} null if the
    *         tag wasn't present or was empty.
    */
-  private Optional<String> getTagVal(Element donorBlock, String tag) {
+  private Optional<String> getXMLTagVal(Element donorBlock, String tag) {
     Elements elements = donorBlock.getElementsByTag(tag);
-    String val = null;
-    if (!elements.isEmpty()) {
-      String text = elements.get(0).text();
-      if (!text.isEmpty()) {
-        val = text;
-      }
-    }
-
-    return Optional.ofNullable(val);
+    return getText(elements);
   }
+
 
 }

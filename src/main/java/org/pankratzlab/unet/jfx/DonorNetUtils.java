@@ -22,10 +22,13 @@
 package org.pankratzlab.unet.jfx;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.pankratzlab.hla.CurrentDirectoryProvider;
+import com.google.common.collect.ImmutableMap;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.stage.FileChooser;
@@ -56,22 +59,35 @@ public final class DonorNetUtils {
   }
 
   /**
+   * Convenience method for single extension file choosers
+   *
+   * @see #getFile(Node, String, String, Map, boolean)
+   */
+  public static Optional<File> getFile(Node node, String title, String initialName,
+      String extensionDescription, String extension, boolean open) {
+    return getFile(node, title, initialName, ImmutableMap.of(extensionDescription, extension),
+        open);
+  }
+
+  /**
    * Helper method to get a file from a user in a consistent way
    *
    * @param event Source {@link ActionEvent}, e.g. if called from a button
    * @param title File chooser title
    * @param initialName Initial file name
-   * @param extensionDescription Description to show in the file filter
-   * @param extension File extension to filter on
+   * @param extensionMap Mapping of extension descriptions to filter values
    * @param open Whether to show the open or save dialog
    * @return An {@link Optional} wrapper around the file selected by the user
    */
   public static Optional<File> getFile(Node node, String title, String initialName,
-      String extensionDescription, String extension, boolean open) {
+      Map<String, String> extensionMap, boolean open) {
     CurrentDirectoryProvider.setInitialFileName(initialName);
     FileChooser fileChooser = CurrentDirectoryProvider.getFileChooser();
     fileChooser.setTitle(title);
-    fileChooser.getExtensionFilters().add(new ExtensionFilter(extensionDescription, extension));
+    for (Entry<String, String> descriptionToFilter : extensionMap.entrySet()) {
+      fileChooser.getExtensionFilters()
+          .add(new ExtensionFilter(descriptionToFilter.getKey(), descriptionToFilter.getValue()));
+    }
     Window owner = null;
     if (Objects.nonNull(node)) {
       owner = node.getScene().getWindow();

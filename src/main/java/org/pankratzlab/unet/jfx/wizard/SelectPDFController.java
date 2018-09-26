@@ -23,6 +23,7 @@ package org.pankratzlab.unet.jfx.wizard;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
@@ -32,6 +33,7 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.util.PdfQTyperParser;
 import org.pankratzlab.unet.util.PdfSureTyperParser;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Controller for adding PDF-sourced donor data to the current {@link ValidationTable}
@@ -45,13 +47,11 @@ public class SelectPDFController extends AbstractFileSelectController {
   private static final String WIZARD_PANE_TITLE = "Step 3 of 4";
   private static final String INITIAL_NAME = "";
   private static final String EXTENSION = "*.pdf";
+  private static final Map<String, String> EXTENSION_MAP =
+      ImmutableMap.of(EXTENSION_DESC, EXTENSION);
   private static final String QTYPER = "QTYPE";
   private static final String SURETYPER = "SureTyper";
 
-  @Override
-  protected String extensionDesc() {
-    return EXTENSION_DESC;
-  }
 
   @Override
   protected String fileChooserHeader() {
@@ -69,13 +69,18 @@ public class SelectPDFController extends AbstractFileSelectController {
   }
 
   @Override
-  protected String extension() {
-    return EXTENSION;
+  protected Map<String, String> extensionMap() {
+    return EXTENSION_MAP;
   }
 
   @Override
   protected BiConsumer<ValidationTable, ValidationModel> setModel() {
     return ValidationTable::setPdfModel;
+  }
+
+  @Override
+  protected String getErrorText() {
+    return "Could not read donor data from PDF.";
   }
 
   @Override
@@ -85,7 +90,7 @@ public class SelectPDFController extends AbstractFileSelectController {
         PDFTextStripper tStripper = new PDFTextStripper();
         tStripper.setSortByPosition(true);
         // Extract all text from the PDF and split it into lines
-        String pdfText = tStripper.getText(pdf); 
+        String pdfText = tStripper.getText(pdf);
         String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
         if (pdfText.contains(SURETYPER)) {
           PdfSureTyperParser.parseTypes(builder, pdfLines);
