@@ -19,11 +19,10 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.pankratzlab.unet.jfx.wizard;
+package org.pankratzlab.unet.parser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
@@ -31,60 +30,52 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
-import org.pankratzlab.unet.util.PdfQTyperParser;
-import org.pankratzlab.unet.util.PdfSureTyperParser;
-import com.google.common.collect.ImmutableMap;
+import org.pankratzlab.unet.parser.util.PdfQTyperParser;
+import org.pankratzlab.unet.parser.util.PdfSureTyperParser;
 
-/**
- * Controller for adding PDF-sourced donor data to the current {@link ValidationTable}
- *
- * @see ValidatingWizardController
- */
-public class SelectPDFController extends AbstractFileSelectController {
-
-  private static final String EXTENSION_DESC = "Type Report";
+public class PdfDonorParser extends AbstractDonorFileParser {
+  private static final String DISPLAY_STRING = "PDF";
   private static final String FILE_CHOOSER_HEADER = "Select PDF Report";
-  private static final String WIZARD_PANE_TITLE = "Step 3 of 4";
   private static final String INITIAL_NAME = "";
-  private static final String EXTENSION = "*.pdf";
-  private static final Map<String, String> EXTENSION_MAP =
-      ImmutableMap.of(EXTENSION_DESC, EXTENSION);
+  private static final String EXTENSION_DESC = "Type Report";
+  private static final String EXTENSION_NAME = "pdf";
+  private static final String EXTENSION = "*." + EXTENSION_NAME;
   private static final String QTYPER = "QTYPE";
   private static final String SURETYPER = "SureTyper";
 
+  @Override
+  public String extensionFilter() {
+    return EXTENSION;
+  }
 
   @Override
-  protected String fileChooserHeader() {
+  public String extensionDescription() {
+    return EXTENSION_DESC;
+  }
+
+  @Override
+  public String fileChooserHeader() {
     return FILE_CHOOSER_HEADER;
   }
 
   @Override
-  protected String wizardPaneTitle() {
-    return WIZARD_PANE_TITLE;
-  }
-
-  @Override
-  protected String initialName() {
+  public String initialName() {
     return INITIAL_NAME;
   }
 
+
   @Override
-  protected Map<String, String> extensionMap() {
-    return EXTENSION_MAP;
+  public BiConsumer<ValidationTable, ValidationModel> setModel() {
+    return ValidationTable::setSecondModel;
   }
 
   @Override
-  protected BiConsumer<ValidationTable, ValidationModel> setModel() {
-    return ValidationTable::setPdfModel;
-  }
-
-  @Override
-  protected String getErrorText() {
+  public String getErrorText() {
     return "Could not read donor data from PDF.";
   }
 
   @Override
-  protected void parseModel(ValidationModelBuilder builder, File file) {
+  protected void doParse(ValidationModelBuilder builder, File file) {
     try (PDDocument pdf = PDDocument.load(file)) {
       if (!pdf.isEncrypted()) {
         PDFTextStripper tStripper = new PDFTextStripper();
@@ -105,5 +96,14 @@ public class SelectPDFController extends AbstractFileSelectController {
     }
   }
 
-}
+  @Override
+  protected String getDisplayString() {
+    return DISPLAY_STRING;
+  }
 
+  @Override
+  protected String extensionName() {
+    return EXTENSION_NAME;
+  }
+
+}

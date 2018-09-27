@@ -44,7 +44,6 @@ import javafx.util.Callback;
  */
 public class ValidationResultsController extends AbstractValidatingWizardController {
 
-  private static final String WIZARD_PANE_TITLE = "Step 4 of 4";
   private EventHandler<Event> handler;
 
   @FXML
@@ -63,13 +62,13 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private TableColumn<ValidationRow<?>, String> rowLabelCol;
 
   @FXML
-  private TableColumn<ValidationRow<?>, String> xmlValueCol;
+  private TableColumn<ValidationRow<?>, String> firstSourceCol;
 
   @FXML
   private TableColumn<ValidationRow<?>, Boolean> isEqualCol;
 
   @FXML
-  private TableColumn<ValidationRow<?>, String> pdfValCol;
+  private TableColumn<ValidationRow<?>, String> secondSourceCol;
 
   @FXML
   private Label resultDisplayText;
@@ -79,22 +78,20 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'StepFourResults.fxml'.";
     assert resultsTable != null : "fx:id=\"resultsTable\" was not injected: check your FXML file 'StepFourResults.fxml'.";
     assert rowLabelCol != null : "fx:id=\"rowLabelCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
-    assert xmlValueCol != null : "fx:id=\"xmlValueCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
+    assert firstSourceCol != null : "fx:id=\"firstSourceCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
     assert isEqualCol != null : "fx:id=\"isEqualCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
-    assert pdfValCol != null : "fx:id=\"pdfValCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
+    assert secondSourceCol != null : "fx:id=\"secondSourceCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
     assert resultDisplayText != null : "fx:id=\"resultDisplayText\" was not injected: check your FXML file 'StepFourResults.fxml'.";
 
     rowLabelCol.setCellValueFactory(new PropertyValueFactory<>("id"));
 
-    xmlValueCol.setCellValueFactory(new PropertyValueFactory<>("xml"));
+    firstSourceCol.setCellValueFactory(new PropertyValueFactory<>("firstCol"));
 
     isEqualCol.setCellValueFactory(new PropertyValueFactory<>("isValid"));
 
-    pdfValCol.setCellValueFactory(new PropertyValueFactory<>("pdf"));
+    secondSourceCol.setCellValueFactory(new PropertyValueFactory<>("secondCol"));
 
     isEqualCol.setCellFactory(new PassFailCellFactory());
-
-    rootPane.setUserData(WIZARD_PANE_TITLE);
 
     // Record an image of the validation state when entering this page
     rootPane.addEventHandler(PageActivatedEvent.PAGE_ACTIVE, e -> addFinishHandler());
@@ -107,6 +104,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     rootPane.setInvalidBinding(table.isValidProperty().not());
     resultsTable.setItems(table.getRows());
     table.isValidProperty().addListener(e -> updateDisplay(table.isValidProperty().get()));
+    firstSourceCol.textProperty().bind(table.firstColSource());
+    secondSourceCol.textProperty().bind(table.secondColSource());
   }
 
   /**

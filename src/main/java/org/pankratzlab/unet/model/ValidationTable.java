@@ -30,45 +30,58 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyListProperty;
 import javafx.beans.property.ReadOnlyListWrapper;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
 import javafx.scene.image.WritableImage;
 
 /**
- * Backing model for a validation, wrapping a PDF and XML donor typing model. Use {@link #getRows()}
- * for accessing a row-dominant view of these models.
+ * Backing model for a validation, wrapping multiple {@link ValidationModel}s being compared. Use
+ * {@link #getRows()} for accessing a row-dominant view of these models.
  */
 public class ValidationTable {
 
   private final ReadOnlyBooleanWrapper isValidWrapper;
-  private final ReadOnlyObjectWrapper<ValidationModel> pdfModelWrapper;
-  private final ReadOnlyObjectWrapper<ValidationModel> xmlModelWrapper;
+  private final ReadOnlyObjectWrapper<String> firstSourceWrapper;
+  private final ReadOnlyObjectWrapper<ValidationModel> firstModelWrapper;
+  private final ReadOnlyObjectWrapper<String> secondSourceWrapper;
+  private final ReadOnlyObjectWrapper<ValidationModel> secondModelWrapper;
   private final ReadOnlyListWrapper<ValidationRow<?>> validationRows;
   private WritableImage validationImage = null;
 
   public ValidationTable() {
     isValidWrapper = new ReadOnlyBooleanWrapper();
-    pdfModelWrapper = new ReadOnlyObjectWrapper<>();
-    xmlModelWrapper = new ReadOnlyObjectWrapper<>();
+    firstSourceWrapper = new ReadOnlyObjectWrapper<>();
+    secondSourceWrapper = new ReadOnlyObjectWrapper<>();
+    firstModelWrapper = new ReadOnlyObjectWrapper<>();
+    secondModelWrapper = new ReadOnlyObjectWrapper<>();
     validationRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
 
     // Each time either model changes we re-generate the rows
-    xmlModelWrapper.addListener((v, o, n) -> generateRows());
-    pdfModelWrapper.addListener((v, o, n) -> generateRows());
+    firstModelWrapper.addListener((v, o, n) -> generateRows());
+    secondModelWrapper.addListener((v, o, n) -> generateRows());
   }
 
   /**
    * @return The donor ID for this validation (if available)
    */
   public String getId() {
-    if (pdfModelWrapper != null) {
-      return pdfModelWrapper.get().getDonorId();
+    if (firstModelWrapper != null) {
+      return firstModelWrapper.get().getDonorId();
     }
-    if (xmlModelWrapper != null) {
-      return xmlModelWrapper.get().getDonorId();
+    if (secondModelWrapper != null) {
+      return secondModelWrapper.get().getDonorId();
     }
     return "";
+  }
+
+  public ReadOnlyObjectProperty<String> firstColSource() {
+    return firstSourceWrapper.getReadOnlyProperty();
+  }
+
+  public ReadOnlyObjectProperty<String> secondColSource() {
+    return secondSourceWrapper.getReadOnlyProperty();
   }
 
   /**
@@ -86,17 +99,19 @@ public class ValidationTable {
   }
 
   /**
-   * @param xmlModel New {@link ValidationModel} parsed from XML source
+   * @param model New {@link ValidationModel} for the first column in the table
    */
-  public void setXmlModel(ValidationModel xmlModel) {
-    xmlModelWrapper.set(xmlModel);
+  public void setFirstModel(ValidationModel model) {
+    firstSourceWrapper.set(model.getSource());
+    firstModelWrapper.set(model);
   }
 
   /**
-   * @param pdfModel New {@link ValidationModel} parsed from PDF source
+   * @param model New {@link ValidationModel} for the second column in the table
    */
-  public void setPdfModel(ValidationModel pdfModel) {
-    pdfModelWrapper.set(pdfModel);
+  public void setSecondModel(ValidationModel model) {
+    secondSourceWrapper.set(model.getSource());
+    secondModelWrapper.set(model);
   }
 
   /**
@@ -164,23 +179,23 @@ public class ValidationTable {
    */
   private <T> void makeRow(List<ValidationRow<?>> rows, String rowLabel,
       Function<ValidationModel, T> getter) {
-    rows.add(new ValidationRow<T>(rowLabel, getXmlField(getter), getPdfField(getter)));
+    rows.add(new ValidationRow<T>(rowLabel, getFirstField(getter), getSecondField(getter)));
   }
 
   /**
    * @param getter Accessor for {@link ValidationModel} field of interest
-   * @return The value of that field in the wrapped PDF model
+   * @return The value of that field in the second column's model
    */
-  private <T> T getPdfField(Function<ValidationModel, T> getter) {
-    return getValueFromModel(getter, pdfModelWrapper);
+  private <T> T getSecondField(Function<ValidationModel, T> getter) {
+    return getValueFromModel(getter, secondModelWrapper);
   }
 
   /**
    * @param getter Accessor for {@link ValidationModel} field of interest
-   * @return The value of that field in the wrapped XML model
+   * @return The value of that field in the first column's model
    */
-  private <T> T getXmlField(Function<ValidationModel, T> getter) {
-    return getValueFromModel(getter, xmlModelWrapper);
+  private <T> T getFirstField(Function<ValidationModel, T> getter) {
+    return getValueFromModel(getter, firstModelWrapper);
   }
 
   /**

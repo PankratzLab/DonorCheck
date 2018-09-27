@@ -48,28 +48,28 @@ import javafx.beans.property.StringProperty;
 public class ValidationRow<T> {
 
   private final ReadOnlyStringWrapper rowLabelWRapper;
-  private final ReadOnlyObjectWrapper<T> xmlColWrapper;
-  private final ReadOnlyObjectWrapper<T> pdfColWrapper;
-  private final ReadOnlyStringWrapper xmlColStringWrapper;
-  private final ReadOnlyStringWrapper pdfColStringWrapper;
+  private final ReadOnlyObjectWrapper<T> firstColWrapper;
+  private final ReadOnlyObjectWrapper<T> secondColWrapper;
+  private final ReadOnlyStringWrapper firstColStringWrapper;
+  private final ReadOnlyStringWrapper secondColStringWrapper;
   private final ReadOnlyBooleanWrapper isValidWrapper;
 
-  public ValidationRow(String rowLabel, T xmlColVal, T pdfColVal) {
+  public ValidationRow(String rowLabel, T firstCol, T secondCol) {
     this.rowLabelWRapper = new ReadOnlyStringWrapper(rowLabel);
-    xmlColWrapper = new ReadOnlyObjectWrapper<>(xmlColVal);
-    pdfColWrapper = new ReadOnlyObjectWrapper<>(pdfColVal);
-    xmlColStringWrapper = new ReadOnlyStringWrapper();
+    firstColWrapper = new ReadOnlyObjectWrapper<>(firstCol);
+    secondColWrapper = new ReadOnlyObjectWrapper<>(secondCol);
+    firstColStringWrapper = new ReadOnlyStringWrapper();
 
     // Ultimately we want to display a String representation of each column value. This string
     // unfortunately depends on the underlying data type.
-    xmlColStringWrapper.bind(
-        Bindings.createStringBinding(() -> getDisplayString(xmlColWrapper.get()), xmlColWrapper));
-    pdfColStringWrapper = new ReadOnlyStringWrapper();
-    pdfColStringWrapper.bind(
-        Bindings.createStringBinding(() -> getDisplayString(pdfColWrapper.get()), pdfColWrapper));
+    firstColStringWrapper.bind(
+        Bindings.createStringBinding(() -> getDisplayString(firstColWrapper.get()), firstColWrapper));
+    secondColStringWrapper = new ReadOnlyStringWrapper();
+    secondColStringWrapper.bind(
+        Bindings.createStringBinding(() -> getDisplayString(secondColWrapper.get()), secondColWrapper));
 
     isValidWrapper = new ReadOnlyBooleanWrapper();
-    isValidWrapper.bind(Bindings.createBooleanBinding(this::isValid, xmlColWrapper, pdfColWrapper));
+    isValidWrapper.bind(Bindings.createBooleanBinding(this::isValid, firstColWrapper, secondColWrapper));
   }
 
   /**
@@ -82,15 +82,15 @@ public class ValidationRow<T> {
   /**
    * @return {@link StringProperty} for the XML value of this row
    */
-  public ReadOnlyStringProperty xmlProperty() {
-    return xmlColStringWrapper.getReadOnlyProperty();
+  public ReadOnlyStringProperty firstColProperty() {
+    return firstColStringWrapper.getReadOnlyProperty();
   }
 
   /**
    * @return {@link StringProperty} for the PDF value of this row
    */
-  public ReadOnlyStringProperty pdfProperty() {
-    return pdfColStringWrapper.getReadOnlyProperty();
+  public ReadOnlyStringProperty secondColProperty() {
+    return secondColStringWrapper.getReadOnlyProperty();
   }
 
   /**
@@ -130,6 +130,6 @@ public class ValidationRow<T> {
    * @return true iff the XML and PDF column values are the same
    */
   private boolean isValid() {
-    return Objects.equals(xmlColWrapper.get(), pdfColWrapper.get());
+    return Objects.equals(firstColWrapper.get(), secondColWrapper.get());
   }
 }

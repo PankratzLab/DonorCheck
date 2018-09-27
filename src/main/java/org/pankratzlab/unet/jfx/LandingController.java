@@ -27,16 +27,17 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.hla.CurrentDirectoryProvider;
-import org.pankratzlab.unet.jfx.wizard.DownloadXMLController;
-import org.pankratzlab.unet.jfx.wizard.SelectPDFController;
-import org.pankratzlab.unet.jfx.wizard.SelectXMLController;
+import org.pankratzlab.unet.jfx.wizard.DownloadTutorialController;
+import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
@@ -56,6 +57,12 @@ import javafx.scene.layout.BorderPane;
  */
 public class LandingController {
 
+  private static final String XML_TUTORIAL = "/XMLDownloadTutorial.fxml";
+  private static final String HTML_TUTORIAL = "/HTMLDownloadTutorial.fxml";
+
+  private static final String INPUT_STEP = "/FileInput.fxml";
+  private static final String RESULTS_STEP = "/ValidationResults.fxml";
+
   @FXML
   private ResourceBundle resources;
 
@@ -71,15 +78,26 @@ public class LandingController {
   }
 
   @FXML
+  void tutorialHTMLDownload(ActionEvent event) {
+    showTutorial(HTML_TUTORIAL, new DownloadTutorialController());
+  }
+
+  @FXML
+  void tutorialXMLDownload(ActionEvent event) {
+    showTutorial(XML_TUTORIAL, new DownloadTutorialController());
+  }
+
+  @FXML
   void runValidation(ActionEvent event) throws IOException {
     ValidationTable table = new ValidationTable();
     Wizard validationWizard = new Wizard(((Node) event.getSource()).getScene().getWindow());
+    validationWizard.setTitle("Donor Validation Wizard");
 
     List<WizardPane> pages = new ArrayList<>();
-    makePage(pages, table, "/StepOneDownloadXML.fxml", new DownloadXMLController());
-    makePage(pages, table, "/StepTwoInputXML.fxml", new SelectXMLController());
-    makePage(pages, table, "/StepThreeInputPDF.fxml", new SelectPDFController());
-    makePage(pages, table, "/StepFourResults.fxml", new ValidationResultsController());
+    makePage(pages, table, INPUT_STEP, new FileInputController());
+    makePage(pages, table, RESULTS_STEP, new ValidationResultsController());
+
+    pages.get(0).getButtonTypes();
 
     validationWizard.setFlow(new LinearFlow(pages));
 
@@ -87,6 +105,7 @@ public class LandingController {
     validationWizard.showAndWait().ifPresent(result -> {
       if (result == ButtonType.FINISH) {
         Alert alert = new Alert(AlertType.CONFIRMATION, "", ButtonType.YES, ButtonType.NO);
+        alert.setTitle("Save Validation PNG");
         alert.setHeaderText("Would you like to save the validation results?");
         alert.showAndWait().filter(response -> response == ButtonType.YES)
             .ifPresent(response -> saveResult(table));
@@ -94,6 +113,9 @@ public class LandingController {
     });
   }
 
+  /**
+   * Write the given {@link ValidationTable#getValidationImage()} to disk
+   */
   private void saveResult(ValidationTable table) {
     Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
         table.getId() + "_donor_valid", "PNG", ".png", false);
@@ -114,13 +136,35 @@ public class LandingController {
   }
 
   /**
+   * TODO
+   */
+  private void showTutorial(String tutorialFxml, Object controller) {
+    try (InputStream is = TypeValidationApp.class.getResourceAsStream(tutorialFxml)) {
+      FXMLLoader loader = new FXMLLoader();
+      // NB: reading the controller from FMXL can cause problems
+
+
+      Alert alert = new Alert(AlertType.NONE, "", ButtonType.OK);
+      alert.getDialogPane().setContent(loader.load(is));
+      alert.setTitle("DonorNet Tutorial");
+      alert.setHeaderText("");
+      alert.showAndWait();
+    } catch (IOException e) {
+      Alert alert = new Alert(AlertType.ERROR, "");
+      alert.setHeaderText("Failed to read tutorial page definition: " + tutorialFxml);
+      alert.showAndWait();
+    }
+
+  }
+
+  /**
    * @param pages List to populate
    * @param table Backing {@link ValidationTable} for this wizard
    * @param pageFXML FXML to read
    * @param controller Controller instance to attach to this page
    * @throws IOException If errors during FXML reading
    */
-  private void makePage(List<WizardPane> pages, ValidationTable table, String pageFXML,
+  private void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML,
       Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
@@ -130,7 +174,7 @@ public class LandingController {
       pages.add(loader.load(is));
 
       // If this controller needs a table, link it
-      if (controller instanceof ValidatingWizardController) {
+      if (controller instanceof ValidatingWizardController && Objects.nonNull(table)) {
         ((ValidatingWizardController) controller).setTable(table);
       }
     } catch (IOException e) {

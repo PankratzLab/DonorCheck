@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.pankratzlab.unet.jfx.wizard;
+package org.pankratzlab.unet.parser;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,25 +40,18 @@ import org.pankratzlab.unet.model.ValidationTable;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
-/**
- * Controller for adding XML-sourced donor data to the current {@link ValidationTable}
- *
- * @see ValidatingWizardController
- */
-public class SelectXMLController extends AbstractFileSelectController {
+public class XmlDonorParser extends AbstractDonorFileParser {
 
+  private static final String DISPLAY_STRING = "XML";
   private static final String XML_FALSE = "96";
   private static final String XML_TRUE = "95";
   private static final String DQA_MAP_PATH = "/DqaMap.xml";
   private static final String DPB_MAP_PATH = "/DpbMap.xml";
   private static final String FILE_CHOOSER_HEADER = "Select DonorNet Web Source";
-  private static final String WIZARD_PANE_TITLE = "Step 2 of 4";
   private static final String INITIAL_NAME = "";
-  private static final String EXTENSION_XML_DESC = "DonorNet XML";
-  private static final String EXTENSION_NAME_XML = "*.xml";
-  private static final String EXTENSION_XML = "*." + EXTENSION_NAME_XML;
-  private static final Map<String, String> EXTENSION_MAP =
-      ImmutableMap.of(EXTENSION_XML_DESC, EXTENSION_XML);
+  private static final String EXTENSION_DESC = "DonorNet XML";
+  private static final String EXTENSION_NAME = "xml";
+  private static final String EXTENSION = "*." + EXTENSION_NAME;
   private static final String XML_ATTR = "value";
   private static final String XML_TAG = "option";
   private static ImmutableMap<String, String> dqaMap;
@@ -83,7 +76,7 @@ public class SelectXMLController extends AbstractFileSelectController {
   private static ImmutableMap<String, String> populateFromFile(String donorNetMapPath) {
     Builder<String, String> builder = new Builder<>();
 
-    try (InputStream xmlStream = SelectXMLController.class.getResourceAsStream(donorNetMapPath)) {
+    try (InputStream xmlStream = XmlDonorParser.class.getResourceAsStream(donorNetMapPath)) {
 
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
       for (Element element : parsed.getElementsByTag(XML_TAG)) {
@@ -98,42 +91,56 @@ public class SelectXMLController extends AbstractFileSelectController {
 
   }
 
-  @Override
-  protected Map<String, String> extensionMap() {
-    return EXTENSION_MAP;
-  }
 
   @Override
-  protected String fileChooserHeader() {
+  public String fileChooserHeader() {
     return FILE_CHOOSER_HEADER;
   }
 
   @Override
-  protected String wizardPaneTitle() {
-    return WIZARD_PANE_TITLE;
-  }
-
-  @Override
-  protected String initialName() {
+  public String initialName() {
     return INITIAL_NAME;
   }
 
   @Override
-  protected String getErrorText() {
+  public String getErrorText() {
     return "Invalid DonorNet XML file. Try downloading as HTML.";
   }
 
   @Override
-  protected BiConsumer<ValidationTable, ValidationModel> setModel() {
-    return ValidationTable::setXmlModel;
+  public BiConsumer<ValidationTable, ValidationModel> setModel() {
+    return ValidationTable::setFirstModel;
   }
 
   @Override
-  protected void parseModel(ValidationModelBuilder builder, File file) {
+  public String extensionFilter() {
+    return EXTENSION;
+  }
 
+
+  @Override
+  public String extensionDescription() {
+    return EXTENSION_DESC;
+  }
+
+
+  @Override
+  protected String getDisplayString() {
+    return DISPLAY_STRING;
+  }
+
+
+  @Override
+  protected String extensionName() {
+    return EXTENSION_NAME;
+  }
+
+
+  @Override
+  protected void doParse(ValidationModelBuilder builder, File file) {
     try (FileInputStream xmlStream = new FileInputStream(file)) {
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
-      if (FilenameUtils.isExtension(file.getName(), EXTENSION_NAME_XML)) {
+      if (FilenameUtils.isExtension(file.getName(), EXTENSION_NAME)) {
         buildModelFromXML(builder, parsed);
       } else {
         throw new InvalidParameterException("Unknown File Type: " + file.getName());
@@ -142,6 +149,7 @@ public class SelectXMLController extends AbstractFileSelectController {
       throw new IllegalStateException("Invalid XML file: " + file);
     }
   }
+
 
   /**
    * Helper method to translate the parsed XML to a {@link ValidationModel}
@@ -173,6 +181,7 @@ public class SelectXMLController extends AbstractFileSelectController {
     getXMLTagVal(donorRoot, "dr53").ifPresent(s -> builder.dr53(decodeXMLBoolean(s)));
   }
 
+
   /**
    * Booleans are exported as a linear value which we have to translate to true/false
    */
@@ -185,6 +194,7 @@ public class SelectXMLController extends AbstractFileSelectController {
     throw new IllegalArgumentException("Unrecognized boolean code: " + boolCode);
   }
 
+
   /**
    * For the loci that are stored as linear values, we have to map those values to the corresponding
    * specificity.
@@ -192,6 +202,7 @@ public class SelectXMLController extends AbstractFileSelectController {
   private String decodeValue(Map<String, String> valueMap, String valueCode) {
     return valueMap.get(valueCode);
   }
+
 
   /**
    * Helper method to extract the text of a particular tag.
@@ -205,6 +216,4 @@ public class SelectXMLController extends AbstractFileSelectController {
     Elements elements = donorBlock.getElementsByTag(tag);
     return getText(elements);
   }
-
-
 }

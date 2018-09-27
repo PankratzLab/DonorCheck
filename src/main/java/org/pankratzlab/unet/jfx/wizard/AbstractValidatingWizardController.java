@@ -21,7 +21,10 @@
  */
 package org.pankratzlab.unet.jfx.wizard;
 
+import java.net.URL;
+import java.util.ResourceBundle;
 import org.pankratzlab.unet.model.ValidationTable;
+import javafx.fxml.FXML;
 
 /**
  * Abstract superclass for {@link ValidatingWizardController}s. Takes care of tracking the
@@ -29,7 +32,21 @@ import org.pankratzlab.unet.model.ValidationTable;
  */
 public abstract class AbstractValidatingWizardController implements ValidatingWizardController {
 
+  @FXML
+  private ResourceBundle resources;
+
+  @FXML
+  private URL location;
+
+  @FXML
+  private ValidatingWizardPane rootPane;
+
   private ValidationTable validationTable;
+
+  @FXML
+  void initialize() {
+    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'StepThreeInputPDF.fxml'.";
+  }
 
   @Override
   public void setTable(ValidationTable table) {
@@ -45,10 +62,13 @@ public abstract class AbstractValidatingWizardController implements ValidatingWi
     return validationTable;
   }
 
+  protected ValidatingWizardPane rootPane() {
+    return rootPane;
+  }
+
   /**
    * Optional callback to override if a controller needs to perform any additional functionality
    * when the validation table changes.
    */
   protected void refreshTable(ValidationTable table) {}
-
 }

@@ -21,8 +21,11 @@
  */
 package org.pankratzlab.unet.jfx.wizard;
 
+import java.util.Objects;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.WizardPane;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.value.ObservableBooleanValue;
 
 /**
@@ -36,23 +39,25 @@ import javafx.beans.value.ObservableBooleanValue;
  */
 public class ValidatingWizardPane extends WizardPane {
 
-  private ObservableBooleanValue invalidBinding;
+  private BooleanProperty invalidBinding = null;
 
-  public void setInvalidBinding(ObservableBooleanValue invalidBinding) {
-    this.invalidBinding = invalidBinding;
+  public void setInvalidBinding(ObservableBooleanValue binding) {
+    if (Objects.isNull(invalidBinding)) {
+      invalidBinding = new ReadOnlyBooleanWrapper();
+    }
+
+    invalidBinding.bind(binding);
   }
 
   @Override
   public void onEnteringPage(Wizard wizard) {
-    if (invalidBinding != null) {
+    if (Objects.nonNull(invalidBinding)) {
       wizard.invalidProperty().bind(invalidBinding);
     } else {
       // If no binding, not invalid
       wizard.invalidProperty().unbind();
       wizard.setInvalid(false);
     }
-
-    wizard.setTitle(getUserData().toString());
 
     // Notify any listeners that we are active
     fireEvent(new PageActivatedEvent());

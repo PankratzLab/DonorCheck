@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableSortedSet;
 public class ValidationModel {
 
   private final String donorId;
+  private final String source;
   private final ImmutableSortedSet<SeroType> aLocus;
   private final ImmutableSortedSet<SeroType> bLocus;
   private final ImmutableSortedSet<SeroType> cLocus;
@@ -47,11 +48,12 @@ public class ValidationModel {
   private final boolean dr52;
   private final boolean dr53;
 
-  public ValidationModel(String donorId, Collection<SeroType> a, Collection<SeroType> b,
-      Collection<SeroType> c, Collection<SeroType> drb, Collection<SeroType> dqb,
-      Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4, boolean bw6, boolean dr51,
-      boolean dr52, boolean dr53) {
+  public ValidationModel(String donorId, String source, Collection<SeroType> a,
+      Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
+      Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4,
+      boolean bw6, boolean dr51, boolean dr52, boolean dr53) {
     this.donorId = donorId;
+    this.source = source;
     aLocus = ImmutableSortedSet.copyOf(a);
     bLocus = ImmutableSortedSet.copyOf(b);
     cLocus = ImmutableSortedSet.copyOf(c);
@@ -68,6 +70,10 @@ public class ValidationModel {
 
   public String getDonorId() {
     return donorId;
+  }
+
+  public String getSource() {
+    return source;
   }
 
   public SeroType getA1() {

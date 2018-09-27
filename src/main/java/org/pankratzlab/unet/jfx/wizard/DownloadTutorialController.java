@@ -26,12 +26,11 @@ import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 
 /**
- * Simple controller for wizard page displaying a download screenshot. Only really necessary to set
- * the wizard title.
+ * Simple controller for wizard page displaying a download screenshot. Only really necessary to
+ * ensure fxml is injected
  */
-public class DownloadXMLController {
+public class DownloadTutorialController {
 
-  private static final String WIZARD_PANE_TITLE = "Step 1 of 4";
 
   @FXML
   private ResourceBundle resources;
@@ -40,13 +39,8 @@ public class DownloadXMLController {
   private URL location;
 
   @FXML
-  private ValidatingWizardPane rootPane;
-
-  @FXML
   void initialize() {
-    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'StepOneDownloadXML.fxml'.";
 
-    rootPane.setUserData(WIZARD_PANE_TITLE);
   }
 
 }

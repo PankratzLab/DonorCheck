@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.pankratzlab.unet.util;
+package org.pankratzlab.unet.parser.util;
 
 import java.util.ArrayList;
 import java.util.List;

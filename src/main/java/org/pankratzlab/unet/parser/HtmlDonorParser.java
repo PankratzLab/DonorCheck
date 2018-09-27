@@ -19,81 +19,76 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.pankratzlab.unet.jfx.wizard;
+package org.pankratzlab.unet.parser;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.InvalidParameterException;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
-import com.google.common.collect.ImmutableMap;
 
-/**
- * Controller for adding HTML-sourced donor data to the current {@link ValidationTable}
- *
- * @see ValidatingWizardController
- */
-public class SelectHTMLController extends AbstractFileSelectController {
+public class HtmlDonorParser extends AbstractDonorFileParser {
 
+  private static final String DISPLAY_STRING = "HTML";
   private static final String FILE_CHOOSER_HEADER = "Select DonorEdit HTML";
-  private static final String WIZARD_PANE_TITLE = "Step 2 of 4";
-  private static final String INITIAL_NAME = "";
-  private static final String EXTENSION_HTML_DESC = "DonorEdit HTML";
-  private static final String EXTENSION_NAME_HTML = "html";
-  private static final String EXTENSION_HTML = "*." + EXTENSION_NAME_HTML;
-  private static final Map<String, String> EXTENSION_MAP =
-      ImmutableMap.of(EXTENSION_HTML_DESC, EXTENSION_HTML);
+  private static final String INITIAL_NAME = "DonorEdit";
+  private static final String EXTENSION_DESC = "DonorEdit HTML";
+  private static final String EXTENSION_NAME = "html";
+  private static final String EXTENSION = "*." + EXTENSION_NAME;
   private static final String HTML_NEGATIVE = "Negative";
 
-  @Override
-  protected Map<String, String> extensionMap() {
-    return EXTENSION_MAP;
-  }
 
   @Override
-  protected String fileChooserHeader() {
+  public String fileChooserHeader() {
     return FILE_CHOOSER_HEADER;
   }
 
   @Override
-  protected String wizardPaneTitle() {
-    return WIZARD_PANE_TITLE;
-  }
-
-  @Override
-  protected String initialName() {
+  public String initialName() {
     return INITIAL_NAME;
   }
 
   @Override
-  protected String getErrorText() {
+  public String getErrorText() {
     return "Invalid DonorEdit.html file. Try downloading as XML.";
   }
 
   @Override
-  protected BiConsumer<ValidationTable, ValidationModel> setModel() {
-    return ValidationTable::setXmlModel;
+  public BiConsumer<ValidationTable, ValidationModel> setModel() {
+    return ValidationTable::setFirstModel;
   }
 
   @Override
-  protected void parseModel(ValidationModelBuilder builder, File file) {
+  public String extensionFilter() {
+    return EXTENSION;
+  }
 
+  @Override
+  public String extensionDescription() {
+    return EXTENSION_DESC;
+  }
+
+  @Override
+  protected String getDisplayString() {
+    return DISPLAY_STRING;
+  }
+
+  @Override
+  protected String extensionName() {
+    return EXTENSION_NAME;
+  }
+
+  @Override
+  protected void doParse(ValidationModelBuilder builder, File file) {
     try (FileInputStream xmlStream = new FileInputStream(file)) {
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
-      if (FilenameUtils.isExtension(file.getName(), EXTENSION_NAME_HTML)) {
-        buildModelFromHTML(builder, parsed);
-      } else {
-        throw new InvalidParameterException("Unknown File Type: " + file.getName());
-      }
+      buildModelFromHTML(builder, parsed);
     } catch (IOException e) {
       throw new IllegalStateException("Invalid HTML file: " + file);
     }

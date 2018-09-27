@@ -41,6 +41,7 @@ import com.google.common.collect.ImmutableList;
 public class ValidationModelBuilder {
 
   private String donorId;
+  private String source;
   private Set<SeroType> aLocus;
   private Set<SeroType> bLocus;
   private Set<SeroType> cLocus;
@@ -59,6 +60,14 @@ public class ValidationModelBuilder {
    */
   public ValidationModelBuilder donorId(String donorId) {
     this.donorId = donorId;
+    return this;
+  }
+
+  /**
+   * @param source Name for the source of this model
+   */
+  public ValidationModelBuilder source(String source) {
+    this.source = source;
     return this;
   }
 
@@ -149,7 +158,7 @@ public class ValidationModelBuilder {
   public ValidationModel build() {
     ensureValidity();
 
-    return new ValidationModel(donorId, aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
+    return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
         dpbLocus, bw4, bw6, dr51, dr52, dr53);
   }
 
@@ -158,7 +167,7 @@ public class ValidationModelBuilder {
    *         incorrectly.
    */
   private void ensureValidity() throws IllegalStateException {
-    for (Object o : new Object[] {donorId, aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
+    for (Object o : new Object[] {donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
         dpbLocus, bw4, bw6, dr51, dr52, dr53}) {
       if (Objects.isNull(o)) {
         throw new IllegalStateException("ValidationModel incomplete");

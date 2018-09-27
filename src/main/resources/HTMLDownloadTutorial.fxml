@@ -14,7 +14,7 @@
 
 <ValidatingWizardPane fx:id="rootPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
    <header>
-      <Label text="Download Donor XML">
+      <Label text="Download Donor HTML">
          <font>
             <Font size="20.0" />
          </font>
@@ -30,7 +30,7 @@
                <items>
                   <ImageView pickOnBounds="true" preserveRatio="true">
                      <image>
-                        <Image url="/unetDownload.png" />
+                        <Image url="/downloadHTML.png" />
                      </image>
                      <viewport>
                         <Rectangle2D />
@@ -38,7 +38,7 @@
                   </ImageView>
                   <TextFlow lineSpacing="1.0">
                      <children>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="1. Navigate to the donor's page in DonorNet&#10;2. Click the &quot;download&quot; button (pictured)&#10;3. Save the XML file">
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="REQUIRES: Chrome or Firefox (not Explorer)&#10;&#10;1. Navigate to the donor's page in DonorNet&#10;2. Right-click in the page and select &quot;Save as...&quot; (pictured)&#10;3. Save the complete website&#10;&#10;NOTE: The typing file is in a sub-directory of the download:&#10;  DonorNet_files/DonorEdit.html">
                            <font>
                               <Font size="16.0" />
                            </font>

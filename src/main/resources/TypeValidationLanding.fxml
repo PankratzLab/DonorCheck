@@ -18,7 +18,7 @@
          <children>
             <TextFlow>
                <children>
-                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="This tool can be used to validate a donor's typing before saving to DonorNet.&#10;&#10;Validating a donor requires comparison of two files:&#10;   - DonorNet entry web page&#10;   - SureTyper PDF report&#10;&#10;At the end of validation you will be presented with a summary which can be saved.&#10;&#10;You can get started by clicking the button below.">
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="This tool can be used to validate a donor's typing before saving to DonorNet.&#10;&#10;Validating a donor requires comparison of two files:&#10;   - PDF typing assignment (SureTyper or SCORE6)&#10;   - DonorNet &quot;Crossmatch &amp; HLA&quot; page  (XML or HTML)&#10;&#10;At the end of validation you will be presented with a summary which can be saved.&#10;&#10;You can get started by clicking the button below.">
                      <font>
                         <Font size="18.0" />
                      </font>
@@ -39,6 +39,12 @@
               <MenuItem mnemonicParsing="false" onAction="#fileQuitAction" text="Quit" />
             </items>
           </Menu>
+            <Menu mnemonicParsing="false" text="Tutorials">
+              <items>
+                <MenuItem mnemonicParsing="false" onAction="#tutorialXMLDownload" text="XML DonorNet Download" />
+                  <MenuItem mnemonicParsing="false" onAction="#tutorialHTMLDownload" text="HTML DonorNet Download" />
+              </items>
+            </Menu>
         </menus>
       </MenuBar>
    </top>
