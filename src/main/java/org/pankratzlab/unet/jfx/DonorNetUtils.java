@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import org.jsoup.select.Elements;
 import org.pankratzlab.hla.CurrentDirectoryProvider;
 import com.google.common.collect.ImmutableMap;
 import javafx.event.ActionEvent;
@@ -96,5 +97,21 @@ public final class DonorNetUtils {
         open ? fileChooser.showOpenDialog(owner) : fileChooser.showSaveDialog(owner);
 
     return Optional.ofNullable(selectedFile);
+  }
+
+  /**
+   * Helper method to extract the text value of an element, with a null value if the element is not
+   * present or empty
+   */
+  public static Optional<String> getText(Elements elements) {
+    String val = null;
+    if (!elements.isEmpty()) {
+      String text = elements.get(0).text();
+      if (!text.isEmpty()) {
+        val = text;
+      }
+    }
+  
+    return Optional.ofNullable(val);
   }
 }

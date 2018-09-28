@@ -25,22 +25,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-import org.pankratzlab.unet.model.ValidationTable;
 
 public class HtmlDonorParser extends AbstractDonorFileParser {
 
   private static final String DISPLAY_STRING = "HTML";
   private static final String FILE_CHOOSER_HEADER = "Select DonorEdit HTML";
   private static final String INITIAL_NAME = "DonorEdit";
-  private static final String EXTENSION_DESC = "DonorEdit HTML";
+  private static final String EXTENSION_DESC = "Donor HTML";
   private static final String EXTENSION_NAME = "html";
-  private static final String EXTENSION = "*." + EXTENSION_NAME;
+  private static final String EXTENSION = "DonorEdit." + EXTENSION_NAME;
   private static final String HTML_NEGATIVE = "Negative";
 
 
@@ -57,11 +56,6 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   @Override
   public String getErrorText() {
     return "Invalid DonorEdit.html file. Try downloading as XML.";
-  }
-
-  @Override
-  public BiConsumer<ValidationTable, ValidationModel> setModel() {
-    return ValidationTable::setFirstModel;
   }
 
   @Override
@@ -145,7 +139,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
     final String prefix = "ddl";
     final String suffix = "_label";
 
-    return getText(parsed.getAllElements().get(0).getElementsByAttributeValue("id",
+    return DonorNetUtils.getText(parsed.getAllElements().get(0).getElementsByAttributeValue("id",
         prefix + typeString + suffix));
   }
 

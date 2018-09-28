@@ -22,10 +22,7 @@
 package org.pankratzlab.unet.parser;
 
 import java.io.File;
-import java.util.function.BiConsumer;
-import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-import org.pankratzlab.unet.model.ValidationTable;
 
 public interface DonorFileParser {
 
@@ -54,12 +51,6 @@ public interface DonorFileParser {
    * @return String to display to user when parsing fails
    */
   public String getErrorText();
-
-  /**
-   * @return {@link ValidationTable} method to call after parsing the model (e.g.
-   *         {@link ValidationTable#setPdfModel} for a PDF input controller
-   */
-  public BiConsumer<ValidationTable, ValidationModel> setModel();
 
   /**
    * Populate the given {@link ValidationModelBuilder} based on the File's contents. Only types

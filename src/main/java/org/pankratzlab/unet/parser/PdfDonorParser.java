@@ -23,14 +23,10 @@ package org.pankratzlab.unet.parser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.function.BiConsumer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-import org.pankratzlab.unet.model.ValidationTable;
-import org.pankratzlab.unet.parser.util.PdfQTyperParser;
 import org.pankratzlab.unet.parser.util.PdfSureTyperParser;
 
 public class PdfDonorParser extends AbstractDonorFileParser {
@@ -63,12 +59,6 @@ public class PdfDonorParser extends AbstractDonorFileParser {
     return INITIAL_NAME;
   }
 
-
-  @Override
-  public BiConsumer<ValidationTable, ValidationModel> setModel() {
-    return ValidationTable::setSecondModel;
-  }
-
   @Override
   public String getErrorText() {
     return "Could not read donor data from PDF.";
@@ -85,9 +75,11 @@ public class PdfDonorParser extends AbstractDonorFileParser {
         String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
         if (pdfText.contains(SURETYPER)) {
           PdfSureTyperParser.parseTypes(builder, pdfLines);
-        } else if (pdfText.contains(QTYPER)) {
-          PdfQTyperParser.parseTypes(builder, pdfLines);
-        }
+        } 
+        // FIXME currently not well supported
+//        else if (pdfText.contains(QTYPER)) {
+//          PdfQTyperParser.parseTypes(builder, pdfLines);
+//        }
       }
     } catch (InvalidPasswordException e) {
       throw new UnsupportedOperationException("PDF can not be encrypted");

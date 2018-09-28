@@ -92,6 +92,30 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     secondSourceCol.setCellValueFactory(new PropertyValueFactory<>("secondCol"));
 
     isEqualCol.setCellFactory(new PassFailCellFactory());
+    firstSourceCol.setCellFactory(
+        new Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>>() {
+
+          @Override
+          public TableCell<ValidationRow<?>, String> call(
+              TableColumn<ValidationRow<?>, String> param) {
+            return new TableCell<ValidationRow<?>, String>() {
+              @Override
+              protected void updateItem(String item, boolean empty) {
+                setText(item);
+                ValidationRow<?> row = (ValidationRow<?>) getTableRow().getItem();
+                String backgroundStyle;
+                if (row == null || row.isValidProperty() == null || row.isValidProperty().get()) {
+                  backgroundStyle = "";
+                } else {
+                  // FIXME instead of setting the style, we just want to update the background color css property
+                  backgroundStyle = "-fx-background-color: #F08080;";
+                }
+                setStyle(backgroundStyle);
+              }
+
+            };
+          }
+        });
 
     // Record an image of the validation state when entering this page
     rootPane.addEventHandler(PageActivatedEvent.PAGE_ACTIVE, e -> addFinishHandler());

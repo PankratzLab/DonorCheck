@@ -8,6 +8,10 @@
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
@@ -16,15 +20,123 @@
     <center>
       <AnchorPane>
          <children>
-            <TextFlow>
+            <VBox>
                <children>
-                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="This tool can be used to validate a donor's typing before saving to DonorNet.&#10;&#10;Validating a donor requires comparison of two files:&#10;   - PDF typing assignment (SureTyper or SCORE6)&#10;   - DonorNet &quot;Crossmatch &amp; HLA&quot; page  (XML or HTML)&#10;&#10;At the end of validation you will be presented with a summary which can be saved.&#10;&#10;You can get started by clicking the button below.">
-                     <font>
-                        <Font size="18.0" />
-                     </font>
-                  </Text>
+                  <TextFlow>
+                     <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="This tool can be used to validate a donor's typing before saving to DonorNet.&#10;&#10;Validation requires comparison of two typing documents for a particular donor.&#10;&#10;The following types are supported:">
+                           <font>
+                              <Font size="18.0" />
+                           </font>
+                        </Text>
+                     </children>
+                  </TextFlow>
+                  <GridPane vgap="15.0">
+                    <columnConstraints>
+                      <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                      <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <TextFlow style="-fx-background-color: lightgray; -fx-border-color: black; -fx-border-width: 0 0 1 0;" textAlignment="CENTER" GridPane.hgrow="SOMETIMES" GridPane.vgrow="SOMETIMES">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Source">
+                                 <font>
+                                    <Font size="24.0" />
+                                 </font>
+                              </Text>
+                           </children>
+                           <GridPane.margin>
+                              <Insets bottom="5.0" />
+                           </GridPane.margin>
+                           <padding>
+                              <Insets bottom="5.0" top="10.0" />
+                           </padding>
+                        </TextFlow>
+                        <TextFlow style="-fx-background-color: lightgray; -fx-border-color: black; -fx-border-width: 0 0 1 0;" textAlignment="CENTER" GridPane.columnIndex="1">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="File Type(s)">
+                                 <font>
+                                    <Font size="24.0" />
+                                 </font>
+                              </Text>
+                           </children>
+                           <GridPane.margin>
+                              <Insets bottom="5.0" />
+                           </GridPane.margin>
+                           <padding>
+                              <Insets bottom="5.0" top="10.0" />
+                           </padding>
+                        </TextFlow>
+                        <TextFlow textAlignment="CENTER" GridPane.rowIndex="1">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="SureTyper">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font></Text>
+                           </children>
+                        </TextFlow>
+                        <TextFlow textAlignment="CENTER" GridPane.rowIndex="2">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="SCORE6">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font></Text>
+                           </children>
+                        </TextFlow>
+                        <TextFlow textAlignment="CENTER" GridPane.rowIndex="3">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="DonorNet">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font></Text>
+                           </children>
+                        </TextFlow>
+                        <TextFlow textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="PDF">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font></Text>
+                           </children>
+                        </TextFlow>
+                        <TextFlow textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="XML">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font></Text>
+                           </children>
+                        </TextFlow>
+                        <TextFlow textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="XML, HTML">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font></Text>
+                           </children>
+                        </TextFlow>
+                     </children>
+                     <VBox.margin>
+                        <Insets bottom="15.0" top="25.0" />
+                     </VBox.margin>
+                  </GridPane>
+                  <TextFlow>
+                     <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="At the end of validation you will be presented with a summary which can be saved.&#10;&#10;You can get started by clicking the button below.">
+                           <font>
+                              <Font size="18.0" />
+                           </font>
+                        </Text>
+                     </children>
+                  </TextFlow>
                </children>
-            </TextFlow>
+            </VBox>
          </children>
          <BorderPane.margin>
             <Insets bottom="5.0" left="15.0" right="15.0" top="5.0" />

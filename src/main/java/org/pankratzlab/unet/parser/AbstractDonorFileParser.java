@@ -23,9 +23,7 @@ package org.pankratzlab.unet.parser;
 
 import java.io.File;
 import java.security.InvalidParameterException;
-import java.util.Optional;
 import org.apache.commons.io.FilenameUtils;
-import org.jsoup.select.Elements;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
 public abstract class AbstractDonorFileParser implements DonorFileParser {
@@ -44,22 +42,6 @@ public abstract class AbstractDonorFileParser implements DonorFileParser {
   @Override
   public String toString() {
     return getDisplayString();
-  }
-
-  /**
-   * Helper method to extract the text value of an element, with a null value if the element is not
-   * present or empty
-   */
-  protected Optional<String> getText(Elements elements) {
-    String val = null;
-    if (!elements.isEmpty()) {
-      String text = elements.get(0).text();
-      if (!text.isEmpty()) {
-        val = text;
-      }
-    }
-
-    return Optional.ofNullable(val);
   }
 
   protected abstract String getDisplayString();

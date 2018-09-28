@@ -43,7 +43,7 @@ public class PdfSureTyperParser {
   private static final String HLA_B = "HLA-B:";
   private static final String HLA_A = "HLA-A:";
 
-  private static ImmutableMap<String, PdfMetadata> metadataMap;
+  private static ImmutableMap<String, TypeSetter> metadataMap;
 
   /**
    * Helper method to process the individual type assignment tokens tokens
@@ -56,7 +56,7 @@ public class PdfSureTyperParser {
     // We now process the PDF text line-by-line.
     StringJoiner typeAssignment = new StringJoiner(" ");
     boolean inAssignment = false;
-  
+
     // All the type assignment strings are joined together and then split on whitespace,
     // creating a stream of tokens.
     for (String line : lines) {
@@ -76,22 +76,22 @@ public class PdfSureTyperParser {
         }
       }
     }
-  
+
     builder.bw4(false);
     builder.bw6(false);
     builder.dr51(false);
     builder.dr52(false);
     builder.dr53(false);
-  
+
     BiConsumer<ValidationModelBuilder, String> setter = null;
     String prefix = "";
-  
+
     for (String token : typeAssignment.toString().split("\\s+")) {
       if (metadataMap.containsKey(token)) {
         // When we encounter a section key we update the prefix string and the field setter
-        PdfMetadata metadata = metadataMap.get(token);
-        setter = metadata.setter;
-        prefix = metadata.tokenPrefix;
+        TypeSetter metadata = metadataMap.get(token);
+        setter = metadata.getSetter();
+        prefix = metadata.getTokenPrefix();
       } else if (setter != null) {
         // Erase the prefix from the current token and set the value on the model builder
         setter.accept(builder, token.replace(prefix, ""));
@@ -106,23 +106,23 @@ public class PdfSureTyperParser {
     // 1. The token indicating a change in locus
     // 2. The prefix string to each antigen token
     // 3. The appropriate setter method in ValidationModelBuilder
-    Builder<String, PdfMetadata> setterBuilder = ImmutableMap.builder();
-    setterBuilder.put(HLA_A, new PdfMetadata("A", ValidationModelBuilder::a));
-    setterBuilder.put(HLA_B, new PdfMetadata("B", ValidationModelBuilder::b));
-    setterBuilder.put(HLA_C, new PdfMetadata("Cw", ValidationModelBuilder::c));
-    setterBuilder.put(HLA_DRB1, new PdfMetadata("DR", ValidationModelBuilder::drb));
-    setterBuilder.put(HLA_DQA1, new PdfMetadata("DQA1*", ValidationModelBuilder::dqa));
-    setterBuilder.put(HLA_DQB1, new PdfMetadata("DQ", ValidationModelBuilder::dqb));
+    Builder<String, TypeSetter> setterBuilder = ImmutableMap.builder();
+    setterBuilder.put(HLA_A, new TypeSetter("A", ValidationModelBuilder::a));
+    setterBuilder.put(HLA_B, new TypeSetter("B", ValidationModelBuilder::b));
+    setterBuilder.put(HLA_C, new TypeSetter("Cw", ValidationModelBuilder::c));
+    setterBuilder.put(HLA_DRB1, new TypeSetter("DR", ValidationModelBuilder::drb));
+    setterBuilder.put(HLA_DQA1, new TypeSetter("DQA1*", ValidationModelBuilder::dqa));
+    setterBuilder.put(HLA_DQB1, new TypeSetter("DQ", ValidationModelBuilder::dqb));
 
     // DPA1 is present in the typing data but we do not currently track it in the validation model
     // (not entered in DonorNet)
-    setterBuilder.put(HLA_DPA1, new PdfMetadata("DPA1*", PdfSureTyperParser::noOp));
+    setterBuilder.put(HLA_DPA1, new TypeSetter("DPA1*", PdfSureTyperParser::noOp));
 
-    setterBuilder.put(HLA_DPB1, new PdfMetadata("DPB1*", ValidationModelBuilder::dpb));
+    setterBuilder.put(HLA_DPB1, new TypeSetter("DPB1*", ValidationModelBuilder::dpb));
 
     // Boolean values appear as literal values, indicating true, and are simply absent if false
-    setterBuilder.put(BW, new PdfMetadata("", PdfSureTyperParser::decodeBw));
-    setterBuilder.put(HLA_DRB345, new PdfMetadata("", PdfSureTyperParser::decodeDR));
+    setterBuilder.put(BW, new TypeSetter("", PdfSureTyperParser::decodeBw));
+    setterBuilder.put(HLA_DRB345, new TypeSetter("", PdfSureTyperParser::decodeDR));
 
     metadataMap = setterBuilder.build();
   }
@@ -167,19 +167,4 @@ public class PdfSureTyperParser {
     // Nothing to do
   }
 
-  /**
-   * Helper class to link together related {@link ValidationModelBuilder} setters and token
-   * specificity prefixes.
-   */
-  private static class PdfMetadata {
-
-    private String tokenPrefix;
-    private BiConsumer<ValidationModelBuilder, String> setter;
-
-    public PdfMetadata(String tokenPrefix, BiConsumer<ValidationModelBuilder, String> setter) {
-      super();
-      this.tokenPrefix = tokenPrefix;
-      this.setter = setter;
-    }
-  }
 }

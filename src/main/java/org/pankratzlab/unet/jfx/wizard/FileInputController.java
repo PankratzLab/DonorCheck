@@ -24,8 +24,10 @@ package org.pankratzlab.unet.jfx.wizard;
 import java.io.File;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import org.pankratzlab.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
+import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.parser.DonorFileParser;
@@ -75,13 +77,16 @@ public class FileInputController extends AbstractValidatingWizardController {
     invalidBinding = Bindings.createBooleanBinding(() -> selectedFileProperties.isEmpty(),
         selectedFileProperties);
 
-    inputFiles_VBox.getChildren().add(createFileBox(PdfDonorParser.class));
-    inputFiles_VBox.getChildren().add(createFileBox(XmlDonorParser.class));
+    inputFiles_VBox.getChildren()
+        .add(createFileBox(PdfDonorParser.class, ValidationTable::setFirstModel));
+    inputFiles_VBox.getChildren()
+        .add(createFileBox(XmlDonorParser.class, ValidationTable::setSecondModel));
 
     rootPane().setInvalidBinding(invalidBinding);
   }
 
-  private HBox createFileBox(Class<? extends DonorFileParser> defaultSelected) {
+  private HBox createFileBox(Class<? extends DonorFileParser> defaultSelected,
+      BiConsumer<ValidationTable, ValidationModel> setter) {
     ReadOnlyObjectWrapper<File> linkedFile = new ReadOnlyObjectWrapper<>();
 
     // Update the invalidation binding
@@ -121,15 +126,15 @@ public class FileInputController extends AbstractValidatingWizardController {
 
     Button chooseFileButton = new Button("Choose File");
     chooseFileButton.setFont(Font.font(16.0));
-    chooseFileButton.setOnAction(
-        e -> selectDonorFile(e, comboBox.getSelectionModel().getSelectedItem(), linkedFile));
+    chooseFileButton.setOnAction(e -> selectDonorFile(e,
+        comboBox.getSelectionModel().getSelectedItem(), setter, linkedFile));
     hbox.getChildren().add(chooseFileButton);
 
     return hbox;
   }
 
   private void selectDonorFile(ActionEvent event, DonorFileParser donorParser,
-      ReadOnlyObjectWrapper<File> linkedFile) {
+      BiConsumer<ValidationTable, ValidationModel> setter, ReadOnlyObjectWrapper<File> linkedFile) {
 
     Optional<File> optionalFile = DonorNetUtils.getFile(((Node) event.getSource()),
         donorParser.fileChooserHeader(), donorParser.initialName(),
@@ -142,7 +147,7 @@ public class FileInputController extends AbstractValidatingWizardController {
 
       try {
         donorParser.parseModel(builder, selectedFile);
-        donorParser.setModel().accept(getTable(), builder.build());
+        setter.accept(getTable(), builder.build());
         linkedFile.set(selectedFile);
       } catch (Exception e) {
         Alert alert = new Alert(AlertType.ERROR);
@@ -150,6 +155,7 @@ public class FileInputController extends AbstractValidatingWizardController {
             + "\nPlease notify the developers as this may indicate the data has changed."
             + "\nOffending file: " + selectedFile.getName());
         alert.showAndWait();
+        e.printStackTrace();
       }
 
       CurrentDirectoryProvider.setBaseDir(selectedFile.getParentFile());
