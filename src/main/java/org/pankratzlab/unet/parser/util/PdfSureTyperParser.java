@@ -27,6 +27,9 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
+/**
+ * Specific parsing logic for SureTyper PDFs
+ */
 public class PdfSureTyperParser {
   private static final String TYPING_STOP_TOKEN = "SureTyper";
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";

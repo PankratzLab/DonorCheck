@@ -37,6 +37,9 @@ import org.pankratzlab.unet.parser.XmlDonorParser;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
+/**
+ * Parses downloaded DonorNet XML (un-saved - after saving, only HTML is supported) to a model.
+ */
 public class XmlDonorNetParser {
 
   public static final String ROOT_ELEMENT = "donorupload";
@@ -124,7 +127,7 @@ public class XmlDonorNetParser {
     // numbers to specificities. These files contain mappings for the given locus and need to be
     // updated if the DonorNet pages ever change.
     dpbMap = populateFromFile(DPB_MAP_PATH);
-  
+
     dqaMap = populateFromFile(DQA_MAP_PATH);
   }
 
@@ -136,19 +139,19 @@ public class XmlDonorNetParser {
    */
   private static ImmutableMap<String, String> populateFromFile(String donorNetMapPath) {
     ImmutableMap.Builder<String, String> builder = new Builder<>();
-  
+
     try (InputStream xmlStream = XmlDonorParser.class.getResourceAsStream(donorNetMapPath)) {
-  
+
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
       for (Element element : parsed.getElementsByTag(XML_TAG)) {
         builder.put(element.attr(XML_ATTR), element.text());
       }
-  
+
     } catch (IOException e) {
       throw new IllegalStateException("Invalid Map file: " + donorNetMapPath);
     }
-  
+
     return builder.build();
-  
+
   }
 }

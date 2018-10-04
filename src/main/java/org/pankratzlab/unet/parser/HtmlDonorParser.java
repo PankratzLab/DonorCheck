@@ -32,8 +32,14 @@ import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
+/**
+ * {@link DonorFileParser} for HTML files. Currently this is restricted to DonorNet html
+ */
 public class HtmlDonorParser extends AbstractDonorFileParser {
 
+  private static final String HTML_TYPE_ATTR = "id";
+  private static final String HTML_SUFFIX = "_label";
+  private static final String HTML_PREFIX = "ddl";
   private static final String DISPLAY_STRING = "HTML";
   private static final String FILE_CHOOSER_HEADER = "Select DonorEdit HTML";
   private static final String INITIAL_NAME = "DonorEdit";
@@ -93,7 +99,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
    */
   private void buildModelFromHTML(ValidationModelBuilder builder, Document parsed) {
 
-    Element idElement = parsed.getElementsByAttributeValue("id", "hdonid").get(0);
+    Element idElement = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, "hdonid").get(0);
     builder.donorId(idElement.val());
 
     // TODO these could be stored in a map of String to Consumer<String> and done in a general way
@@ -136,11 +142,10 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
    */
   private Optional<String> getHTMLTypeValue(Document parsed, String typeString) {
     // All tags with type info start and end with these
-    final String prefix = "ddl";
-    final String suffix = "_label";
 
-    return DonorNetUtils.getText(parsed.getAllElements().get(0).getElementsByAttributeValue("id",
-        prefix + typeString + suffix));
+    return DonorNetUtils.getText(parsed.getAllElements().get(0)
+        .getElementsByAttributeValue(HTML_TYPE_ATTR,
+        HTML_PREFIX + typeString + HTML_SUFFIX));
   }
 
 }

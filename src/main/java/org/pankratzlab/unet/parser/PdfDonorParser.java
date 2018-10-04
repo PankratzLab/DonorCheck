@@ -29,6 +29,9 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.PdfSureTyperParser;
 
+/**
+ * {@link DonorFileParser} entry point for PDF files.
+ */
 public class PdfDonorParser extends AbstractDonorFileParser {
   private static final String DISPLAY_STRING = "PDF";
   private static final String FILE_CHOOSER_HEADER = "Select PDF Report";
@@ -73,13 +76,15 @@ public class PdfDonorParser extends AbstractDonorFileParser {
         // Extract all text from the PDF and split it into lines
         String pdfText = tStripper.getText(pdf);
         String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
+
+        // Pass the text to the appropriate parser
         if (pdfText.contains(SURETYPER)) {
           PdfSureTyperParser.parseTypes(builder, pdfLines);
-        } 
+        }
         // FIXME currently not well supported
-//        else if (pdfText.contains(QTYPER)) {
-//          PdfQTyperParser.parseTypes(builder, pdfLines);
-//        }
+        // else if (pdfText.contains(QTYPER)) {
+        // PdfQTyperParser.parseTypes(builder, pdfLines);
+        // }
       }
     } catch (InvalidPasswordException e) {
       throw new UnsupportedOperationException("PDF can not be encrypted");

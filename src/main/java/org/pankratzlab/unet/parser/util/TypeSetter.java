@@ -24,21 +24,29 @@ package org.pankratzlab.unet.parser.util;
 import java.util.function.BiConsumer;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
+/**
+ * Wrapper class linking a particular {@link ValidationModelBuilder} setter with a prefix that needs
+ * to be stripped from a type string before being passed to the setter.
+ */
 public class TypeSetter {
   private String tokenPrefix;
   private BiConsumer<ValidationModelBuilder, String> setter;
-
-  public TypeSetter() {}
 
   public TypeSetter(String prefix, BiConsumer<ValidationModelBuilder, String> setter) {
     tokenPrefix = prefix;
     this.setter = setter;
   }
 
+  /**
+   * @return The prefix to remove from any input to {@link #getSetter()}
+   */
   public String getTokenPrefix() {
     return tokenPrefix;
   }
 
+  /**
+   * @return The {@link ValidationModelBuilder} method to use
+   */
   public BiConsumer<ValidationModelBuilder, String> getSetter() {
     return setter;
   }

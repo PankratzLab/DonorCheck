@@ -26,6 +26,9 @@ import java.security.InvalidParameterException;
 import org.apache.commons.io.FilenameUtils;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
+/**
+ * Abstract superclass for {@link DonorFileParser} for common operations.
+ */
 public abstract class AbstractDonorFileParser implements DonorFileParser {
 
   @Override
@@ -44,9 +47,19 @@ public abstract class AbstractDonorFileParser implements DonorFileParser {
     return getDisplayString();
   }
 
+  /**
+   * @return Label to display to users (to select between different file types)
+   */
   protected abstract String getDisplayString();
 
+  /**
+   * @return Extension string for checking (e.g. no file separator"
+   */
   protected abstract String extensionName();
 
+  /**
+   * Perform the actual builder population from this file. At this point it is verified that the
+   * file matches the {@link #extensionName()}.
+   */
   protected abstract void doParse(ValidationModelBuilder builder, File file);
 }

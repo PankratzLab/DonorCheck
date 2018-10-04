@@ -32,6 +32,9 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.XmlDonorNetParser;
 import org.pankratzlab.unet.parser.util.XmlQTyperParser;
 
+/**
+ * {@link DonorFileParser} entry point for XML files
+ */
 public class XmlDonorParser extends AbstractDonorFileParser {
 
   private static final String BODY_TAG = "body";
@@ -83,13 +86,14 @@ public class XmlDonorParser extends AbstractDonorFileParser {
     return EXTENSION_NAME;
   }
 
-
   @Override
   protected void doParse(ValidationModelBuilder builder, File file) {
     try (FileInputStream xmlStream = new FileInputStream(file)) {
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
       if (FilenameUtils.isExtension(file.getName(), EXTENSION_NAME)) {
         final String rootElement = parsed.getElementsByTag(BODY_TAG).get(0).child(0).tagName();
+
+        // Based on XML contents, pass to specific XML parser
         if (XmlDonorNetParser.ROOT_ELEMENT.equals(rootElement)) {
           XmlDonorNetParser.buildModelFromXML(builder, parsed);
         } else if (XmlQTyperParser.ROOT_ELEMENT.equals(rootElement)) {
