@@ -94,7 +94,7 @@ public class XmlQTyperParser {
 
   private static final ImmutableSet<String> BW4 = ImmutableSet.of("B5", "B5102", "B5103", "B13",
       "B17", "B27", "B37", "B38", "B44", "B47", "B49", "B51", "B52", "B53", "B57", "B58", "B59",
-      "B63", "B77", "A9", "A23", "A24", "A2403", "A25", "A32");
+      "B63", "B77");
 
   private static final ImmutableSet<String> BW6 = ImmutableSet.of("B7", "B703", "B8", "B14", "B18",
       "B22", "B2708", "B35", "B39", "B3901", "B3902", "B40", "B4005", "B41", "B42", "B45", "B46",
