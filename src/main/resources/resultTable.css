@@ -7,3 +7,7 @@
 .table-column {
 	-fx-alignment: CENTER;
 }
+
+.invalid-cell {
+	-fx-background-color: #F08080;
+}

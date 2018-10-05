@@ -22,9 +22,11 @@
 package org.pankratzlab.unet.jfx.wizard;
 
 import java.net.URL;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
+import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -43,7 +45,6 @@ import javafx.util.Callback;
  * Controller for viewing the final results status.
  */
 public class ValidationResultsController extends AbstractValidatingWizardController {
-
   private EventHandler<Event> handler;
 
   @FXML
@@ -103,14 +104,18 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
               protected void updateItem(String item, boolean empty) {
                 setText(item);
                 ValidationRow<?> row = (ValidationRow<?>) getTableRow().getItem();
-                String backgroundStyle;
-                if (row == null || row.isValidProperty() == null || row.isValidProperty().get()) {
-                  backgroundStyle = "";
+                if (Objects.nonNull(row) && Objects.nonNull(row.isValidProperty())
+                    && !(row.isValidProperty().get())) {
+                  getStyleClass().add(0, "invalid-cell");
                 } else {
-                  // FIXME instead of setting the style, we just want to update the background color css property
-                  backgroundStyle = "-fx-background-color: #F08080;";
+                  ObservableList<String> styleList = getStyleClass();
+                  for (int i = 0; i < styleList.size(); i++) {
+                    if (styleList.get(i).equals("invalid-cell")) {
+                      styleList.remove(i);
+                      break;
+                    }
+                  }
                 }
-                setStyle(backgroundStyle);
               }
 
             };
