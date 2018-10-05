@@ -31,7 +31,7 @@
                         </Text>
                      </children>
                   </TextFlow>
-                  <GridPane vgap="15.0">
+                  <GridPane style="-fx-border-color: lightgray; -fx-border-width: 2; -fx-border-radius: 5;" vgap="15.0">
                     <columnConstraints>
                       <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                       <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -125,6 +125,9 @@
                      <VBox.margin>
                         <Insets bottom="15.0" top="25.0" />
                      </VBox.margin>
+                     <padding>
+                        <Insets bottom="15.0" top="10.0" />
+                     </padding>
                   </GridPane>
                   <TextFlow>
                      <children>
