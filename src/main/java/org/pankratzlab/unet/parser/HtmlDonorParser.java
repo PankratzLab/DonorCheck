@@ -25,9 +25,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
@@ -37,6 +39,9 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
  */
 public class HtmlDonorParser extends AbstractDonorFileParser {
 
+  private static final String SELECTED_VALUE = "selected";
+  private static final String SELECTED_ATTRIBUTE = SELECTED_VALUE;
+  private static final String DONOR_ATTRIBUTE = "hdonid";
   private static final String HTML_TYPE_ATTR = "id";
   private static final String HTML_SUFFIX = "_label";
   private static final String HTML_PREFIX = "ddl";
@@ -88,7 +93,16 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   protected void doParse(ValidationModelBuilder builder, File file) {
     try (FileInputStream xmlStream = new FileInputStream(file)) {
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
-      buildModelFromHTML(builder, parsed);
+
+      // Test for saved or unsaved HTML state
+      // No selected elements means this has been saved previously
+      Elements selectedElements = parsed.getElementsByAttribute(SELECTED_ATTRIBUTE);
+
+      if (selectedElements.isEmpty()) {
+        buildModelFromHTML(builder, parsed, this::getSavedHTMLType);
+      } else {
+        buildModelFromHTML(builder, parsed, this::getUnsavedHTMLType);
+      }
     } catch (IOException e) {
       throw new IllegalStateException("Invalid HTML file: " + file);
     }
@@ -97,32 +111,33 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   /**
    * Helper method to translate the parsed HTML to a {@link ValidationModel}
    */
-  private void buildModelFromHTML(ValidationModelBuilder builder, Document parsed) {
+  private void buildModelFromHTML(ValidationModelBuilder builder, Document parsed,
+      BiFunction<Document, String, Optional<String>> typeParser) {
 
-    Element idElement = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, "hdonid").get(0);
+    Element idElement = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, DONOR_ATTRIBUTE).get(0);
     builder.donorId(idElement.val());
 
     // TODO these could be stored in a map of String to Consumer<String> and done in a general way
-    getHTMLTypeValue(parsed, "A1").ifPresent(builder::a);
-    getHTMLTypeValue(parsed, "A2").ifPresent(builder::a);
-    getHTMLTypeValue(parsed, "B1").ifPresent(builder::b);
-    getHTMLTypeValue(parsed, "B2").ifPresent(builder::b);
-    getHTMLTypeValue(parsed, "C1").ifPresent(builder::c);
-    getHTMLTypeValue(parsed, "C2").ifPresent(builder::c);
-    getHTMLTypeValue(parsed, "DR1").ifPresent(builder::drb);
-    getHTMLTypeValue(parsed, "DR2").ifPresent(builder::drb);
-    getHTMLTypeValue(parsed, "DQB1").ifPresent(builder::dqb);
-    getHTMLTypeValue(parsed, "DQB2").ifPresent(builder::dqb);
-    getHTMLTypeValue(parsed, "DQA1").ifPresent(builder::dqa);
-    getHTMLTypeValue(parsed, "DQA2").ifPresent(builder::dqa);
-    getHTMLTypeValue(parsed, "DPB1").ifPresent(builder::dpb);
-    getHTMLTypeValue(parsed, "DPB2").ifPresent(builder::dpb);
+    typeParser.apply(parsed, "A1").ifPresent(builder::a);
+    typeParser.apply(parsed, "A2").ifPresent(builder::a);
+    typeParser.apply(parsed, "B1").ifPresent(builder::b);
+    typeParser.apply(parsed, "B2").ifPresent(builder::b);
+    typeParser.apply(parsed, "C1").ifPresent(builder::c);
+    typeParser.apply(parsed, "C2").ifPresent(builder::c);
+    typeParser.apply(parsed, "DR1").ifPresent(builder::drb);
+    typeParser.apply(parsed, "DR2").ifPresent(builder::drb);
+    typeParser.apply(parsed, "DQB1").ifPresent(builder::dqb);
+    typeParser.apply(parsed, "DQB2").ifPresent(builder::dqb);
+    typeParser.apply(parsed, "DQA1").ifPresent(builder::dqa);
+    typeParser.apply(parsed, "DQA2").ifPresent(builder::dqa);
+    typeParser.apply(parsed, "DPB1").ifPresent(builder::dpb);
+    typeParser.apply(parsed, "DPB2").ifPresent(builder::dpb);
 
-    getHTMLTypeValue(parsed, "BW4").ifPresent(s -> builder.bw4(decodeHTMLBoolean(s)));
-    getHTMLTypeValue(parsed, "BW6").ifPresent(s -> builder.bw6(decodeHTMLBoolean(s)));
-    getHTMLTypeValue(parsed, "DR51").ifPresent(s -> builder.dr51(decodeHTMLBoolean(s)));
-    getHTMLTypeValue(parsed, "DR52").ifPresent(s -> builder.dr52(decodeHTMLBoolean(s)));
-    getHTMLTypeValue(parsed, "DR53").ifPresent(s -> builder.dr53(decodeHTMLBoolean(s)));
+    typeParser.apply(parsed, "BW4").ifPresent(s -> builder.bw4(decodeHTMLBoolean(s)));
+    typeParser.apply(parsed, "BW6").ifPresent(s -> builder.bw6(decodeHTMLBoolean(s)));
+    typeParser.apply(parsed, "DR51").ifPresent(s -> builder.dr51(decodeHTMLBoolean(s)));
+    typeParser.apply(parsed, "DR52").ifPresent(s -> builder.dr52(decodeHTMLBoolean(s)));
+    typeParser.apply(parsed, "DR53").ifPresent(s -> builder.dr53(decodeHTMLBoolean(s)));
 
   }
 
@@ -134,18 +149,32 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   }
 
   /**
-   * Helper method to extract the text of a particular tag.
+   * Helper method to extract the type text from HTML for a donor still editable
    * 
    * @param parsed Parent {@link Document}
    * @param typeString The typing to look up (e.g. A1)
-   * @return The value of the given tag
+   * @return The value of the given type
    */
-  private Optional<String> getHTMLTypeValue(Document parsed, String typeString) {
+  private Optional<String> getUnsavedHTMLType(Document parsed, String typeString) {
+    Element typeRow =
+        parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + typeString).get(0);
+    Elements selectedOption =
+        typeRow.getElementsByAttributeValue(SELECTED_ATTRIBUTE, SELECTED_VALUE);
+    return DonorNetUtils.getText(selectedOption);
+  }
+
+  /**
+   * Helper method to extract the type text from HTML for a previously saved donor
+   * 
+   * @param parsed Parent {@link Document}
+   * @param typeString The typing to look up (e.g. A1)
+   * @return The value of the given type
+   */
+  private Optional<String> getSavedHTMLType(Document parsed, String typeString) {
     // All tags with type info start and end with these
 
     return DonorNetUtils.getText(parsed.getAllElements().get(0)
-        .getElementsByAttributeValue(HTML_TYPE_ATTR,
-        HTML_PREFIX + typeString + HTML_SUFFIX));
+        .getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + typeString + HTML_SUFFIX));
   }
 
 }
