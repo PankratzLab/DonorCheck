@@ -92,14 +92,15 @@ public class XmlQTyperParser {
 
   // -- BW4 and BW6 status is not embedded in the XML, so we need to explicitly do a look up --
 
-  private static final ImmutableSet<String> BW4 = ImmutableSet.of("B5", "B5102", "B5103", "B13",
-      "B17", "B27", "B37", "B38", "B44", "B47", "B49", "B51", "B52", "B53", "B57", "B58", "B59",
-      "B63", "B77");
+  private static final ImmutableSet<String> BW4 =
+      ImmutableSet.of("B5", "B5102", "B5103", "B13", "B17", "B27", "B37", "B38", "B44", "B47",
+          "B49", "B51", "B52", "B53", "B57", "B58", "B59", "B63", "B77");
 
   private static final ImmutableSet<String> BW6 = ImmutableSet.of("B7", "B703", "B8", "B14", "B18",
       "B22", "B2708", "B35", "B39", "B3901", "B3902", "B40", "B4005", "B41", "B42", "B45", "B46",
       "B48", "B50", "B54", "B55", "B56", "B60", "B61", "B62", "B64", "B65", "B67", "B70", "B71",
       "B72", "B73", "B75", "B76", "B78", "B81", "B82");
+  private static final String PARENT_TYPE_SEPARATOR = "/";
 
   // Map of Locus values to setter + type prefix
   private static ImmutableMap<String, TypeSetter> metadataMap;
@@ -411,6 +412,13 @@ public class XmlQTyperParser {
           }
           type = tmp;
         }
+
+        // Sometimes the inheritance structure of the types is listed. We only want the first (most
+        // specific) type.
+        if (type.contains(PARENT_TYPE_SEPARATOR)) {
+          type = type.substring(0, type.indexOf(PARENT_TYPE_SEPARATOR));
+        }
+
         // If the only result is {@link #NULL_TYPE}, the allele is skipped (homozygous).
         if (!NULL_TYPE.equals(type)) {
           typeText.add(type);
