@@ -72,57 +72,43 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder a(String aType) {
-    if (Objects.isNull(aLocus)) {
-      aLocus = new LinkedHashSet<>();
-    }
-    aLocus.add(new SeroType(SeroLocus.A, aType));
+    aLocus = makeIfNull(aLocus);
+    addToLocus(aLocus, SeroLocus.DQB, aType);
     return this;
   }
 
   public ValidationModelBuilder b(String bType) {
-    if (Objects.isNull(bLocus)) {
-      bLocus = new LinkedHashSet<>();
-    }
-    bLocus.add(new SeroType(SeroLocus.B, bType));
+    bLocus = makeIfNull(bLocus);
+    addToLocus(bLocus, SeroLocus.DQB, bType);
     return this;
   }
 
   public ValidationModelBuilder c(String cType) {
-    if (Objects.isNull(cLocus)) {
-      cLocus = new LinkedHashSet<>();
-    }
-    cLocus.add(new SeroType(SeroLocus.C, cType));
+    cLocus = makeIfNull(cLocus);
+    addToLocus(cLocus, SeroLocus.DQB, cType);
     return this;
   }
 
   public ValidationModelBuilder drb(String drbType) {
-    if (Objects.isNull(drbLocus)) {
-      drbLocus = new LinkedHashSet<>();
-    }
-    drbLocus.add(new SeroType(SeroLocus.DRB, drbType));
+    drbLocus = makeIfNull(drbLocus);
+    addToLocus(drbLocus, SeroLocus.DQB, drbType);
     return this;
   }
 
   public ValidationModelBuilder dqb(String dqbType) {
-    if (Objects.isNull(dqbLocus)) {
-      dqbLocus = new LinkedHashSet<>();
-    }
-    dqbLocus.add(new SeroType(SeroLocus.DQB, dqbType));
+    dqbLocus = makeIfNull(dqbLocus);
+    addToLocus(dqbLocus, SeroLocus.DQB, dqbType);
     return this;
   }
 
   public ValidationModelBuilder dqa(String dqaType) {
-    if (Objects.isNull(dqaLocus)) {
-      dqaLocus = new LinkedHashSet<>();
-    }
-    dqaLocus.add(new SeroType(SeroLocus.DQA, dqaType));
+    dqaLocus = makeIfNull(dqaLocus);
+    addToLocus(dqaLocus, SeroLocus.DQB, dqaType);
     return this;
   }
 
   public ValidationModelBuilder dpb(String dpbType) {
-    if (Objects.isNull(dpbLocus)) {
-      dpbLocus = new LinkedHashSet<>();
-    }
+    dpbLocus = makeIfNull(dpbLocus);
     dpbLocus.add(new HLAType(HLALocus.DPB1, dpbType));
     return this;
   }
@@ -158,8 +144,8 @@ public class ValidationModelBuilder {
   public ValidationModel build() {
     ensureValidity();
 
-    return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
-        dpbLocus, bw4, bw6, dr51, dr52, dr53);
+    return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
+        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53);
   }
 
   /**
@@ -167,8 +153,8 @@ public class ValidationModelBuilder {
    *         incorrectly.
    */
   private void ensureValidity() throws IllegalStateException {
-    for (Object o : new Object[] {donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
-        dpbLocus, bw4, bw6, dr51, dr52, dr53}) {
+    for (Object o : new Object[] {donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
+        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53}) {
       if (Objects.isNull(o)) {
         throw new IllegalStateException("ValidationModel incomplete");
       }
@@ -179,5 +165,25 @@ public class ValidationModelBuilder {
         throw new IllegalStateException("ValidationModel contains invalid allele count: " + set);
       }
     }
+  }
+
+  /**
+   * Helper method to build a set if it's null
+   */
+  private <T> Set<T> makeIfNull(Set<T> locusSet) {
+    if (Objects.isNull(locusSet)) {
+      locusSet = new LinkedHashSet<>();
+    }
+    return locusSet;
+  }
+
+  /**
+   * Helper method to create {@link SeroType}s and add them to a locus's set in a consistent manner
+   */
+  private void addToLocus(Set<SeroType> locusSet, SeroLocus locus, String typeString) {
+    if (typeString.length() > 2) {
+      typeString = typeString.substring(0, typeString.length() - 2);
+    }
+    locusSet.add(new SeroType(locus, typeString));
   }
 }
