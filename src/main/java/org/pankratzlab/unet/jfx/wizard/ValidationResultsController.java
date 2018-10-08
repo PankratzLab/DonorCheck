@@ -45,6 +45,8 @@ import javafx.util.Callback;
  * Controller for viewing the final results status.
  */
 public class ValidationResultsController extends AbstractValidatingWizardController {
+  private static final String INVALID_STYLE_CLASS = "invalid-cell";
+
   private EventHandler<Event> handler;
 
   @FXML
@@ -93,38 +95,11 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     secondSourceCol.setCellValueFactory(new PropertyValueFactory<>("secondCol"));
 
     isEqualCol.setCellFactory(new PassFailCellFactory());
-    firstSourceCol.setCellFactory(
-        new Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>>() {
-
-          @Override
-          public TableCell<ValidationRow<?>, String> call(
-              TableColumn<ValidationRow<?>, String> param) {
-            return new TableCell<ValidationRow<?>, String>() {
-              @Override
-              protected void updateItem(String item, boolean empty) {
-                setText(item);
-                ValidationRow<?> row = (ValidationRow<?>) getTableRow().getItem();
-                if (Objects.nonNull(row) && Objects.nonNull(row.isValidProperty())
-                    && !(row.isValidProperty().get())) {
-                  getStyleClass().add(0, "invalid-cell");
-                } else {
-                  ObservableList<String> styleList = getStyleClass();
-                  for (int i = 0; i < styleList.size(); i++) {
-                    if (styleList.get(i).equals("invalid-cell")) {
-                      styleList.remove(i);
-                      break;
-                    }
-                  }
-                }
-              }
-
-            };
-          }
-        });
+    firstSourceCol.setCellFactory(new InvalidColorCellFactory());
+    secondSourceCol.setCellFactory(new InvalidColorCellFactory());
 
     // Record an image of the validation state when entering this page
     rootPane.addEventHandler(PageActivatedEvent.PAGE_ACTIVE, e -> addFinishHandler());
-
   }
 
   @Override
@@ -208,5 +183,34 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
       };
     }
 
+  }
+
+  /**
+   * Helper class to color cells when the row is invalid
+   */
+  private static class InvalidColorCellFactory implements
+      Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>> {
+    @Override
+    public TableCell<ValidationRow<?>, String> call(TableColumn<ValidationRow<?>, String> param) {
+      return new TableCell<ValidationRow<?>, String>() {
+        @Override
+        protected void updateItem(String item, boolean empty) {
+          setText(item);
+          ValidationRow<?> row = (ValidationRow<?>) getTableRow().getItem();
+          if (Objects.nonNull(row) && Objects.nonNull(row.isValidProperty())
+              && !(row.isValidProperty().get())) {
+            getStyleClass().add(0, INVALID_STYLE_CLASS);
+          } else {
+            ObservableList<String> styleList = getStyleClass();
+            for (int i = 0; i < styleList.size(); i++) {
+              if (styleList.get(i).equals(INVALID_STYLE_CLASS)) {
+                styleList.remove(i);
+                break;
+              }
+            }
+          }
+        }
+      };
+    }
   }
 }
