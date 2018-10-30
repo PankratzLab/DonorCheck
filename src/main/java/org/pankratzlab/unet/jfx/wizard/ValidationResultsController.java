@@ -21,18 +21,29 @@
  */
 package org.pankratzlab.unet.jfx.wizard;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
+import javax.imageio.ImageIO;
+import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
-import javafx.event.EventHandler;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.print.Printer;
+import javafx.print.PrinterJob;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -47,8 +58,6 @@ import javafx.util.Callback;
 public class ValidationResultsController extends AbstractValidatingWizardController {
   private static final String INVALID_STYLE_CLASS = "invalid-cell";
 
-  private EventHandler<Event> handler;
-
   @FXML
   private ResourceBundle resources;
 
@@ -57,6 +66,12 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   @FXML
   private ValidatingWizardPane rootPane;
+
+  @FXML
+  private MenuItem saveOption;
+
+  @FXML
+  private MenuItem printOption;
 
   @FXML
   private TableView<ValidationRow<?>> resultsTable;
@@ -76,15 +91,64 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   @FXML
   private Label resultDisplayText;
 
+  /**
+   * Write the given {@link ValidationTable#getValidationImage()} to disk
+   */
+  @FXML
+  void saveResults(ActionEvent event) {
+    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
+        getTable().getId() + "_donor_valid", "PNG", ".png", false);
+
+    if (destination.isPresent()) {
+      try {
+        ImageIO.write(SwingFXUtils.fromFXImage(rootPane.snapshot(null, null), null), "png",
+            destination.get());
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setHeaderText("Saved validation image to: " + destination.get().getName());
+        alert.showAndWait();
+      } catch (IOException e) {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setHeaderText("Failed to save results to file: " + destination.get().getName());
+        alert.showAndWait();
+      }
+    }
+  }
+
+  @FXML
+  void printResults(ActionEvent event) {
+    ChoiceDialog<Printer> dialog =
+        new ChoiceDialog<>(Printer.getDefaultPrinter(), Printer.getAllPrinters());
+    dialog.setHeaderText("Select a printer");
+    dialog.setContentText("Choose a printer from available printers");
+    dialog.setTitle("Printer Choice");
+    Optional<Printer> opt = dialog.showAndWait();
+    if (opt.isPresent()) {
+      Printer printer = opt.get();
+      // start printing ...
+      PrinterJob job = PrinterJob.createPrinterJob(printer);
+      if (job != null) {
+        boolean success = job.printPage(rootPane);
+        if (success) {
+          job.endJob();
+          Alert alert = new Alert(AlertType.INFORMATION);
+          alert.setHeaderText("Successfully printed validation results!");
+          alert.showAndWait();
+        }
+      }
+    }
+  }
+
   @FXML
   void initialize() {
-    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'StepFourResults.fxml'.";
-    assert resultsTable != null : "fx:id=\"resultsTable\" was not injected: check your FXML file 'StepFourResults.fxml'.";
-    assert rowLabelCol != null : "fx:id=\"rowLabelCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
-    assert firstSourceCol != null : "fx:id=\"firstSourceCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
-    assert isEqualCol != null : "fx:id=\"isEqualCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
-    assert secondSourceCol != null : "fx:id=\"secondSourceCol\" was not injected: check your FXML file 'StepFourResults.fxml'.";
-    assert resultDisplayText != null : "fx:id=\"resultDisplayText\" was not injected: check your FXML file 'StepFourResults.fxml'.";
+    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert saveOption != null : "fx:id=\"saveOption\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert printOption != null : "fx:id=\"printOption\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert resultsTable != null : "fx:id=\"resultsTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert rowLabelCol != null : "fx:id=\"rowLabelCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert firstSourceCol != null : "fx:id=\"firstSourceCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert isEqualCol != null : "fx:id=\"isEqualCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert secondSourceCol != null : "fx:id=\"secondSourceCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert resultDisplayText != null : "fx:id=\"resultDisplayText\" was not injected: check your FXML file 'ValidationResults.fxml'.";
 
     rowLabelCol.setCellValueFactory(new PropertyValueFactory<>("id"));
 
@@ -99,7 +163,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     secondSourceCol.setCellFactory(new InvalidColorCellFactory());
 
     // Record an image of the validation state when entering this page
-    rootPane.addEventHandler(PageActivatedEvent.PAGE_ACTIVE, e -> addFinishHandler());
+    rootPane.addEventHandler(PageActivatedEvent.PAGE_ACTIVE, e -> performPageSetup());
   }
 
   @Override
@@ -113,14 +177,13 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   }
 
   /**
-   * Add an event handler to save the validation image when the Finish button is clicked
+   * Perform required actions when the page is being displayed
    */
-  private void addFinishHandler() {
-    if (handler == null) {
-      handler = (e) -> getTable().setValidationImage(rootPane.snapshot(null, null));
-      Button finishButton = (Button) rootPane.lookupButton(ButtonType.FINISH);
-      finishButton.addEventHandler(Event.ANY, handler);
-    }
+  private void performPageSetup() {
+    // Link the disable property of the Save menu option to that of the finish button
+    Button finishButton = (Button) rootPane.lookupButton(ButtonType.FINISH);
+    saveOption.disableProperty().bind(finishButton.disabledProperty());
+    printOption.disableProperty().bind(finishButton.disabledProperty());
   }
 
   /**

@@ -28,10 +28,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.ResourceBundle;
 import javax.annotation.Nullable;
-import javax.imageio.ImageIO;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
@@ -42,7 +40,6 @@ import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
 import javafx.application.Platform;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -102,38 +99,9 @@ public class LandingController {
     validationWizard.setFlow(new LinearFlow(pages));
 
     // show wizard and wait for response
-    validationWizard.showAndWait().ifPresent(result -> {
-      if (result == ButtonType.FINISH) {
-        Alert alert = new Alert(AlertType.CONFIRMATION, "", ButtonType.YES, ButtonType.NO);
-        alert.setTitle("Save Validation PNG");
-        alert.setHeaderText("Would you like to save the validation results?");
-        alert.showAndWait().filter(response -> response == ButtonType.YES)
-            .ifPresent(response -> saveResult(table));
-      }
-    });
+    validationWizard.showAndWait();
   }
 
-  /**
-   * Write the given {@link ValidationTable#getValidationImage()} to disk
-   */
-  private void saveResult(ValidationTable table) {
-    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
-        table.getId() + "_donor_valid", "PNG", ".png", false);
-
-    if (destination.isPresent()) {
-      try {
-        ImageIO.write(SwingFXUtils.fromFXImage(table.getValidationImage(), null), "png",
-            destination.get());
-        Alert alert = new Alert(AlertType.INFORMATION);
-        alert.setHeaderText("Saved validation image to: " + destination.get().getName());
-        alert.showAndWait();
-      } catch (IOException e) {
-        Alert alert = new Alert(AlertType.ERROR);
-        alert.setHeaderText("Failed to save results to file: " + destination.get().getName());
-        alert.showAndWait();
-      }
-    }
-  }
 
   /**
    * TODO
