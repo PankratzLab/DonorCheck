@@ -36,6 +36,7 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.XmlDonorParser;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Parses downloaded DonorNet XML (un-saved - after saving, only HTML is supported) to a model.
@@ -43,8 +44,8 @@ import com.google.common.collect.ImmutableMap.Builder;
 public class XmlDonorNetParser {
 
   public static final String ROOT_ELEMENT = "donorupload";
-  private static final String XML_FALSE = "96";
-  private static final String XML_TRUE = "95";
+  private static final ImmutableSet<String> XML_FALSE = ImmutableSet.of("96", "6");
+  private static final ImmutableSet<String> XML_TRUE = ImmutableSet.of("95", "5");
   private static final String DQA_MAP_PATH = "/DqaMap.xml";
   private static final String DPB_MAP_PATH = "/DpbMap.xml";
   private static final String XML_ATTR = "value";
@@ -90,9 +91,9 @@ public class XmlDonorNetParser {
    * Booleans are exported as a linear value which we have to translate to true/false
    */
   private static boolean decodeXMLBoolean(String boolCode) {
-    if (boolCode.equals(XML_TRUE)) {
+    if (XML_TRUE.contains(boolCode)) {
       return true;
-    } else if (boolCode.equals(XML_FALSE)) {
+    } else if (XML_FALSE.contains(boolCode)) {
       return false;
     }
     throw new IllegalArgumentException("Unrecognized boolean code: " + boolCode);
