@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -237,7 +238,7 @@ public class XmlQTyperParser {
             // DRB contains the DR5* designations in the same results block as the actual types
             // Otherwise, the first valid result is added
             types.addAll(resultTypes);
-          } else if (testIfMoreFrequent(types, resultTypes)) {
+          } else if (isTestListPreferred(types, resultTypes)) {
             // If an allele pair with a better frequency weight is discovered, switch to that
             types = resultTypes;
           }
@@ -303,18 +304,53 @@ public class XmlQTyperParser {
   /**
    * @param reference Base list
    * @param test List to compare to base
-   * @return true if the test list contains a more frequent allele pairing than the reference set
+   * @return true if the test list contains a more frequent allele pairing than the reference set.
+   *         If the frequency is the same, the specificity values will be compared - preferring
+   *         lower values.
    */
-  private static boolean testIfMoreFrequent(List<String> reference, List<String> test) {
+  private static boolean isTestListPreferred(List<String> reference, List<String> test) {
     if (Objects.isNull(test) || test.isEmpty()) {
       return false;
     }
 
-    double refScore = freqScore(reference);
-    double testScore = freqScore(test);
+    // Test if test has higher frequency alleles
+    int diff = Double.compare(freqScore(reference), freqScore(test));
 
-    return Double.compare(refScore, testScore) < 0;
+    if (diff == 0) {
+      // Test if test contains alleles with smaller spec
+      // When comparing the specificities, a smaller value is preferred
+      return compareSpec(reference, test) > 0;
+    }
+
+    // When comparing the frequency score, a larger value is preferred
+    return diff < 0;
   }
+
+  /**
+   * @return As {@link Comparable#compareTo} when comparing each allele in the given lists, based
+   *         purely on specificity numbers.
+   */
+  private static int compareSpec(List<String> reference, List<String> test) {
+    if (!Objects.equals(reference.size(), test.size())) {
+      String refString = reference.stream().collect(Collectors.joining(", "));
+      String testString = test.stream().collect(Collectors.joining(", "));
+      throw new IllegalArgumentException(
+          "Found allele combinations with different sizes: " + refString + " - " + testString);
+    }
+
+    int diff = 0;
+
+    // Compare the lists until we find different types
+    for (int i = 0; i < reference.size() && diff == 0; i++) {
+      HLAType refType = HLAType.valueOf(reference.get(i));
+      HLAType testType = HLAType.valueOf(test.get(i));
+
+      diff = refType.compareTo(testType);
+    }
+
+    return diff;
+  }
+
 
   /**
    * @param alleles Set of alleles
