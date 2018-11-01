@@ -21,31 +21,30 @@
  */
 package org.pankratzlab.unet.parser.util;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
+import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-import org.pankratzlab.unet.parser.XmlDonorParser;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
 
 /**
  * Parses SCORE6 QType format to donor model
@@ -53,22 +52,15 @@ import com.google.common.collect.ImmutableSet;
 public class XmlQTyperParser {
 
   // -- Type assignment requires assessing allele frequencies, which are read from an HTML doc --
-  private static final String P_TYPE_SUFFIX = "P";
-  private static final String G_TYPE_SUFFIX = "G";
-  private static final String FREQ_TABLE = "table";
-  private static final String FREQ_TABLE_ROW = "tr";
-  private static final String FREQ_TABLE_COL = "td";
-  private static final String WELL_DOCUMENTED_FLAG = "WD";
-  private static final String COMMON_FLAG = "C";
-  private static final String ALLELE_FREQ_PATH = "/cwd200.html";
-  private static ImmutableMultimap<String, Double> ALLELE_FREQS;
 
+
+  private static final String RANGE_TOKEN = "-";
   private static final String SPEC_SEPARATOR = ":";
   private static final String LOCUS_SEPARATOR = "*";
   private static final String RESULT_SEPARATOR = ",";
 
   // - Specific allele values -
-  private static final Set<String> UNDEFINED_TOKENS = ImmutableSet.of("-");
+  private static final Set<String> UNDEFINED_TOKENS = ImmutableSet.of(RANGE_TOKEN);
   private static final String UNDEFINED_TYPE = "Undefined";
   private static final String NULL_TYPE = "Null";
 
@@ -91,16 +83,6 @@ public class XmlQTyperParser {
   private static final String B_HEADER = "HLA-B";
   private static final String A_HEADER = "HLA-A";
 
-  // -- BW4 and BW6 status is not embedded in the XML, so we need to explicitly do a look up --
-
-  private static final ImmutableSet<String> BW4 =
-      ImmutableSet.of("B5", "B5102", "B5103", "B13", "B17", "B27", "B37", "B38", "B44", "B47",
-          "B49", "B51", "B52", "B53", "B57", "B58", "B59", "B63", "B77");
-
-  private static final ImmutableSet<String> BW6 = ImmutableSet.of("B7", "B703", "B8", "B14", "B18",
-      "B22", "B2708", "B35", "B39", "B3901", "B3902", "B40", "B4005", "B41", "B42", "B45", "B46",
-      "B48", "B50", "B54", "B55", "B56", "B60", "B61", "B62", "B64", "B65", "B67", "B70", "B71",
-      "B72", "B73", "B75", "B76", "B78", "B81", "B82");
   private static final String PARENT_TYPE_SEPARATOR = "/";
 
   // Map of Locus values to setter + type prefix
@@ -143,47 +125,6 @@ public class XmlQTyperParser {
 
     // DR52/53/54 appears as a serological combination
     xmlTypeMap = xmlBuilder.build();
-
-    // -- Read allele frequency map --
-    try (InputStream htmlStream = XmlDonorParser.class.getResourceAsStream(ALLELE_FREQ_PATH)) {
-      Document parsed = Jsoup.parse(htmlStream, "UTF-8", "http://example.com");
-      ImmutableListMultimap.Builder<String, Double> freqMapBuilder =
-          new ImmutableListMultimap.Builder<>();
-
-      // Three tables - base, G type and P type
-      for (Element frequencyTable : parsed.getElementsByTag(FREQ_TABLE)) {
-        Elements rows = frequencyTable.getElementsByTag(FREQ_TABLE_ROW);
-
-        // first row is a header
-        for (int rowNum = 1; rowNum < rows.size(); rowNum++) {
-          Element row = rows.get(rowNum);
-          Elements columns = row.getElementsByTag(FREQ_TABLE_COL);
-          String freqKey = columns.get(0).text();
-          if (freqKey.endsWith(G_TYPE_SUFFIX) || freqKey.endsWith(P_TYPE_SUFFIX)) {
-            // Remove G and P designations
-            freqKey = freqKey.substring(0, freqKey.length() - 1);
-          }
-          Double freqVal = getCwdWeight(columns.get(1).text());
-          freqMapBuilder.put(freqKey, freqVal);
-        }
-      }
-      ALLELE_FREQS = freqMapBuilder.build();
-    } catch (IOException e) {
-      throw new IllegalStateException("Invalid Frequency file: " + ALLELE_FREQ_PATH);
-    }
-  }
-
-  /**
-   * @return A numeric weight whether the input allele is common, well-documented or unknown.
-   */
-  private static Double getCwdWeight(String cwdText) {
-    switch (cwdText) {
-      case COMMON_FLAG:
-        return 1.0;
-      case WELL_DOCUMENTED_FLAG:
-        return 0.5;
-    }
-    return 0.0;
   }
 
   public static void buildModelFromXML(ValidationModelBuilder builder, Document doc) {
@@ -226,23 +167,31 @@ public class XmlQTyperParser {
       Elements resultCombinations = typedLocus.getElementsByTag(ALLELE_RESULTS_TAG).get(0)
           .getElementsByTag(RESULT_COMBINATION_TAG);
 
+
+      int selectedResult = -1;
       List<String> types = new ArrayList<>();
+      List<String> drTypes = new ArrayList<>();
 
       // Parse the allele pairs in the result section
       for (int result = 0; result < resultCombinations.size(); result++) {
         List<String> resultTypes = null;
+
         try {
           resultTypes = xmlTypeMap.get(locus).apply(typeSetter.getTokenPrefix(),
               resultCombinations.get(result));
-          if (types.isEmpty() || DRB_HEADER.equals(locus)) {
-            // DRB contains the DR5* designations in the same results block as the actual types
-            // Otherwise, the first valid result is added
+          if (DRB_HEADER.equals(locus)
+              && !resultCombinations.get(result).toString().contains("DRB1")) {
+            // Non-DRB1 headers in the DR locus are DR5* indicators
+            drTypes.addAll(resultTypes);
+          } else if (types.isEmpty()) {
+            // Record the first result
             types.addAll(resultTypes);
+            selectedResult = result;
           } else if (isTestListPreferred(types, resultTypes)) {
             // If an allele pair with a better frequency weight is discovered, switch to that
             types = resultTypes;
+            selectedResult = result;
           }
-
         } catch (Exception e) {
         }
       }
@@ -259,13 +208,36 @@ public class XmlQTyperParser {
           tmp.add(type);
         }
         types = tmp;
+      } else if (C_HEADER.equals(locus)) {
+        addHaplotypes(builder, resultCombinations.get(selectedResult),
+            ValidationModelBuilder::cHaplotype);
+      } else if (B_HEADER.equals(locus)) {
+        addHaplotypes(builder, resultCombinations.get(selectedResult),
+            ValidationModelBuilder::bHaplotype);
+      } else if (DQB_HEADER.equals(locus)) {
+        addHaplotypes(builder, resultCombinations.get(selectedResult),
+            ValidationModelBuilder::dqHaplotype);
+      }
+
+      for (String type : types) {
+        // If this is a BW4 or BW6 type, set the appropriate flag
+        if (BwSerotypes.BW4.contains(type)) {
+          builder.bw4(true);
+        }
+        if (BwSerotypes.BW6.contains(type)) {
+          builder.bw6(true);
+        }
       }
 
       if (DRB_HEADER.equals(locus)) {
+
+        // Add haplotypes
+        addHaplotypes(builder, resultCombinations.get(selectedResult),
+            ValidationModelBuilder::drHaplotype);
+
         // Remove the DR51/52/53 types from the type list and set the appropriate flag(s)
-        List<String> tmp = new ArrayList<>();
-        for (String type : types) {
-          switch (type) {
+        for (String dr : drTypes) {
+          switch (dr) {
             case "DR51":
               builder.dr51(true);
               break;
@@ -276,28 +248,59 @@ public class XmlQTyperParser {
               builder.dr53(true);
               break;
             default:
-              tmp.add(type);
           }
         }
 
-        types = tmp;
-      }
-
-
-      for (String type : types) {
-        // If this is a BW4 or BW6 type, set the appropriate flag
-        if (BW4.contains(type)) {
-          builder.bw4(true);
-        }
-        if (BW6.contains(type)) {
-          builder.bw6(true);
-        }
       }
 
       // Finally, add the types to the model builder
       for (String type : types) {
         typeSetter.getSetter().accept(builder, type.replace(typeSetter.getTokenPrefix(), ""));
       }
+    }
+  }
+
+  private static void addHaplotypes(ValidationModelBuilder builder, Element resultCombination,
+      BiConsumer<ValidationModelBuilder, Multimap<Strand, HLAType>> haplotypeSetter) {
+    for (int strandIndex = 1; strandIndex <= Strand.values().length; strandIndex++) {
+      Elements results = resultCombination.getElementsByTag(ALLELE_COMBINATION_TAG + strandIndex);
+      if (results == null || results.isEmpty()) {
+        continue;
+      }
+
+      String[] alleleStrings = results.get(0).text().replaceAll("\\s+", "").split(RESULT_SEPARATOR);
+      Multimap<Strand, HLAType> haplotypeMap = HashMultimap.create();
+      String locus = "";
+      for (String allele : alleleStrings) {
+        if (allele.indexOf(LOCUS_SEPARATOR) > 0) {
+          locus = allele.substring(0, allele.indexOf(LOCUS_SEPARATOR));
+          allele = allele.substring(allele.indexOf(LOCUS_SEPARATOR) + 1, allele.length());
+        }
+
+        if (allele.endsWith("N")) {
+          // Skip null types
+          continue;
+        }
+
+        // Replace suffix flags
+        allele.replaceAll("[LSCAQ]", "");
+
+        if (allele.contains(RANGE_TOKEN)) {
+          // Convert ranges to individual alleles
+          HLAType firstType = new HLAType(HLALocus.valueOf(locus), allele.split(RANGE_TOKEN)[0]);
+          HLAType lastType = new HLAType(HLALocus.valueOf(locus), allele.split(RANGE_TOKEN)[1]);
+          for (int rangeIndex = firstType.spec().get(1); rangeIndex <= lastType.spec()
+              .get(1); rangeIndex++) {
+            haplotypeMap.put(Strand.values()[strandIndex - 1],
+                new HLAType(firstType.locus(), firstType.spec().get(0), rangeIndex));
+          }
+        } else {
+          haplotypeMap.put(Strand.values()[strandIndex - 1],
+              new HLAType(HLALocus.valueOf(locus), allele));
+        }
+      }
+
+      haplotypeSetter.accept(builder, haplotypeMap);
     }
   }
 
@@ -314,7 +317,8 @@ public class XmlQTyperParser {
     }
 
     // Test if test has higher frequency alleles
-    int diff = Double.compare(freqScore(reference), freqScore(test));
+    int diff = Double.compare(CommonWellDocumented.cwdScore(reference),
+        CommonWellDocumented.cwdScore(test));
 
     if (diff == 0) {
       // Test if test contains alleles with smaller spec
@@ -352,23 +356,6 @@ public class XmlQTyperParser {
   }
 
 
-  /**
-   * @param alleles Set of alleles
-   * @return A combined weighting of the input allele set, based on their CWD frequencies
-   */
-  private static double freqScore(List<String> alleles) {
-    double score = 0;
-
-    for (String allele : alleles) {
-      if (ALLELE_FREQS.containsKey(allele)) {
-        OptionalDouble average = ALLELE_FREQS.get(allele).stream().mapToDouble(a -> a).average();
-        if (average.isPresent()) {
-          score += average.getAsDouble();
-        }
-      }
-    }
-    return score;
-  }
 
   /**
    * Parser for allele combinations from an allele-based loci

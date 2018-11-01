@@ -11,3 +11,16 @@
 .invalid-cell {
 	-fx-background-color: #F08080;
 }
+
+.well-documented-allele {
+	-fx-font-style: italic;
+}
+
+.unknown-allele {
+	-fx-font-style: italic;
+	-fx-font-weight: bold;
+}
+
+.unknown-haplotype {
+	-fx-background-color: #F08080;
+}

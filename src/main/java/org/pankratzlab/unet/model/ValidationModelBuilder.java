@@ -21,14 +21,29 @@
  */
 package org.pankratzlab.unet.model;
 
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroLocus;
 import org.pankratzlab.hla.SeroType;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
+import org.pankratzlab.unet.hapstats.Haplotype;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
 
 /**
  * Mutable builder class for creating a {@link ValidationModel}.
@@ -54,6 +69,10 @@ public class ValidationModelBuilder {
   private Boolean dr51;
   private Boolean dr52;
   private Boolean dr53;
+  private Multimap<Strand, HLAType> bHaplotypes;
+  private Multimap<Strand, HLAType> cHaplotypes;
+  private Multimap<Strand, HLAType> drHaplotypes;
+  private Multimap<Strand, HLAType> dqHaplotypes;
 
   /**
    * @param donorId Unique identifying string for this donor
@@ -138,14 +157,131 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder bHaplotype(Multimap<Strand, HLAType> types) {
+    bHaplotypes = makeIfNull(bHaplotypes);
+    bHaplotypes.putAll(types);
+    return this;
+  }
+
+  public ValidationModelBuilder cHaplotype(Multimap<Strand, HLAType> types) {
+    cHaplotypes = makeIfNull(cHaplotypes);
+    cHaplotypes.putAll(types);
+    return this;
+  }
+
+  public ValidationModelBuilder drHaplotype(Multimap<Strand, HLAType> types) {
+    drHaplotypes = makeIfNull(drHaplotypes);
+    drHaplotypes.putAll(types);
+    return this;
+  }
+
+  public ValidationModelBuilder dqHaplotype(Multimap<Strand, HLAType> types) {
+    dqHaplotypes = makeIfNull(dqHaplotypes);
+    dqHaplotypes.putAll(types);
+    return this;
+  }
+
   /**
    * @return The immutable {@link ValidationModel} based on the current builder state.
    */
   public ValidationModel build() {
     ensureValidity();
-
+    Multimap<Ethnicity, Haplotype> bcCwdHaplotypes =
+        buildCwdHaplotypes(makeIfNull(bHaplotypes), makeIfNull(cHaplotypes));
+    Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes =
+        buildCwdHaplotypes(makeIfNull(drHaplotypes), makeIfNull(dqHaplotypes));
     return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53);
+        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53, bcCwdHaplotypes, drdqCwdHaplotypes);
+  }
+
+  /**
+   * @return A table of the highest-probability haplotypes for each ethnicity
+   */
+  private Multimap<Ethnicity, Haplotype> buildCwdHaplotypes(Multimap<Strand, HLAType> locusOneTypes,
+      Multimap<Strand, HLAType> locusTwoTypes) {
+    Multimap<Ethnicity, Haplotype> haplotypesByEthnicity = HashMultimap.create();
+
+    if (!(locusOneTypes.isEmpty() && locusTwoTypes.isEmpty())) {
+
+      prune(locusOneTypes);
+      prune(locusTwoTypes);
+
+      // for each ethnicity
+      for (Ethnicity ethnicity : Ethnicity.values()) {
+        Table<Strand, Strand, Set<Haplotype>> optionsByStrand = HashBasedTable.create();
+
+        // Iterate over each strand of each locus
+        for (Strand strandLocusOne : Strand.values()) {
+          for (Strand strandLocusTwo : Strand.values()) {
+            Set<Haplotype> hapSet = new HashSet<>();
+
+            // Add all possible haplotypes for these strands to a TreeSet
+            for (HLAType t1 : locusOneTypes.get(strandLocusOne)) {
+              for (HLAType t2 : locusTwoTypes.get(strandLocusTwo)) {
+                hapSet.add(new Haplotype(t1, t2));
+              }
+            }
+
+            // Add the winning haplotype to the haploTable
+            optionsByStrand.put(strandLocusOne, strandLocusTwo, hapSet);
+          }
+        }
+
+        TreeSet<Collection<Haplotype>> haplotypeSets =
+            new TreeSet<>(new EthnicityHaplotypeComp(ethnicity));
+
+        // Compute the most likely strand combinations
+        // Each strand value must be used once and only once in both row and column indices
+        addHaplotypes(haplotypeSets, optionsByStrand.get(Strand.FIRST, Strand.FIRST),
+            optionsByStrand.get(Strand.SECOND, Strand.SECOND));
+
+        addHaplotypes(haplotypeSets, optionsByStrand.get(Strand.FIRST, Strand.SECOND),
+            optionsByStrand.get(Strand.SECOND, Strand.FIRST));
+
+        // Whichever Haplotype pairing of haplotypes had the highest probability gets recorded for
+        // this ethnicity
+        for (Haplotype t : haplotypeSets.first()) {
+          haplotypesByEthnicity.put(ethnicity, t);
+        }
+      }
+    }
+
+    return haplotypesByEthnicity;
+  }
+
+  /**
+   * Add all combinations of haplotypes in set 1 and set 2 to the base set
+   */
+  private void addHaplotypes(Set<Collection<Haplotype>> baseSet, Set<Haplotype> setOne,
+      Set<Haplotype> setTwo) {
+    setOne.forEach(h1 -> {
+      setTwo.forEach(h2 -> {
+        baseSet.add(ImmutableSet.of(h1, h2));
+      });
+    });
+  }
+
+  /**
+   * Filter out {@link Status#UNKNOWN} types and eliminate redundant strands
+   */
+  private void prune(Multimap<Strand, HLAType> typesForStrand) {
+    if (typesForStrand.isEmpty()) {
+      return;
+    }
+
+    // Homozygous
+    if (Objects.equals(typesForStrand.get(Strand.FIRST), typesForStrand.get(Strand.SECOND))) {
+      typesForStrand.removeAll(Strand.SECOND);
+    }
+
+    // Remove UNKNOWN types
+    Iterator<HLAType> iterator = typesForStrand.values().iterator();
+    while (iterator.hasNext()) {
+      HLAType type = iterator.next();
+      if (Objects.equals(Status.UNKNOWN, CommonWellDocumented.getStatus(type))) {
+        iterator.remove();
+      }
+    }
   }
 
   /**
@@ -153,18 +289,28 @@ public class ValidationModelBuilder {
    *         incorrectly.
    */
   private void ensureValidity() throws IllegalStateException {
-    for (Object o : new Object[] {donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53}) {
+    // Ensure all fields have been set
+    for (Object o : ImmutableList.of(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
+        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53)) {
       if (Objects.isNull(o)) {
         throw new IllegalStateException("ValidationModel incomplete");
       }
     }
+    // Ensure all sets have a reasonable number of entries
     for (Set<?> set : ImmutableList.of(aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
         dpbLocus)) {
-      if (set.size() <= 0 || set.size() > 2) {
+      if (set.isEmpty() || set.size() > 2) {
         throw new IllegalStateException("ValidationModel contains invalid allele count: " + set);
       }
     }
+    // Note: haplotype maps are OPTIONAL
+  }
+
+  private Multimap<Strand, HLAType> makeIfNull(Multimap<Strand, HLAType> hapMap) {
+    if (hapMap == null) {
+      hapMap = HashMultimap.create();
+    }
+    return hapMap;
   }
 
   /**
@@ -185,5 +331,23 @@ public class ValidationModelBuilder {
       typeString = typeString.substring(0, typeString.length() - 2);
     }
     locusSet.add(new SeroType(locus, typeString));
+  }
+
+  private static class EthnicityHaplotypeComp implements Comparator<Collection<Haplotype>> {
+    private Ethnicity ethnicity;
+
+    private EthnicityHaplotypeComp(Ethnicity e) {
+      this.ethnicity = e;
+    }
+
+    @Override
+    public int compare(Collection<Haplotype> o1, Collection<Haplotype> o2) {
+      double p1 = HaplotypeFrequencies.getFrequency(ethnicity, o1);
+      double p2 = HaplotypeFrequencies.getFrequency(ethnicity, o2);
+
+      // Prefer larger frequencies for this ethnicity
+      return Double.compare(p2, p1);
+    }
+
   }
 }

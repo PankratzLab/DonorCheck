@@ -24,7 +24,11 @@ package org.pankratzlab.unet.model;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import org.pankratzlab.unet.hapstats.Haplotype;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
 import org.pankratzlab.util.JFXPropertyHelper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -38,7 +42,7 @@ import javafx.scene.image.WritableImage;
 
 /**
  * Backing model for a validation, wrapping multiple {@link ValidationModel}s being compared. Use
- * {@link #getRows()} for accessing a row-dominant view of these models.
+ * {@link #getValidationRows()} for accessing a row-dominant view of these models.
  */
 public class ValidationTable {
 
@@ -48,6 +52,7 @@ public class ValidationTable {
   private final ReadOnlyObjectWrapper<String> secondSourceWrapper;
   private final ReadOnlyObjectWrapper<ValidationModel> secondModelWrapper;
   private final ReadOnlyListWrapper<ValidationRow<?>> validationRows;
+  private final ReadOnlyListWrapper<HaplotypeRow> haplotypeRows;
   private WritableImage validationImage = null;
 
   public ValidationTable() {
@@ -57,6 +62,7 @@ public class ValidationTable {
     firstModelWrapper = new ReadOnlyObjectWrapper<>();
     secondModelWrapper = new ReadOnlyObjectWrapper<>();
     validationRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
+    haplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
 
     // Each time either model changes we re-generate the rows
     firstModelWrapper.addListener((v, o, n) -> generateRows());
@@ -124,8 +130,15 @@ public class ValidationTable {
   /**
    * @return The {@link ValidationRow}s for this model, e.g. for display
    */
-  public ReadOnlyListProperty<ValidationRow<?>> getRows() {
+  public ReadOnlyListProperty<ValidationRow<?>> getValidationRows() {
     return validationRows.getReadOnlyProperty();
+  }
+
+  /**
+   * @return The {@link ValidationRow}s for this model, e.g. for display
+   */
+  public ReadOnlyListProperty<HaplotypeRow> getHaplotypeRows() {
+    return haplotypeRows.getReadOnlyProperty();
   }
 
   /**
@@ -133,34 +146,34 @@ public class ValidationTable {
    */
   private void generateRows() {
     validationRows.clear();
-    makeRow(validationRows, "Donor ID", ValidationModel::getDonorId);
-    makeRow(validationRows, "A", ValidationModel::getA1);
-    makeRow(validationRows, "A", ValidationModel::getA2);
+    makeValidationRow(validationRows, "Donor ID", ValidationModel::getDonorId);
+    makeValidationRow(validationRows, "A", ValidationModel::getA1);
+    makeValidationRow(validationRows, "A", ValidationModel::getA2);
 
-    makeRow(validationRows, "B", ValidationModel::getB1);
-    makeRow(validationRows, "B", ValidationModel::getB2);
+    makeValidationRow(validationRows, "B", ValidationModel::getB1);
+    makeValidationRow(validationRows, "B", ValidationModel::getB2);
 
-    makeRow(validationRows, "BW4", ValidationModel::isBw4);
-    makeRow(validationRows, "BW6", ValidationModel::isBw6);
+    makeValidationRow(validationRows, "BW4", ValidationModel::isBw4);
+    makeValidationRow(validationRows, "BW6", ValidationModel::isBw6);
 
-    makeRow(validationRows, "C", ValidationModel::getC1);
-    makeRow(validationRows, "C", ValidationModel::getC2);
+    makeValidationRow(validationRows, "C", ValidationModel::getC1);
+    makeValidationRow(validationRows, "C", ValidationModel::getC2);
 
-    makeRow(validationRows, "DRB1", ValidationModel::getDRB1);
-    makeRow(validationRows, "DRB1", ValidationModel::getDRB2);
+    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB1);
+    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB2);
 
-    makeRow(validationRows, "DQB1", ValidationModel::getDQB1);
-    makeRow(validationRows, "DQB1", ValidationModel::getDQB2);
+    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB1);
+    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB2);
 
-    makeRow(validationRows, "DQA1", ValidationModel::getDQA1);
-    makeRow(validationRows, "DQA1", ValidationModel::getDQA2);
+    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA1);
+    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA2);
 
-    makeRow(validationRows, "DPB1", ValidationModel::getDPB1);
-    makeRow(validationRows, "DPB1", ValidationModel::getDPB2);
+    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB1);
+    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB2);
 
-    makeRow(validationRows, "DR51", ValidationModel::isDr51);
-    makeRow(validationRows, "DR52", ValidationModel::isDr52);
-    makeRow(validationRows, "DR53", ValidationModel::isDr53);
+    makeValidationRow(validationRows, "DR51", ValidationModel::isDr51);
+    makeValidationRow(validationRows, "DR52", ValidationModel::isDr52);
+    makeValidationRow(validationRows, "DR53", ValidationModel::isDr53);
 
     // A Table is valid if all its Rows are valid
     ObservableBooleanValue validBinding = null;
@@ -168,6 +181,47 @@ public class ValidationTable {
       validBinding = JFXPropertyHelper.andHelper(validBinding, row.isValidProperty());
     }
     isValidWrapper.bind(validBinding);
+
+
+    haplotypeRows.clear();
+    makeHaplotypeRows(haplotypeRows,
+        chooseHaplotypeModel(firstModelWrapper.get(), secondModelWrapper.get()));
+  }
+
+  /**
+   * Use the given model to populate a list of {@link HaplotypeRow}s
+   */
+  private void makeHaplotypeRows(ReadOnlyListWrapper<HaplotypeRow> rows, ValidationModel model) {
+    if (Objects.isNull(model)) {
+      return;
+    }
+    addHaplotypes(rows, ImmutableList.of(model.getBCHaplotypes(), model.getDRDQHaplotypes()));
+  }
+
+  /**
+   * Add haplotype rows to the given list. Haplotypes are added in Ethnicity order (grouping all
+   * haplotypes for a given ethnicity)
+   */
+  private void addHaplotypes(ReadOnlyListWrapper<HaplotypeRow> rows,
+      List<ImmutableMultimap<Ethnicity, Haplotype>> haplotypeEthnicityMaps) {
+    for (Ethnicity ethnicity : Ethnicity.values()) {
+      haplotypeEthnicityMaps.forEach(ethnicityMap -> {
+        ethnicityMap.get(ethnicity).forEach(haplotype -> {
+          rows.add(new HaplotypeRow(ethnicity, haplotype));
+        });
+      });
+    } ;
+  }
+
+  /**
+   * We only report one set of haplotypes, so we have to choose which model to use. We default to
+   * the first, but if the first is empty we use the second.
+   */
+  private ValidationModel chooseHaplotypeModel(ValidationModel model1, ValidationModel model2) {
+    if (model1.getBCHaplotypes().isEmpty() && model1.getDRDQHaplotypes().isEmpty()) {
+      return model2;
+    }
+    return model1;
   }
 
   /**
@@ -177,7 +231,7 @@ public class ValidationTable {
    * @param rowLabel Description of this row (first column)
    * @param getter Method to use to retrieve this row's value
    */
-  private <T> void makeRow(List<ValidationRow<?>> rows, String rowLabel,
+  private <T> void makeValidationRow(List<ValidationRow<?>> rows, String rowLabel,
       Function<ValidationModel, T> getter) {
     rows.add(new ValidationRow<T>(rowLabel, getFirstField(getter), getSecondField(getter)));
   }

@@ -46,6 +46,10 @@ import javafx.beans.property.StringProperty;
  * </table>
  */
 public class ValidationRow<T> {
+  public static final String SECOND_COL_PROP = "secondCol";
+  public static final String IS_VALID_PROP = "isValid";
+  public static final String FIRST_COL_PROP = "firstCol";
+  public static final String ID_PROP = "id";
 
   private final ReadOnlyStringWrapper rowLabelWRapper;
   private final ReadOnlyObjectWrapper<T> firstColWrapper;

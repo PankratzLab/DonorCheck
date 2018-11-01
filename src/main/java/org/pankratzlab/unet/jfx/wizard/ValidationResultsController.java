@@ -27,10 +27,16 @@ import java.net.URL;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
 import javax.imageio.ImageIO;
+import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
+import org.pankratzlab.unet.model.HaplotypeRow;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
+import com.google.common.collect.ImmutableSet;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -57,6 +63,11 @@ import javafx.util.Callback;
  */
 public class ValidationResultsController extends AbstractValidatingWizardController {
   private static final String INVALID_STYLE_CLASS = "invalid-cell";
+  private static final String WD_ALLELE_CLASS = "well-documented-allele";
+  private static final String UK_ALLELE_CLASS = "unknown-allele";
+  private static final String UNKNOWN_HAPLOTYPE_CLASS = "unknown-haplotype";
+  private static final Set<String> HAPLOTYPE_CLASSES =
+      ImmutableSet.of(WD_ALLELE_CLASS, UK_ALLELE_CLASS, UNKNOWN_HAPLOTYPE_CLASS);
 
   @FXML
   private ResourceBundle resources;
@@ -90,6 +101,18 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   @FXML
   private Label resultDisplayText;
+
+  @FXML
+  private TableView<HaplotypeRow> haplotypeTable;
+
+  @FXML
+  private TableColumn<HaplotypeRow, String> ethnicityColumn;
+
+  @FXML
+  private TableColumn<HaplotypeRow, String> haplotypeAlleleOneColumn;
+
+  @FXML
+  private TableColumn<HaplotypeRow, String> haplotypeAlleleTwoColumn;
 
   /**
    * Write the given {@link ValidationTable#getValidationImage()} to disk
@@ -149,18 +172,30 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     assert isEqualCol != null : "fx:id=\"isEqualCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert secondSourceCol != null : "fx:id=\"secondSourceCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert resultDisplayText != null : "fx:id=\"resultDisplayText\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeTable != null : "fx:id=\"haplotypeTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert ethnicityColumn != null : "fx:id=\"ethnicityColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeAlleleOneColumn != null : "fx:id=\"haplotypeAlleleOneColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeAlleleTwoColumn != null : "fx:id=\"haplotypeAlleleTwoColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
 
-    rowLabelCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-
-    firstSourceCol.setCellValueFactory(new PropertyValueFactory<>("firstCol"));
-
-    isEqualCol.setCellValueFactory(new PropertyValueFactory<>("isValid"));
-
-    secondSourceCol.setCellValueFactory(new PropertyValueFactory<>("secondCol"));
+    // Configure validation results table columns
+    rowLabelCol.setCellValueFactory(new PropertyValueFactory<>(ValidationRow.ID_PROP));
+    firstSourceCol.setCellValueFactory(new PropertyValueFactory<>(ValidationRow.FIRST_COL_PROP));
+    isEqualCol.setCellValueFactory(new PropertyValueFactory<>(ValidationRow.IS_VALID_PROP));
+    secondSourceCol.setCellValueFactory(new PropertyValueFactory<>(ValidationRow.SECOND_COL_PROP));
 
     isEqualCol.setCellFactory(new PassFailCellFactory());
     firstSourceCol.setCellFactory(new InvalidColorCellFactory());
     secondSourceCol.setCellFactory(new InvalidColorCellFactory());
+
+    // Configure haplotype table columns
+    ethnicityColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
+    haplotypeAlleleOneColumn
+        .setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ALLELE_1_PROP));
+    haplotypeAlleleTwoColumn
+        .setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ALLELE_2_PROP));
+
+    haplotypeAlleleOneColumn.setCellFactory(new HaplotypeCellFactory());
+    haplotypeAlleleTwoColumn.setCellFactory(new HaplotypeCellFactory());
 
     // Record an image of the validation state when entering this page
     rootPane.addEventHandler(PageActivatedEvent.PAGE_ACTIVE, e -> performPageSetup());
@@ -170,10 +205,12 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   protected void refreshTable(ValidationTable table) {
     // Can only finish the wizard if the validation is successful
     rootPane.setInvalidBinding(table.isValidProperty().not());
-    resultsTable.setItems(table.getRows());
+    resultsTable.setItems(table.getValidationRows());
     table.isValidProperty().addListener(e -> updateDisplay(table.isValidProperty().get()));
     firstSourceCol.textProperty().bind(table.firstColSource());
     secondSourceCol.textProperty().bind(table.secondColSource());
+
+    haplotypeTable.setItems(table.getHaplotypeRows());
   }
 
   /**
@@ -271,6 +308,52 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
                 break;
               }
             }
+          }
+        }
+      };
+    }
+  }
+
+  /**
+   * Helper class to color cells when the row's haplotype is unknown or individual alleles are not
+   * common
+   */
+  private static class HaplotypeCellFactory
+      implements Callback<TableColumn<HaplotypeRow, String>, TableCell<HaplotypeRow, String>> {
+    @Override
+    public TableCell<HaplotypeRow, String> call(TableColumn<HaplotypeRow, String> param) {
+      return new TableCell<HaplotypeRow, String>() {
+        @Override
+        protected void updateItem(String item, boolean empty) {
+          setText(item);
+
+          ObservableList<String> styleList = getStyleClass();
+          for (int i = 0; i < styleList.size(); i++) {
+            if (HAPLOTYPE_CLASSES.contains(styleList.get(i))) {
+              styleList.remove(i);
+              break;
+            }
+          }
+
+          HaplotypeRow row = (HaplotypeRow) getTableRow().getItem();
+          if (Objects.nonNull(row) && Objects.nonNull(row.haplotypeProperty())) {
+            switch (CommonWellDocumented.getStatus(HLAType.valueOf(item))) {
+              case UNKNOWN:
+                getStyleClass().add(0, UK_ALLELE_CLASS);
+                break;
+              case WELL_DOCUMENTED:
+                getStyleClass().add(0, WD_ALLELE_CLASS);
+                break;
+              case COMMON:
+              default:
+                break;
+            }
+
+            if (Double.compare(0.0, HaplotypeFrequencies.getFrequency(row.ethnicityProperty().get(),
+                row.haplotypeProperty().get())) == 0) {
+              getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
+            }
+
           }
         }
       };

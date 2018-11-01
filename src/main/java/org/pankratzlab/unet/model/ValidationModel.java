@@ -24,7 +24,11 @@ package org.pankratzlab.unet.model;
 import java.util.Collection;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
+import org.pankratzlab.unet.hapstats.Haplotype;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Multimap;
 
 /**
  * Backing, immutable model representing a single donor typing.
@@ -47,11 +51,15 @@ public class ValidationModel {
   private final boolean dr51;
   private final boolean dr52;
   private final boolean dr53;
+  private final ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypes;
+  private final ImmutableMultimap<Ethnicity, Haplotype> drdqHaplotypes;
 
   public ValidationModel(String donorId, String source, Collection<SeroType> a,
       Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
       Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4,
-      boolean bw6, boolean dr51, boolean dr52, boolean dr53) {
+      boolean bw6, boolean dr51, boolean dr52, boolean dr53,
+      Multimap<Ethnicity, Haplotype> bcCwdHaplotypes,
+      Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes) {
     this.donorId = donorId;
     this.source = source;
     aLocus = ImmutableSortedSet.copyOf(a);
@@ -66,6 +74,8 @@ public class ValidationModel {
     this.dr51 = dr51;
     this.dr52 = dr52;
     this.dr53 = dr53;
+    bcHaplotypes = ImmutableMultimap.copyOf(bcCwdHaplotypes);
+    drdqHaplotypes = ImmutableMultimap.copyOf(drdqCwdHaplotypes);
   }
 
   public String getDonorId() {
@@ -150,6 +160,14 @@ public class ValidationModel {
 
   public String isDr53() {
     return inGroupString(dr53);
+  }
+
+  public ImmutableMultimap<Ethnicity, Haplotype> getBCHaplotypes() {
+    return bcHaplotypes;
+  }
+
+  public ImmutableMultimap<Ethnicity, Haplotype> getDRDQHaplotypes() {
+    return drdqHaplotypes;
   }
 
   private String inGroupString(boolean group) {
