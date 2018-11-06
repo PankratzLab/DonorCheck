@@ -23,8 +23,8 @@ package org.pankratzlab.unet.model;
 
 import java.util.Objects;
 import javax.jms.IllegalStateException;
-import org.pankratzlab.hla.type.HLAType;
-import org.pankratzlab.hla.type.SeroType;
+import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.SeroType;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;

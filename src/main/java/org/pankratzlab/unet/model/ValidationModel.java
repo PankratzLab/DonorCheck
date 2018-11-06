@@ -22,8 +22,8 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Collection;
-import org.pankratzlab.hla.type.HLAType;
-import org.pankratzlab.hla.type.SeroType;
+import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.SeroType;
 import com.google.common.collect.ImmutableSortedSet;
 
 /**

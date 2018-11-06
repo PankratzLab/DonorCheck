@@ -24,10 +24,10 @@ package org.pankratzlab.unet.model;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
-import org.pankratzlab.hla.type.HLALocus;
-import org.pankratzlab.hla.type.HLAType;
-import org.pankratzlab.hla.type.SeroLocus;
-import org.pankratzlab.hla.type.SeroType;
+import org.pankratzlab.hla.HLALocus;
+import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.SeroLocus;
+import org.pankratzlab.hla.SeroType;
 import com.google.common.collect.ImmutableList;
 
 /**
