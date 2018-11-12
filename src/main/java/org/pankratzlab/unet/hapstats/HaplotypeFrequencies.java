@@ -116,19 +116,6 @@ public final class HaplotypeFrequencies {
     return TABLES.get(haplotype).getFrequencyForEthnicity(ethnicity);
   }
 
-  /**
-   * @return The combined frequency of the given haplotypes for the specified ethnicity
-   * 
-   * @see #getFrequency(Ethnicity, Haplotype)
-   */
-  public static double getFrequency(Ethnicity ethnicity, Collection<Haplotype> haplotypes) {
-    double f = 1.0;
-    // FIXME if a particular haplotype is missing should score by CWD weights
-    for (Haplotype type : haplotypes) {
-      f *= getFrequency(ethnicity, type);
-    }
-    return f;
-  }
 
   /**
    * Enum of ethnicities known in Haplotype CSVs

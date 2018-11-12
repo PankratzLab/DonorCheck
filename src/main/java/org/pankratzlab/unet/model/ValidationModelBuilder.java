@@ -306,6 +306,9 @@ public class ValidationModelBuilder {
     // Note: haplotype maps are OPTIONAL
   }
 
+  /**
+   * Helper method to build a multimap if it's null
+   */
   private Multimap<Strand, HLAType> makeIfNull(Multimap<Strand, HLAType> hapMap) {
     if (hapMap == null) {
       hapMap = HashMultimap.create();
@@ -333,6 +336,10 @@ public class ValidationModelBuilder {
     locusSet.add(new SeroType(locus, typeString));
   }
 
+  /**
+   * {@link Comparator} to sort collections of {@link Haplotype}s based on their frequency and the
+   * CWD status of their alleles.
+   */
   private static class EthnicityHaplotypeComp implements Comparator<Collection<Haplotype>> {
     private Ethnicity ethnicity;
 
@@ -342,12 +349,53 @@ public class ValidationModelBuilder {
 
     @Override
     public int compare(Collection<Haplotype> o1, Collection<Haplotype> o2) {
-      double p1 = HaplotypeFrequencies.getFrequency(ethnicity, o1);
-      double p2 = HaplotypeFrequencies.getFrequency(ethnicity, o2);
+      double p1 = getScore(ethnicity, o1);
+      double p2 = getScore(ethnicity, o2);
 
       // Prefer larger frequencies for this ethnicity
       return Double.compare(p2, p1);
     }
 
+    /**
+     * @return The combined frequency of the given haplotypes for the specified ethnicity
+     * 
+     * @see #getScore(Ethnicity, Haplotype)
+     */
+    public static double getScore(Ethnicity ethnicity, Collection<Haplotype> haplotypes) {
+      double noMissingBonus = haplotypes.size();
+      double cwdBonus = 2 * haplotypes.size();
+
+      double frequency = 1.0;
+      for (Haplotype type : haplotypes) {
+        double f = HaplotypeFrequencies.getFrequency(ethnicity, type);
+
+        if (f > 0) {
+          frequency *= f;
+        } else {
+          // penalize mising haplotypes
+          noMissingBonus--;
+        }
+
+        for (HLAType allele : type.getTypes()) {
+          switch (CommonWellDocumented.getStatus(allele)) {
+            case UNKNOWN:
+              // Remove one point for unknown alleles
+              cwdBonus--;
+              break;
+            case WELL_DOCUMENTED:
+              // Remove half a point for well-documented alleles
+              cwdBonus -= 0.5;
+              break;
+            case COMMON:
+            default:
+              break;
+          }
+        }
+      }
+
+      // The bonuses ensure that haplotypes with no missing frequencies are prioritized, while
+      // allowing comparison between unknown and well-documented alleles/haplotypes.
+      return noMissingBonus + cwdBonus + frequency;
+    }
   }
 }
