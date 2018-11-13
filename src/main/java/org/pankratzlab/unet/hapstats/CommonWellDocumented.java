@@ -111,10 +111,11 @@ public final class CommonWellDocumented {
   }
 
   public static Status getStatus(HLAType type) {
-    if (!ALLELE_FREQS.containsKey(type)) {
+    HLAType equivType = AlleleGroups.getGGroup(type);
+    if (!ALLELE_FREQS.containsKey(equivType)) {
       return Status.UNKNOWN;
     }
-    return ALLELE_FREQS.get(type);
+    return ALLELE_FREQS.get(equivType);
   }
 
   public static double cwdScore(String... alleles) {
@@ -129,10 +130,8 @@ public final class CommonWellDocumented {
     double score = 0;
 
     for (String allele : alleles) {
-      HLAType type = HLAType.valueOf(allele);
-      if (ALLELE_FREQS.containsKey(type)) {
-        score += ALLELE_FREQS.get(type).getWeight();
-      }
+      Status status = getStatus(HLAType.valueOf(allele));
+      score += status.getWeight();
     }
     return score;
   }

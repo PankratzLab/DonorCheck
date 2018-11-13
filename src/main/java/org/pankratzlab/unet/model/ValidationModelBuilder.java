@@ -362,7 +362,7 @@ public class ValidationModelBuilder {
      * @see #getScore(Ethnicity, Haplotype)
      */
     public static double getScore(Ethnicity ethnicity, Collection<Haplotype> haplotypes) {
-      double noMissingBonus = haplotypes.size();
+      double noMissingBonus = 10 * haplotypes.size();
       double cwdBonus = 2 * haplotypes.size();
 
       double frequency = 1.0;
@@ -373,7 +373,7 @@ public class ValidationModelBuilder {
           frequency *= f;
         } else {
           // penalize mising haplotypes
-          noMissingBonus--;
+          noMissingBonus -= 10;
         }
 
         for (HLAType allele : type.getTypes()) {

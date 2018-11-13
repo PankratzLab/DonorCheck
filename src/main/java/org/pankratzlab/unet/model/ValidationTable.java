@@ -218,7 +218,8 @@ public class ValidationTable {
    * the first, but if the first is empty we use the second.
    */
   private ValidationModel chooseHaplotypeModel(ValidationModel model1, ValidationModel model2) {
-    if (model1.getBCHaplotypes().isEmpty() && model1.getDRDQHaplotypes().isEmpty()) {
+    if (Objects.isNull(model1)
+        || (model1.getBCHaplotypes().isEmpty() && model1.getDRDQHaplotypes().isEmpty())) {
       return model2;
     }
     return model1;
