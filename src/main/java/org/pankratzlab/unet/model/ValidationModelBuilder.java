@@ -21,11 +21,14 @@
  */
 package org.pankratzlab.unet.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -42,6 +45,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 
@@ -290,7 +294,7 @@ public class ValidationModelBuilder {
    */
   private void ensureValidity() throws IllegalStateException {
     // Ensure all fields have been set
-    for (Object o : ImmutableList.of(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
+    for (Object o : Lists.newArrayList(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
         dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53)) {
       if (Objects.isNull(o)) {
         throw new IllegalStateException("ValidationModel incomplete");
@@ -341,6 +345,7 @@ public class ValidationModelBuilder {
    * CWD status of their alleles.
    */
   private static class EthnicityHaplotypeComp implements Comparator<Collection<Haplotype>> {
+    private static final int NO_MISSING_WEIGHT = 10;
     private Ethnicity ethnicity;
 
     private EthnicityHaplotypeComp(Ethnicity e) {
@@ -353,7 +358,46 @@ public class ValidationModelBuilder {
       double p2 = getScore(ethnicity, o2);
 
       // Prefer larger frequencies for this ethnicity
-      return Double.compare(p2, p1);
+      int result = Double.compare(p2, p1);
+
+      if (result == 0) {
+        // If the scores are the same, we do compare the unique HLATypes between these two
+        List<HLAType> t1 = makeList(o1);
+        List<HLAType> t2 = makeList(o2);
+        removeOverlapAndSort(t1, t2);
+        for (int i = 0; i < t1.size(); i++) {
+          result += t1.get(i).compareTo(t2.get(i));
+        }
+      }
+      return result;
+    }
+
+    /**
+     * Modify the two input sets to remove any overlap between them, and sort them both before
+     * returning.
+     */
+    private void removeOverlapAndSort(List<HLAType> t1, List<HLAType> t2) {
+      Set<HLAType> overlap = new HashSet<>(t1);
+      t1.retainAll(t2);
+      t1.removeAll(overlap);
+      t2.removeAll(overlap);
+      Collections.sort(t1);
+      Collections.sort(t2);
+    }
+
+    /**
+     * Helper method to convert a {@link Haplotype} collection to a sorted list of the alleles
+     * contained in that haplotype.
+     */
+    private List<HLAType> makeList(Collection<Haplotype> haplotypes) {
+      List<HLAType> sorted = new ArrayList<>();
+      haplotypes.forEach(haplotype -> {
+        haplotype.getTypes().forEach(allele -> {
+          sorted.add(allele);
+        });
+      });
+      Collections.sort(sorted);
+      return sorted;
     }
 
     /**
@@ -362,7 +406,7 @@ public class ValidationModelBuilder {
      * @see #getScore(Ethnicity, Haplotype)
      */
     public static double getScore(Ethnicity ethnicity, Collection<Haplotype> haplotypes) {
-      double noMissingBonus = 10 * haplotypes.size();
+      double noMissingBonus = haplotypes.size();
       double cwdBonus = 2 * haplotypes.size();
 
       double frequency = 1.0;
@@ -373,7 +417,7 @@ public class ValidationModelBuilder {
           frequency *= f;
         } else {
           // penalize mising haplotypes
-          noMissingBonus -= 10;
+          noMissingBonus--;
         }
 
         for (HLAType allele : type.getTypes()) {
@@ -395,7 +439,7 @@ public class ValidationModelBuilder {
 
       // The bonuses ensure that haplotypes with no missing frequencies are prioritized, while
       // allowing comparison between unknown and well-documented alleles/haplotypes.
-      return noMissingBonus + cwdBonus + frequency;
+      return (NO_MISSING_WEIGHT * noMissingBonus) + cwdBonus + frequency;
     }
   }
 }

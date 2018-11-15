@@ -22,23 +22,24 @@
 package org.pankratzlab.unet.hapstats;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.StringJoiner;
 import org.pankratzlab.hla.HLAType;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 
 /**
  * A {@link Haplotype} is a collection of types at different loci which co-occur together.
  */
 public class Haplotype {
 
-  private final Set<HLAType> types;
+  private final ImmutableSortedSet<HLAType> types;
 
   public Haplotype(Collection<HLAType> types) {
     if (types.size() != 2) {
       throw new IllegalStateException("Invalid haplotype: " + types.toString());
     }
-    this.types = ImmutableSet.copyOf(types);
+    this.types = ImmutableSortedSet.copyOf(types);
   }
 
   public Haplotype(HLAType typeOne, HLAType typeTwo) {
@@ -48,7 +49,7 @@ public class Haplotype {
   /**
    * @return The {@link HLAType}s linked by this haplotype
    */
-  public Set<HLAType> getTypes() {
+  public SortedSet<HLAType> getTypes() {
     return types;
   }
 
