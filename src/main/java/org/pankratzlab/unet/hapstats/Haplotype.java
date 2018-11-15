@@ -21,6 +21,7 @@
  */
 package org.pankratzlab.unet.hapstats;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.StringJoiner;
 import org.pankratzlab.hla.HLAType;
@@ -33,8 +34,15 @@ public class Haplotype {
 
   private final Set<HLAType> types;
 
+  public Haplotype(Collection<HLAType> types) {
+    if (types.size() != 2) {
+      throw new IllegalStateException("Invalid haplotype: " + types.toString());
+    }
+    this.types = ImmutableSet.copyOf(types);
+  }
+
   public Haplotype(HLAType typeOne, HLAType typeTwo) {
-    types = ImmutableSet.of(typeOne, typeTwo);
+    this(ImmutableSet.of(typeOne, typeTwo));
   }
 
   /**

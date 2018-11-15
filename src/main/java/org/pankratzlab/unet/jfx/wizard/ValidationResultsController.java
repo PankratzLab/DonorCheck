@@ -324,8 +324,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     public TableCell<HaplotypeRow, String> call(TableColumn<HaplotypeRow, String> param) {
       return new TableCell<HaplotypeRow, String>() {
         @Override
-        protected void updateItem(String item, boolean empty) {
-          setText(item);
+        protected void updateItem(String alleleText, boolean empty) {
+          setText(alleleText);
 
           ObservableList<String> styleList = getStyleClass();
           for (int i = 0; i < styleList.size(); i++) {
@@ -337,7 +337,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
           HaplotypeRow row = (HaplotypeRow) getTableRow().getItem();
           if (Objects.nonNull(row) && Objects.nonNull(row.haplotypeProperty())) {
-            switch (CommonWellDocumented.getStatus(HLAType.valueOf(item))) {
+            switch (CommonWellDocumented.getStatus(HLAType.valueOf(alleleText))) {
               case UNKNOWN:
                 getStyleClass().add(0, UK_ALLELE_CLASS);
                 break;

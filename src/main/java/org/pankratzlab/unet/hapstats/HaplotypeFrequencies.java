@@ -24,9 +24,9 @@ package org.pankratzlab.unet.hapstats;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.pankratzlab.hla.HLALocus;
@@ -110,10 +110,13 @@ public final class HaplotypeFrequencies {
    *         two types
    */
   public static Double getFrequency(Ethnicity ethnicity, Haplotype haplotype) {
-    if (!TABLES.containsKey(haplotype)) {
+    Haplotype equivHaplotype = new Haplotype(
+        haplotype.getTypes().stream().map(AlleleGroups::getGGroup).collect(Collectors.toSet()));
+
+    if (!TABLES.containsKey(equivHaplotype)) {
       return 0.0;
     }
-    return TABLES.get(haplotype).getFrequencyForEthnicity(ethnicity);
+    return TABLES.get(equivHaplotype).getFrequencyForEthnicity(ethnicity);
   }
 
 
