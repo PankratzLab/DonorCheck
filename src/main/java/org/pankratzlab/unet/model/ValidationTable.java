@@ -195,7 +195,7 @@ public class ValidationTable {
     if (Objects.isNull(model)) {
       return;
     }
-    addHaplotypes(rows, ImmutableList.of(model.getBCHaplotypes(), model.getDRDQHaplotypes()));
+    addHaplotypes(rows, ImmutableList.of(model.getBCHaplotypes()));
   }
 
   /**
