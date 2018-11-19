@@ -71,9 +71,10 @@
                       <Label text="No haplotype data found for patient." />
                     </placeholder>
                     <columns>
-                      <TableColumn fx:id="ethnicityColumn" prefWidth="100" text="Ethnicity" />
-                      <TableColumn fx:id="haplotypeAlleleOneColumn" prefWidth="125" text="Allele 1" />
-                      <TableColumn fx:id="haplotypeAlleleTwoColumn" prefWidth="125" text="Allele 2" />
+                      <TableColumn fx:id="ethnicityColumn" prefWidth="75" text="Ethnicity" />
+                      <TableColumn fx:id="haplotypeCAlleleColumn" prefWidth="85" text="C Allele" />
+                      <TableColumn fx:id="haplotypeBAlleleColumn" prefWidth="85" text="B Allele" />
+                      <TableColumn fx:id="haplotypeBwColumn" prefWidth="85" text="Bw Group" />
                     </columns>
                      <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

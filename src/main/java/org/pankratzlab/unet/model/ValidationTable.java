@@ -27,7 +27,6 @@ import java.util.function.Function;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
 import org.pankratzlab.util.JFXPropertyHelper;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -52,7 +51,7 @@ public class ValidationTable {
   private final ReadOnlyObjectWrapper<String> secondSourceWrapper;
   private final ReadOnlyObjectWrapper<ValidationModel> secondModelWrapper;
   private final ReadOnlyListWrapper<ValidationRow<?>> validationRows;
-  private final ReadOnlyListWrapper<HaplotypeRow> haplotypeRows;
+  private final ReadOnlyListWrapper<BCHaplotypeRow> haplotypeRows;
   private WritableImage validationImage = null;
 
   public ValidationTable() {
@@ -137,7 +136,7 @@ public class ValidationTable {
   /**
    * @return The {@link ValidationRow}s for this model, e.g. for display
    */
-  public ReadOnlyListProperty<HaplotypeRow> getHaplotypeRows() {
+  public ReadOnlyListProperty<BCHaplotypeRow> getHaplotypeRows() {
     return haplotypeRows.getReadOnlyProperty();
   }
 
@@ -189,26 +188,24 @@ public class ValidationTable {
   }
 
   /**
-   * Use the given model to populate a list of {@link HaplotypeRow}s
+   * Use the given model to populate a list of {@link BCHaplotypeRow}s
    */
-  private void makeHaplotypeRows(ReadOnlyListWrapper<HaplotypeRow> rows, ValidationModel model) {
+  private void makeHaplotypeRows(ReadOnlyListWrapper<BCHaplotypeRow> rows, ValidationModel model) {
     if (Objects.isNull(model)) {
       return;
     }
-    addHaplotypes(rows, ImmutableList.of(model.getBCHaplotypes()));
+    addBCHaplotypes(rows, model.getBCHaplotypes());
   }
 
   /**
    * Add haplotype rows to the given list. Haplotypes are added in Ethnicity order (grouping all
    * haplotypes for a given ethnicity)
    */
-  private void addHaplotypes(ReadOnlyListWrapper<HaplotypeRow> rows,
-      List<ImmutableMultimap<Ethnicity, Haplotype>> haplotypeEthnicityMaps) {
+  private void addBCHaplotypes(ReadOnlyListWrapper<BCHaplotypeRow> rows,
+      ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypeEtchnicityMap) {
     for (Ethnicity ethnicity : Ethnicity.values()) {
-      haplotypeEthnicityMaps.forEach(ethnicityMap -> {
-        ethnicityMap.get(ethnicity).forEach(haplotype -> {
-          rows.add(new HaplotypeRow(ethnicity, haplotype));
-        });
+      bcHaplotypeEtchnicityMap.get(ethnicity).forEach(haplotype -> {
+        rows.add(new BCHaplotypeRow(ethnicity, haplotype));
       });
     } ;
   }

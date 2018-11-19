@@ -21,11 +21,11 @@
  */
 package org.pankratzlab.unet.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
+import org.pankratzlab.unet.parser.util.BwSerotypes;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -34,25 +34,46 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 /**
  * One row of a Haplotype table (showing all haplotypes for an individual)
  */
-public class HaplotypeRow {
+public class BCHaplotypeRow {
   public static final String ETHNICITY_PROP = "ethnicityDisplay";
-  public static final String ALLELE_1_PROP = "alleleOne";
-  public static final String ALLELE_2_PROP = "alleleTwo";
+  public static final String C_ALLELE_PROP = "alleleC";
+  public static final String B_ALLELE_PROP = "alleleB";
+  public static final String BW_GROUP_PROP = "bwGroup";
 
   private final ReadOnlyStringWrapper ethnicityDisplay;
   private final ReadOnlyObjectWrapper<Haplotype> haplotype;
   private final ReadOnlyObjectWrapper<Ethnicity> ethnicity;
-  private final ReadOnlyStringWrapper alleleOne;
-  private final ReadOnlyStringWrapper alleleTwo;
+  private final ReadOnlyStringWrapper alleleC;
+  private final ReadOnlyStringWrapper alleleB;
+  private final ReadOnlyStringWrapper bwGroup;
 
-  public HaplotypeRow(Ethnicity ethnicity, Haplotype haplotype) {
+  public BCHaplotypeRow(Ethnicity ethnicity, Haplotype haplotype) {
     super();
     this.ethnicity = new ReadOnlyObjectWrapper<>(ethnicity);
     ethnicityDisplay = new ReadOnlyStringWrapper(ethnicity.displayString());
     this.haplotype = new ReadOnlyObjectWrapper<>(haplotype);
-    List<HLAType> typeList = new ArrayList<>(haplotype.getTypes());
-    alleleOne = new ReadOnlyStringWrapper(typeList.get(0).toString());
-    alleleTwo = new ReadOnlyStringWrapper(typeList.get(1).toString());
+    HLAType c = null;
+    HLAType b = null;
+    for (HLAType hlaType : haplotype.getTypes()) {
+      switch (hlaType.locus()) {
+        case B:
+          b = hlaType;
+          break;
+        case C:
+          c = hlaType;
+          break;
+        default:
+          break;
+
+      }
+    }
+    if (Objects.isNull(b) || Objects.isNull(c)) {
+      throw new IllegalArgumentException("Invalid B-C haplotype: " + haplotype.toShortString());
+    }
+
+    alleleC = new ReadOnlyStringWrapper(c.toString());
+    alleleB = new ReadOnlyStringWrapper(b.toString());
+    bwGroup = new ReadOnlyStringWrapper(BwSerotypes.getBwGroup(b).toString());
   }
 
   /**
@@ -70,17 +91,24 @@ public class HaplotypeRow {
   }
 
   /**
-   * @return Property for the first allele of this row's {@link Haplotype}
+   * @return Property for the C allele of this row's {@link Haplotype}
    */
-  public ReadOnlyStringProperty alleleOneProperty() {
-    return alleleOne.getReadOnlyProperty();
+  public ReadOnlyStringProperty alleleCProperty() {
+    return alleleC.getReadOnlyProperty();
   }
 
   /**
-   * @return Property for the second allele of this row's {@link Haplotype}
+   * @return Property for the B allele of this row's {@link Haplotype}
    */
-  public ReadOnlyStringProperty alleleTwoProperty() {
-    return alleleTwo.getReadOnlyProperty();
+  public ReadOnlyStringProperty alleleBProperty() {
+    return alleleB.getReadOnlyProperty();
+  }
+
+  /**
+   * @return Property for the Bw group status of this row's B allele
+   */
+  public ReadOnlyStringProperty bwGroupProperty() {
+    return bwGroup.getReadOnlyProperty();
   }
 
   /**
