@@ -23,6 +23,7 @@ package org.pankratzlab.unet.parser.util;
 
 import java.util.List;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.SeroType;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -46,16 +47,29 @@ public final class BwSerotypes {
       "B50", "B54", "B55", "B56", "B60", "B61", "B62", "B64", "B65", "B67", "B70", "B71", "B72",
       "B73", "B75", "B76", "B78", "B81", "B82");
 
-  public static final BwGroup getBwGroup(HLAType allele) {
-    for (String antigen : ImmutableSet.of(makeAntigen(allele, 2), makeAntigen(allele, 1))) {
-      if (BW6.contains(antigen)) {
-        return BwGroup.Bw6;
-      }
-      if (BW4.contains(antigen)) {
-        return BwGroup.Bw4;
-      }
+  public static final BwGroup getBwGroup(String antigen) {
+    if (BW6.contains(antigen)) {
+      return BwGroup.Bw6;
+    }
+    if (BW4.contains(antigen)) {
+      return BwGroup.Bw4;
     }
     return BwGroup.Unknown;
+  }
+
+  public static final BwGroup getBwGroup(SeroType antigen) {
+    return getBwGroup(antigen.toString());
+  }
+
+  public static final BwGroup getBwGroup(HLAType allele) {
+    BwGroup result = BwGroup.Unknown;
+    for (String antigen : ImmutableSet.of(makeAntigen(allele, 2), makeAntigen(allele, 1))) {
+
+      if (BwGroup.Unknown.equals(result)) {
+        result = getBwGroup(antigen);
+      }
+    }
+    return result;
   }
 
   private static String makeAntigen(HLAType allele, int resolution) {

@@ -22,7 +22,9 @@
 package org.pankratzlab.unet.parser.util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -32,13 +34,14 @@ import java.util.stream.Collectors;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
+import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -54,13 +57,12 @@ public class XmlQTyperParser {
   // -- Type assignment requires assessing allele frequencies, which are read from an HTML doc --
 
 
-  private static final String RANGE_TOKEN = "-";
   private static final String SPEC_SEPARATOR = ":";
   private static final String LOCUS_SEPARATOR = "*";
   private static final String RESULT_SEPARATOR = ",";
 
   // - Specific allele values -
-  private static final Set<String> UNDEFINED_TOKENS = ImmutableSet.of(RANGE_TOKEN);
+  private static final Set<String> UNDEFINED_TOKENS = ImmutableSet.of("-");
   private static final String UNDEFINED_TYPE = "Undefined";
   private static final String NULL_TYPE = "Null";
 
@@ -214,20 +216,32 @@ public class XmlQTyperParser {
       } else if (B_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResult),
             ValidationModelBuilder::bHaplotype);
+        Map<Strand, BwGroup> bwMap = new HashMap<>();
+
+        // Build the Bw strand map
+        for (int strandIdx = 0; strandIdx < types.size(); strandIdx++) {
+          bwMap.put(Strand.values()[strandIdx], BwSerotypes.getBwGroup(types.get(strandIdx)));
+        }
+        builder.bwHaplotype(bwMap);
+
+        // Update the appropriate builder flags
+        for (BwGroup bw : bwMap.values()) {
+          switch (bw) {
+            case Bw4:
+              builder.bw4(true);
+              break;
+            case Bw6:
+              builder.bw6(true);
+              break;
+            default:
+              break;
+          }
+        }
       } else if (DQB_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResult),
             ValidationModelBuilder::dqHaplotype);
       }
 
-      for (String type : types) {
-        // If this is a BW4 or BW6 type, set the appropriate flag
-        if (BwSerotypes.BW4.contains(type)) {
-          builder.bw4(true);
-        }
-        if (BwSerotypes.BW6.contains(type)) {
-          builder.bw6(true);
-        }
-      }
 
       if (DRB_HEADER.equals(locus)) {
 
@@ -285,19 +299,7 @@ public class XmlQTyperParser {
         // Replace suffix flags
         allele.replaceAll("[LSCAQ]", "");
 
-        if (allele.contains(RANGE_TOKEN)) {
-          // Convert ranges to individual alleles
-          HLAType firstType = new HLAType(HLALocus.valueOf(locus), allele.split(RANGE_TOKEN)[0]);
-          HLAType lastType = new HLAType(HLALocus.valueOf(locus), allele.split(RANGE_TOKEN)[1]);
-          for (int rangeIndex = firstType.spec().get(1); rangeIndex <= lastType.spec()
-              .get(1); rangeIndex++) {
-            haplotypeMap.put(Strand.values()[strandIndex - 1],
-                new HLAType(firstType.locus(), firstType.spec().get(0), rangeIndex));
-          }
-        } else {
-          haplotypeMap.put(Strand.values()[strandIndex - 1],
-              new HLAType(HLALocus.valueOf(locus), allele));
-        }
+        HaplotypeUtils.parseAllelesToStrandMap(allele, locus, strandIndex - 1, haplotypeMap);
       }
 
       haplotypeSetter.accept(builder, haplotypeMap);

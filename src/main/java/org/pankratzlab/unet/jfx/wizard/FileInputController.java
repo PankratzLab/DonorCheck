@@ -34,7 +34,7 @@ import org.pankratzlab.unet.parser.DonorFileParser;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
-import org.pankratzlab.util.JFXPropertyHelper;
+import org.pankratzlab.util.jfx.JFXPropertyHelper;
 import com.google.common.collect.ImmutableList;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;

@@ -22,10 +22,13 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Collection;
+import java.util.Map;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
+import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Multimap;
@@ -53,13 +56,14 @@ public class ValidationModel {
   private final boolean dr53;
   private final ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<Ethnicity, Haplotype> drdqHaplotypes;
+  private final ImmutableMap<HLAType, BwGroup> bwMap;
 
   public ValidationModel(String donorId, String source, Collection<SeroType> a,
       Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
       Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4,
       boolean bw6, boolean dr51, boolean dr52, boolean dr53,
       Multimap<Ethnicity, Haplotype> bcCwdHaplotypes,
-      Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes) {
+      Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes, Map<HLAType, BwGroup> bwAlleleMap) {
     this.donorId = donorId;
     this.source = source;
     aLocus = ImmutableSortedSet.copyOf(a);
@@ -76,6 +80,7 @@ public class ValidationModel {
     this.dr53 = dr53;
     bcHaplotypes = ImmutableMultimap.copyOf(bcCwdHaplotypes);
     drdqHaplotypes = ImmutableMultimap.copyOf(drdqCwdHaplotypes);
+    bwMap = ImmutableMap.copyOf(bwAlleleMap);
   }
 
   public String getDonorId() {
@@ -168,6 +173,10 @@ public class ValidationModel {
 
   public ImmutableMultimap<Ethnicity, Haplotype> getDRDQHaplotypes() {
     return drdqHaplotypes;
+  }
+
+  public ImmutableMap<HLAType, BwGroup> getBwMap() {
+    return bwMap;
   }
 
   private String inGroupString(boolean group) {

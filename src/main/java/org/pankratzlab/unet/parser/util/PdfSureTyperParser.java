@@ -21,18 +21,30 @@
  */
 package org.pankratzlab.unet.parser.util;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
+import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.unet.hapstats.HaplotypeUtils;
+import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Multimap;
 
 /**
  * Specific parsing logic for SureTyper PDFs
  */
 public class PdfSureTyperParser {
+  private static final String HLA_PREFIX = "HLA";
+  private static final String UNKNOWN_ANTIGEN = "-";
+  private static final String WHITESPACE_REGEX = "\\s+";
   private static final String TYPING_STOP_TOKEN = "SureTyper";
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
+  private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
   private static final int DONOR_ID_INDEX = 2;
   private static final String PATIENT_ID_TOKEN = "Patient ID:";
   private static final String HLA_DRB345 = "HLA-DRB345:";
@@ -45,6 +57,8 @@ public class PdfSureTyperParser {
   private static final String HLA_C = "HLA-C:";
   private static final String HLA_B = "HLA-B:";
   private static final String HLA_A = "HLA-A:";
+  private static final String HAPLOTYPE_C = "HLA-C";
+  private static final String HAPLOTYPE_B = "HLA-B";
 
   private static ImmutableMap<String, TypeSetter> metadataMap;
 
@@ -56,27 +70,29 @@ public class PdfSureTyperParser {
       init();
     }
 
+    Map<String, Multimap<Strand, HLAType>> haplotypeMap = new HashMap<>();
+    haplotypeMap.put(HAPLOTYPE_B, ArrayListMultimap.create());
+    haplotypeMap.put(HAPLOTYPE_C, ArrayListMultimap.create());
+    Map<Strand, BwGroup> bwMap = new HashMap<>();
+
     // We now process the PDF text line-by-line.
     StringJoiner typeAssignment = new StringJoiner(" ");
-    boolean inAssignment = false;
 
     // All the type assignment strings are joined together and then split on whitespace,
     // creating a stream of tokens.
-    for (String line : lines) {
+    for (int currentLine = 0; currentLine < lines.length; currentLine++) {
+      String line = lines[currentLine].trim();
+
       if (line.startsWith(PATIENT_ID_TOKEN)) {
         // The patient ID value is at a particular position in the line starting with this token
-        builder.donorId(line.split("\\s+")[DONOR_ID_INDEX]);
+        builder.donorId(line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX]);
       } else if (line.contains(TYPING_START_TOKEN)) {
         // After encountering this token, all following lines contain type assignment data
-        inAssignment = true;
-      } else if (inAssignment) {
-        if (line.contains(TYPING_STOP_TOKEN)) {
-          // Once we hit this token, typing is over
-          inAssignment = false;
-        } else {
-          // Until then, keep building the type assignment
-          typeAssignment.add(line);
-        }
+        currentLine = parseAssignment(lines, typeAssignment, ++currentLine);
+      } else if (haplotypeMap.keySet().contains(line)) {
+        // This is a genotype section
+        currentLine = parseHaplotype(lines, ++currentLine, line.replaceAll("HLA-", ""),
+            haplotypeMap.get(line), bwMap);
       }
     }
 
@@ -86,10 +102,14 @@ public class PdfSureTyperParser {
     builder.dr52(false);
     builder.dr53(false);
 
+    builder.bHaplotype(haplotypeMap.get(HAPLOTYPE_B));
+    builder.cHaplotype(haplotypeMap.get(HAPLOTYPE_C));
+    builder.bwHaplotype(bwMap);
+
     BiConsumer<ValidationModelBuilder, String> setter = null;
     String prefix = "";
 
-    for (String token : typeAssignment.toString().split("\\s+")) {
+    for (String token : typeAssignment.toString().split(WHITESPACE_REGEX)) {
       if (metadataMap.containsKey(token)) {
         // When we encounter a section key we update the prefix string and the field setter
         TypeSetter metadata = metadataMap.get(token);
@@ -100,6 +120,72 @@ public class PdfSureTyperParser {
         setter.accept(builder, token.replace(prefix, ""));
       }
     }
+  }
+
+  private static int parseHaplotype(String[] lines, int currentLine, String locus,
+      Multimap<Strand, HLAType> strandMap, Map<Strand, BwGroup> bwMap) {
+    // Sections start with a line containing JUST HLA_A/b/c etc..
+    // Strands are marked by first type is always low res (group)
+    // Read until we get to a semi-colon
+
+    String line = null;
+    int strandIndex = -2;
+    // Read until we hit the end of the genotype data
+    for (; currentLine < lines.length && strandIndex < Strand.values().length; currentLine++) {
+      line = lines[currentLine].trim();
+
+      String[] tokens = line.split(WHITESPACE_REGEX);
+      int tokenIndex = 0;
+
+      // Check if we are at a strand break
+      if (line.matches(locus + "\\*[0-9]+.*") || line.contains(GENOTYPE_HEADER)
+          || line.startsWith(HLA_PREFIX)) {
+        strandIndex++;
+        // Skip the first token. If this line contains alleles and is also a strand break, the first
+        // token is the strand start pattern (e.g. B*02)
+        tokenIndex++;
+      }
+
+      // If we're on a valid strand, parse the tokens to alleles
+      for (; tokenIndex < tokens.length
+          && (strandIndex >= 0 && strandIndex < Strand.values().length); tokenIndex++) {
+        String token = tokens[tokenIndex].trim();
+
+        // Explicitly parse the Bw antigen token
+        if (token.matches("B[0-9]+")) {
+          bwMap.put(Strand.values()[strandIndex], BwSerotypes.getBwGroup(token));
+        }
+
+        if (token.startsWith(locus) || token.equals(UNKNOWN_ANTIGEN)) {
+          // These cases are either reiterations of the locus (e.g. B*) or antigen equivalents (B75,
+          // Cw)
+          continue;
+        }
+
+        // If we're at this point we have a string containing actual alleles which need to be added
+        // to the strand map
+
+        // Sanitize the token string
+        token = token.replaceAll("[a-zA-Z]", "").replaceAll(";", "");
+
+        HaplotypeUtils.parseAllelesToStrandMap(token, locus, strandIndex, strandMap);
+      }
+
+      // Update strand index when we reach the end of an individual allele section
+    }
+
+    return currentLine--;
+  }
+
+  private static int parseAssignment(String[] lines, StringJoiner typeAssignment, int currentLine) {
+    String line = null;
+    // Read until we hit the end of the typing
+    for (; currentLine < lines.length
+        && !(line = lines[currentLine].trim()).contains(TYPING_STOP_TOKEN); currentLine++) {
+      // Building the type assignment lines
+      typeAssignment.add(line);
+    }
+    return currentLine--;
   }
 
   private static void init() {

@@ -25,10 +25,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -41,6 +43,7 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
+import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
@@ -74,6 +77,7 @@ public class ValidationModelBuilder {
   private Boolean dr52;
   private Boolean dr53;
   private Multimap<Strand, HLAType> bHaplotypes;
+  private Map<Strand, BwGroup> bwHaplotypes;
   private Multimap<Strand, HLAType> cHaplotypes;
   private Multimap<Strand, HLAType> drHaplotypes;
   private Multimap<Strand, HLAType> dqHaplotypes;
@@ -167,6 +171,12 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder bwHaplotype(Map<Strand, BwGroup> bwMap) {
+    bwHaplotypes = makeIfNull(bwHaplotypes);
+    bwHaplotypes.putAll(bwMap);
+    return this;
+  }
+
   public ValidationModelBuilder cHaplotype(Multimap<Strand, HLAType> types) {
     cHaplotypes = makeIfNull(cHaplotypes);
     cHaplotypes.putAll(types);
@@ -194,8 +204,26 @@ public class ValidationModelBuilder {
         buildCwdHaplotypes(makeIfNull(bHaplotypes), makeIfNull(cHaplotypes));
     Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes =
         buildCwdHaplotypes(makeIfNull(drHaplotypes), makeIfNull(dqHaplotypes));
+    Map<HLAType, BwGroup> bwAlleleMap = makeBwAlleleMap();
     return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53, bcCwdHaplotypes, drdqCwdHaplotypes);
+        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53, bcCwdHaplotypes, drdqCwdHaplotypes,
+        bwAlleleMap);
+  }
+
+  /**
+   * @return Map all the possible alleles to their {@link BwGroup} (based on {@link Strand})
+   */
+  private Map<HLAType, BwGroup> makeBwAlleleMap() {
+    Map<HLAType, BwGroup> bwMap = new HashMap<>();
+    if (Objects.nonNull(bHaplotypes) && Objects.nonNull(bwHaplotypes)) {
+      for (Strand strand : bHaplotypes.keySet()) {
+        BwGroup bw = bwHaplotypes.get(strand);
+        for (HLAType allele : bHaplotypes.get(strand)) {
+          bwMap.put(allele, bw);
+        }
+      }
+    }
+    return bwMap;
   }
 
   /**
@@ -318,6 +346,13 @@ public class ValidationModelBuilder {
       hapMap = HashMultimap.create();
     }
     return hapMap;
+  }
+
+  private Map<Strand, BwGroup> makeIfNull(Map<Strand, BwGroup> bwMap) {
+    if (Objects.isNull(bwMap)) {
+      bwMap = new HashMap<>();
+    }
+    return bwMap;
   }
 
   /**

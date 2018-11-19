@@ -24,9 +24,12 @@ package org.pankratzlab.unet.model;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
-import org.pankratzlab.util.JFXPropertyHelper;
+import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+import org.pankratzlab.util.jfx.JFXPropertyHelper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -194,18 +197,20 @@ public class ValidationTable {
     if (Objects.isNull(model)) {
       return;
     }
-    addBCHaplotypes(rows, model.getBCHaplotypes());
+    addBCHaplotypes(rows, model.getBCHaplotypes(), model.getBwMap());
   }
 
   /**
    * Add haplotype rows to the given list. Haplotypes are added in Ethnicity order (grouping all
    * haplotypes for a given ethnicity)
+   * @param immutableMap 
    */
   private void addBCHaplotypes(ReadOnlyListWrapper<BCHaplotypeRow> rows,
-      ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypeEtchnicityMap) {
+      ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypeEtchnicityMap,
+      ImmutableMap<HLAType, BwGroup> bwMap) {
     for (Ethnicity ethnicity : Ethnicity.values()) {
       bcHaplotypeEtchnicityMap.get(ethnicity).forEach(haplotype -> {
-        rows.add(new BCHaplotypeRow(ethnicity, haplotype));
+        rows.add(new BCHaplotypeRow(ethnicity, haplotype, bwMap));
       });
     } ;
   }
