@@ -39,10 +39,11 @@ import com.google.common.collect.Multimap;
  * Specific parsing logic for SureTyper PDFs
  */
 public class PdfSureTyperParser {
+  private static final String SURE_TYPER = "SureTyper";
   private static final String HLA_PREFIX = "HLA";
   private static final String UNKNOWN_ANTIGEN = "-";
   private static final String WHITESPACE_REGEX = "\\s+";
-  private static final String TYPING_STOP_TOKEN = "SureTyper";
+  private static final String TYPING_STOP_TOKEN = SURE_TYPER;
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
   private static final int DONOR_ID_INDEX = 2;
@@ -129,7 +130,7 @@ public class PdfSureTyperParser {
     // Read until we get to a semi-colon
 
     String line = null;
-    int strandIndex = -2;
+    int strandIndex = -1;
     // Read until we hit the end of the genotype data
     for (; currentLine < lines.length && strandIndex < Strand.values().length; currentLine++) {
       line = lines[currentLine].trim();
@@ -138,11 +139,21 @@ public class PdfSureTyperParser {
       int tokenIndex = 0;
 
       // Check if we are at a strand break
-      if (line.matches(locus + "\\*[0-9]+.*") || line.contains(GENOTYPE_HEADER)
-          || line.startsWith(HLA_PREFIX)) {
+      if (line.startsWith(SURE_TYPER) || line.contains(GENOTYPE_HEADER)) {
+        // These indicate page breaks and have nothing to do with the data
+        continue;
+      }
+      if (line.startsWith(HLA_PREFIX)) {
+        // This indicates a new locus is starting
+        break;
+      }
+
+      if (line.matches(locus + "\\*[0-9]+.*")) {
+        // This is the first line of allele data. It is possible for it to appear without a
+        // GENOTYPE_HEADER if both alleles are on the same page.
         strandIndex++;
-        // Skip the first token. If this line contains alleles and is also a strand break, the first
-        // token is the strand start pattern (e.g. B*02)
+
+        // Skip the first token. The first token is the allele group pattern (e.g. B*02)
         tokenIndex++;
       }
 
@@ -162,11 +173,13 @@ public class PdfSureTyperParser {
           continue;
         }
 
-        // If we're at this point we have a string containing actual alleles which need to be added
-        // to the strand map
-
         // Sanitize the token string
-        token = token.replaceAll("[a-zA-Z]", "").replaceAll(";", "");
+        token = token.replaceAll("[^0-9:]", "");
+
+        if (token.isEmpty()) {
+          // Wasn't actually an allele
+          continue;
+        }
 
         HaplotypeUtils.parseAllelesToStrandMap(token, locus, strandIndex, strandMap);
       }
@@ -174,7 +187,7 @@ public class PdfSureTyperParser {
       // Update strand index when we reach the end of an individual allele section
     }
 
-    return currentLine--;
+    return --currentLine;
   }
 
   private static int parseAssignment(String[] lines, StringJoiner typeAssignment, int currentLine) {
@@ -185,7 +198,7 @@ public class PdfSureTyperParser {
       // Building the type assignment lines
       typeAssignment.add(line);
     }
-    return currentLine--;
+    return --currentLine;
   }
 
   private static void init() {
