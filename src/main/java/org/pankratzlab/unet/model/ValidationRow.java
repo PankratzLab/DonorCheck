@@ -23,8 +23,6 @@ package org.pankratzlab.unet.model;
 
 import java.util.Objects;
 import javax.jms.IllegalStateException;
-import org.pankratzlab.hla.HLAType;
-import org.pankratzlab.hla.SeroType;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -45,7 +43,7 @@ import javafx.beans.property.StringProperty;
  * </tr>
  * </table>
  */
-public class ValidationRow<T> {
+public abstract class ValidationRow<T> {
   public static final String SECOND_COL_PROP = "secondCol";
   public static final String IS_VALID_PROP = "isValid";
   public static final String FIRST_COL_PROP = "firstCol";
@@ -109,31 +107,16 @@ public class ValidationRow<T> {
    * @return The String representation of the given type
    * @throws IllegalStateException if the type is not one of supported values
    */
-  private String getDisplayString(T toDisplay) throws IllegalStateException {
-    // TODO each ValidationRow could take the method to use here as a constructor argument?
-    if (Objects.isNull(toDisplay)) {
-      return "";
-    }
-    if (toDisplay instanceof String) {
-      return (String) toDisplay;
-    }
-    if (toDisplay instanceof SeroType) {
-      return ((SeroType) toDisplay).specString();
-    }
-    if (toDisplay instanceof HLAType) {
-      return ((HLAType) toDisplay).specString();
-    }
-    if (toDisplay instanceof Boolean) {
-      return String.valueOf((Boolean) toDisplay);
-    }
-
-    throw new IllegalStateException("Invalid ValidationRow value: " + toDisplay);
-  }
+  protected  abstract String getDisplayString(T toDisplay) throws IllegalStateException;
 
   /**
    * @return true iff the XML and PDF column values are the same
    */
   private boolean isValid() {
     return Objects.equals(firstColWrapper.get(), secondColWrapper.get());
+  }
+
+  public static interface RowBuilder<T> {
+    ValidationRow<T> makeRow(String s, T col1, T col2);
   }
 }

@@ -27,6 +27,7 @@ import java.util.function.Function;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
+import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.util.jfx.JFXPropertyHelper;
 import com.google.common.collect.ImmutableMap;
@@ -147,35 +148,54 @@ public class ValidationTable {
    * Helper method to translate the wrapped {@link ValidationModel}s to rows for display.
    */
   private void generateRows() {
+    // FIXME the row labels and row type should probably be linked in the ValidationModel
     validationRows.clear();
-    makeValidationRow(validationRows, "Donor ID", ValidationModel::getDonorId);
-    makeValidationRow(validationRows, "A", ValidationModel::getA1);
-    makeValidationRow(validationRows, "A", ValidationModel::getA2);
+    makeValidationRow(validationRows, "Donor ID", ValidationModel::getDonorId,
+        StringValidationRow::makeRow);
+    makeValidationRow(validationRows, "A", ValidationModel::getA1, AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, "A", ValidationModel::getA2, AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "B", ValidationModel::getB1);
-    makeValidationRow(validationRows, "B", ValidationModel::getB2);
+    makeValidationRow(validationRows, "B", ValidationModel::getB1, AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, "B", ValidationModel::getB2, AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "BW4", ValidationModel::isBw4);
-    makeValidationRow(validationRows, "BW6", ValidationModel::isBw6);
+    makeValidationRow(validationRows, "BW4", ValidationModel::isBw4, StringValidationRow::makeRow);
+    makeValidationRow(validationRows, "BW6", ValidationModel::isBw6, StringValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "C", ValidationModel::getC1);
-    makeValidationRow(validationRows, "C", ValidationModel::getC2);
+    makeValidationRow(validationRows, "C", ValidationModel::getC1, AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, "C", ValidationModel::getC2, AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB1);
-    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB2);
+    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB1,
+        AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB2,
+        AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB1);
-    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB2);
+    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB1,
+        AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB2,
+        AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA1);
-    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA2);
+    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA1,
+        AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA2,
+        AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB1);
-    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB2);
+    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB1,
+        AlleleValidationRow::makeRow);
+    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB2,
+        AlleleValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DR51", ValidationModel::getDR51_1);
-    makeValidationRow(validationRows, "DR52", ValidationModel::getDR52_1);
-    makeValidationRow(validationRows, "DR53", ValidationModel::getDR53_1);
+    makeValidationRow(validationRows, "DR51 1", ValidationModel::getDR51_1,
+        DR345ValidationRow::makeRow);
+    makeValidationRow(validationRows, "DR51 2", ValidationModel::getDR51_2,
+        DR345ValidationRow::makeRow);
+    makeValidationRow(validationRows, "DR52 1", ValidationModel::getDR52_1,
+        DR345ValidationRow::makeRow);
+    makeValidationRow(validationRows, "DR52 2", ValidationModel::getDR52_2,
+        DR345ValidationRow::makeRow);
+    makeValidationRow(validationRows, "DR53 1", ValidationModel::getDR53_1,
+        DR345ValidationRow::makeRow);
+    makeValidationRow(validationRows, "DR53 2", ValidationModel::getDR53_2,
+        DR345ValidationRow::makeRow);
 
     // A Table is valid if all its Rows are valid
     ObservableBooleanValue validBinding = null;
@@ -203,7 +223,8 @@ public class ValidationTable {
   /**
    * Add haplotype rows to the given list. Haplotypes are added in Ethnicity order (grouping all
    * haplotypes for a given ethnicity)
-   * @param immutableMap 
+   * 
+   * @param immutableMap
    */
   private void addBCHaplotypes(ReadOnlyListWrapper<BCHaplotypeRow> rows,
       ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypeEtchnicityMap,
@@ -235,8 +256,8 @@ public class ValidationTable {
    * @param getter Method to use to retrieve this row's value
    */
   private <T> void makeValidationRow(List<ValidationRow<?>> rows, String rowLabel,
-      Function<ValidationModel, T> getter) {
-    rows.add(new ValidationRow<T>(rowLabel, getFirstField(getter), getSecondField(getter)));
+      Function<ValidationModel, T> getter, RowBuilder<T> builder) {
+    rows.add(builder.makeRow(rowLabel, getFirstField(getter), getSecondField(getter)));
   }
 
   /**

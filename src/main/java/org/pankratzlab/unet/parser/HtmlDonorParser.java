@@ -135,10 +135,28 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
 
     typeParser.apply(parsed, "BW4").ifPresent(s -> builder.bw4(decodeHTMLBoolean(s)));
     typeParser.apply(parsed, "BW6").ifPresent(s -> builder.bw6(decodeHTMLBoolean(s)));
-    typeParser.apply(parsed, "DR51").ifPresent(s -> builder.dr51(decodeHTMLBoolean(s)));
-    typeParser.apply(parsed, "DR52").ifPresent(s -> builder.dr52(decodeHTMLBoolean(s)));
-    typeParser.apply(parsed, "DR53").ifPresent(s -> builder.dr53(decodeHTMLBoolean(s)));
+    typeParser.apply(parsed, "DR51").ifPresent(s -> builder.dr51(decodeDR(s)));
+    typeParser.apply(parsed, "DR51_2").ifPresent(s -> builder.dr51(decodeDR(s)));
+    typeParser.apply(parsed, "DR52").ifPresent(s -> builder.dr52(decodeDR(s)));
+    typeParser.apply(parsed, "DR52_2").ifPresent(s -> builder.dr52(decodeDR(s)));
+    typeParser.apply(parsed, "DR53").ifPresent(s -> builder.dr53(decodeDR(s)));
+    typeParser.apply(parsed, "DR53_2").ifPresent(s -> builder.dr53(decodeDR(s)));
 
+  }
+
+  /**
+   * Helper method to remove unnecessary info from DR drop down selection options
+   */
+  private String decodeDR(String dr) {
+    int start = 0;
+    int end = dr.length();
+    if (dr.contains("*")) {
+      start = dr.indexOf("*") + 1;
+    }
+    if (dr.contains(":")) {
+      end = dr.indexOf(":");
+    }
+    return dr.substring(start, end);
   }
 
   /**

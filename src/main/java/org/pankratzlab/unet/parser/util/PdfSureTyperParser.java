@@ -23,8 +23,10 @@ package org.pankratzlab.unet.parser.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
+import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
@@ -40,6 +42,8 @@ import com.google.common.collect.Multimap;
  */
 public class PdfSureTyperParser {
   private static final String SURE_TYPER = "SureTyper";
+  private static final String SUMMARY_START = "SUMMARY";
+  private static final String SUMMARY_END = SURE_TYPER;
   private static final String HLA_PREFIX = "HLA";
   private static final String UNKNOWN_ANTIGEN = "-";
   private static final String WHITESPACE_REGEX = "\\s+";
@@ -48,7 +52,7 @@ public class PdfSureTyperParser {
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
   private static final int DONOR_ID_INDEX = 2;
   private static final String PATIENT_ID_TOKEN = "Patient ID:";
-  private static final String HLA_DRB345 = "HLA-DRB345:";
+
   private static final String BW = "Bw:";
   private static final String HLA_DPB1 = "HLA-DPB1:";
   private static final String HLA_DPA1 = "HLA-DPA1:";
@@ -58,9 +62,12 @@ public class PdfSureTyperParser {
   private static final String HLA_C = "HLA-C:";
   private static final String HLA_B = "HLA-B:";
   private static final String HLA_A = "HLA-A:";
+  private static final String HLA_DRB345 = "HLA-DRB345:";
+  private static final String HLA_DRB3 = "HLA-DRB3:";
+  private static final String HLA_DRB4 = "HLA-DRB4:";
+  private static final String HLA_DRB5 = "HLA-DRB5:";
   private static final String HAPLOTYPE_C = "HLA-C";
   private static final String HAPLOTYPE_B = "HLA-B";
-
   private static ImmutableMap<String, TypeSetter> metadataMap;
 
   /**
@@ -87,6 +94,8 @@ public class PdfSureTyperParser {
       if (line.startsWith(PATIENT_ID_TOKEN)) {
         // The patient ID value is at a particular position in the line starting with this token
         builder.donorId(line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX]);
+      } else if (line.trim().equals(SUMMARY_START)) {
+        parseSummary(lines, typeAssignment, ++currentLine);
       } else if (line.contains(TYPING_START_TOKEN)) {
         // After encountering this token, all following lines contain type assignment data
         currentLine = parseAssignment(lines, typeAssignment, ++currentLine);
@@ -99,9 +108,6 @@ public class PdfSureTyperParser {
 
     builder.bw4(false);
     builder.bw6(false);
-    builder.dr51(false);
-    builder.dr52(false);
-    builder.dr53(false);
 
     builder.bHaplotype(haplotypeMap.get(HAPLOTYPE_B));
     builder.cHaplotype(haplotypeMap.get(HAPLOTYPE_C));
@@ -121,6 +127,34 @@ public class PdfSureTyperParser {
         setter.accept(builder, token.replace(prefix, ""));
       }
     }
+  }
+
+  private static int parseSummary(String[] lines, StringJoiner typeAssignment, int currentLine) {
+    // go line-by-line, split on whitespace, look for DRB[3/4/5]* tokens and convert to line
+    for (; currentLine < lines.length; currentLine++) {
+      String line = lines[currentLine];
+      if (line.contains(SUMMARY_END)) {
+        break;
+      }
+      String[] tokens = line.split(WHITESPACE_REGEX);
+      for (String token : tokens) {
+        String type = null;
+        if (token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
+            || token.contains(HLALocus.DRB5 + "*")) {
+          type = token;
+        }
+        if (Objects.nonNull(type)) {
+          if (type.contains(":")) {
+            type = type.substring(0, type.indexOf(":"));
+          }
+          typeAssignment.add(HLA_PREFIX + "-" + type.substring(0, type.indexOf("*")) + ": " + type);
+        }
+
+      }
+    }
+
+    return currentLine;
+
   }
 
   private static int parseHaplotype(String[] lines, int currentLine, String locus,
@@ -208,6 +242,8 @@ public class PdfSureTyperParser {
     // 1. The token indicating a change in locus
     // 2. The prefix string to each antigen token
     // 3. The appropriate setter method in ValidationModelBuilder
+    // NB: this section MUST be parsed completely, even if particular loci are unused, to avoid
+    // interfering with other loci
     Builder<String, TypeSetter> setterBuilder = ImmutableMap.builder();
     setterBuilder.put(HLA_A, new TypeSetter("A", ValidationModelBuilder::a));
     setterBuilder.put(HLA_B, new TypeSetter("B", ValidationModelBuilder::b));
@@ -215,6 +251,13 @@ public class PdfSureTyperParser {
     setterBuilder.put(HLA_DRB1, new TypeSetter("DR", ValidationModelBuilder::drb));
     setterBuilder.put(HLA_DQA1, new TypeSetter("DQA1*", ValidationModelBuilder::dqa));
     setterBuilder.put(HLA_DQB1, new TypeSetter("DQ", ValidationModelBuilder::dqb));
+
+    setterBuilder.put(HLA_DRB3, new TypeSetter("DRB3*", ValidationModelBuilder::dr52));
+    setterBuilder.put(HLA_DRB4, new TypeSetter("DRB4*", ValidationModelBuilder::dr53));
+    setterBuilder.put(HLA_DRB5, new TypeSetter("DRB5*", ValidationModelBuilder::dr51));
+
+    // DR is only low-res at this point and we need high-res
+    setterBuilder.put(HLA_DRB345, new TypeSetter("DR", PdfSureTyperParser::noOp));
 
     // DPA1 is present in the typing data but we do not currently track it in the validation model
     // (not entered in DonorNet)
@@ -224,7 +267,6 @@ public class PdfSureTyperParser {
 
     // Boolean values appear as literal values, indicating true, and are simply absent if false
     setterBuilder.put(BW, new TypeSetter("", PdfSureTyperParser::decodeBw));
-    setterBuilder.put(HLA_DRB345, new TypeSetter("", PdfSureTyperParser::decodeDR));
 
     metadataMap = setterBuilder.build();
   }
@@ -240,24 +282,6 @@ public class PdfSureTyperParser {
         break;
       case "Bw6":
         builder.bw6(true);
-        break;
-    }
-  }
-
-  /**
-   * Helper method to call the appropriate {@link ValidationModelBuilder} method when a DR value is
-   * encountered.
-   */
-  private static void decodeDR(ValidationModelBuilder builder, String value) {
-    switch (value) {
-      case "DR51":
-        builder.dr51(true);
-        break;
-      case "DR52":
-        builder.dr52(true);
-        break;
-      case "DR53":
-        builder.dr53(true);
         break;
     }
   }

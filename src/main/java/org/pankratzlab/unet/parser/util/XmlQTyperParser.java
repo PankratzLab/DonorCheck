@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -62,8 +63,8 @@ public class XmlQTyperParser {
   private static final String RESULT_SEPARATOR = ",";
 
   // - Specific allele values -
-  private static final Set<String> UNDEFINED_TOKENS = ImmutableSet.of("-");
   private static final String UNDEFINED_TYPE = "Undefined";
+  private static final Set<String> UNDEFINED_TOKENS = ImmutableSet.of(UNDEFINED_TYPE, "-");
   private static final String NULL_TYPE = "Null";
 
   // -- XML Tags required for parsing --
@@ -92,6 +93,8 @@ public class XmlQTyperParser {
 
   private static ImmutableMap<String, BiFunction<String, Element, List<String>>> xmlTypeMap;
 
+  private static ImmutableMap<String, TypeSetter> drbMap;
+
   private static void init() {
     // -- Build mapping between loci sections, serotype prefixes and validation model setters --
     Builder<String, TypeSetter> setterBuilder = ImmutableMap.builder();
@@ -111,6 +114,14 @@ public class XmlQTyperParser {
     // setterBuilder.put("HLA-DPA1", null);
 
     metadataMap = setterBuilder.build();
+
+    // -- Build mapping specifically for DRB3/4/5 alleles. These are also under the DRB header but
+    // parsed differently --
+    Builder<String, TypeSetter> drbBuilder = ImmutableMap.builder();
+    drbBuilder.put("DRB3", new TypeSetter("DRB3*", ValidationModelBuilder::dr52));
+    drbBuilder.put("DRB4", new TypeSetter("DRB4*", ValidationModelBuilder::dr53));
+    drbBuilder.put("DRB5", new TypeSetter("DRB5*", ValidationModelBuilder::dr51));
+    drbMap = drbBuilder.build();
 
     // -- Build mapping between loci and serological/allele parsing
     Builder<String, BiFunction<String, Element, List<String>>> xmlBuilder = ImmutableMap.builder();
@@ -137,9 +148,6 @@ public class XmlQTyperParser {
     // These fields are not present if false. If present they are true
     builder.bw4(false);
     builder.bw6(false);
-    builder.dr51(false);
-    builder.dr52(false);
-    builder.dr53(false);
 
     DonorNetUtils.getText(doc.getElementsByTag(PATIENT_ID_TAG))
         .ifPresent(s -> builder.donorId(s.toUpperCase()));
@@ -172,29 +180,46 @@ public class XmlQTyperParser {
 
       int selectedResult = -1;
       List<String> types = new ArrayList<>();
-      List<String> drTypes = new ArrayList<>();
 
       // Parse the allele pairs in the result section
       for (int result = 0; result < resultCombinations.size(); result++) {
         List<String> resultTypes = null;
-
+        Element currentCombination = resultCombinations.get(result);
         try {
-          resultTypes = xmlTypeMap.get(locus).apply(typeSetter.getTokenPrefix(),
-              resultCombinations.get(result));
-          if (DRB_HEADER.equals(locus)
-              && !resultCombinations.get(result).toString().contains("DRB1")) {
+          if (DRB_HEADER.equals(locus) && !currentCombination.toString().contains("DRB1")) {
             // Non-DRB1 headers in the DR locus are DR5* indicators
-            drTypes.addAll(resultTypes);
-          } else if (types.isEmpty()) {
-            // Record the first result
-            types.addAll(resultTypes);
-            selectedResult = result;
-          } else if (isTestListPreferred(types, resultTypes)) {
-            // If an allele pair with a better frequency weight is discovered, switch to that
-            types = resultTypes;
-            selectedResult = result;
+            for (Entry<String, TypeSetter> drbEntry : drbMap.entrySet()) {
+              if (currentCombination.toString().contains(drbEntry.getKey())) {
+                List<String> drbAlleles =
+                    XmlQTyperParser.parseAlleles(drbEntry.getKey(), currentCombination);
+                TypeSetter drbSetter = drbEntry.getValue();
+                for (String type : drbAlleles) {
+                  if (type.contains(":")) {
+                    type = type.substring(0, type.indexOf(":"));
+                  }
+                  drbSetter.getSetter().accept(builder,
+                      type.replace(drbSetter.getTokenPrefix(), ""));
+                }
+              }
+            }
+
+          } else {
+            resultTypes =
+                xmlTypeMap.get(locus).apply(typeSetter.getTokenPrefix(), currentCombination);
+
+            if (types.isEmpty()) {
+              // Record the first result
+              types.addAll(resultTypes);
+              selectedResult = result;
+            } else if (isTestListPreferred(types, resultTypes)) {
+              // If an allele pair with a better frequency weight is discovered, switch to that
+              types = resultTypes;
+              selectedResult = result;
+            }
           }
         } catch (Exception e) {
+          System.err.println(e);
+          continue;
         }
       }
 
@@ -213,6 +238,12 @@ public class XmlQTyperParser {
       } else if (C_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResult),
             ValidationModelBuilder::cHaplotype);
+      } else if (DQB_HEADER.equals(locus)) {
+        addHaplotypes(builder, resultCombinations.get(selectedResult),
+            ValidationModelBuilder::dqHaplotype);
+      } else if (DRB_HEADER.equals(locus)) {
+        addHaplotypes(builder, resultCombinations.get(selectedResult),
+            ValidationModelBuilder::drHaplotype);
       } else if (B_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResult),
             ValidationModelBuilder::bHaplotype);
@@ -237,34 +268,6 @@ public class XmlQTyperParser {
               break;
           }
         }
-      } else if (DQB_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResult),
-            ValidationModelBuilder::dqHaplotype);
-      }
-
-
-      if (DRB_HEADER.equals(locus)) {
-
-        // Add haplotypes
-        addHaplotypes(builder, resultCombinations.get(selectedResult),
-            ValidationModelBuilder::drHaplotype);
-
-        // Remove the DR51/52/53 types from the type list and set the appropriate flag(s)
-        for (String dr : drTypes) {
-          switch (dr) {
-            case "DR51":
-              builder.dr51(true);
-              break;
-            case "DR52":
-              builder.dr52(true);
-              break;
-            case "DR53":
-              builder.dr53(true);
-              break;
-            default:
-          }
-        }
-
       }
 
       // Finally, add the types to the model builder
@@ -365,10 +368,18 @@ public class XmlQTyperParser {
    * @return The list of alleles discovered for this combination
    */
   private static List<String> parseAlleles(String locus, Element combination) {
-    List<String> firstTypes = getFirstValidTypes(combination, ALLELE_COMBINATION_TAG);
-    for (String type : firstTypes) {
+    List<String> firstTypes = new ArrayList<>();
+
+    List<String> candidates = getFirstValidTypes(combination, ALLELE_COMBINATION_TAG);
+    for (String type : candidates) {
       // Ensure these are recognized types
-      HLAType.valueOfStrict(type);
+      try {
+        HLAType.valueOfStrict(type);
+        // This type is valid
+        firstTypes.add(type);
+      } catch (IllegalArgumentException e) {
+        // These types are invalid
+      }
     }
     return firstTypes;
   }
@@ -382,10 +393,11 @@ public class XmlQTyperParser {
     List<String> types = getFirstValidTypes(combination, SERO_COMBINATION_TAG);
     List<Integer> undefined = new ArrayList<>();
 
-    // Check if there are undefined types in the result list
-    for (int i = 0; i < types.size(); i++) {
+    // Check if there are undefined types in the result list and record them in reverse order
+    // (in case we have to remove some we don't want to affect the indices of earlier unknowns)
+    for (int i = types.size() - 1; i >= 0; i--) {
       String type = types.get(i);
-      if (UNDEFINED_TYPE.equals(type)) {
+      if (UNDEFINED_TOKENS.contains(type)) {
         undefined.add(i);
       }
     }
@@ -430,12 +442,21 @@ public class XmlQTyperParser {
         for (int result = 0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type))
             && result < resultTypes.length; result++) {
           String tmp = resultTypes[result];
-          // The undefined tokens are just skipped
-          // Null types don't take precedence over any other values
-          if (UNDEFINED_TOKENS.contains(tmp) || (NULL_TYPE.equals(tmp) && Objects.nonNull(type))) {
+          // Null and Undefined types don't take precedence over any other values
+
+          if (NULL_TYPE.equals(tmp) && Objects.nonNull(type) && !UNDEFINED_TOKENS.contains(type)) {
+            // Null type overrides undefined, but not other types
+            continue;
+          } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type)) {
+            // Undefined type overrides null, but not any other type
             continue;
           }
           type = tmp;
+        }
+
+        if (Objects.isNull(type)) {
+          // No valid values - set as Undefined
+          type = UNDEFINED_TYPE;
         }
 
         // Sometimes the inheritance structure of the types is listed. We only want the first (most

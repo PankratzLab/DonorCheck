@@ -62,6 +62,7 @@ import com.google.common.collect.Table;
  */
 public class ValidationModelBuilder {
 
+  private static final String NEGATIVE_ALLELE = "N-Negative";
   private String donorId;
   private String source;
   private Set<SeroType> aLocus;
@@ -73,9 +74,9 @@ public class ValidationModelBuilder {
   private Set<HLAType> dpbLocus;
   private Boolean bw4;
   private Boolean bw6;
-  private Set<HLAType> dr51Locus;
-  private Set<HLAType> dr52Locus;
-  private Set<HLAType> dr53Locus;
+  private Set<HLAType> dr51Locus = new LinkedHashSet<>();
+  private Set<HLAType> dr52Locus = new LinkedHashSet<>();
+  private Set<HLAType> dr53Locus = new LinkedHashSet<>();
   private Multimap<Strand, HLAType> bHaplotypes;
   private Map<Strand, BwGroup> bwHaplotypes;
   private Multimap<Strand, HLAType> cHaplotypes;
@@ -123,20 +124,23 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dr51(String dr51) {
-    dr51Locus = makeIfNull(dr51Locus);
-    dr51Locus.add(new HLAType(HLALocus.DRB5, dr51));
+    if (isPositive(dr51)) {
+      dr51Locus.add(new HLAType(HLALocus.DRB5, dr51));
+    }
     return this;
   }
 
   public ValidationModelBuilder dr52(String dr52) {
-    dr52Locus = makeIfNull(dr52Locus);
-    dr52Locus.add(new HLAType(HLALocus.DRB3, dr52));
+    if (isPositive(dr52)) {
+      dr52Locus.add(new HLAType(HLALocus.DRB3, dr52));
+    }
     return this;
   }
 
   public ValidationModelBuilder dr53(String dr53) {
-    dr53Locus = makeIfNull(dr53Locus);
-    dr53Locus.add(new HLAType(HLALocus.DRB4, dr53));
+    if (isPositive(dr53)) {
+      dr53Locus.add(new HLAType(HLALocus.DRB4, dr53));
+    }
     return this;
   }
 
@@ -209,8 +213,12 @@ public class ValidationModelBuilder {
         buildCwdHaplotypes(makeIfNull(drHaplotypes), makeIfNull(dqHaplotypes));
     Map<HLAType, BwGroup> bwAlleleMap = makeBwAlleleMap();
     return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus, bcCwdHaplotypes, drdqCwdHaplotypes,
-        bwAlleleMap);
+        dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus, bcCwdHaplotypes,
+        drdqCwdHaplotypes, bwAlleleMap);
+  }
+
+  private boolean isPositive(String dr) {
+    return !Objects.equals(dr, NEGATIVE_ALLELE);
   }
 
   /**
@@ -326,7 +334,7 @@ public class ValidationModelBuilder {
   private void ensureValidity() throws IllegalStateException {
     // Ensure all fields have been set
     for (Object o : Lists.newArrayList(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus)) {
+        dqaLocus, dpbLocus, bw4, bw6)) {
       if (Objects.isNull(o)) {
         throw new IllegalStateException("ValidationModel incomplete");
       }
