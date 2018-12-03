@@ -42,16 +42,21 @@ import com.google.common.collect.ImmutableSet;
  * Parses downloaded DonorNet XML (un-saved - after saving, only HTML is supported) to a model.
  */
 public class XmlDonorNetParser {
-
-  public static final String ROOT_ELEMENT = "donorupload";
   private static final ImmutableSet<String> XML_FALSE = ImmutableSet.of("96", "6");
   private static final ImmutableSet<String> XML_TRUE = ImmutableSet.of("95", "5");
+  public static final String ROOT_ELEMENT = "donorupload";
   private static final String DQA_MAP_PATH = "/DqaMap.xml";
   private static final String DPB_MAP_PATH = "/DpbMap.xml";
+  private static final String DR51_MAP_PATH = "/DR51Map.xml";
+  private static final String DR52_MAP_PATH = "/DR52Map.xml";
+  private static final String DR53_MAP_PATH = "/DR53Map.xml";
   private static final String XML_ATTR = "value";
   private static final String XML_TAG = "option";
   private static ImmutableMap<String, String> dqaMap;
   private static ImmutableMap<String, String> dpbMap;
+  private static ImmutableMap<String, String> dr51Map;
+  private static ImmutableMap<String, String> dr52Map;
+  private static ImmutableMap<String, String> dr53Map;
 
   /**
    * Helper method to translate the parsed XML to a {@link ValidationModel}
@@ -82,9 +87,12 @@ public class XmlDonorNetParser {
 
     getXMLTagVal(donorRoot, "bw4").ifPresent(s -> builder.bw4(decodeXMLBoolean(s)));
     getXMLTagVal(donorRoot, "bw6").ifPresent(s -> builder.bw6(decodeXMLBoolean(s)));
-    getXMLTagVal(donorRoot, "dr51").ifPresent(s -> builder.dr51(decodeXMLBoolean(s)));
-    getXMLTagVal(donorRoot, "dr52").ifPresent(s -> builder.dr52(decodeXMLBoolean(s)));
-    getXMLTagVal(donorRoot, "dr53").ifPresent(s -> builder.dr53(decodeXMLBoolean(s)));
+    getXMLTagVal(donorRoot, "dr51").ifPresent(s -> builder.dr51(decodeValue(dr51Map, s)));
+    getXMLTagVal(donorRoot, "dr52").ifPresent(s -> builder.dr52(decodeValue(dr52Map, s)));
+    getXMLTagVal(donorRoot, "dr53").ifPresent(s -> builder.dr53(decodeValue(dr53Map, s)));
+    getXMLTagVal(donorRoot, "dr51_2").ifPresent(s -> builder.dr51(decodeValue(dr51Map, s)));
+    getXMLTagVal(donorRoot, "dr52_2").ifPresent(s -> builder.dr52(decodeValue(dr52Map, s)));
+    getXMLTagVal(donorRoot, "dr53_2").ifPresent(s -> builder.dr53(decodeValue(dr53Map, s)));
   }
 
   /**
@@ -128,8 +136,10 @@ public class XmlDonorNetParser {
     // numbers to specificities. These files contain mappings for the given locus and need to be
     // updated if the DonorNet pages ever change.
     dpbMap = populateFromFile(DPB_MAP_PATH);
-
     dqaMap = populateFromFile(DQA_MAP_PATH);
+    dr51Map = populateFromFile(DR51_MAP_PATH);
+    dr52Map = populateFromFile(DR52_MAP_PATH);
+    dr53Map = populateFromFile(DR53_MAP_PATH);
   }
 
   /**
