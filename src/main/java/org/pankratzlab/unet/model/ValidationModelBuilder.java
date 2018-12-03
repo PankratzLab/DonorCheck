@@ -73,9 +73,9 @@ public class ValidationModelBuilder {
   private Set<HLAType> dpbLocus;
   private Boolean bw4;
   private Boolean bw6;
-  private Boolean dr51;
-  private Boolean dr52;
-  private Boolean dr53;
+  private Set<HLAType> dr51Locus;
+  private Set<HLAType> dr52Locus;
+  private Set<HLAType> dr53Locus;
   private Multimap<Strand, HLAType> bHaplotypes;
   private Map<Strand, BwGroup> bwHaplotypes;
   private Multimap<Strand, HLAType> cHaplotypes;
@@ -118,7 +118,25 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder drb(String drbType) {
     drbLocus = makeIfNull(drbLocus);
-    addToLocus(drbLocus, SeroLocus.DQB, drbType);
+    addToLocus(drbLocus, SeroLocus.DRB, drbType);
+    return this;
+  }
+
+  public ValidationModelBuilder dr51(String dr51) {
+    dr51Locus = makeIfNull(dr51Locus);
+    dr51Locus.add(new HLAType(HLALocus.DRB5, dr51));
+    return this;
+  }
+
+  public ValidationModelBuilder dr52(String dr52) {
+    dr52Locus = makeIfNull(dr52Locus);
+    dr52Locus.add(new HLAType(HLALocus.DRB3, dr52));
+    return this;
+  }
+
+  public ValidationModelBuilder dr53(String dr53) {
+    dr53Locus = makeIfNull(dr53Locus);
+    dr53Locus.add(new HLAType(HLALocus.DRB4, dr53));
     return this;
   }
 
@@ -147,21 +165,6 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder bw6(boolean bw6) {
     this.bw6 = bw6;
-    return this;
-  }
-
-  public ValidationModelBuilder dr51(boolean dr51) {
-    this.dr51 = dr51;
-    return this;
-  }
-
-  public ValidationModelBuilder dr52(boolean dr52) {
-    this.dr52 = dr52;
-    return this;
-  }
-
-  public ValidationModelBuilder dr53(boolean dr53) {
-    this.dr53 = dr53;
     return this;
   }
 
@@ -206,7 +209,7 @@ public class ValidationModelBuilder {
         buildCwdHaplotypes(makeIfNull(drHaplotypes), makeIfNull(dqHaplotypes));
     Map<HLAType, BwGroup> bwAlleleMap = makeBwAlleleMap();
     return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53, bcCwdHaplotypes, drdqCwdHaplotypes,
+        dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus, bcCwdHaplotypes, drdqCwdHaplotypes,
         bwAlleleMap);
   }
 
@@ -323,7 +326,7 @@ public class ValidationModelBuilder {
   private void ensureValidity() throws IllegalStateException {
     // Ensure all fields have been set
     for (Object o : Lists.newArrayList(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus, bw4, bw6, dr51, dr52, dr53)) {
+        dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus)) {
       if (Objects.isNull(o)) {
         throw new IllegalStateException("ValidationModel incomplete");
       }

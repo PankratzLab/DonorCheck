@@ -173,9 +173,9 @@ public class ValidationTable {
     makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB1);
     makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB2);
 
-    makeValidationRow(validationRows, "DR51", ValidationModel::isDr51);
-    makeValidationRow(validationRows, "DR52", ValidationModel::isDr52);
-    makeValidationRow(validationRows, "DR53", ValidationModel::isDr53);
+    makeValidationRow(validationRows, "DR51", ValidationModel::getDR51_1);
+    makeValidationRow(validationRows, "DR52", ValidationModel::getDR52_1);
+    makeValidationRow(validationRows, "DR53", ValidationModel::getDR53_1);
 
     // A Table is valid if all its Rows are valid
     ObservableBooleanValue validBinding = null;

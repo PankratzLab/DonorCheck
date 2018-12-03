@@ -51,9 +51,9 @@ public class ValidationModel {
   private final ImmutableSortedSet<HLAType> dpbLocus;
   private final boolean bw4;
   private final boolean bw6;
-  private final boolean dr51;
-  private final boolean dr52;
-  private final boolean dr53;
+  private final ImmutableSortedSet<HLAType> dr51Locus;
+  private final ImmutableSortedSet<HLAType> dr52Locus;
+  private final ImmutableSortedSet<HLAType> dr53Locus;
   private final ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<Ethnicity, Haplotype> drdqHaplotypes;
   private final ImmutableMap<HLAType, BwGroup> bwMap;
@@ -61,7 +61,7 @@ public class ValidationModel {
   public ValidationModel(String donorId, String source, Collection<SeroType> a,
       Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
       Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4,
-      boolean bw6, boolean dr51, boolean dr52, boolean dr53,
+      boolean bw6, Collection<HLAType> dr51, Collection<HLAType> dr52, Collection<HLAType> dr53,
       Multimap<Ethnicity, Haplotype> bcCwdHaplotypes,
       Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes, Map<HLAType, BwGroup> bwAlleleMap) {
     this.donorId = donorId;
@@ -75,9 +75,9 @@ public class ValidationModel {
     dpbLocus = ImmutableSortedSet.copyOf(dpb);
     this.bw4 = bw4;
     this.bw6 = bw6;
-    this.dr51 = dr51;
-    this.dr52 = dr52;
-    this.dr53 = dr53;
+    dr51Locus = ImmutableSortedSet.copyOf(dr51);
+    dr52Locus = ImmutableSortedSet.copyOf(dr52);
+    dr53Locus = ImmutableSortedSet.copyOf(dr53);
     bcHaplotypes = ImmutableMultimap.copyOf(bcCwdHaplotypes);
     drdqHaplotypes = ImmutableMultimap.copyOf(drdqCwdHaplotypes);
     bwMap = ImmutableMap.copyOf(bwAlleleMap);
@@ -155,16 +155,28 @@ public class ValidationModel {
     return inGroupString(bw6);
   }
 
-  public String isDr51() {
-    return inGroupString(dr51);
+  public HLAType getDR51_1() {
+    return getFromList(dr51Locus, 0);
   }
 
-  public String isDr52() {
-    return inGroupString(dr52);
+  public HLAType getDR51_2() {
+    return getFromList(dr51Locus, 1);
   }
 
-  public String isDr53() {
-    return inGroupString(dr53);
+  public HLAType getDR52_1() {
+    return getFromList(dr52Locus, 0);
+  }
+
+  public HLAType getDR52_2() {
+    return getFromList(dr52Locus, 1);
+  }
+
+  public HLAType getDR53_1() {
+    return getFromList(dr53Locus, 0);
+  }
+
+  public HLAType getDR53_2() {
+    return getFromList(dr53Locus, 1);
   }
 
   public ImmutableMultimap<Ethnicity, Haplotype> getBCHaplotypes() {
@@ -196,17 +208,21 @@ public class ValidationModel {
     int result = 1;
     result = prime * result + ((aLocus == null) ? 0 : aLocus.hashCode());
     result = prime * result + ((bLocus == null) ? 0 : bLocus.hashCode());
+    result = prime * result + ((bcHaplotypes == null) ? 0 : bcHaplotypes.hashCode());
     result = prime * result + (bw4 ? 1231 : 1237);
     result = prime * result + (bw6 ? 1231 : 1237);
+    result = prime * result + ((bwMap == null) ? 0 : bwMap.hashCode());
     result = prime * result + ((cLocus == null) ? 0 : cLocus.hashCode());
     result = prime * result + ((donorId == null) ? 0 : donorId.hashCode());
     result = prime * result + ((dpbLocus == null) ? 0 : dpbLocus.hashCode());
     result = prime * result + ((dqaLocus == null) ? 0 : dqaLocus.hashCode());
     result = prime * result + ((dqbLocus == null) ? 0 : dqbLocus.hashCode());
-    result = prime * result + (dr51 ? 1231 : 1237);
-    result = prime * result + (dr52 ? 1231 : 1237);
-    result = prime * result + (dr53 ? 1231 : 1237);
+    result = prime * result + ((dr51Locus == null) ? 0 : dr51Locus.hashCode());
+    result = prime * result + ((dr52Locus == null) ? 0 : dr52Locus.hashCode());
+    result = prime * result + ((dr53Locus == null) ? 0 : dr53Locus.hashCode());
     result = prime * result + ((drbLocus == null) ? 0 : drbLocus.hashCode());
+    result = prime * result + ((drdqHaplotypes == null) ? 0 : drdqHaplotypes.hashCode());
+    result = prime * result + ((source == null) ? 0 : source.hashCode());
     return result;
   }
 
@@ -229,9 +245,19 @@ public class ValidationModel {
         return false;
     } else if (!bLocus.equals(other.bLocus))
       return false;
+    if (bcHaplotypes == null) {
+      if (other.bcHaplotypes != null)
+        return false;
+    } else if (!bcHaplotypes.equals(other.bcHaplotypes))
+      return false;
     if (bw4 != other.bw4)
       return false;
     if (bw6 != other.bw6)
+      return false;
+    if (bwMap == null) {
+      if (other.bwMap != null)
+        return false;
+    } else if (!bwMap.equals(other.bwMap))
       return false;
     if (cLocus == null) {
       if (other.cLocus != null)
@@ -258,16 +284,35 @@ public class ValidationModel {
         return false;
     } else if (!dqbLocus.equals(other.dqbLocus))
       return false;
-    if (dr51 != other.dr51)
+    if (dr51Locus == null) {
+      if (other.dr51Locus != null)
+        return false;
+    } else if (!dr51Locus.equals(other.dr51Locus))
       return false;
-    if (dr52 != other.dr52)
+    if (dr52Locus == null) {
+      if (other.dr52Locus != null)
+        return false;
+    } else if (!dr52Locus.equals(other.dr52Locus))
       return false;
-    if (dr53 != other.dr53)
+    if (dr53Locus == null) {
+      if (other.dr53Locus != null)
+        return false;
+    } else if (!dr53Locus.equals(other.dr53Locus))
       return false;
     if (drbLocus == null) {
       if (other.drbLocus != null)
         return false;
     } else if (!drbLocus.equals(other.drbLocus))
+      return false;
+    if (drdqHaplotypes == null) {
+      if (other.drdqHaplotypes != null)
+        return false;
+    } else if (!drdqHaplotypes.equals(other.drdqHaplotypes))
+      return false;
+    if (source == null) {
+      if (other.source != null)
+        return false;
+    } else if (!source.equals(other.source))
       return false;
     return true;
   }
