@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +49,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Table;
 
 /**
@@ -214,10 +214,10 @@ public class ValidationModelBuilder {
     Multimap<Ethnicity, Haplotype> drDqDR345Haplotypes = ImmutableMultimap.of();
 
     Map<HLAType, BwGroup> bwAlleleMap = makeBwAlleleMap();
-     ValidationModel validationModel = new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus, bcCwdHaplotypes,
-        drDqDR345Haplotypes, bwAlleleMap);
-     return validationModel;
+    ValidationModel validationModel = new ValidationModel(donorId, source, aLocus, bLocus, cLocus,
+        drbLocus, dqbLocus, dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus,
+        bcCwdHaplotypes, drDqDR345Haplotypes, bwAlleleMap);
+    return validationModel;
   }
 
   private boolean isPositive(String dr) {
@@ -257,8 +257,8 @@ public class ValidationModelBuilder {
         Table<Strand, Strand, Set<Haplotype>> optionsByStrand = HashBasedTable.create();
 
         // Iterate over each strand of each locus
-        for (Strand strandLocusOne : Strand.values()) {
-          for (Strand strandLocusTwo : Strand.values()) {
+        for (Strand strandLocusOne : locusOneTypes.keySet()) {
+          for (Strand strandLocusTwo : locusTwoTypes.keySet()) {
             Set<Haplotype> hapSet = new HashSet<>();
 
             // Add all possible haplotypes for these strands to a TreeSet
@@ -322,13 +322,19 @@ public class ValidationModelBuilder {
       typesForStrand.removeAll(Strand.SECOND);
     }
 
-    // Remove UNKNOWN types
-    Iterator<HLAType> iterator = typesForStrand.values().iterator();
-    while (iterator.hasNext()) {
-      HLAType type = iterator.next();
-      if (Objects.equals(Status.UNKNOWN, CommonWellDocumented.getStatus(type))) {
-        iterator.remove();
-      }
+    // Sort out our types by CWD status
+    Multimap<Status, HLAType> typesByStatus =
+        MultimapBuilder.enumKeys(Status.class).hashSetValues().build();
+    Collection<HLAType> values = typesForStrand.values();
+    values.forEach(t -> typesByStatus.put(CommonWellDocumented.getStatus(t), t));
+
+    Set<HLAType> cwdTypes = new HashSet<>();
+    cwdTypes.addAll(typesByStatus.get(Status.COMMON));
+    cwdTypes.addAll(typesByStatus.get(Status.WELL_DOCUMENTED));
+
+    // If we have any common or well-documented types, drop all unknown
+    if (!cwdTypes.isEmpty()) {
+      values.removeAll(typesByStatus.get(Status.UNKNOWN));
     }
   }
 
