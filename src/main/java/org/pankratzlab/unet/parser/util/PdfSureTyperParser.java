@@ -139,8 +139,9 @@ public class PdfSureTyperParser {
       String[] tokens = line.split(WHITESPACE_REGEX);
       for (String token : tokens) {
         String type = null;
-        if (token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
-            || token.contains(HLALocus.DRB5 + "*")) {
+        // Check if this is a non-null DRB3/4/5
+        if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
+            || token.contains(HLALocus.DRB5 + "*")) && !token.endsWith("N")) {
           type = token;
         }
         if (Objects.nonNull(type)) {
