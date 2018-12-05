@@ -23,6 +23,8 @@ package org.pankratzlab.unet.jfx;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
+import com.google.common.collect.ImmutableSet;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -34,7 +36,8 @@ import javafx.stage.Stage;
  */
 public class TypeValidationApp extends Application {
 
-  private static final String CSS_PATH = "/resultTable.css";
+  private static final Set<String> CSS_FILES =
+      ImmutableSet.of("/resultTable.css", "/fileInput.css");
 
   private static final String LANDING_FXML = "/TypeValidationLanding.fxml";
 
@@ -62,7 +65,9 @@ public class TypeValidationApp extends Application {
     primaryStage.setScene(scene);
 
     // Attach style sheets
-    scene.getStylesheets().add(CSS_PATH);
+    for (String styleSheet : CSS_FILES) {
+      scene.getStylesheets().add(styleSheet);
+    }
 
     // Display the Stage
     primaryStage.show();

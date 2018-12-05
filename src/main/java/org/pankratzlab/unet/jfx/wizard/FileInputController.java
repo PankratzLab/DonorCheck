@@ -61,6 +61,8 @@ import javafx.scene.text.Font;
  */
 public class FileInputController extends AbstractValidatingWizardController {
 
+  private static final String FILE_DISPLAY_CLASS = "file-display";
+
   private ObservableList<ReadOnlyObjectWrapper<File>> selectedFileProperties =
       FXCollections.observableArrayList();
 
@@ -120,8 +122,9 @@ public class FileInputController extends AbstractValidatingWizardController {
     fileDisplay.setPromptText("no file selected");
 
     // Link text field and file
-    fileDisplay.textProperty()
-        .bind(Bindings.createStringBinding(() -> getName(linkedFile.get()), linkedFile));
+    linkedFile.getReadOnlyProperty()
+        .addListener((b, o, n) -> updateFileDisplay(fileDisplay, linkedFile.get()));
+
     hbox.getChildren().add(fileDisplay);
 
     Button chooseFileButton = new Button("Choose File");
@@ -162,10 +165,20 @@ public class FileInputController extends AbstractValidatingWizardController {
     }
   }
 
-  private String getName(File file) {
-    if (Objects.isNull(file)) {
-      return "";
+  private void updateFileDisplay(TextField fileDisplay, File file) {
+    String text = "";
+    for (int i = 0; i < fileDisplay.getStyleClass().size(); i++) {
+      if (Objects.equals(FILE_DISPLAY_CLASS, fileDisplay.getStyleClass().get(i))) {
+        fileDisplay.getStyleClass().remove(i);
+        break;
+      }
     }
-    return file.getName();
+
+    if (Objects.nonNull(file)) {
+      text = file.getName();
+      fileDisplay.getStyleClass().add(FILE_DISPLAY_CLASS);
+    }
+
+    fileDisplay.setText(text);
   }
 }
