@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -180,6 +179,7 @@ public class XmlQTyperParser {
 
       int selectedResult = -1;
       List<String> types = new ArrayList<>();
+      List<String> drbResults = null;
 
       // Parse the allele pairs in the result section
       for (int result = 0; result < resultCombinations.size(); result++) {
@@ -188,21 +188,17 @@ public class XmlQTyperParser {
         try {
           if (DRB_HEADER.equals(locus) && !currentCombination.toString().contains("DRB1")) {
             // Non-DRB1 headers in the DR locus are DR5* indicators
-            for (Entry<String, TypeSetter> drbEntry : drbMap.entrySet()) {
-              if (currentCombination.toString().contains(drbEntry.getKey())) {
-                List<String> drbAlleles =
-                    XmlQTyperParser.parseAlleles(drbEntry.getKey(), currentCombination);
-                TypeSetter drbSetter = drbEntry.getValue();
-                for (String type : drbAlleles) {
-                  if (type.contains(":")) {
-                    type = type.substring(0, type.indexOf(":"));
-                  }
-                  drbSetter.getSetter().accept(builder,
-                      type.replace(drbSetter.getTokenPrefix(), ""));
-                }
+            List<String> parsed = XmlQTyperParser.parseAlleles("", currentCombination);
+            List<String> drbAlleles = new ArrayList<>();
+            for (String type : parsed) {
+              if (type.contains(":")) {
+                type = type.substring(0, type.indexOf(":"));
               }
+              drbAlleles.add(type);
             }
-
+            if (drbResults == null || isTestListPreferred(drbResults, drbAlleles)) {
+              drbResults = drbAlleles;
+            }
           } else {
             resultTypes =
                 xmlTypeMap.get(locus).apply(typeSetter.getTokenPrefix(), currentCombination);
@@ -224,6 +220,17 @@ public class XmlQTyperParser {
       }
 
       // -- Locus-specific processing of the individual types --
+      if (!Objects.isNull(drbResults) && !drbResults.isEmpty()) {
+        for (String drbType : drbResults) {
+          for (String key : drbMap.keySet()) {
+            if (drbType.startsWith(key)) {
+              TypeSetter drbSetter = drbMap.get(key);
+              drbSetter.getSetter().accept(builder,
+                  drbType.replaceAll(drbSetter.getTokenPrefix(), ""));
+            }
+          }
+        }
+      }
 
       if (DQA_HEADER.equals(locus)) {
         // if DQA we have to remove the higher-position spec
@@ -275,6 +282,7 @@ public class XmlQTyperParser {
         typeSetter.getSetter().accept(builder, type.replace(typeSetter.getTokenPrefix(), ""));
       }
     }
+
   }
 
   private static void addHaplotypes(ValidationModelBuilder builder, Element resultCombination,
@@ -365,6 +373,8 @@ public class XmlQTyperParser {
   /**
    * Parser for allele combinations from an allele-based loci
    *
+   * @param locus - NB: Not actually used. Needed to match signature of
+   *        {@link #parseSerological(String, Element)}
    * @return The list of alleles discovered for this combination
    */
   private static List<String> parseAlleles(String locus, Element combination) {
