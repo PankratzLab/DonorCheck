@@ -47,7 +47,7 @@ import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -209,12 +209,14 @@ public class ValidationModelBuilder {
     ensureValidity();
     Multimap<Ethnicity, Haplotype> bcCwdHaplotypes =
         buildCwdHaplotypes(makeIfNull(bHaplotypes), makeIfNull(cHaplotypes));
-    Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes =
-        buildCwdHaplotypes(makeIfNull(drHaplotypes), makeIfNull(dqHaplotypes));
+
+    // DRDQ haplotypes not currently supported
+    Multimap<Ethnicity, Haplotype> drDqDR345Haplotypes = ImmutableMultimap.of();
+
     Map<HLAType, BwGroup> bwAlleleMap = makeBwAlleleMap();
     return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
         dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus, bcCwdHaplotypes,
-        drdqCwdHaplotypes, bwAlleleMap);
+        drDqDR345Haplotypes, bwAlleleMap);
   }
 
   private boolean isPositive(String dr) {
@@ -270,8 +272,7 @@ public class ValidationModelBuilder {
           }
         }
 
-        TreeSet<Collection<Haplotype>> haplotypeSets =
-            new TreeSet<>(new EthnicityHaplotypeComp(ethnicity));
+        TreeSet<HaplotypeSet> haplotypeSets = new TreeSet<>(new EthnicityHaplotypeComp(ethnicity));
 
         // Compute the most likely strand combinations
         // Each strand value must be used once and only once in both row and column indices
@@ -295,11 +296,14 @@ public class ValidationModelBuilder {
   /**
    * Add all combinations of haplotypes in set 1 and set 2 to the base set
    */
-  private void addHaplotypes(Set<Collection<Haplotype>> baseSet, Set<Haplotype> setOne,
+  private void addHaplotypes(Set<HaplotypeSet> baseSet, Set<Haplotype> setOne,
       Set<Haplotype> setTwo) {
     setOne.forEach(h1 -> {
       setTwo.forEach(h2 -> {
-        baseSet.add(ImmutableSet.of(h1, h2));
+        HaplotypeSet haplotypes = new HaplotypeSet();
+        haplotypes.add(h1);
+        haplotypes.add(h2);
+        baseSet.add(haplotypes);
       });
     });
   }
@@ -387,11 +391,74 @@ public class ValidationModelBuilder {
   }
 
   /**
+   * Helper class to cache the scores for collections of haplotypes
+   */
+  private static class HaplotypeSet extends HashSet<Haplotype> {
+    private static final long serialVersionUID = 2987756599790100395L;
+
+    private static final int NO_MISSING_WEIGHT = 10;
+
+    private Map<Ethnicity, Double> scoreMap = new HashMap<>();
+
+    private double getScore(Ethnicity e) {
+      if (!scoreMap.containsKey(e)) {
+        scoreMap.put(e, getScore(e, this));
+      }
+      return scoreMap.get(e);
+    }
+
+
+    /**
+     * @return The combined frequency of the given haplotypes for the specified ethnicity
+     */
+    private static double getScore(Ethnicity ethnicity, Collection<Haplotype> haplotypes) {
+      double noMissingBonus = haplotypes.size();
+      double cwdBonus = 2 * haplotypes.size();
+
+      double frequency = 1.0;
+      for (Haplotype type : haplotypes) {
+        double f = HaplotypeFrequencies.getFrequency(ethnicity, type);
+
+        if (f > 0) {
+          frequency *= f;
+        } else {
+          // penalize mising haplotypes
+          noMissingBonus--;
+        }
+
+        for (HLAType allele : type.getTypes()) {
+          switch (CommonWellDocumented.getStatus(allele)) {
+            case UNKNOWN:
+              // Remove one point for unknown alleles
+              cwdBonus--;
+              break;
+            case WELL_DOCUMENTED:
+              // Remove half a point for well-documented alleles
+              cwdBonus -= 0.5;
+              break;
+            case COMMON:
+            default:
+              break;
+          }
+        }
+      }
+
+      // The bonuses ensure that haplotypes with no missing frequencies are prioritized, while
+      // allowing comparison between unknown and well-documented alleles/haplotypes.
+      return (NO_MISSING_WEIGHT * noMissingBonus) + cwdBonus + frequency;
+    }
+
+    private int compareTo(HaplotypeSet o, Ethnicity e) {
+      return Double.compare(getScore(e), o.getScore(e));
+    }
+
+  }
+
+  /**
    * {@link Comparator} to sort collections of {@link Haplotype}s based on their frequency and the
    * CWD status of their alleles.
    */
-  private static class EthnicityHaplotypeComp implements Comparator<Collection<Haplotype>> {
-    private static final int NO_MISSING_WEIGHT = 10;
+  private static class EthnicityHaplotypeComp implements Comparator<HaplotypeSet> {
     private Ethnicity ethnicity;
 
     private EthnicityHaplotypeComp(Ethnicity e) {
@@ -399,12 +466,10 @@ public class ValidationModelBuilder {
     }
 
     @Override
-    public int compare(Collection<Haplotype> o1, Collection<Haplotype> o2) {
-      double p1 = getScore(ethnicity, o1);
-      double p2 = getScore(ethnicity, o2);
+    public int compare(HaplotypeSet o1, HaplotypeSet o2) {
 
       // Prefer larger frequencies for this ethnicity
-      int result = Double.compare(p2, p1);
+      int result = o2.compareTo(o1, ethnicity);
 
       if (result == 0) {
         // If the scores are the same, we do compare the unique HLATypes between these two
@@ -446,46 +511,5 @@ public class ValidationModelBuilder {
       return sorted;
     }
 
-    /**
-     * @return The combined frequency of the given haplotypes for the specified ethnicity
-     * 
-     * @see #getScore(Ethnicity, Haplotype)
-     */
-    public static double getScore(Ethnicity ethnicity, Collection<Haplotype> haplotypes) {
-      double noMissingBonus = haplotypes.size();
-      double cwdBonus = 2 * haplotypes.size();
-
-      double frequency = 1.0;
-      for (Haplotype type : haplotypes) {
-        double f = HaplotypeFrequencies.getFrequency(ethnicity, type);
-
-        if (f > 0) {
-          frequency *= f;
-        } else {
-          // penalize mising haplotypes
-          noMissingBonus--;
-        }
-
-        for (HLAType allele : type.getTypes()) {
-          switch (CommonWellDocumented.getStatus(allele)) {
-            case UNKNOWN:
-              // Remove one point for unknown alleles
-              cwdBonus--;
-              break;
-            case WELL_DOCUMENTED:
-              // Remove half a point for well-documented alleles
-              cwdBonus -= 0.5;
-              break;
-            case COMMON:
-            default:
-              break;
-          }
-        }
-      }
-
-      // The bonuses ensure that haplotypes with no missing frequencies are prioritized, while
-      // allowing comparison between unknown and well-documented alleles/haplotypes.
-      return (NO_MISSING_WEIGHT * noMissingBonus) + cwdBonus + frequency;
-    }
   }
 }
