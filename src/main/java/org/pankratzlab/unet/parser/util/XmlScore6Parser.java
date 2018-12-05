@@ -52,7 +52,7 @@ import com.google.common.collect.Multimap;
 /**
  * Parses SCORE6 QType format to donor model
  */
-public class XmlQTyperParser {
+public class XmlScore6Parser {
 
   // -- Type assignment requires assessing allele frequencies, which are read from an HTML doc --
 
@@ -125,15 +125,15 @@ public class XmlQTyperParser {
     // -- Build mapping between loci and serological/allele parsing
     Builder<String, BiFunction<String, Element, List<String>>> xmlBuilder = ImmutableMap.builder();
 
-    xmlBuilder.put(A_HEADER, XmlQTyperParser::parseSerological);
-    xmlBuilder.put(B_HEADER, XmlQTyperParser::parseSerological);
-    xmlBuilder.put(C_HEADER, XmlQTyperParser::parseSerological);
-    xmlBuilder.put(DRB_HEADER, XmlQTyperParser::parseSerological);
-    xmlBuilder.put(DQB_HEADER, XmlQTyperParser::parseSerological);
+    xmlBuilder.put(A_HEADER, XmlScore6Parser::parseSerological);
+    xmlBuilder.put(B_HEADER, XmlScore6Parser::parseSerological);
+    xmlBuilder.put(C_HEADER, XmlScore6Parser::parseSerological);
+    xmlBuilder.put(DRB_HEADER, XmlScore6Parser::parseSerological);
+    xmlBuilder.put(DQB_HEADER, XmlScore6Parser::parseSerological);
 
     // Reported as allele types
-    xmlBuilder.put(DPB_HEADER, XmlQTyperParser::parseAlleles);
-    xmlBuilder.put(DQA_HEADER, XmlQTyperParser::parseAlleles);
+    xmlBuilder.put(DPB_HEADER, XmlScore6Parser::parseAlleles);
+    xmlBuilder.put(DQA_HEADER, XmlScore6Parser::parseAlleles);
 
     // DR52/53/54 appears as a serological combination
     xmlTypeMap = xmlBuilder.build();
@@ -188,7 +188,7 @@ public class XmlQTyperParser {
         try {
           if (DRB_HEADER.equals(locus) && !currentCombination.toString().contains("DRB1")) {
             // Non-DRB1 headers in the DR locus are DR5* indicators
-            List<String> parsed = XmlQTyperParser.parseAlleles("", currentCombination);
+            List<String> parsed = XmlScore6Parser.parseAlleles("", currentCombination);
             List<String> drbAlleles = new ArrayList<>();
             for (String type : parsed) {
               if (type.contains(":")) {

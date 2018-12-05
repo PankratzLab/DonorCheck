@@ -30,7 +30,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.XmlDonorNetParser;
-import org.pankratzlab.unet.parser.util.XmlQTyperParser;
+import org.pankratzlab.unet.parser.util.XmlScore6Parser;
 
 /**
  * {@link DonorFileParser} entry point for XML files
@@ -96,8 +96,8 @@ public class XmlDonorParser extends AbstractDonorFileParser {
         // Based on XML contents, pass to specific XML parser
         if (XmlDonorNetParser.ROOT_ELEMENT.equals(rootElement)) {
           XmlDonorNetParser.buildModelFromXML(builder, parsed);
-        } else if (XmlQTyperParser.ROOT_ELEMENT.equals(rootElement)) {
-          XmlQTyperParser.buildModelFromXML(builder, parsed);
+        } else if (XmlScore6Parser.ROOT_ELEMENT.equals(rootElement)) {
+          XmlScore6Parser.buildModelFromXML(builder, parsed);
         }
       } else {
         throw new InvalidParameterException("Unknown File Type: " + file.getName());
