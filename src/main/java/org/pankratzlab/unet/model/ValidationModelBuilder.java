@@ -74,9 +74,9 @@ public class ValidationModelBuilder {
   private Set<HLAType> dpbLocus;
   private Boolean bw4;
   private Boolean bw6;
-  private Set<HLAType> dr51Locus = new LinkedHashSet<>();
-  private Set<HLAType> dr52Locus = new LinkedHashSet<>();
-  private Set<HLAType> dr53Locus = new LinkedHashSet<>();
+  private List<HLAType> dr51Locus = new ArrayList<>();
+  private List<HLAType> dr52Locus = new ArrayList<>();
+  private List<HLAType> dr53Locus = new ArrayList<>();
   private Multimap<Strand, HLAType> bHaplotypes;
   private Map<Strand, BwGroup> bwHaplotypes;
   private Multimap<Strand, HLAType> cHaplotypes;
@@ -352,6 +352,11 @@ public class ValidationModelBuilder {
       }
     }
     // Note: haplotype maps are OPTIONAL
+
+    // Note: Some DRB345 loci may be empty, but should be sorted
+    Collections.sort(dr51Locus);
+    Collections.sort(dr52Locus);
+    Collections.sort(dr53Locus);
   }
 
   /**

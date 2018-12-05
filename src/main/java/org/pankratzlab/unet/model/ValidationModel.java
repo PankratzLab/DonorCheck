@@ -21,7 +21,6 @@
  */
 package org.pankratzlab.unet.model;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +66,7 @@ public class ValidationModel {
   public ValidationModel(String donorId, String source, Collection<SeroType> a,
       Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
       Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4,
-      boolean bw6, Collection<HLAType> dr51, Collection<HLAType> dr52, Collection<HLAType> dr53,
+      boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
       Multimap<Ethnicity, Haplotype> bcCwdHaplotypes,
       Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes, Map<HLAType, BwGroup> bwAlleleMap) {
     this.donorId = donorId;
@@ -82,34 +81,13 @@ public class ValidationModel {
     this.bw4 = bw4;
     this.bw6 = bw6;
 
-    // Check if homozygous across DR loci
-    boolean homozygousDR = false;
-    if ((dr51.size() + dr52.size() + dr53.size()) == 1) {
-      homozygousDR = true;
-    }
-
-    dr51Locus = makeHomozygousList(dr51, homozygousDR);
-    dr52Locus = makeHomozygousList(dr52, homozygousDR);
-    dr53Locus = makeHomozygousList(dr53, homozygousDR);
+    dr51Locus = ImmutableList.copyOf(dr51);
+    dr52Locus = ImmutableList.copyOf(dr52);
+    dr53Locus = ImmutableList.copyOf(dr53);
 
     bcHaplotypes = ImmutableMultimap.copyOf(bcCwdHaplotypes);
     drdqHaplotypes = ImmutableMultimap.copyOf(drdqCwdHaplotypes);
     bwMap = ImmutableMap.copyOf(bwAlleleMap);
-  }
-
-  /**
-   * Helper method to build a list from a set of 0-2 HLATypes for a given locus. Since the set only
-   * contained one value, we want to duplicate that type for this particular locus.
-   */
-  private ImmutableList<HLAType> makeHomozygousList(Collection<HLAType> typesForLocus,
-      boolean homozygous) {
-    List<HLAType> typeList = new ArrayList<>(typesForLocus);
-
-    if (homozygous && typeList.size() == 1) {
-      typeList.add(typeList.get(0));
-    }
-
-    return ImmutableList.copyOf(typeList);
   }
 
   public String getDonorId() {

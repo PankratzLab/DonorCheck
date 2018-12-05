@@ -35,6 +35,7 @@ import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 
 /**
@@ -131,6 +132,9 @@ public class PdfSureTyperParser {
 
   private static int parseSummary(String[] lines, StringJoiner typeAssignment, int currentLine) {
     // go line-by-line, split on whitespace, look for DRB[3/4/5]* tokens and convert to line
+    final ImmutableSet<String> validLoci = ImmutableSet.of(HLALocus.DRB3.toString(),
+        HLALocus.DRB4.toString(), HLALocus.DRB5.toString());
+    boolean homozygous = false;
     for (; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine];
       if (line.contains(SUMMARY_END)) {
@@ -140,7 +144,11 @@ public class PdfSureTyperParser {
       for (String token : tokens) {
         String type = null;
         // Check if this is a non-null DRB3/4/5
-        if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
+        if (validLoci.contains(token)) {
+          // For homozygous cases that are reported, the locus appears twice.. once by itself, the
+          // other with the allele designation.
+          homozygous = true;
+        } else if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
             || token.contains(HLALocus.DRB5 + "*")) && !token.endsWith("N")) {
           type = token;
         }
@@ -148,7 +156,13 @@ public class PdfSureTyperParser {
           if (type.contains(":")) {
             type = type.substring(0, type.indexOf(":"));
           }
-          typeAssignment.add(HLA_PREFIX + "-" + type.substring(0, type.indexOf("*")) + ": " + type);
+          String typeAssignmentEntry =
+              HLA_PREFIX + "-" + type.substring(0, type.indexOf("*")) + ": ";
+          typeAssignmentEntry += type;
+          if (homozygous) {
+            typeAssignmentEntry += (" " + type);
+          }
+          typeAssignment.add(typeAssignmentEntry);
         }
 
       }
