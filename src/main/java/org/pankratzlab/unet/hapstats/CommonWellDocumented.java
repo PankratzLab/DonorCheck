@@ -130,7 +130,12 @@ public final class CommonWellDocumented {
     double score = 0;
 
     for (String allele : alleles) {
-      Status status = getStatus(HLAType.valueOf(allele));
+      HLAType type = HLAType.valueOf(allele);
+      if (type.spec().size() == 1) {
+        // If we have an antigen, default to spec *:01 
+        type = new HLAType(type.locus(), type.spec().get(0), 1);
+      }
+      Status status = getStatus(type);
       score += status.getWeight();
     }
     return score;

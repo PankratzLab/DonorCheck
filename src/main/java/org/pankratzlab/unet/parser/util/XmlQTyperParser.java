@@ -330,6 +330,7 @@ public class XmlQTyperParser {
     }
 
     // Test if test has higher frequency alleles
+    // FIXME in many cases we're parsing serotypes, but we need alleles for CWD
     int diff = Double.compare(CommonWellDocumented.cwdScore(reference),
         CommonWellDocumented.cwdScore(test));
 
