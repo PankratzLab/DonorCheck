@@ -41,9 +41,9 @@ public class XmlDonorParser extends AbstractDonorFileParser {
 
   private static final String DISPLAY_STRING = "XML";
 
-  private static final String FILE_CHOOSER_HEADER = "Select DonorNet Web Source";
+  private static final String FILE_CHOOSER_HEADER = "Select Donor Typing XML";
   private static final String INITIAL_NAME = "";
-  private static final String EXTENSION_DESC = "DonorNet XML";
+  private static final String EXTENSION_DESC = "DonorNet, SCORE6";
   private static final String EXTENSION_NAME = "xml";
   private static final String EXTENSION = "*." + EXTENSION_NAME;
 
