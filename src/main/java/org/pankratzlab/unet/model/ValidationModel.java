@@ -21,13 +21,19 @@
  */
 package org.pankratzlab.unet.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedSet;
@@ -51,9 +57,9 @@ public class ValidationModel {
   private final ImmutableSortedSet<HLAType> dpbLocus;
   private final boolean bw4;
   private final boolean bw6;
-  private final ImmutableSortedSet<HLAType> dr51Locus;
-  private final ImmutableSortedSet<HLAType> dr52Locus;
-  private final ImmutableSortedSet<HLAType> dr53Locus;
+  private final ImmutableList<HLAType> dr51Locus;
+  private final ImmutableList<HLAType> dr52Locus;
+  private final ImmutableList<HLAType> dr53Locus;
   private final ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<Ethnicity, Haplotype> drdqHaplotypes;
   private final ImmutableMap<HLAType, BwGroup> bwMap;
@@ -75,12 +81,35 @@ public class ValidationModel {
     dpbLocus = ImmutableSortedSet.copyOf(dpb);
     this.bw4 = bw4;
     this.bw6 = bw6;
-    dr51Locus = ImmutableSortedSet.copyOf(dr51);
-    dr52Locus = ImmutableSortedSet.copyOf(dr52);
-    dr53Locus = ImmutableSortedSet.copyOf(dr53);
+
+    // Check if homozygous across DR loci
+    boolean homozygousDR = false;
+    if ((dr51.size() + dr52.size() + dr53.size()) == 1) {
+      homozygousDR = true;
+    }
+
+    dr51Locus = makeHomozygousList(dr51, homozygousDR);
+    dr52Locus = makeHomozygousList(dr52, homozygousDR);
+    dr53Locus = makeHomozygousList(dr53, homozygousDR);
+
     bcHaplotypes = ImmutableMultimap.copyOf(bcCwdHaplotypes);
     drdqHaplotypes = ImmutableMultimap.copyOf(drdqCwdHaplotypes);
     bwMap = ImmutableMap.copyOf(bwAlleleMap);
+  }
+
+  /**
+   * Helper method to build a list from a set of 0-2 HLATypes for a given locus. Since the set only
+   * contained one value, we want to duplicate that type for this particular locus.
+   */
+  private ImmutableList<HLAType> makeHomozygousList(Collection<HLAType> typesForLocus,
+      boolean homozygous) {
+    List<HLAType> typeList = new ArrayList<>(typesForLocus);
+
+    if (homozygous && typeList.size() == 1) {
+      typeList.add(typeList.get(0));
+    }
+
+    return ImmutableList.copyOf(typeList);
   }
 
   public String getDonorId() {
@@ -92,59 +121,59 @@ public class ValidationModel {
   }
 
   public SeroType getA1() {
-    return getFromList(aLocus, 0);
+    return getFromPair(aLocus, 0);
   }
 
   public SeroType getA2() {
-    return getFromList(aLocus, 1);
+    return getFromPair(aLocus, 1);
   }
 
   public SeroType getB1() {
-    return getFromList(bLocus, 0);
+    return getFromPair(bLocus, 0);
   }
 
   public SeroType getB2() {
-    return getFromList(bLocus, 1);
+    return getFromPair(bLocus, 1);
   }
 
   public SeroType getC1() {
-    return getFromList(cLocus, 0);
+    return getFromPair(cLocus, 0);
   }
 
   public SeroType getC2() {
-    return getFromList(cLocus, 1);
+    return getFromPair(cLocus, 1);
   }
 
   public SeroType getDRB1() {
-    return getFromList(drbLocus, 0);
+    return getFromPair(drbLocus, 0);
   }
 
   public SeroType getDRB2() {
-    return getFromList(drbLocus, 1);
+    return getFromPair(drbLocus, 1);
   }
 
   public SeroType getDQB1() {
-    return getFromList(dqbLocus, 0);
+    return getFromPair(dqbLocus, 0);
   }
 
   public SeroType getDQB2() {
-    return getFromList(dqbLocus, 1);
+    return getFromPair(dqbLocus, 1);
   }
 
   public SeroType getDQA1() {
-    return getFromList(dqaLocus, 0);
+    return getFromPair(dqaLocus, 0);
   }
 
   public SeroType getDQA2() {
-    return getFromList(dqaLocus, 1);
+    return getFromPair(dqaLocus, 1);
   }
 
   public HLAType getDPB1() {
-    return getFromList(dpbLocus, 0);
+    return getFromPair(dpbLocus, 0);
   }
 
   public HLAType getDPB2() {
-    return getFromList(dpbLocus, 1);
+    return getFromPair(dpbLocus, 1);
   }
 
   public String isBw4() {
@@ -195,11 +224,18 @@ public class ValidationModel {
     return group ? "Positive" : "Negative";
   }
 
-  private <T> T getFromList(ImmutableSortedSet<T> set, int index) {
+  private <T> T getFromPair(ImmutableSortedSet<T> set, int index) {
     if (set.size() <= index) {
       return null;
     }
     return index == 0 ? set.first() : set.last();
+  }
+
+  private <T> T getFromList(ImmutableList<T> list, int index) {
+    if (list.size() <= index) {
+      return null;
+    }
+    return list.get(index);
   }
 
   @Override
@@ -315,6 +351,66 @@ public class ValidationModel {
     } else if (!source.equals(other.source))
       return false;
     return true;
+  }
+
+  @Override
+  public String toString() {
+    StringJoiner sj = new StringJoiner("\n");
+    sj.add(getDonorId());
+    sj.add(getSource());
+    addPair(sj, getA1(), getA2());
+    addPair(sj, getB1(), getB2());
+    addPair(sj, getC1(), getC2());
+    addPair(sj, getDRB1(), getDRB2());
+    addPair(sj, getDQB1(), getDQB2());
+    addPair(sj, getDQA1(), getDQA2());
+    addPair(sj, getDPB1(), getDPB2());
+    sj.add("Bw4: " + isBw4());
+    sj.add("Bw6: " + isBw6());
+    addPair(sj, getDR51_1(), getDR51_2(), "DR51");
+    addPair(sj, getDR52_1(), getDR52_2(), "DR52");
+    addPair(sj, getDR53_1(), getDR53_2(), "DR53");
+    addHaplotypes(sj, getBCHaplotypes(), "B-C Haplotype");
+    addHaplotypes(sj, getDRDQHaplotypes(), "DR-DQ Haplotype");
+
+    return sj.toString();
+  }
+
+  private void addHaplotypes(StringJoiner sj, ImmutableMultimap<Ethnicity, Haplotype> haplotypes,
+      String title) {
+    sj.add(title);
+    for (Ethnicity e : Ethnicity.values()) {
+      sj.add("\t" + e.displayString());
+      List<String> hapStrings =
+          haplotypes.get(e).stream().map(Haplotype::toString).sorted().collect(Collectors.toList());
+      hapStrings.forEach(s -> sj.add("\t" + s));
+    }
+
+  }
+
+  private void addPair(StringJoiner sj, Object s1, Object s2) {
+    addPair(sj, s1, s2, "");
+  }
+
+  private void addPair(StringJoiner sj, Object s1, Object s2, String prefix) {
+    String pair = "";
+    if (!prefix.isEmpty()) {
+      pair = prefix + ": ";
+    }
+
+    if (Objects.isNull(s1) && Objects.isNull(s2)) {
+      pair = pair + "-";
+    }
+    if (Objects.nonNull(s1) && Objects.isNull(s2)) {
+      pair = pair + s1.toString();
+    }
+    if (Objects.isNull(s1) && Objects.nonNull(s2)) {
+      pair = pair + s2.toString();
+    }
+    if (Objects.nonNull(s1) && Objects.nonNull(s2)) {
+      pair = pair + s1.toString() + " - " + s2.toString();
+    }
+    sj.add(pair);
   }
 
 }

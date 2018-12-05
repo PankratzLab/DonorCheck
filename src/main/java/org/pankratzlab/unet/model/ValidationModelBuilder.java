@@ -101,19 +101,19 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder a(String aType) {
     aLocus = makeIfNull(aLocus);
-    addToLocus(aLocus, SeroLocus.DQB, aType);
+    addToLocus(aLocus, SeroLocus.A, aType);
     return this;
   }
 
   public ValidationModelBuilder b(String bType) {
     bLocus = makeIfNull(bLocus);
-    addToLocus(bLocus, SeroLocus.DQB, bType);
+    addToLocus(bLocus, SeroLocus.B, bType);
     return this;
   }
 
   public ValidationModelBuilder c(String cType) {
     cLocus = makeIfNull(cLocus);
-    addToLocus(cLocus, SeroLocus.DQB, cType);
+    addToLocus(cLocus, SeroLocus.C, cType);
     return this;
   }
 
@@ -214,9 +214,10 @@ public class ValidationModelBuilder {
     Multimap<Ethnicity, Haplotype> drDqDR345Haplotypes = ImmutableMultimap.of();
 
     Map<HLAType, BwGroup> bwAlleleMap = makeBwAlleleMap();
-    return new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
+     ValidationModel validationModel = new ValidationModel(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
         dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus, bcCwdHaplotypes,
         drDqDR345Haplotypes, bwAlleleMap);
+     return validationModel;
   }
 
   private boolean isPositive(String dr) {
