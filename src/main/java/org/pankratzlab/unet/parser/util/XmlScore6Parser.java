@@ -29,11 +29,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
@@ -43,11 +45,13 @@ import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.base.Strings;
+import com.google.common.collect.EnumMultiset;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
 
 /**
  * Parses SCORE6 QType format to donor model
@@ -57,7 +61,6 @@ public class XmlScore6Parser {
   // -- Type assignment requires assessing allele frequencies, which are read from an HTML doc --
 
 
-  private static final String SPEC_SEPARATOR = ":";
   private static final String LOCUS_SEPARATOR = "*";
   private static final String RESULT_SEPARATOR = ",";
 
@@ -87,60 +90,61 @@ public class XmlScore6Parser {
 
   private static final String PARENT_TYPE_SEPARATOR = "/";
 
+  private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, String>> metadataMap;
+  private static ImmutableMap<HLALocus, BiConsumer<ValidationModelBuilder, String>> drbMap;
+
   // Map of Locus values to setter + type prefix
-  private static ImmutableMap<String, TypeSetter> metadataMap;
-
-  private static ImmutableMap<String, BiFunction<String, Element, List<String>>> xmlTypeMap;
-
-  private static ImmutableMap<String, TypeSetter> drbMap;
+  private static ImmutableMap<String, Function<ResultCombination, String>> specStringGeneratorMap;
 
   private static void init() {
     // -- Build mapping between loci sections, serotype prefixes and validation model setters --
-    Builder<String, TypeSetter> setterBuilder = ImmutableMap.builder();
-    setterBuilder.put(A_HEADER, new TypeSetter("A", ValidationModelBuilder::a));
-    setterBuilder.put(B_HEADER, new TypeSetter("B", ValidationModelBuilder::b));
-    setterBuilder.put(C_HEADER, new TypeSetter("Cw", ValidationModelBuilder::c));
-    setterBuilder.put(DQB_HEADER, new TypeSetter("DQ", ValidationModelBuilder::dqb));
+    Builder<String, BiConsumer<ValidationModelBuilder, String>> setterBuilder =
+        ImmutableMap.builder();
+    setterBuilder.put(A_HEADER, ValidationModelBuilder::a);
+    setterBuilder.put(B_HEADER, ValidationModelBuilder::b);
+    setterBuilder.put(C_HEADER, ValidationModelBuilder::c);
+    setterBuilder.put(DQB_HEADER, ValidationModelBuilder::dqb);
 
     // Reported as allele types
-    setterBuilder.put(DPB_HEADER, new TypeSetter("DPB1*", ValidationModelBuilder::dpb));
-    setterBuilder.put(DQA_HEADER, new TypeSetter("DQA1*", ValidationModelBuilder::dqa));
+    setterBuilder.put(DPB_HEADER, ValidationModelBuilder::dpb);
+    setterBuilder.put(DQA_HEADER, ValidationModelBuilder::dqa);
 
     // DR52/53/54 appears as a serological combination
-    setterBuilder.put(DRB_HEADER, new TypeSetter("DR", ValidationModelBuilder::drb));
+    setterBuilder.put(DRB_HEADER, ValidationModelBuilder::drb);
+
+    // -- Build mapping specifically for DRB3/4/5 alleles. These are also under the DRB header but
+    // parsed differently --
+    Builder<HLALocus, BiConsumer<ValidationModelBuilder, String>> drbBuilder =
+        ImmutableMap.builder();
+    drbBuilder.put(HLALocus.DRB3, ValidationModelBuilder::dr52);
+    drbBuilder.put(HLALocus.DRB4, ValidationModelBuilder::dr53);
+    drbBuilder.put(HLALocus.DRB5, ValidationModelBuilder::dr51);
+    drbMap = drbBuilder.build();
 
     // NB: not in DonorNet
     // setterBuilder.put("HLA-DPA1", null);
 
     metadataMap = setterBuilder.build();
 
-    // -- Build mapping specifically for DRB3/4/5 alleles. These are also under the DRB header but
-    // parsed differently --
-    Builder<String, TypeSetter> drbBuilder = ImmutableMap.builder();
-    drbBuilder.put("DRB3", new TypeSetter("DRB3*", ValidationModelBuilder::dr52));
-    drbBuilder.put("DRB4", new TypeSetter("DRB4*", ValidationModelBuilder::dr53));
-    drbBuilder.put("DRB5", new TypeSetter("DRB5*", ValidationModelBuilder::dr51));
-    drbMap = drbBuilder.build();
 
     // -- Build mapping between loci and serological/allele parsing
-    Builder<String, BiFunction<String, Element, List<String>>> xmlBuilder = ImmutableMap.builder();
-
-    xmlBuilder.put(A_HEADER, XmlScore6Parser::parseSerological);
-    xmlBuilder.put(B_HEADER, XmlScore6Parser::parseSerological);
-    xmlBuilder.put(C_HEADER, XmlScore6Parser::parseSerological);
-    xmlBuilder.put(DRB_HEADER, XmlScore6Parser::parseSerological);
-    xmlBuilder.put(DQB_HEADER, XmlScore6Parser::parseSerological);
-
-    // Reported as allele types
-    xmlBuilder.put(DPB_HEADER, XmlScore6Parser::parseAlleles);
-    xmlBuilder.put(DQA_HEADER, XmlScore6Parser::parseAlleles);
+    Builder<String, Function<ResultCombination, String>> specGeneratorBuilder =
+        ImmutableMap.builder();
+    specGeneratorBuilder.put(A_HEADER, XmlScore6Parser::getSeroSpec);
+    specGeneratorBuilder.put(B_HEADER, XmlScore6Parser::getSeroSpec);
+    specGeneratorBuilder.put(C_HEADER, XmlScore6Parser::getSeroSpec);
+    specGeneratorBuilder.put(DRB_HEADER, XmlScore6Parser::getSeroSpec);
+    specGeneratorBuilder.put(DQB_HEADER, XmlScore6Parser::getSeroSpec);
+    specGeneratorBuilder.put(DPB_HEADER, XmlScore6Parser::getAlleleSpec);
+    specGeneratorBuilder.put(DQA_HEADER, XmlScore6Parser::getDQASpec);
 
     // DR52/53/54 appears as a serological combination
-    xmlTypeMap = xmlBuilder.build();
+    specStringGeneratorMap = specGeneratorBuilder.build();
   }
 
+
   public static void buildModelFromXML(ValidationModelBuilder builder, Document doc) {
-    if (metadataMap == null) {
+    if (Objects.isNull(metadataMap)) {
       init();
     }
 
@@ -166,83 +170,68 @@ public class XmlScore6Parser {
     Optional<String> tag = DonorNetUtils.getText(typedLocus.getElementsByTag(LOCUS_TAG));
     if (tag.isPresent()) {
       String locus = tag.get();
-      if (!xmlTypeMap.containsKey(locus) || !metadataMap.containsKey(locus)) {
+      if (!metadataMap.containsKey(locus)) {
         return;
       }
-
-      TypeSetter typeSetter = metadataMap.get(locus);
 
       // Each locus has one allele results block which contains potential allele pairs
       Elements resultCombinations = typedLocus.getElementsByTag(ALLELE_RESULTS_TAG).get(0)
           .getElementsByTag(RESULT_COMBINATION_TAG);
 
-
       int selectedResult = -1;
-      List<String> types = new ArrayList<>();
-      List<String> drbResults = null;
+      List<ResultCombination> resultPairs = new ArrayList<>();
+      List<ResultCombination> drb345Pairs = new ArrayList<>();
 
       // Parse the allele pairs in the result section
-      for (int result = 0; result < resultCombinations.size(); result++) {
-        List<String> resultTypes = null;
-        Element currentCombination = resultCombinations.get(result);
-        try {
-          if (DRB_HEADER.equals(locus) && !currentCombination.toString().contains("DRB1")) {
-            // Non-DRB1 headers in the DR locus are DR5* indicators
-            List<String> parsed = XmlScore6Parser.parseAlleles("", currentCombination);
-            List<String> drbAlleles = new ArrayList<>();
-            for (String type : parsed) {
-              if (type.contains(":")) {
-                type = type.substring(0, type.indexOf(":"));
-              }
-              drbAlleles.add(type);
-            }
-            if (drbResults == null || isTestListPreferred(drbResults, drbAlleles)) {
-              drbResults = drbAlleles;
-            }
-          } else {
-            resultTypes =
-                xmlTypeMap.get(locus).apply(typeSetter.getTokenPrefix(), currentCombination);
+      for (int currentResult = 0; currentResult < resultCombinations.size(); currentResult++) {
+        Element currentCombination = resultCombinations.get(currentResult);
 
-            if (types.isEmpty()) {
-              // Record the first result
-              types.addAll(resultTypes);
-              selectedResult = result;
-            } else if (isTestListPreferred(types, resultTypes)) {
-              // If an allele pair with a better frequency weight is discovered, switch to that
-              types = resultTypes;
-              selectedResult = result;
-            }
+        List<ResultCombination> combinations = parseResultCombinations(currentCombination);
+
+        List<ResultCombination> toUpdate = resultPairs;
+
+        boolean isDRB345 =
+            DRB_HEADER.equals(locus) && !currentCombination.toString().contains("DRB1");
+
+        if (isDRB345) {
+          toUpdate = drb345Pairs;
+
+          // Ensure we only check DRB345 combinations that are consistent with the DRB1 result
+          Multiset<HLALocus> countDRB1 = countDRB1(resultPairs);
+          Multiset<HLALocus> countDRB345 = countDRB345(combinations);
+          if (countDRB345.size() > countDRB1.size() || !countDRB1.containsAll(countDRB345)) {
+            continue;
           }
-        } catch (Exception e) {
-          System.err.println(e);
-          continue;
+        }
+
+        // Check if the new set is preferred to the old set
+        if (!toUpdate.isEmpty() && isTestListPreferred(toUpdate, combinations)) {
+          toUpdate.clear();
+        }
+
+        if (toUpdate.isEmpty()) {
+          // Record this set
+          toUpdate.addAll(combinations);
+
+          if (!isDRB345) {
+            // The selected result is the selected non-DRB345 index
+            selectedResult = currentResult;
+          }
         }
       }
 
       // -- Locus-specific processing of the individual types --
-      if (!Objects.isNull(drbResults) && !drbResults.isEmpty()) {
-        for (String drbType : drbResults) {
-          for (String key : drbMap.keySet()) {
-            if (drbType.startsWith(key)) {
-              TypeSetter drbSetter = drbMap.get(key);
-              drbSetter.getSetter().accept(builder,
-                  drbType.replaceAll(drbSetter.getTokenPrefix(), ""));
-            }
+      if (!Objects.isNull(drb345Pairs) && !drb345Pairs.isEmpty()) {
+        for (ResultCombination drbType : drb345Pairs) {
+          HLAType drbAllele = drbType.getAlleleCombination();
+          if (drbMap.containsKey(drbAllele.locus())) {
+            String drbString = String.valueOf(drbAllele.spec().get(0));
+            drbMap.get(drbAllele.locus()).accept(builder, drbString);
           }
         }
       }
 
-      if (DQA_HEADER.equals(locus)) {
-        // if DQA we have to remove the higher-position spec
-        List<String> tmp = new ArrayList<>();
-        for (String type : types) {
-          if (type.contains(SPEC_SEPARATOR)) {
-            type = type.substring(0, type.indexOf(SPEC_SEPARATOR));
-          }
-          tmp.add(type);
-        }
-        types = tmp;
-      } else if (C_HEADER.equals(locus)) {
+      if (C_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResult),
             ValidationModelBuilder::cHaplotype);
       } else if (DQB_HEADER.equals(locus)) {
@@ -257,8 +246,9 @@ public class XmlScore6Parser {
         Map<Strand, BwGroup> bwMap = new HashMap<>();
 
         // Build the Bw strand map
-        for (int strandIdx = 0; strandIdx < types.size(); strandIdx++) {
-          bwMap.put(Strand.values()[strandIdx], BwSerotypes.getBwGroup(types.get(strandIdx)));
+        for (int strandIdx = 0; strandIdx < resultPairs.size(); strandIdx++) {
+          bwMap.put(Strand.values()[strandIdx],
+              BwSerotypes.getBwGroup(resultPairs.get(strandIdx).getAntigenCombination()));
         }
         builder.bwHaplotype(bwMap);
 
@@ -278,12 +268,99 @@ public class XmlScore6Parser {
       }
 
       // Finally, add the types to the model builder
-      for (String type : types) {
-        typeSetter.getSetter().accept(builder, type.replace(typeSetter.getTokenPrefix(), ""));
+      for (ResultCombination combination : resultPairs) {
+        String specString = specStringGeneratorMap.get(locus).apply(combination);
+        metadataMap.get(locus).accept(builder, specString);
       }
     }
 
   }
+
+  private static Multiset<HLALocus> countDRB1(List<ResultCombination> resultPairs) {
+    Multiset<HLALocus> drCounts = EnumMultiset.create(HLALocus.class);
+
+    resultPairs.forEach(result -> {
+      HLALocus drbLocus = DRAssociations.getDRBLocus(result.getAntigenCombination());
+
+      if (drbLocus != null) {
+        drCounts.add(drbLocus);
+      }
+    });
+
+    return drCounts;
+  }
+
+  private static Multiset<HLALocus> countDRB345(List<ResultCombination> resultPairs) {
+    Multiset<HLALocus> drCounts = EnumMultiset.create(HLALocus.class);
+
+    resultPairs.forEach(result -> {
+      HLALocus drbLocus = result.getAlleleCombination().locus();
+
+      if (drbLocus != null) {
+        drCounts.add(drbLocus);
+      }
+    });
+
+    return drCounts;
+  }
+
+
+  private static List<ResultCombination> parseResultCombinations(Element currentCombination) {
+    List<ResultCombination> combinations = new ArrayList<>();
+    for (int combination = 1; combination <= 4; combination++) {
+      ResultCombination nextResult = null;
+      try {
+        nextResult = parseCombination(currentCombination, combination);
+      } catch (Exception e) {
+        e.printStackTrace(System.err);
+      }
+      if (Objects.nonNull(nextResult)) {
+        combinations.add(nextResult);
+      }
+    }
+    return combinations;
+  }
+
+  /**
+  
+   */
+  private static ResultCombination parseCombination(Element resultCombinations,
+      int combinationIndex) {
+    if (!hasCombination(resultCombinations, combinationIndex)) {
+      return null;
+    }
+    HLAType allele = null;
+    SeroType antigen = null;
+
+    String alleleString = getFirstValidType(
+        resultCombinations.getElementsByTag(ALLELE_COMBINATION_TAG + combinationIndex));
+    String antigenString = getFirstValidType(
+        resultCombinations.getElementsByTag(SERO_COMBINATION_TAG + combinationIndex));
+
+    // Ensure these are recognized types
+    try {
+      allele = HLAType.valueOfStrict(alleleString);
+      // This type is valid
+    } catch (IllegalArgumentException e) {
+      // These types are invalid
+    }
+
+    if (Objects.nonNull(antigenString)) {
+      if (NULL_TYPE.equals(antigenString)) {
+        // This type isn't expressed
+        return null;
+      }
+      if (UNDEFINED_TOKENS.contains(antigenString)) {
+        // No serological equivalent defined so we just take the first position of the allele spec
+        antigen = new SeroType(allele.locus().sero(), allele.spec().get(0));
+      } else {
+        antigen = SeroType.valueOf(antigenString);
+      }
+    }
+
+    return new ResultCombination(antigen, allele);
+  }
+
 
   private static void addHaplotypes(ValidationModelBuilder builder, Element resultCombination,
       BiConsumer<ValidationModelBuilder, Multimap<Strand, HLAType>> haplotypeSetter) {
@@ -324,13 +401,18 @@ public class XmlScore6Parser {
    *         If the frequency is the same, the specificity values will be compared - preferring
    *         lower values.
    */
-  private static boolean isTestListPreferred(List<String> reference, List<String> test) {
-    if (Objects.isNull(test) || test.isEmpty()) {
+  private static boolean isTestListPreferred(List<ResultCombination> referenceCombinations,
+      List<ResultCombination> testCombinations) {
+    if (Objects.isNull(testCombinations) || testCombinations.isEmpty()) {
       return false;
     }
 
+    List<HLAType> reference = referenceCombinations.stream()
+        .map(ResultCombination::getAlleleCombination).collect(Collectors.toList());
+    List<HLAType> test = testCombinations.stream().map(ResultCombination::getAlleleCombination)
+        .collect(Collectors.toList());
+
     // Test if test has higher frequency alleles
-    // FIXME in many cases we're parsing serotypes, but we need alleles for CWD
     int diff = Double.compare(CommonWellDocumented.cwdScore(reference),
         CommonWellDocumented.cwdScore(test));
 
@@ -348,10 +430,11 @@ public class XmlScore6Parser {
    * @return As {@link Comparable#compareTo} when comparing each allele in the given lists, based
    *         purely on specificity numbers.
    */
-  private static int compareSpec(List<String> reference, List<String> test) {
+  private static int compareSpec(List<HLAType> reference, List<HLAType> test) {
     if (!Objects.equals(reference.size(), test.size())) {
-      String refString = reference.stream().collect(Collectors.joining(", "));
-      String testString = test.stream().collect(Collectors.joining(", "));
+      String refString =
+          reference.stream().map(HLAType::toString).collect(Collectors.joining(", "));
+      String testString = test.stream().map(HLAType::toString).collect(Collectors.joining(", "));
       throw new IllegalArgumentException(
           "Found allele combinations with different sizes: " + refString + " - " + testString);
     }
@@ -360,8 +443,8 @@ public class XmlScore6Parser {
 
     // Compare the lists until we find different types
     for (int i = 0; i < reference.size() && diff == 0; i++) {
-      HLAType refType = HLAType.valueOf(reference.get(i));
-      HLAType testType = HLAType.valueOf(test.get(i));
+      HLAType refType = reference.get(i);
+      HLAType testType = test.get(i);
 
       diff = refType.compareTo(testType);
     }
@@ -370,118 +453,100 @@ public class XmlScore6Parser {
   }
 
 
-
-  /**
-   * Parser for allele combinations from an allele-based loci
-   *
-   * @param locus - NB: Not actually used. Needed to match signature of
-   *        {@link #parseSerological(String, Element)}
-   * @return The list of alleles discovered for this combination
-   */
-  private static List<String> parseAlleles(String locus, Element combination) {
-    List<String> firstTypes = new ArrayList<>();
-
-    List<String> candidates = getFirstValidTypes(combination, ALLELE_COMBINATION_TAG);
-    for (String type : candidates) {
-      // Ensure these are recognized types
-      try {
-        HLAType.valueOfStrict(type);
-        // This type is valid
-        firstTypes.add(type);
-      } catch (IllegalArgumentException e) {
-        // These types are invalid
+  private static boolean hasCombination(Element resultCombinations, int combinationIndex) {
+    for (String combinationTag : ImmutableSet.of(ALLELE_COMBINATION_TAG, SERO_COMBINATION_TAG)) {
+      Elements results = resultCombinations.getElementsByTag(combinationTag + combinationIndex);
+      if (results.isEmpty() || !results.get(0).hasText()) {
+        return false;
       }
     }
-    return firstTypes;
+    return true;
   }
 
   /**
-   * Parser for allele combinations from an serological loci
-   *
-   * @return The list of alleles discovered for this combination
+   * @return {@code null} if there is no type at this position (homozygous or single DRB345);
+   *         {@link #NULL_TYPE} if the allele is present but not expressed; {@link #UNDEFINED_TYPE}
+   *         if the allele is expressed but has no serological equivalent.
    */
-  private static List<String> parseSerological(String locus, Element combination) {
-    List<String> types = getFirstValidTypes(combination, SERO_COMBINATION_TAG);
-    List<Integer> undefined = new ArrayList<>();
+  private static String getFirstValidType(Elements results) {
+    String typeText = null;
+    if (!results.isEmpty() && results.get(0).hasText()) {
+      String type = null;
+      String[] resultTypes = results.get(0).text().replaceAll("\\s+", "").split(RESULT_SEPARATOR);
 
-    // Check if there are undefined types in the result list and record them in reverse order
-    // (in case we have to remove some we don't want to affect the indices of earlier unknowns)
-    for (int i = types.size() - 1; i >= 0; i--) {
-      String type = types.get(i);
-      if (UNDEFINED_TOKENS.contains(type)) {
-        undefined.add(i);
+      for (int result = 0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type))
+          && result < resultTypes.length; result++) {
+        String tmp = resultTypes[result];
+        // Null and Undefined types don't take precedence over any other values
+        if (NULL_TYPE.equals(tmp) && Objects.nonNull(type)) {
+          // Null type overrides undefined, but not other types
+          continue;
+        } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type)
+            && !NULL_TYPE.equals(type)) {
+          // Undefined type overrides null, but not any other type
+          continue;
+        }
+        type = tmp;
       }
-    }
 
-    // If so, we need to look up the corresponding allele type for the undefined serotypes
-    if (!undefined.isEmpty()) {
-      List<String> alleles = parseAlleles(locus, combination);
-      for (Integer index : undefined) {
-        String allele = alleles.get(index);
-        // We have to convert the locus to the serological version
-        if (allele.indexOf(LOCUS_SEPARATOR) > 0) {
-          allele = allele.substring(allele.indexOf(LOCUS_SEPARATOR) + 1, allele.length());
-        }
-        // We also have to remove the high-resolution typing
-        if (allele.contains(SPEC_SEPARATOR)) {
-          allele = locus + allele.substring(0, allele.indexOf(SPEC_SEPARATOR));
-        }
-        types.set(index, allele);
-      }
-    }
-
-    // Finally, we ensure these are recognized types
-    for (String type : types) {
-      SeroType.valueOf(type);
-    }
-
-    return types;
-  }
-
-  /**
-   * Parses the types from an allele combination block. Each block contains 1 or more individual
-   * combinations (alleles). Each allele may have multiple results.
-   */
-  private static List<String> getFirstValidTypes(Element combinations, String tagPrefix) {
-    List<String> typeText = new ArrayList<>();
-    for (int i = 1; i < 5; i++) {
-      Elements results = combinations.getElementsByTag(tagPrefix + i);
-      if (!results.isEmpty() && results.get(0).hasText()) {
-        String type = null;
-        String[] resultTypes = results.get(0).text().replaceAll("\\s+", "").split(RESULT_SEPARATOR);
-
-        for (int result = 0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type))
-            && result < resultTypes.length; result++) {
-          String tmp = resultTypes[result];
-          // Null and Undefined types don't take precedence over any other values
-
-          if (NULL_TYPE.equals(tmp) && Objects.nonNull(type) && !UNDEFINED_TOKENS.contains(type)) {
-            // Null type overrides undefined, but not other types
-            continue;
-          } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type)) {
-            // Undefined type overrides null, but not any other type
-            continue;
-          }
-          type = tmp;
-        }
-
-        if (Objects.isNull(type)) {
-          // No valid values - set as Undefined
-          type = UNDEFINED_TYPE;
-        }
-
+      if (Objects.nonNull(type)) {
         // Sometimes the inheritance structure of the types is listed. We only want the first (most
         // specific) type.
         if (type.contains(PARENT_TYPE_SEPARATOR)) {
           type = type.substring(0, type.indexOf(PARENT_TYPE_SEPARATOR));
         }
 
-        // If the only result is {@link #NULL_TYPE}, the allele is skipped (homozygous).
-        if (!NULL_TYPE.equals(type)) {
-          typeText.add(type);
-        }
+        typeText = type;
       }
     }
     return typeText;
+  }
+
+  private static String getSeroSpec(ResultCombination combination) {
+    return combination.getAntigenCombination().specString();
+  }
+
+  private static String getAlleleSpec(ResultCombination combination) {
+    HLAType allele = combination.getAlleleCombination();
+    // Cap the allele fields to two
+    allele = new HLAType(allele.locus(), allele.spec().subList(0, 2));
+    return allele.specString();
+  }
+
+  private static String getDQASpec(ResultCombination combination) {
+    // if DQA we have to remove the higher-position spec
+    return String.valueOf(combination.getAlleleCombination().spec().get(0));
+  }
+
+  private static class ResultCombination {
+    private final SeroType antigenCombination;
+    private final HLAType alleleCombination;
+
+    public ResultCombination(@Nonnull SeroType antigenCombination,
+        @Nonnull HLAType alleleCombination) {
+      super();
+      try {
+        Objects.requireNonNull(antigenCombination);
+        Objects.requireNonNull(alleleCombination);
+      } catch (NullPointerException e) {
+        System.out.println();
+      }
+      this.alleleCombination = alleleCombination;
+      this.antigenCombination = antigenCombination;
+    }
+
+    @Override
+    public String toString() {
+      return "ResultCombination [antigenCombination=" + antigenCombination + ", alleleCombination="
+          + alleleCombination + "]";
+    }
+
+    public SeroType getAntigenCombination() {
+      return antigenCombination;
+    }
+
+    public HLAType getAlleleCombination() {
+      return alleleCombination;
+    }
   }
 }

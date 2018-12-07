@@ -60,24 +60,4 @@ public final class BwSerotypes {
   public static final BwGroup getBwGroup(SeroType antigen) {
     return getBwGroup(antigen.toString());
   }
-
-  public static final BwGroup getBwGroup(HLAType allele) {
-    BwGroup result = BwGroup.Unknown;
-    for (String antigen : ImmutableSet.of(makeAntigen(allele, 2), makeAntigen(allele, 1))) {
-
-      if (BwGroup.Unknown.equals(result)) {
-        result = getBwGroup(antigen);
-      }
-    }
-    return result;
-  }
-
-  private static String makeAntigen(HLAType allele, int resolution) {
-    List<Integer> spec = allele.spec();
-    String antigen = allele.locus().sero().toString();
-    for (int i = 0; i < resolution; i++) {
-      antigen += spec.get(i);
-    }
-    return antigen;
-  }
 }

@@ -23,7 +23,6 @@ package org.pankratzlab.unet.hapstats;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -39,6 +38,9 @@ import com.google.common.collect.Multimap;
  * Utility class for reporting common/well-documented status of alleles
  */
 public final class CommonWellDocumented {
+
+  private CommonWellDocumented() {};
+
   private static final String P_TYPE_SUFFIX = "P";
   private static final String G_TYPE_SUFFIX = "G";
   private static final String FREQ_TABLE = "table";
@@ -112,35 +114,27 @@ public final class CommonWellDocumented {
 
   public static Status getStatus(HLAType type) {
     HLAType equivType = AlleleGroups.getGGroup(type);
-    if (!ALLELE_FREQS.containsKey(equivType)) {
-      return Status.UNKNOWN;
-    }
-    return ALLELE_FREQS.get(equivType);
-  }
 
-  public static double cwdScore(String... alleles) {
-    return cwdScore(Arrays.asList(alleles));
+    if (ALLELE_FREQS.containsKey(equivType)) {
+      return ALLELE_FREQS.get(equivType);
+    }
+
+    return Status.UNKNOWN;
   }
 
   /**
    * @param alleles Set of alleles
    * @return A combined weighting of the input allele set, based on their CWD frequencies
    */
-  public static double cwdScore(List<String> alleles) {
+  public static double cwdScore(List<HLAType> alleles) {
     double score = 0;
 
-    for (String allele : alleles) {
-      HLAType type = HLAType.valueOf(allele);
-      if (type.spec().size() == 1) {
-        // If we have an antigen, default to spec *:01 
-        type = new HLAType(type.locus(), type.spec().get(0), 1);
-      }
+    for (HLAType type : alleles) {
       Status status = getStatus(type);
       score += status.getWeight();
     }
     return score;
   }
 
-  private CommonWellDocumented() {}
 
 }
