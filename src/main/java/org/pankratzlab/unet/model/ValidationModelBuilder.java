@@ -232,6 +232,9 @@ public class ValidationModelBuilder {
     if (Objects.nonNull(bHaplotypes) && Objects.nonNull(bwHaplotypes)) {
       for (Strand strand : bHaplotypes.keySet()) {
         BwGroup bw = bwHaplotypes.get(strand);
+        if (Objects.isNull(bw)) {
+          bw = BwGroup.Unknown;
+        }
         for (HLAType allele : bHaplotypes.get(strand)) {
           bwMap.put(allele, bw);
         }
