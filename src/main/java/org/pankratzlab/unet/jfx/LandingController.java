@@ -21,7 +21,6 @@
  */
 package org.pankratzlab.unet.jfx;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -54,6 +53,7 @@ import javafx.scene.layout.BorderPane;
  */
 public class LandingController {
 
+  private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String XML_TUTORIAL = "/XMLDownloadTutorial.fxml";
   private static final String HTML_TUTORIAL = "/HTMLDownloadTutorial.fxml";
 
@@ -153,8 +153,7 @@ public class LandingController {
   @FXML
   void initialize() {
     assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
-
-    CurrentDirectoryProvider.setBaseDir(new File(System.getProperty("user.home")));
+    System.setProperty(CurrentDirectoryProvider.BASE_DIR_PROP_NAME, UNET_BASE_DIR_PROP);
   }
 
 }
