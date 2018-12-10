@@ -185,13 +185,21 @@ public class XmlScore6Parser {
       // Parse the allele pairs in the result section
       for (int currentResult = 0; currentResult < resultCombinations.size(); currentResult++) {
         Element currentCombination = resultCombinations.get(currentResult);
-
-        List<ResultCombination> combinations = parseResultCombinations(currentCombination);
-
-        List<ResultCombination> toUpdate = resultPairs;
+        HLALocus locusType = null;
 
         boolean isDRB345 =
             DRB_HEADER.equals(locus) && !currentCombination.toString().contains("DRB1");
+
+        if (isDRB345) {
+          locusType = parseDRBHeader(currentCombination.toString());
+        } else {
+          locusType = HLALocus.safeValueOf(locus.substring(locus.indexOf("-") + 1));
+        }
+
+        List<ResultCombination> combinations =
+            parseResultCombinations(currentCombination, locusType);
+
+        List<ResultCombination> toUpdate = resultPairs;
 
         if (isDRB345) {
           toUpdate = drb345Pairs;
@@ -276,6 +284,19 @@ public class XmlScore6Parser {
 
   }
 
+  private static HLALocus parseDRBHeader(String xml) {
+    Set<HLALocus> drbLoci =
+        ImmutableSet.of(HLALocus.DRB1, HLALocus.DRB3, HLALocus.DRB4, HLALocus.DRB5);
+
+    for (HLALocus locus : drbLoci) {
+      if (xml.contains(locus.toString() + "*")) {
+        return locus;
+      }
+    }
+    throw new IllegalArgumentException("XML does not contain DRB locus: " + xml);
+  }
+
+
   private static Multiset<HLALocus> countDRB1(List<ResultCombination> resultPairs) {
     Multiset<HLALocus> drCounts = EnumMultiset.create(HLALocus.class);
 
@@ -305,12 +326,13 @@ public class XmlScore6Parser {
   }
 
 
-  private static List<ResultCombination> parseResultCombinations(Element currentCombination) {
+  private static List<ResultCombination> parseResultCombinations(Element currentCombination,
+      HLALocus locus) {
     List<ResultCombination> combinations = new ArrayList<>();
     for (int combination = 1; combination <= 4; combination++) {
       ResultCombination nextResult = null;
       try {
-        nextResult = parseCombination(currentCombination, combination);
+        nextResult = parseCombination(currentCombination, combination, locus);
       } catch (Exception e) {
         e.printStackTrace(System.err);
       }
@@ -322,10 +344,11 @@ public class XmlScore6Parser {
   }
 
   /**
-  
+   * @param locus
+   * 
    */
   private static ResultCombination parseCombination(Element resultCombinations,
-      int combinationIndex) {
+      int combinationIndex, HLALocus locus) {
     if (!hasCombination(resultCombinations, combinationIndex)) {
       return null;
     }
@@ -339,7 +362,11 @@ public class XmlScore6Parser {
 
     // Ensure these are recognized types
     try {
-      allele = HLAType.valueOfStrict(alleleString);
+      if (!alleleString.contains("*")) {
+        // picked a combination with no locus so we have to add it manually
+        alleleString = locus.toString() + alleleString;
+      }
+      allele = HLAType.valueOf(alleleString);
       // This type is valid
     } catch (IllegalArgumentException e) {
       // These types are invalid
@@ -484,6 +511,10 @@ public class XmlScore6Parser {
         } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type)
             && !NULL_TYPE.equals(type)) {
           // Undefined type overrides null, but not any other type
+          continue;
+        } else if (tmp.matches(".+[0-9]+[LSCAQlscaq]$")) {
+          // This is an allele which is unlikely to be expressed, per
+          // http://hla.alleles.org/nomenclature/naming.html
           continue;
         }
         type = tmp;
