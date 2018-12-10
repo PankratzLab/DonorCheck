@@ -58,8 +58,10 @@ import com.google.common.collect.Multiset;
  */
 public class XmlScore6Parser {
 
-  // -- Type assignment requires assessing allele frequencies, which are read from an HTML doc --
+  private static final String NOT_ON_CELL_SURFACE = ".+[0-9]+[LSCAQlscaq]$";
+  private static final String NOT_EXPRESSED = ".+[0-9]+[Nn]$";
 
+  // -- Type assignment requires assessing allele frequencies, which are read from an HTML doc --
 
   private static final String LOCUS_SEPARATOR = "*";
   private static final String RESULT_SEPARATOR = ",";
@@ -501,18 +503,23 @@ public class XmlScore6Parser {
       String type = null;
       String[] resultTypes = results.get(0).text().replaceAll("\\s+", "").split(RESULT_SEPARATOR);
 
-      for (int result = 0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type))
-          && result < resultTypes.length; result++) {
+      for (int result =
+          0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type) || isNullType(type))
+              && result < resultTypes.length; result++) {
         String tmp = resultTypes[result];
+        if (tmp.isEmpty()) {
+          // Sometimes a leading comma can create empty strings - skip these
+          continue;
+        }
+
         // Null and Undefined types don't take precedence over any other values
-        if (NULL_TYPE.equals(tmp) && Objects.nonNull(type)) {
+        if (isNullType(tmp) && Objects.nonNull(type)) {
           // Null type overrides undefined, but not other types
           continue;
-        } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type)
-            && !NULL_TYPE.equals(type)) {
+        } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type) && !isNullType(type)) {
           // Undefined type overrides null, but not any other type
           continue;
-        } else if (tmp.matches(".+[0-9]+[LSCAQlscaq]$")) {
+        } else if (tmp.matches(NOT_ON_CELL_SURFACE)) {
           // This is an allele which is unlikely to be expressed, per
           // http://hla.alleles.org/nomenclature/naming.html
           continue;
@@ -532,6 +539,11 @@ public class XmlScore6Parser {
     }
     return typeText;
   }
+
+  private static boolean isNullType(String tmp) {
+    return NULL_TYPE.equals(tmp) || tmp.matches(NOT_EXPRESSED);
+  }
+
 
   private static String getSeroSpec(ResultCombination combination) {
     return combination.getAntigenCombination().specString();
