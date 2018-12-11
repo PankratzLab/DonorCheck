@@ -130,6 +130,10 @@ public class PdfSureTyperParser {
     }
   }
 
+  /**
+   * Helper method to parse the summary section. This is where the selected DRB345 alleles are
+   * stored.
+   */
   private static int parseSummary(String[] lines, StringJoiner typeAssignment, int currentLine) {
     // go line-by-line, split on whitespace, look for DRB[3/4/5]* tokens and convert to line
     final ImmutableSet<String> validLoci = ImmutableSet.of(HLALocus.DRB3.toString(),
@@ -172,6 +176,10 @@ public class PdfSureTyperParser {
 
   }
 
+  /**
+   * Helper method to parse the possible haplotypes. These are long lists of possible alleles,
+   * divided by HLA locus.
+   */
   private static int parseHaplotype(String[] lines, int currentLine, String locus,
       Multimap<Strand, HLAType> strandMap, Map<Strand, BwGroup> bwMap) {
     // Sections start with a line containing JUST HLA_A/b/c etc..
@@ -239,6 +247,9 @@ public class PdfSureTyperParser {
     return --currentLine;
   }
 
+  /**
+   * Helper method to parse the laboratory assigned types. These are what will be reported to UNOS.
+   */
   private static int parseAssignment(String[] lines, StringJoiner typeAssignment, int currentLine) {
     String line = null;
     // Read until we hit the end of the typing

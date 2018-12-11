@@ -22,6 +22,7 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.jms.IllegalStateException;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -108,7 +109,7 @@ public abstract class ValidationRow<T> {
    * @return The String representation of the given type
    * @throws IllegalStateException if the type is not one of supported values
    */
-  protected abstract String getDisplayString(T toDisplay) throws IllegalStateException;
+  protected abstract String getDisplayString(@Nullable T toDisplay) throws IllegalStateException;
 
   /**
    * @return true iff the XML and PDF column values are the same

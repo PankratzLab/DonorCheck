@@ -22,9 +22,13 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.jms.IllegalStateException;
 import org.pankratzlab.hla.SeroType;
 
+/**
+ * {@link ValidationRow} for displaying {@link SeroType}s
+ */
 public class AntigenValidationRow extends ValidationRow<SeroType> {
 
   public AntigenValidationRow(String rowLabel, SeroType firstCol, SeroType secondCol) {
@@ -32,7 +36,7 @@ public class AntigenValidationRow extends ValidationRow<SeroType> {
   }
 
   @Override
-  protected String getDisplayString(SeroType toDisplay) throws IllegalStateException {
+  protected String getDisplayString(@Nullable SeroType toDisplay) throws IllegalStateException {
     if (Objects.isNull(toDisplay)) {
       return "";
     }

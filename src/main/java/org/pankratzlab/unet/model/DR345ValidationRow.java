@@ -22,11 +22,16 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.jms.IllegalStateException;
 import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import com.google.common.collect.ImmutableSet;
 
+/**
+ * {@link AlleleValidationRow} for alleles of the DRB345 loci. Unlike other alleles, instead of
+ * displaying blank when absent (null), these display a {@link #NULL_STRING}
+ */
 public class DR345ValidationRow extends AlleleValidationRow {
   private static final String NULL_STRING = "Negative";
   private static final ImmutableSet<HLALocus> VALID_LOCI =
@@ -40,13 +45,16 @@ public class DR345ValidationRow extends AlleleValidationRow {
     }
   }
 
+  /**
+   * @return true if the given type is an HLA345 type.
+   */
   private boolean isInvalidCol(HLAType colValue) {
     // An invalid value is a non-null HLAType with a locus outside the valid set
     return !(Objects.isNull(colValue) || VALID_LOCI.contains(colValue.locus()));
   }
 
   @Override
-  protected String getDisplayString(HLAType toDisplay) throws IllegalStateException {
+  protected String getDisplayString(@Nullable HLAType toDisplay) throws IllegalStateException {
     if (Objects.isNull(toDisplay)) {
       return NULL_STRING;
     }

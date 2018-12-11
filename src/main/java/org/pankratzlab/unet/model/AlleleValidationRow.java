@@ -22,9 +22,13 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.jms.IllegalStateException;
 import org.pankratzlab.hla.HLAType;
 
+/**
+ * {@link ValidationRow} for displaying {@link HLAType}s
+ */
 public class AlleleValidationRow extends ValidationRow<HLAType> {
 
   public AlleleValidationRow(String rowLabel, HLAType firstCol, HLAType secondCol) {
@@ -32,7 +36,7 @@ public class AlleleValidationRow extends ValidationRow<HLAType> {
   }
 
   @Override
-  protected String getDisplayString(HLAType toDisplay) throws IllegalStateException {
+  protected String getDisplayString(@Nullable HLAType toDisplay) throws IllegalStateException {
     if (Objects.isNull(toDisplay)) {
       return "";
     }

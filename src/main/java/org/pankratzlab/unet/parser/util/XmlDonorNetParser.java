@@ -131,7 +131,7 @@ public class XmlDonorNetParser {
   }
 
   private static void init() {
-    // NB: the DonorNet XML export uses linear numbering (e.g. 1-100) for the DPB and DQA loci.
+    // NB: the DonorNet XML export uses linear numbering for the DPB, DQA, and DR51/52/53 loci.
     // All other loci export their actual specificities. Thus we have to map from the linear
     // numbers to specificities. These files contain mappings for the given locus and need to be
     // updated if the DonorNet pages ever change.

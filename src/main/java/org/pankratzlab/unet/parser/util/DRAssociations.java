@@ -27,15 +27,16 @@ import org.pankratzlab.hla.SeroType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
+/**
+ * Static utility class to track DRB345 associations with DRB1 alleles. This can be used to
+ * determine possible DRB345 combinations if the DRB1 allele is known.
+ */
 public final class DRAssociations {
   private DRAssociations() {};
 
   // NONE : DRB1* 01, 08, 10
-  //
-  // DRB3 - 52 : DRB1* 03, 11, 12, 13, 14
-  //
+  // DRB3 - 52 : DRB1* 03, 11, 12, 13, 14, 17(3), 18(3)
   // DRB4 - 53 : DRB1* 04, 07, 09
-  //
   // DRB5 - 51 : DRB1* 15, 16
   private static ImmutableMap<SeroType, HLALocus> DR_MAP;
 
@@ -64,6 +65,10 @@ public final class DRAssociations {
     return DR_MAP;
   }
 
+  /**
+   * @param drType {@link SeroType} representation of a DRB1 antigen
+   * @return The corresponding DRB345 {@link HLALocus} or {@code null} if no match.
+   */
   public static HLALocus getDRBLocus(SeroType drType) {
     if (Objects.nonNull(drType) && drMap().containsKey(drType)) {
       return drMap().get(drType);

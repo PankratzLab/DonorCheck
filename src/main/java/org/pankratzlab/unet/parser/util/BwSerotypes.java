@@ -45,6 +45,10 @@ public final class BwSerotypes {
       "B48", "B50", "B54", "B55", "B56", "B60", "B61", "B62", "B64", "B65", "B67", "B70", "B71",
       "B72", "B73", "B75", "B76", "B78", "B81", "B82");
 
+  /**
+   * @return the {@link BwGroup} matching the given antigen string
+   * @see #getBwGroup(SeroType)
+   */
   public static final BwGroup getBwGroup(String antigen) {
     if (BW6.contains(antigen)) {
       return BwGroup.Bw6;
@@ -55,6 +59,10 @@ public final class BwSerotypes {
     return BwGroup.Unknown;
   }
 
+  /**
+   * @return the {@link BwGroup} matching the given {@link SeroType}
+   * @see #getBwGroup(String)
+   */
   public static final BwGroup getBwGroup(SeroType antigen) {
     return getBwGroup(antigen.toString());
   }
