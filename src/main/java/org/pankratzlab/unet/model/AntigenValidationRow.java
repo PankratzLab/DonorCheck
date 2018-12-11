@@ -40,7 +40,8 @@ public class AntigenValidationRow extends ValidationRow<SeroType> {
     return toDisplay.specString();
   }
 
-  public static AntigenValidationRow makeRow(String rowLabel, SeroType firstCol, SeroType secondCol) {
+  public static AntigenValidationRow makeRow(String rowLabel, SeroType firstCol,
+      SeroType secondCol) {
     return new AntigenValidationRow(rowLabel, firstCol, secondCol);
   }
 }

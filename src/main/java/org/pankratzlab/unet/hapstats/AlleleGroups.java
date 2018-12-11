@@ -98,19 +98,19 @@ public final class AlleleGroups {
           equivs.add(getAllele(locus, spec));
         }
 
-//        equivs.forEach(equivAllele -> {
-//          builder.put(equivAllele, rootAllele);
-//          if (typeMap.put(equivAllele, rootAllele) == null) {
-//            System.out.println("");
-//          }
-//        });
+        // equivs.forEach(equivAllele -> {
+        // builder.put(equivAllele, rootAllele);
+        // if (typeMap.put(equivAllele, rootAllele) == null) {
+        // System.out.println("");
+        // }
+        // });
         for (HLAType equivAllele : equivs) {
           builder.put(equivAllele, rootAllele);
           HLAType old = typeMap.put(equivAllele, rootAllele);
           if (old != null) {
             System.out.println("");
           }
-          
+
         }
 
       }

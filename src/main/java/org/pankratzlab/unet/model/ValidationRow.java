@@ -64,14 +64,15 @@ public abstract class ValidationRow<T> {
 
     // Ultimately we want to display a String representation of each column value. This string
     // unfortunately depends on the underlying data type.
-    firstColStringWrapper.bind(
-        Bindings.createStringBinding(() -> getDisplayString(firstColWrapper.get()), firstColWrapper));
+    firstColStringWrapper.bind(Bindings
+        .createStringBinding(() -> getDisplayString(firstColWrapper.get()), firstColWrapper));
     secondColStringWrapper = new ReadOnlyStringWrapper();
-    secondColStringWrapper.bind(
-        Bindings.createStringBinding(() -> getDisplayString(secondColWrapper.get()), secondColWrapper));
+    secondColStringWrapper.bind(Bindings
+        .createStringBinding(() -> getDisplayString(secondColWrapper.get()), secondColWrapper));
 
     isValidWrapper = new ReadOnlyBooleanWrapper();
-    isValidWrapper.bind(Bindings.createBooleanBinding(this::isValid, firstColWrapper, secondColWrapper));
+    isValidWrapper
+        .bind(Bindings.createBooleanBinding(this::isValid, firstColWrapper, secondColWrapper));
   }
 
   /**
@@ -107,7 +108,7 @@ public abstract class ValidationRow<T> {
    * @return The String representation of the given type
    * @throws IllegalStateException if the type is not one of supported values
    */
-  protected  abstract String getDisplayString(T toDisplay) throws IllegalStateException;
+  protected abstract String getDisplayString(T toDisplay) throws IllegalStateException;
 
   /**
    * @return true iff the XML and PDF column values are the same

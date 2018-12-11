@@ -111,7 +111,7 @@ public final class DonorNetUtils {
         val = text;
       }
     }
-  
+
     return Optional.ofNullable(val);
   }
 }
