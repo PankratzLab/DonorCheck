@@ -29,6 +29,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import org.jsoup.select.Elements;
 import org.pankratzlab.hla.CurrentDirectoryProvider;
+import org.pankratzlab.hla.LoggingPlaceholder;
 import com.google.common.collect.ImmutableMap;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
@@ -93,8 +94,13 @@ public final class DonorNetUtils {
     if (Objects.nonNull(node)) {
       owner = node.getScene().getWindow();
     }
-    File selectedFile =
-        open ? fileChooser.showOpenDialog(owner) : fileChooser.showSaveDialog(owner);
+    File selectedFile = null;
+
+    try {
+        selectedFile = open ? fileChooser.showOpenDialog(owner) : fileChooser.showSaveDialog(owner);
+    } catch (Exception e) {
+      LoggingPlaceholder.reportError(e);
+    }
 
     return Optional.ofNullable(selectedFile);
   }
