@@ -43,6 +43,7 @@ import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
@@ -119,7 +120,13 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder drb(String drbType) {
     drbLocus = makeIfNull(drbLocus);
-    addToLocus(drbLocus, SeroLocus.DRB, drbType);
+    if (!Strings.isNullOrEmpty(drbType)
+        && Objects.equals(103, Integer.parseInt(drbType.replaceAll(":", "").trim()))) {
+      // UNOS explicitly requires DRB1*01:03 to be reported as DRB0103
+      drbLocus.add(new SeroType(SeroLocus.DRB, "0103"));
+    } else {
+      addToLocus(drbLocus, SeroLocus.DRB, drbType);
+    }
     return this;
   }
 
