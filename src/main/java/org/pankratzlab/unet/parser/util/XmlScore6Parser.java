@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -134,13 +135,13 @@ public class XmlScore6Parser {
     // -- Build mapping between loci and serological/allele parsing
     Builder<String, Function<ResultCombination, String>> specGeneratorBuilder =
         ImmutableMap.builder();
-    specGeneratorBuilder.put(A_HEADER, XmlScore6Parser::getSeroSpec);
-    specGeneratorBuilder.put(B_HEADER, XmlScore6Parser::getSeroSpec);
-    specGeneratorBuilder.put(C_HEADER, XmlScore6Parser::getSeroSpec);
-    specGeneratorBuilder.put(DRB_HEADER, XmlScore6Parser::getSeroSpec);
-    specGeneratorBuilder.put(DQB_HEADER, XmlScore6Parser::getSeroSpec);
+    specGeneratorBuilder.put(A_HEADER, XmlScore6Parser::getAlleleSpec);
+    specGeneratorBuilder.put(B_HEADER, XmlScore6Parser::getAlleleLookup);
+    specGeneratorBuilder.put(C_HEADER, XmlScore6Parser::getAlleleLookup);
+    specGeneratorBuilder.put(DRB_HEADER, XmlScore6Parser::getAlleleLookup);
+    specGeneratorBuilder.put(DQB_HEADER, XmlScore6Parser::getAlleleLookup);
     specGeneratorBuilder.put(DPB_HEADER, XmlScore6Parser::getAlleleSpec);
-    specGeneratorBuilder.put(DQA_HEADER, XmlScore6Parser::getDQASpec);
+    specGeneratorBuilder.put(DQA_HEADER, XmlScore6Parser::getAlleleSpec);
 
     // DR52/53/54 appears as a serological combination
     specStringGeneratorMap = specGeneratorBuilder.build();
@@ -575,28 +576,33 @@ public class XmlScore6Parser {
   }
 
   /**
-   * @return The {@link SeroType} specificity of an allele + antigen pairing
+   * @return The specificity of alleles with special lookup rules
    */
-  private static String getSeroSpec(ResultCombination combination) {
-    return combination.getAntigenCombination().specString();
+  private static String getAlleleLookup(ResultCombination combination) {
+    SeroType st = SerotypeEquivalence.get(combination.getAlleleCombination());
+    if (st != null) {
+      return st.specString();
+    }
+
+    // Not a special case allele - use standard rules
+    return getAlleleSpec(combination);
   }
 
   /**
    * @return The {@link HLAType} specificity of an allele + antigen pairing
    */
   private static String getAlleleSpec(ResultCombination combination) {
-    HLAType allele = combination.getAlleleCombination();
-    // Cap the allele fields to two
-    allele = new HLAType(allele.locus(), allele.spec().subList(0, 2));
-    return allele.specString();
-  }
+    // Standard operating procedure is to just report the first field of the allele
+    HLAType hlaType = combination.getAlleleCombination();
+    StringJoiner sj = new StringJoiner(":");
+    sj.add(String.valueOf(hlaType.spec().get(0)));
 
-  /**
-   * As {@link #getAlleleSpec(ResultCombination)} but always limit the specificity to one position.
-   */
-  private static String getDQASpec(ResultCombination combination) {
-    // if DQA we have to remove the higher-position spec
-    return String.valueOf(combination.getAlleleCombination().spec().get(0));
+    if (Objects.equals(HLALocus.DPA1, hlaType.locus()) || Objects.equals(HLALocus.DPB1, hlaType.locus())) {
+      // DPA and DPB report two fields
+      sj.add(String.valueOf(hlaType.spec().get(1)));
+    }
+
+    return sj.toString();
   }
 
   /**
