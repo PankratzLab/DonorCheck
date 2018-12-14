@@ -36,14 +36,14 @@ public class Haplotype {
   private final ImmutableSortedSet<HLAType> types;
 
   public Haplotype(Collection<HLAType> types) {
-    if (types.size() != 2) {
+    if (types.size() < 2) {
       throw new IllegalStateException("Invalid haplotype: " + types.toString());
     }
     this.types = ImmutableSortedSet.copyOf(types);
   }
 
-  public Haplotype(HLAType typeOne, HLAType typeTwo) {
-    this(ImmutableSet.of(typeOne, typeTwo));
+  public Haplotype(HLAType... types) {
+    this(ImmutableSet.copyOf(types));
   }
 
   /**

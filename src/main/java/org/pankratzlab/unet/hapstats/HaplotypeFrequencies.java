@@ -24,20 +24,25 @@ package org.pankratzlab.unet.hapstats;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 
 /**
  * Static utility class for accessing haplotype frequencies for B-C and DR-DQ haplotypes
  */
 public final class HaplotypeFrequencies {
+  private static final String DR_DQ_TABLE = "/2013_DRB3-4-5_DRB1_DQB1.csv";
+  private static final String BC_TABLE = "/2013_C_B.csv";
+  private static final String FREQ_COL_SUFFIX = "_freq";
   private static final Map<Haplotype, HaplotypeFrequency> TABLES;
 
   private HaplotypeFrequencies() {}
@@ -45,8 +50,8 @@ public final class HaplotypeFrequencies {
   static {
     // Initialize the haplotype tables
     Builder<Haplotype, HaplotypeFrequency> frequencyMapBuilder = ImmutableMap.builder();
-    buildTable(frequencyMapBuilder, "C", "B", "/NMDP_CB.csv");
-    buildTable(frequencyMapBuilder, "DRB1", "DQB1", "/NMDP_DRB1DQB1.csv");
+    buildTable(frequencyMapBuilder, BC_TABLE, "C", "B");
+    buildTable(frequencyMapBuilder, DR_DQ_TABLE, "DRB3-4-5", "DRB1", "DQB1");
 
     TABLES = frequencyMapBuilder.build();
   }
@@ -55,23 +60,25 @@ public final class HaplotypeFrequencies {
    * Helper method to build a haplotype table from a CSV file from NMDP
    */
   private static void buildTable(Builder<Haplotype, HaplotypeFrequency> frequencyTableBuilder,
-      String firstHeader, String secondHeader, String tablePath) {
+      String tablePath, String... headers) {
 
     try (Reader in =
         new InputStreamReader(HaplotypeFrequencies.class.getResourceAsStream(tablePath))) {
       CSVFormat csvFormat = CSVFormat.EXCEL.withFirstRecordAsHeader();
       Iterable<CSVRecord> records = csvFormat.parse(in);
 
-      HLALocus firstLocus = HLALocus.valueOf(firstHeader);
-      HLALocus secondLocus = HLALocus.valueOf(secondHeader);
-
       // Process each haplotype entry
       records.forEach(next -> {
-        Haplotype haplotype = new Haplotype(makeType(firstLocus, next, firstHeader),
-            makeType(secondLocus, next, secondHeader));
-        Map<Ethnicity, Double> hapMap = new HashMap<>();
-        for (Ethnicity e : Ethnicity.values()) {
-          hapMap.put(e, Double.parseDouble(next.get(e)));
+        Set<HLAType> types  = new HashSet<>();
+        for (String header : headers) {
+          types.add(makeType(next, header));
+        }
+        Haplotype haplotype = new Haplotype(types);
+        Multimap<RaceGroup, Double> hapMap = MultimapBuilder.hashKeys().arrayListValues().build();
+        // Values are stored as RaceCode frequencies, but we want to condense them to RaceGroups
+        for (RaceCode code : RaceCode.values()) {
+          hapMap.put(code.getRaceGroup(),
+              Double.parseDouble(next.get(code.toString() + FREQ_COL_SUFFIX)));
         }
         frequencyTableBuilder.put(haplotype, new HaplotypeFrequency(hapMap));
       });
@@ -84,10 +91,13 @@ public final class HaplotypeFrequencies {
   /**
    * Convert a record to a {@link HLAType}
    */
-  private static HLAType makeType(HLALocus locus, CSVRecord record, String specificityHeader) {
-    String specificity = record.get(specificityHeader).replaceAll("[a-zA-Z]", "");
-    // All specificities are 4 characters, to be split into two groups of two.
-    return new HLAType(locus, specificity.substring(0, 2), specificity.substring(2));
+  private static HLAType makeType(CSVRecord record, String specificityHeader) {
+    String alleleString = record.get(specificityHeader);
+    if (alleleString.endsWith("N")) {
+      // this is a null type which we do want to record
+      return null;
+    }
+    return AlleleGroups.getGroupAllele(alleleString);
   }
 
   /**
@@ -97,9 +107,9 @@ public final class HaplotypeFrequencies {
    * @return The population frequency in the specified ethnicity of the haplotype containing these
    *         two types
    * 
-   * @see #getFrequency(Ethnicity, Haplotype)
+   * @see #getFrequency(RaceGroup, Haplotype)
    */
-  public static Double getFrequency(Ethnicity ethnicity, HLAType typeOne, HLAType typeTwo) {
+  public static Double getFrequency(RaceGroup ethnicity, HLAType typeOne, HLAType typeTwo) {
     return getFrequency(ethnicity, new Haplotype(typeOne, typeTwo));
   }
 
@@ -109,7 +119,7 @@ public final class HaplotypeFrequencies {
    * @return The population frequency in the specified ethnicity of the haplotype containing these
    *         two types
    */
-  public static Double getFrequency(Ethnicity ethnicity, Haplotype haplotype) {
+  public static Double getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
     Haplotype equivHaplotype = new Haplotype(
         haplotype.getTypes().stream().map(AlleleGroups::getGGroup).collect(Collectors.toSet()));
 
@@ -121,29 +131,20 @@ public final class HaplotypeFrequencies {
 
 
   /**
-   * Enum of ethnicities known in Haplotype CSVs
-   */
-  public static enum Ethnicity {
-    EUR_freq, AFA_freq, API_freq, HIS_freq;
-
-    private static final String SEPARATOR = "_";
-
-    public String displayString() {
-      return name().substring(0, name().indexOf(SEPARATOR));
-    }
-  }
-
-  /**
-   * Helper class linking {@link Ethnicity} and frequency values for a particular Haplotype
+   * Helper class linking {@link RaceGroup} and frequency values for a particular Haplotype
    */
   private static class HaplotypeFrequency {
-    private final ImmutableMap<Ethnicity, Double> frequencyForEthnicity;
+    private final ImmutableMap<RaceGroup, Double> frequencyForEthnicity;
 
-    private HaplotypeFrequency(Map<Ethnicity, Double> frequencyByEth) {
-      this.frequencyForEthnicity = ImmutableMap.copyOf(frequencyByEth);
+    private HaplotypeFrequency(Multimap<RaceGroup, Double> hapMap) {
+      Builder<RaceGroup, Double> builder = ImmutableMap.builder();
+      for (RaceGroup group : hapMap.keySet()) {
+        builder.put(group, hapMap.get(group).stream().mapToDouble(Double::doubleValue).sum());
+      }
+      this.frequencyForEthnicity = builder.build();
     }
 
-    private Double getFrequencyForEthnicity(Ethnicity e) {
+    private Double getFrequencyForEthnicity(RaceGroup e) {
       return frequencyForEthnicity.get(e);
     }
 

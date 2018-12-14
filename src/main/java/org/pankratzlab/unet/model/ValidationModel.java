@@ -29,8 +29,8 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
+import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.hapstats.Haplotype;
-import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -59,16 +59,16 @@ public class ValidationModel {
   private final ImmutableList<HLAType> dr51Locus;
   private final ImmutableList<HLAType> dr52Locus;
   private final ImmutableList<HLAType> dr53Locus;
-  private final ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypes;
-  private final ImmutableMultimap<Ethnicity, Haplotype> drdqHaplotypes;
+  private final ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypes;
+  private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
   private final ImmutableMap<HLAType, BwGroup> bwMap;
 
   public ValidationModel(String donorId, String source, Collection<SeroType> a,
       Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
       Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4,
       boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
-      Multimap<Ethnicity, Haplotype> bcCwdHaplotypes,
-      Multimap<Ethnicity, Haplotype> drdqCwdHaplotypes, Map<HLAType, BwGroup> bwAlleleMap) {
+      Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
+      Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes, Map<HLAType, BwGroup> bwAlleleMap) {
     this.donorId = donorId;
     this.source = source;
     aLocus = ImmutableSortedSet.copyOf(a);
@@ -186,11 +186,11 @@ public class ValidationModel {
     return getFromList(dr53Locus, 1);
   }
 
-  public ImmutableMultimap<Ethnicity, Haplotype> getBCHaplotypes() {
+  public ImmutableMultimap<RaceGroup, Haplotype> getBCHaplotypes() {
     return bcHaplotypes;
   }
 
-  public ImmutableMultimap<Ethnicity, Haplotype> getDRDQHaplotypes() {
+  public ImmutableMultimap<RaceGroup, Haplotype> getDRDQHaplotypes() {
     return drdqHaplotypes;
   }
 
@@ -354,11 +354,11 @@ public class ValidationModel {
     return sj.toString();
   }
 
-  private void addHaplotypes(StringJoiner sj, ImmutableMultimap<Ethnicity, Haplotype> haplotypes,
+  private void addHaplotypes(StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes,
       String title) {
     sj.add(title);
-    for (Ethnicity e : Ethnicity.values()) {
-      sj.add("\t" + e.displayString());
+    for (RaceGroup e : RaceGroup.values()) {
+      sj.add("\t" + e.toString());
       List<String> hapStrings =
           haplotypes.get(e).stream().map(Haplotype::toString).sorted().collect(Collectors.toList());
       hapStrings.forEach(s -> sj.add("\t" + s));

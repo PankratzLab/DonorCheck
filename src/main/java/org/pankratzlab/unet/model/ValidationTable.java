@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.hapstats.Haplotype;
-import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
 import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.util.jfx.JFXPropertyHelper;
@@ -227,9 +227,9 @@ public class ValidationTable {
    * @param immutableMap
    */
   private void addBCHaplotypes(ReadOnlyListWrapper<BCHaplotypeRow> rows,
-      ImmutableMultimap<Ethnicity, Haplotype> bcHaplotypeEtchnicityMap,
+      ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypeEtchnicityMap,
       ImmutableMap<HLAType, BwGroup> bwMap) {
-    for (Ethnicity ethnicity : Ethnicity.values()) {
+    for (RaceGroup ethnicity : RaceGroup.values()) {
       bcHaplotypeEtchnicityMap.get(ethnicity).forEach(haplotype -> {
         rows.add(new BCHaplotypeRow(ethnicity, haplotype, bwMap));
       });

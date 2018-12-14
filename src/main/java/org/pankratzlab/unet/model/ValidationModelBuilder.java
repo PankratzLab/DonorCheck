@@ -39,9 +39,9 @@ import org.pankratzlab.hla.SeroLocus;
 import org.pankratzlab.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
+import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
-import org.pankratzlab.unet.hapstats.HaplotypeFrequencies.Ethnicity;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
@@ -214,11 +214,11 @@ public class ValidationModelBuilder {
    */
   public ValidationModel build() {
     ensureValidity();
-    Multimap<Ethnicity, Haplotype> bcCwdHaplotypes =
+    Multimap<RaceGroup, Haplotype> bcCwdHaplotypes =
         buildCwdHaplotypes(makeIfNull(bHaplotypes), makeIfNull(cHaplotypes));
 
     // DRDQ haplotypes not currently supported
-    Multimap<Ethnicity, Haplotype> drDqDR345Haplotypes = ImmutableMultimap.of();
+    Multimap<RaceGroup, Haplotype> drDqDR345Haplotypes = ImmutableMultimap.of();
 
     Map<HLAType, BwGroup> bwAlleleMap = makeBwAlleleMap();
     ValidationModel validationModel = new ValidationModel(donorId, source, aLocus, bLocus, cLocus,
@@ -253,9 +253,9 @@ public class ValidationModelBuilder {
   /**
    * @return A table of the highest-probability haplotypes for each ethnicity
    */
-  private Multimap<Ethnicity, Haplotype> buildCwdHaplotypes(Multimap<Strand, HLAType> locusOneTypes,
+  private Multimap<RaceGroup, Haplotype> buildCwdHaplotypes(Multimap<Strand, HLAType> locusOneTypes,
       Multimap<Strand, HLAType> locusTwoTypes) {
-    Multimap<Ethnicity, Haplotype> haplotypesByEthnicity = HashMultimap.create();
+    Multimap<RaceGroup, Haplotype> haplotypesByEthnicity = HashMultimap.create();
 
     if (!(locusOneTypes.isEmpty() && locusTwoTypes.isEmpty())) {
 
@@ -263,7 +263,7 @@ public class ValidationModelBuilder {
       prune(locusTwoTypes);
 
       // for each ethnicity
-      for (Ethnicity ethnicity : Ethnicity.values()) {
+      for (RaceGroup ethnicity : RaceGroup.values()) {
         Table<Strand, Strand, Set<Haplotype>> optionsByStrand = HashBasedTable.create();
 
         // Iterate over each strand of each locus
@@ -420,9 +420,9 @@ public class ValidationModelBuilder {
 
     private static final int NO_MISSING_WEIGHT = 10;
 
-    private Map<Ethnicity, Double> scoreMap = new HashMap<>();
+    private Map<RaceGroup, Double> scoreMap = new HashMap<>();
 
-    private double getScore(Ethnicity e) {
+    private double getScore(RaceGroup e) {
       if (!scoreMap.containsKey(e)) {
         scoreMap.put(e, getScore(e, this));
       }
@@ -433,7 +433,7 @@ public class ValidationModelBuilder {
     /**
      * @return The combined frequency of the given haplotypes for the specified ethnicity
      */
-    private static double getScore(Ethnicity ethnicity, Collection<Haplotype> haplotypes) {
+    private static double getScore(RaceGroup ethnicity, Collection<Haplotype> haplotypes) {
       double noMissingBonus = haplotypes.size();
       double cwdBonus = 2 * haplotypes.size();
 
@@ -470,7 +470,7 @@ public class ValidationModelBuilder {
       return (NO_MISSING_WEIGHT * noMissingBonus) + cwdBonus + frequency;
     }
 
-    private int compareTo(HaplotypeSet o, Ethnicity e) {
+    private int compareTo(HaplotypeSet o, RaceGroup e) {
       return Double.compare(getScore(e), o.getScore(e));
     }
 
@@ -481,9 +481,9 @@ public class ValidationModelBuilder {
    * CWD status of their alleles.
    */
   private static class EthnicityHaplotypeComp implements Comparator<HaplotypeSet> {
-    private Ethnicity ethnicity;
+    private RaceGroup ethnicity;
 
-    private EthnicityHaplotypeComp(Ethnicity e) {
+    private EthnicityHaplotypeComp(RaceGroup e) {
       this.ethnicity = e;
     }
 

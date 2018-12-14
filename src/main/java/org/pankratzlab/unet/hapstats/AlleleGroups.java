@@ -132,6 +132,18 @@ public final class AlleleGroups {
     return HLAType.valueOf(locus + split[0] + ":" + split[1].replaceAll("[a-zA-Z]", ""));
   }
 
+  public static HLAType getGroupAllele(String alleleString) {
+    HLAType baseType = HLAType.valueOf(alleleString);
+
+    if (alleleString.toLowerCase().endsWith("g")) {
+      return getGGroup(baseType);
+    }
+    if (alleleString.toLowerCase().endsWith("p")) {
+      return getPGroup(baseType);
+    }
+    return baseType;
+  }
+
   /**
    * @param allele
    * @return
