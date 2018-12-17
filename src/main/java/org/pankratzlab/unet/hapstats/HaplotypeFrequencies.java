@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.NullType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Multimap;
@@ -69,7 +70,7 @@ public final class HaplotypeFrequencies {
 
       // Process each haplotype entry
       records.forEach(next -> {
-        Set<HLAType> types  = new HashSet<>();
+        Set<HLAType> types = new HashSet<>();
         for (String header : headers) {
           types.add(makeType(next, header));
         }
@@ -93,11 +94,14 @@ public final class HaplotypeFrequencies {
    */
   private static HLAType makeType(CSVRecord record, String specificityHeader) {
     String alleleString = record.get(specificityHeader);
-    if (alleleString.endsWith("N")) {
+    HLAType t = null;
+    if (!alleleString.endsWith("N")) {
       // this is a null type which we do want to record
-      return null;
+      t = AlleleGroups.getGroupAllele(alleleString);
+    } else {
+      t = NullType.valueOf(alleleString);
     }
-    return AlleleGroups.getGroupAllele(alleleString);
+    return t;
   }
 
   /**
