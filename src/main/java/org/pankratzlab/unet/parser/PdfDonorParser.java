@@ -39,8 +39,12 @@ public class PdfDonorParser extends AbstractDonorFileParser {
   private static final String EXTENSION_DESC = "SureTyper";
   private static final String EXTENSION_NAME = "pdf";
   private static final String EXTENSION = "*." + EXTENSION_NAME;
-//  private static final String QTYPER = "QTYPE";
+  // private static final String QTYPER = "QTYPE";
   private static final String SURETYPER = "SureTyper";
+
+  static {
+    System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
+  }
 
   @Override
   public String extensionFilter() {
