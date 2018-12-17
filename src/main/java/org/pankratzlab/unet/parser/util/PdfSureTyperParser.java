@@ -69,6 +69,9 @@ public class PdfSureTyperParser {
   private static final String HLA_DRB5 = "HLA-DRB5:";
   private static final String HAPLOTYPE_C = "HLA-C";
   private static final String HAPLOTYPE_B = "HLA-B";
+  private static final String HAPLOTYPE_DRB1 = "HLA-DRB1";
+  private static final String HAPLOTYPE_DQB1 = "HLA-DQB1";
+  private static final String HAPLOTYPE_DRB345 = "HLA-DRB345";
   private static ImmutableMap<String, TypeSetter> metadataMap;
 
   /**
@@ -82,6 +85,9 @@ public class PdfSureTyperParser {
     Map<String, Multimap<Strand, HLAType>> haplotypeMap = new HashMap<>();
     haplotypeMap.put(HAPLOTYPE_B, ArrayListMultimap.create());
     haplotypeMap.put(HAPLOTYPE_C, ArrayListMultimap.create());
+    haplotypeMap.put(HAPLOTYPE_DRB1, ArrayListMultimap.create());
+    haplotypeMap.put(HAPLOTYPE_DQB1, ArrayListMultimap.create());
+    haplotypeMap.put(HAPLOTYPE_DRB345, ArrayListMultimap.create());
     Map<Strand, BwGroup> bwMap = new HashMap<>();
 
     // We now process the PDF text line-by-line.
@@ -102,8 +108,15 @@ public class PdfSureTyperParser {
         currentLine = parseAssignment(lines, typeAssignment, ++currentLine);
       } else if (haplotypeMap.keySet().contains(line)) {
         // This is a genotype section
-        currentLine = parseHaplotype(lines, ++currentLine, line.replaceAll("HLA-", ""),
-            haplotypeMap.get(line), bwMap);
+        if (HAPLOTYPE_DRB345.equals(line)) {
+          // Have to parse DRB3, 4 and 5 separately
+          parseHaplotype(lines, currentLine + 1, "DRB3", haplotypeMap.get(line), bwMap);
+          parseHaplotype(lines, currentLine + 1, "DRB4", haplotypeMap.get(line), bwMap);
+          currentLine = parseHaplotype(lines, ++currentLine, "DRB5", haplotypeMap.get(line), bwMap);
+        } else {
+          String locus = line.replaceAll("HLA-", "");
+          currentLine = parseHaplotype(lines, ++currentLine, locus, haplotypeMap.get(line), bwMap);
+        }
       }
     }
 
@@ -112,6 +125,9 @@ public class PdfSureTyperParser {
 
     builder.bHaplotype(haplotypeMap.get(HAPLOTYPE_B));
     builder.cHaplotype(haplotypeMap.get(HAPLOTYPE_C));
+    builder.dqHaplotype(haplotypeMap.get(HAPLOTYPE_DQB1));
+    builder.drHaplotype(haplotypeMap.get(HAPLOTYPE_DRB1));
+    builder.dr345Haplotype(haplotypeMap.get(HAPLOTYPE_DRB345));
     builder.bwHaplotype(bwMap);
 
     BiConsumer<ValidationModelBuilder, String> setter = null;
@@ -224,7 +240,7 @@ public class PdfSureTyperParser {
           bwMap.put(Strand.values()[strandIndex], BwSerotypes.getBwGroup(token));
         }
 
-        if (token.startsWith(locus) || token.equals(UNKNOWN_ANTIGEN)) {
+        if (locus.startsWith(token.replaceAll("[0-9*w]", "")) || token.equals(UNKNOWN_ANTIGEN)) {
           // These cases are either reiterations of the locus (e.g. B*) or antigen equivalents (B75,
           // Cw)
           continue;

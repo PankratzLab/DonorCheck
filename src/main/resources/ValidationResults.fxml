@@ -66,15 +66,29 @@
             </VBox>
             <VBox spacing="10.0">
                <children>
-                  <TableView fx:id="haplotypeTable" fixedCellSize="30.0" prefHeight="270.0">
+                  <TableView fx:id="bcHaplotypeTable" fixedCellSize="30.0" prefHeight="270.0">
                     <placeholder>
                       <Label text="No haplotype data found for patient." />
                     </placeholder>
                     <columns>
-                      <TableColumn fx:id="ethnicityColumn" prefWidth="75" text="Ethnicity" />
+                      <TableColumn fx:id="bcEthnicityColumn" prefWidth="75" text="Ethnicity" />
                       <TableColumn fx:id="haplotypeCAlleleColumn" prefWidth="85" text="C Allele" />
                       <TableColumn fx:id="haplotypeBAlleleColumn" prefWidth="85" text="B Allele" />
                       <TableColumn fx:id="haplotypeBwColumn" prefWidth="85" text="Bw Group" />
+                    </columns>
+                     <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                     </columnResizePolicy>
+                  </TableView>
+                  <TableView fx:id="drdqHaplotypeTable" fixedCellSize="30.0" prefHeight="270.0">
+                    <placeholder>
+                      <Label text="No haplotype data found for patient." />
+                    </placeholder>
+                    <columns>
+                      <TableColumn fx:id="drdqEthnicityColumn" prefWidth="75" text="Ethnicity" />
+                      <TableColumn fx:id="haplotypeDRB345AlleleColumn" prefWidth="85" text="DRB345" />
+                      <TableColumn fx:id="haplotypeDRB1AlleleColumn" prefWidth="85" text="DRB1" />
+                      <TableColumn fx:id="haplotypeDQB1Column" prefWidth="85" text="DQB1" />
                     </columns>
                      <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

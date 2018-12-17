@@ -24,9 +24,7 @@ package org.pankratzlab.unet.model;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.util.jfx.JFXPropertyHelper;
@@ -55,7 +53,8 @@ public class ValidationTable {
   private final ReadOnlyObjectWrapper<String> secondSourceWrapper;
   private final ReadOnlyObjectWrapper<ValidationModel> secondModelWrapper;
   private final ReadOnlyListWrapper<ValidationRow<?>> validationRows;
-  private final ReadOnlyListWrapper<BCHaplotypeRow> haplotypeRows;
+  private final ReadOnlyListWrapper<BCHaplotypeRow> bcHaplotypeRows;
+  private final ReadOnlyListWrapper<DRDQHaplotypeRow> drdqHaplotypeRows;
   private WritableImage validationImage = null;
 
   public ValidationTable() {
@@ -65,7 +64,8 @@ public class ValidationTable {
     firstModelWrapper = new ReadOnlyObjectWrapper<>();
     secondModelWrapper = new ReadOnlyObjectWrapper<>();
     validationRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
-    haplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
+    bcHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
+    drdqHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
 
     // Each time either model changes we re-generate the rows
     firstModelWrapper.addListener((v, o, n) -> generateRows());
@@ -138,10 +138,17 @@ public class ValidationTable {
   }
 
   /**
-   * @return The {@link ValidationRow}s for this model, e.g. for display
+   * @return The B-C Haplotype rows for this model, e.g. for display
    */
-  public ReadOnlyListProperty<BCHaplotypeRow> getHaplotypeRows() {
-    return haplotypeRows.getReadOnlyProperty();
+  public ReadOnlyListProperty<BCHaplotypeRow> getBCHaplotypeRows() {
+    return bcHaplotypeRows.getReadOnlyProperty();
+  }
+
+  /**
+   * @return The DRB1-DQB1-DRB345 Haplotype rows for this model, e.g. for display
+   */
+  public ReadOnlyListProperty<DRDQHaplotypeRow> getDRDQHaplotypeRows() {
+    return drdqHaplotypeRows.getReadOnlyProperty();
   }
 
   /**
@@ -204,34 +211,33 @@ public class ValidationTable {
     }
     isValidWrapper.bind(validBinding);
 
+    bcHaplotypeRows.clear();
+    drdqHaplotypeRows.clear();
 
-    haplotypeRows.clear();
-    makeHaplotypeRows(haplotypeRows,
-        chooseHaplotypeModel(firstModelWrapper.get(), secondModelWrapper.get()));
+    ValidationModel model = chooseHaplotypeModel(firstModelWrapper.get(), secondModelWrapper.get());
+    if (Objects.nonNull(model)) {
+      makeBCHaplotypeRows(bcHaplotypeRows, model);
+      makeDRDQHaplotypeRows(drdqHaplotypeRows, model);
+    }
+  }
+
+  private void makeDRDQHaplotypeRows(ReadOnlyListWrapper<DRDQHaplotypeRow> rows,
+      ValidationModel model) {
+    for (RaceGroup ethnicity : RaceGroup.values()) {
+      model.getDRDQHaplotypes().get(ethnicity).forEach(haplotype -> {
+        rows.add(new DRDQHaplotypeRow(ethnicity, haplotype));
+      });
+    } ;
   }
 
   /**
    * Use the given model to populate a list of {@link BCHaplotypeRow}s
    */
-  private void makeHaplotypeRows(ReadOnlyListWrapper<BCHaplotypeRow> rows, ValidationModel model) {
-    if (Objects.isNull(model)) {
-      return;
-    }
-    addBCHaplotypes(rows, model.getBCHaplotypes(), model.getBwMap());
-  }
-
-  /**
-   * Add haplotype rows to the given list. Haplotypes are added in Ethnicity order (grouping all
-   * haplotypes for a given ethnicity)
-   * 
-   * @param immutableMap
-   */
-  private void addBCHaplotypes(ReadOnlyListWrapper<BCHaplotypeRow> rows,
-      ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypeEtchnicityMap,
-      ImmutableMap<HLAType, BwGroup> bwMap) {
+  private void makeBCHaplotypeRows(ReadOnlyListWrapper<BCHaplotypeRow> rows,
+      ValidationModel model) {
     for (RaceGroup ethnicity : RaceGroup.values()) {
-      bcHaplotypeEtchnicityMap.get(ethnicity).forEach(haplotype -> {
-        rows.add(new BCHaplotypeRow(ethnicity, haplotype, bwMap));
+      model.getBCHaplotypes().get(ethnicity).forEach(haplotype -> {
+        rows.add(new BCHaplotypeRow(ethnicity, haplotype, model.getBwMap()));
       });
     } ;
   }

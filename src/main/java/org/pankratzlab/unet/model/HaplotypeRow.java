@@ -21,19 +21,14 @@
  */
 package org.pankratzlab.unet.model;
 
-/**
- * Simple enum for tracking DNA strand alignment
- */
-public enum Strand {
-  FIRST, SECOND;
+import org.pankratzlab.unet.hapstats.Haplotype;
+import org.pankratzlab.unet.hapstats.RaceGroup;
+import javafx.beans.property.ReadOnlyObjectProperty;
 
-  /**
-   * @return The opposite strand as this one
-   */
-  public Strand flip() {
-    if (FIRST.equals(this)) {
-      return Strand.SECOND;
-    }
-    return FIRST;
-  }
+public interface HaplotypeRow {
+
+  ReadOnlyObjectProperty<Haplotype> haplotypeProperty();
+
+  ReadOnlyObjectProperty<RaceGroup> ethnicityProperty();
+
 }
