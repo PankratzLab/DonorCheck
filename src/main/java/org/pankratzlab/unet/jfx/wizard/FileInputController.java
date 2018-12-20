@@ -35,13 +35,18 @@ import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
 import org.pankratzlab.util.jfx.JFXPropertyHelper;
+import org.pankratzlab.util.jfx.JFXUtilHelper;
 import com.google.common.collect.ImmutableList;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -53,6 +58,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.stage.Stage;
 
 /**
  * Controller for adding donor data to the current {@link ValidationTable}
@@ -144,24 +150,45 @@ public class FileInputController extends AbstractValidatingWizardController {
         donorParser.extensionDescription(), donorParser.extensionFilter(), true);
 
     if (optionalFile.isPresent()) {
-      File selectedFile = optionalFile.get();
+      Stage progressStage = JFXUtilHelper.createProgressStage();
 
-      ValidationModelBuilder builder = new ValidationModelBuilder();
+      Task<Void> loadFileTask = new Task<Void>() {
+        @Override
+        protected Void call() throws Exception {
+          Platform.runLater(() -> progressStage.show());
 
-      try {
-        donorParser.parseModel(builder, selectedFile);
-        setter.accept(getTable(), builder.build());
-        linkedFile.set(selectedFile);
-      } catch (Exception e) {
-        Alert alert = new Alert(AlertType.ERROR);
-        alert.setHeaderText(donorParser.getErrorText()
-            + "\nPlease notify the developers as this may indicate the data has changed."
-            + "\nOffending file: " + selectedFile.getName());
-        alert.showAndWait();
-        e.printStackTrace();
-      }
+          File selectedFile = optionalFile.get();
 
-      CurrentDirectoryProvider.setBaseDir(selectedFile.getParentFile());
+          ValidationModelBuilder builder = new ValidationModelBuilder();
+
+          try {
+            donorParser.parseModel(builder, selectedFile);
+            setter.accept(getTable(), builder.build());
+            linkedFile.set(selectedFile);
+          } catch (Exception e) {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setHeaderText(donorParser.getErrorText()
+                + "\nPlease notify the developers as this may indicate the data has changed."
+                + "\nOffending file: " + selectedFile.getName());
+            alert.showAndWait();
+            e.printStackTrace();
+          }
+
+          CurrentDirectoryProvider.setBaseDir(selectedFile.getParentFile());
+          return null;
+        }
+      };
+
+      EventHandler<WorkerStateEvent> closeStage = (w) -> {
+        Platform.runLater(() -> {
+          progressStage.close();
+        });
+      };
+      loadFileTask.setOnCancelled(closeStage);
+      loadFileTask.setOnFailed(closeStage);
+      loadFileTask.setOnSucceeded(closeStage);
+
+      new Thread(loadFileTask).start();
     }
   }
 
