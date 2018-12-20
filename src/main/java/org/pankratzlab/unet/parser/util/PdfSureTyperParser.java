@@ -221,7 +221,7 @@ public class PdfSureTyperParser {
         break;
       }
 
-      if (line.matches(locus + "\\*[0-9]+.*")) {
+      if (line.matches(locus + "[*w][0-9]+.*")) {
         // This is the first line of allele data. It is possible for it to appear without a
         // GENOTYPE_HEADER if both alleles are on the same page.
         strandIndex++;
