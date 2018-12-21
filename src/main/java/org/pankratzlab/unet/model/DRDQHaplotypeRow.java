@@ -23,34 +23,26 @@ package org.pankratzlab.unet.model;
 
 import java.util.Objects;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.NullType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 
 /**
  * One row of a Haplotype table (showing all haplotypes for an individual)
  */
-public class DRDQHaplotypeRow implements HaplotypeRow {
-  public static final String ETHNICITY_PROP = "ethnicityDisplay";
+public class DRDQHaplotypeRow extends AbstractHaplotypeRow {
   public static final String DRB1_ALLELE_PROP = "alleleDRB1";
   public static final String DQB1_ALLELE_PROP = "alleleDQB1";
   public static final String DRB345_PROP = "alleleDRB345";
 
-  private final ReadOnlyStringWrapper ethnicityDisplay;
-  private final ReadOnlyObjectWrapper<Haplotype> haplotype;
-  private final ReadOnlyObjectWrapper<RaceGroup> ethnicity;
   private final ReadOnlyStringWrapper alleleDRB1;
   private final ReadOnlyStringWrapper alleleDQB1;
   private final ReadOnlyStringWrapper alleleDRB345;
 
   public DRDQHaplotypeRow(RaceGroup ethnicity, Haplotype haplotype) {
-    super();
-    this.ethnicity = new ReadOnlyObjectWrapper<>(ethnicity);
-    ethnicityDisplay = new ReadOnlyStringWrapper(ethnicity.toString());
-    this.haplotype = new ReadOnlyObjectWrapper<>(haplotype);
+    super(ethnicity, haplotype);
     HLAType drb1 = null;
     HLAType dqb1 = null;
     HLAType drb345 = null;
@@ -80,21 +72,12 @@ public class DRDQHaplotypeRow implements HaplotypeRow {
 
     alleleDRB1 = new ReadOnlyStringWrapper(drb1.toString());
     alleleDQB1 = new ReadOnlyStringWrapper(dqb1.toString());
-    alleleDRB345 = new ReadOnlyStringWrapper(drb345.toString());
-  }
 
-  /**
-   * @return Property for this row's {@link RaceGroup}
-   */
-  public ReadOnlyObjectProperty<RaceGroup> ethnicityProperty() {
-    return ethnicity.getReadOnlyProperty();
-  }
-
-  /**
-   * @return Property for a display string for this row's {@link RaceGroup}
-   */
-  public ReadOnlyStringProperty ethnicityDisplayProperty() {
-    return ethnicityDisplay.getReadOnlyProperty();
+    String drb345String = drb345.toString();
+    if (Objects.equals(NullType.UNREPORTED_DRB345, drb345)) {
+      drb345String = "Unreported";
+    }
+    alleleDRB345 = new ReadOnlyStringWrapper(drb345String);
   }
 
   /**
@@ -116,12 +99,5 @@ public class DRDQHaplotypeRow implements HaplotypeRow {
    */
   public ReadOnlyStringProperty alleleDRB345Property() {
     return alleleDRB345.getReadOnlyProperty();
-  }
-
-  /**
-   * @return Property for this row's {@link Haplotype}
-   */
-  public ReadOnlyObjectProperty<Haplotype> haplotypeProperty() {
-    return haplotype.getReadOnlyProperty();
   }
 }

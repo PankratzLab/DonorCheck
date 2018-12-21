@@ -23,12 +23,19 @@ package org.pankratzlab.unet.model;
 
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
+import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
 
 public interface HaplotypeRow {
+  public static final String ETHNICITY_PROP = "ethnicityDisplay";
+  public static final String FREQUENCY_PROP = "frequency";
 
   ReadOnlyObjectProperty<Haplotype> haplotypeProperty();
 
   ReadOnlyObjectProperty<RaceGroup> ethnicityProperty();
 
+  ReadOnlyStringProperty ethnicityDisplayProperty();
+
+  ReadOnlyDoubleProperty frequencyProperty();
 }

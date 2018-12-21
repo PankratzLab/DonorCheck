@@ -124,13 +124,25 @@ public final class HaplotypeFrequencies {
    *         two types
    */
   public static Double getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
-    Haplotype equivHaplotype = new Haplotype(
-        haplotype.getTypes().stream().map(AlleleGroups::getGGroup).collect(Collectors.toSet()));
+    Haplotype equivHaplotype =
+        new Haplotype(haplotype.getTypes().stream().map(AlleleGroups::getGGroup)
+            .map(HaplotypeFrequencies::adjustNulls).collect(Collectors.toSet()));
 
     if (!TABLES.containsKey(equivHaplotype)) {
       return 0.0;
     }
     return TABLES.get(equivHaplotype).getFrequencyForEthnicity(ethnicity);
+  }
+
+  /**
+   * Any null type is treated as {@link NullType#UNREPORTED_DRB345}
+   */
+  private static HLAType adjustNulls(HLAType testType) {
+    if (testType.locus().isDRB345() && testType instanceof NullType) {
+      return NullType.UNREPORTED_DRB345;
+    }
+
+    return testType;
   }
 
 

@@ -75,6 +75,7 @@
                       <TableColumn fx:id="haplotypeCAlleleColumn" prefWidth="85" text="C Allele" />
                       <TableColumn fx:id="haplotypeBAlleleColumn" prefWidth="85" text="B Allele" />
                       <TableColumn fx:id="haplotypeBwColumn" prefWidth="85" text="Bw Group" />
+                      <TableColumn fx:id="bcFrequencyColumn" prefWidth="75" text="Frequency" />
                     </columns>
                      <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -89,6 +90,7 @@
                       <TableColumn fx:id="haplotypeDRB345AlleleColumn" prefWidth="85" text="DRB345" />
                       <TableColumn fx:id="haplotypeDRB1AlleleColumn" prefWidth="85" text="DRB1" />
                       <TableColumn fx:id="haplotypeDQB1Column" prefWidth="85" text="DQB1" />
+                      <TableColumn fx:id="drdqFrequencyColumn" prefWidth="75" text="Frequency" />
                     </columns>
                      <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

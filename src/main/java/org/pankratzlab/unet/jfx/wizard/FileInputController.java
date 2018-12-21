@@ -166,12 +166,14 @@ public class FileInputController extends AbstractValidatingWizardController {
             setter.accept(getTable(), builder.build());
             linkedFile.set(selectedFile);
           } catch (Exception e) {
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText(donorParser.getErrorText()
-                + "\nPlease notify the developers as this may indicate the data has changed."
-                + "\nOffending file: " + selectedFile.getName());
-            alert.showAndWait();
-            e.printStackTrace();
+            Platform.runLater(() -> {
+              Alert alert = new Alert(AlertType.ERROR);
+              alert.setHeaderText(donorParser.getErrorText()
+                  + "\nPlease notify the developers as this may indicate the data has changed."
+                  + "\nOffending file: " + selectedFile.getName());
+              alert.showAndWait();
+              e.printStackTrace();
+            });
           }
 
           CurrentDirectoryProvider.setBaseDir(selectedFile.getParentFile());

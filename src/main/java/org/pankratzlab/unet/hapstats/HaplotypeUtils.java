@@ -23,6 +23,7 @@ package org.pankratzlab.unet.hapstats;
 
 import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.NullType;
 import org.pankratzlab.unet.model.Strand;
 import com.google.common.collect.Multimap;
 
@@ -58,9 +59,14 @@ public final class HaplotypeUtils {
     } else {
       HLALocus parsedLocus = HLALocus.valueOf(locus);
       // Cap the spec at 2 positions
-      HLAType rawType = new HLAType(parsedLocus, specString);
-      haplotypeMap.put(Strand.values()[strandIndex],
-          new HLAType(parsedLocus, rawType.spec().get(0), rawType.spec().get(1)));
+      HLAType rawType = new HLAType(parsedLocus, specString.replaceAll("N", ""));
+      HLAType finalType;
+      if (specString.endsWith("N")) {
+        finalType = new NullType(parsedLocus, rawType.spec().get(0), rawType.spec().get(1));
+      } else {
+        finalType = new HLAType(parsedLocus, rawType.spec().get(0), rawType.spec().get(1));
+      }
+      haplotypeMap.put(Strand.values()[strandIndex], finalType);
     }
   }
 }

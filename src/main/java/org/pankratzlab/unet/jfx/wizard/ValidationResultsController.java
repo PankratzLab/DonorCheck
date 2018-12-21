@@ -31,7 +31,6 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
-import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.BCHaplotypeRow;
 import org.pankratzlab.unet.model.DRDQHaplotypeRow;
@@ -64,6 +63,7 @@ import javafx.util.Callback;
  * Controller for viewing the final results status.
  */
 public class ValidationResultsController extends AbstractValidatingWizardController {
+  private static final double UNKNOWN_HAP_CUTOFF = 0.00001;
   private static final String INVALID_STYLE_CLASS = "invalid-cell";
   private static final String WD_ALLELE_CLASS = "well-documented-allele";
   private static final String UK_ALLELE_CLASS = "unknown-allele";
@@ -120,6 +120,10 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private TableColumn<BCHaplotypeRow, String> haplotypeBwColumn;
 
   @FXML
+  private TableColumn<BCHaplotypeRow, Double> bcFrequencyColumn;
+
+
+  @FXML
   private TableView<DRDQHaplotypeRow> drdqHaplotypeTable;
 
   @FXML
@@ -133,6 +137,9 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   @FXML
   private TableColumn<DRDQHaplotypeRow, String> haplotypeDQB1Column;
+
+  @FXML
+  private TableColumn<DRDQHaplotypeRow, Double> drdqFrequencyColumn;
 
   /**
    * Write the given {@link ValidationTable#getValidationImage()} to disk
@@ -214,25 +221,27 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     secondSourceCol.setCellFactory(new InvalidColorCellFactory());
 
     // Configure haplotype table columns
-    bcEthnicityColumn
-        .setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.ETHNICITY_PROP));
+    bcEthnicityColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
     haplotypeCAlleleColumn
         .setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.C_ALLELE_PROP));
     haplotypeBAlleleColumn
         .setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.B_ALLELE_PROP));
     haplotypeBwColumn.setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.BW_GROUP_PROP));
+    bcFrequencyColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
 
     haplotypeCAlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
     haplotypeBAlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
 
     drdqEthnicityColumn
-        .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.ETHNICITY_PROP));
+        .setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
     haplotypeDRB345AlleleColumn
         .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB345_PROP));
     haplotypeDRB1AlleleColumn
         .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB1_ALLELE_PROP));
     haplotypeDQB1Column
         .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DQB1_ALLELE_PROP));
+    drdqFrequencyColumn
+        .setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
 
     haplotypeDRB345AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
     haplotypeDRB1AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
@@ -360,8 +369,9 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
    * Helper class to color cells when the row's haplotype is unknown or individual alleles are not
    * common
    */
-  private static class HaplotypeCellFactory <T extends HaplotypeRow>
+  private static class HaplotypeCellFactory<T extends HaplotypeRow>
       implements Callback<TableColumn<T, String>, TableCell<T, String>> {
+
     @Override
     public TableCell<T, String> call(TableColumn<T, String> param) {
       return new TableCell<T, String>() {
@@ -378,7 +388,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
           }
 
           HaplotypeRow row = (HaplotypeRow) getTableRow().getItem();
-          if (Objects.nonNull(row) && Objects.nonNull(row.haplotypeProperty())) {
+          if (Objects.nonNull(row) && Objects.nonNull(row.haplotypeProperty())
+              && !HLAType.parseTypes(alleleText).isEmpty()) {
             switch (CommonWellDocumented.getStatus(HLAType.valueOf(alleleText))) {
               case UNKNOWN:
                 getStyleClass().add(0, UK_ALLELE_CLASS);
@@ -391,8 +402,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
                 break;
             }
 
-            if (Double.compare(0.0, HaplotypeFrequencies.getFrequency(row.ethnicityProperty().get(),
-                row.haplotypeProperty().get())) == 0) {
+            if (Double.compare(UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
               getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
             }
 

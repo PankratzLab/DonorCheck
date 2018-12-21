@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.NullType;
 import org.pankratzlab.hla.SeroLocus;
 import org.pankratzlab.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
@@ -42,6 +43,7 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
+import org.pankratzlab.unet.parser.util.DRAssociations;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
@@ -195,6 +197,13 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder drHaplotype(Multimap<Strand, HLAType> types) {
     drb1Haplotypes.putAll(types);
+
+    for (Strand strand : types.keySet()) {
+      SeroType drbType = types.get(strand).iterator().next().equiv();
+      if (Objects.isNull(DRAssociations.getDRBLocus(drbType))) {
+        dr345Haplotypes.put(strand, NullType.UNREPORTED_DRB345);
+      }
+    }
     return this;
   }
 
@@ -405,18 +414,20 @@ public class ValidationModelBuilder {
     }
 
     // Sort out our types by CWD status
-    Multimap<Status, HLAType> typesByStatus =
-        MultimapBuilder.enumKeys(Status.class).hashSetValues().build();
-    Collection<HLAType> values = typesForStrand.values();
-    values.forEach(t -> typesByStatus.put(CommonWellDocumented.getStatus(t), t));
+    for (Strand strand : typesForStrand.keySet()) {
+      Multimap<Status, HLAType> typesByStatus =
+          MultimapBuilder.enumKeys(Status.class).hashSetValues().build();
+      Collection<HLAType> values = typesForStrand.get(strand);
+      values.forEach(t -> typesByStatus.put(CommonWellDocumented.getStatus(t), t));
 
-    Set<HLAType> cwdTypes = new HashSet<>();
-    cwdTypes.addAll(typesByStatus.get(Status.COMMON));
-    cwdTypes.addAll(typesByStatus.get(Status.WELL_DOCUMENTED));
+      Set<HLAType> cwdTypes = new HashSet<>();
+      cwdTypes.addAll(typesByStatus.get(Status.COMMON));
+      cwdTypes.addAll(typesByStatus.get(Status.WELL_DOCUMENTED));
 
-    // If we have any common or well-documented types, drop all unknown
-    if (!cwdTypes.isEmpty()) {
-      values.removeAll(typesByStatus.get(Status.UNKNOWN));
+      // If we have any common or well-documented types, drop all unknown
+      if (!cwdTypes.isEmpty()) {
+        values.removeAll(typesByStatus.get(Status.UNKNOWN));
+      }
     }
   }
 

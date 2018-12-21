@@ -23,11 +23,13 @@ package org.pankratzlab.unet.parser.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.NullType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
@@ -110,13 +112,28 @@ public class PdfSureTyperParser {
         // This is a genotype section
         if (HAPLOTYPE_DRB345.equals(line)) {
           // Have to parse DRB3, 4 and 5 separately
-          parseHaplotype(lines, currentLine + 1, "DRB3", haplotypeMap.get(line), bwMap);
-          parseHaplotype(lines, currentLine + 1, "DRB4", haplotypeMap.get(line), bwMap);
-          currentLine = parseHaplotype(lines, ++currentLine, "DRB5", haplotypeMap.get(line), bwMap);
+          Multimap<Strand, HLAType> drb345Map = haplotypeMap.get(line);
+          parseHaplotype(lines, currentLine + 1, "DRB3", drb345Map, bwMap);
+          parseHaplotype(lines, currentLine + 1, "DRB4", drb345Map, bwMap);
+          currentLine = parseHaplotype(lines, ++currentLine, "DRB5", drb345Map, bwMap);
         } else {
           String locus = line.replaceAll("HLA-", "");
           currentLine = parseHaplotype(lines, ++currentLine, locus, haplotypeMap.get(line), bwMap);
         }
+      }
+    }
+
+    // Adjust DRB345 for unreported types
+    for (Entry<Strand, HLAType> entry : haplotypeMap.get(HAPLOTYPE_DRB1).entries()) {
+      if (Objects.isNull(DRAssociations.getDRBLocus(entry.getValue().equivSafe()))) {
+        // This DRB1 has an unreported DRB345 that needs to be manually registered
+        Multimap<Strand, HLAType> drb345Map = haplotypeMap.get(HAPLOTYPE_DRB345);
+        Strand unreportedStrand = entry.getKey();
+        if (drb345Map.containsKey(unreportedStrand)) {
+          // ensure we don't overwrite an existing mapping
+          unreportedStrand = unreportedStrand.flip();
+        }
+        drb345Map.put(unreportedStrand, NullType.UNREPORTED_DRB345);
       }
     }
 

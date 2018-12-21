@@ -23,37 +23,28 @@ package org.pankratzlab.unet.model;
 
 import java.util.Objects;
 import org.pankratzlab.hla.HLAType;
-import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.hapstats.Haplotype;
+import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.collect.ImmutableMap;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 
 /**
  * One row of a Haplotype table (showing all haplotypes for an individual)
  */
-public class BCHaplotypeRow implements HaplotypeRow {
-  public static final String ETHNICITY_PROP = "ethnicityDisplay";
+public class BCHaplotypeRow extends AbstractHaplotypeRow {
   public static final String C_ALLELE_PROP = "alleleC";
   public static final String B_ALLELE_PROP = "alleleB";
   public static final String BW_GROUP_PROP = "bwGroup";
 
-  private final ReadOnlyStringWrapper ethnicityDisplay;
-  private final ReadOnlyObjectWrapper<Haplotype> haplotype;
-  private final ReadOnlyObjectWrapper<RaceGroup> ethnicity;
   private final ReadOnlyStringWrapper alleleC;
   private final ReadOnlyStringWrapper alleleB;
   private final ReadOnlyStringWrapper bwGroup;
 
   public BCHaplotypeRow(RaceGroup ethnicity, Haplotype haplotype,
       ImmutableMap<HLAType, BwGroup> bwMap) {
-    super();
-    this.ethnicity = new ReadOnlyObjectWrapper<>(ethnicity);
-    ethnicityDisplay = new ReadOnlyStringWrapper(ethnicity.toString());
-    this.haplotype = new ReadOnlyObjectWrapper<>(haplotype);
+    super(ethnicity, haplotype);
     HLAType c = null;
     HLAType b = null;
     for (HLAType hlaType : haplotype.getTypes()) {
@@ -82,19 +73,6 @@ public class BCHaplotypeRow implements HaplotypeRow {
     bwGroup = new ReadOnlyStringWrapper(group.toString());
   }
 
-  /**
-   * @return Property for this row's {@link RaceGroup}
-   */
-  public ReadOnlyObjectProperty<RaceGroup> ethnicityProperty() {
-    return ethnicity.getReadOnlyProperty();
-  }
-
-  /**
-   * @return Property for a display string for this row's {@link RaceGroup}
-   */
-  public ReadOnlyStringProperty ethnicityDisplayProperty() {
-    return ethnicityDisplay.getReadOnlyProperty();
-  }
 
   /**
    * @return Property for the C allele of this row's {@link Haplotype}
@@ -117,10 +95,4 @@ public class BCHaplotypeRow implements HaplotypeRow {
     return bwGroup.getReadOnlyProperty();
   }
 
-  /**
-   * @return Property for this row's {@link Haplotype}
-   */
-  public ReadOnlyObjectProperty<Haplotype> haplotypeProperty() {
-    return haplotype.getReadOnlyProperty();
-  }
 }

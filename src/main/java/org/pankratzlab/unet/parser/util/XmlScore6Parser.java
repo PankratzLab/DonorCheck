@@ -46,6 +46,7 @@ import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.base.Strings;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.EnumMultiset;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -181,7 +182,8 @@ public class XmlScore6Parser {
       Elements resultCombinations = typedLocus.getElementsByTag(ALLELE_RESULTS_TAG).get(0)
           .getElementsByTag(RESULT_COMBINATION_TAG);
 
-      int selectedResult = -1;
+      int selectedResultIndex = -1;
+      int selectedDRB345Index = -1;
       List<ResultCombination> resultPairs = new ArrayList<>();
       List<ResultCombination> drb345Pairs = new ArrayList<>();
 
@@ -229,7 +231,9 @@ public class XmlScore6Parser {
 
           if (!isDRB345) {
             // The selected result is the selected non-DRB345 index
-            selectedResult = currentResult;
+            selectedResultIndex = currentResult;
+          } else {
+            selectedDRB345Index = currentResult;
           }
         }
       }
@@ -248,16 +252,22 @@ public class XmlScore6Parser {
 
       // Parse haplotypes
       if (C_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResult),
+        addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
             ValidationModelBuilder::cHaplotype);
       } else if (DQB_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResult),
+        addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
             ValidationModelBuilder::dqHaplotype);
       } else if (DRB_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResult),
+        addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
             ValidationModelBuilder::drHaplotype);
+        if (selectedDRB345Index > 0) {
+          addHaplotypes(builder, resultCombinations.get(selectedDRB345Index),
+              ValidationModelBuilder::dr345Haplotype);
+        } else {
+          builder.dr345Haplotype(ArrayListMultimap.create());
+        }
       } else if (B_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResult),
+        addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
             ValidationModelBuilder::bHaplotype);
         Map<Strand, BwGroup> bwMap = new HashMap<>();
 
@@ -428,14 +438,13 @@ public class XmlScore6Parser {
       Multimap<Strand, HLAType> haplotypeMap = HashMultimap.create();
       String locus = "";
       for (String allele : alleleStrings) {
+        if (allele.isEmpty()) {
+          continue;
+        }
+
         if (allele.indexOf(LOCUS_SEPARATOR) > 0) {
           locus = allele.substring(0, allele.indexOf(LOCUS_SEPARATOR));
           allele = allele.substring(allele.indexOf(LOCUS_SEPARATOR) + 1, allele.length());
-        }
-
-        if (allele.endsWith("N")) {
-          // Skip null types
-          continue;
         }
 
         // Replace suffix flags
@@ -597,7 +606,8 @@ public class XmlScore6Parser {
     StringJoiner sj = new StringJoiner(":");
     sj.add(String.valueOf(hlaType.spec().get(0)));
 
-    if (Objects.equals(HLALocus.DPA1, hlaType.locus()) || Objects.equals(HLALocus.DPB1, hlaType.locus())) {
+    if (Objects.equals(HLALocus.DPA1, hlaType.locus())
+        || Objects.equals(HLALocus.DPB1, hlaType.locus())) {
       // DPA and DPB report two fields
       sj.add(String.valueOf(hlaType.spec().get(1)));
     }
