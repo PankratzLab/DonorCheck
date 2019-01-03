@@ -1,5 +1,10 @@
 package org.pankratzlab.unet;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeNotNull;
+import static org.junit.Assume.assumeTrue;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,34 +41,46 @@ public class IntegrationTest {
   private static final String DONORNET_HTML_FILE = "DonorEdit.html";
   private static final String DONORNET_HTML_DIR_SUFFIX = "_files";
   private static final String TEST_DIR_PROPERTY = "hla.integration.test.dir";
-  private final File individualDir;
-  private final String individualName;
+  private File individualDir;
 
   public IntegrationTest(File individualDirectory) {
-    if (individualDirectory.exists() && individualDirectory.isDirectory()) {
-      individualDir = individualDirectory;
-      individualName = individualDir.getName();
-    } else {
-      individualDir = null;
-      individualName = "";
-      LoggingManager.getLoggerForClass()
-          .info("Not a valid individual directory: " + individualDir.getAbsolutePath());
-    }
+    individualDir = individualDirectory;
+  }
+
+  @Test
+  public void validateInput() {
+    assertTrue("Validation failed - no directory provided.", Objects.nonNull(individualDir));
+    String individualName = individualDir.getName();
+
+    assertTrue(
+        individualName + ": Can't validate individual. Directory doesn't exist:" + individualDir,
+        individualDir.exists());
+
+    assertTrue(
+        individualName + ": Can't validate individual. Input not a directory: " + individualDir,
+        individualDir.isDirectory());
   }
 
   @Test
   public void integrationTest() {
-    if (Objects.nonNull(individualDir)) {
-      // An individual's test directory should contain 2 or more model files that we can parse and
-      // compare to each other.
+    assumeNotNull(individualDir);
+    assumeTrue(individualDir.exists());
+    assumeTrue(individualDir.isDirectory());
+
+    String individualName = individualDir.getName();
+
+    try {
       List<ValidationModel> individualModels = parseIndividualFiles(individualDir);
-      if (individualModels.isEmpty()) {
-        Assert.fail(individualName + ": Can't validate individual. No model files found.");
-      }
-      if (individualModels.size() == 1) {
-        Assert.fail(individualName + ": Can't validate individual - only found one model file.");
-      }
+
+      assertFalse(individualName + ": Can't validate individual. No model files found.",
+          individualModels.isEmpty());
+
+      assertFalse(individualName + ": Can't validate individual - only found one model file.",
+          individualModels.size() == 1);
+
       testIfModelsAgree(individualModels);
+    } catch (Exception e) {
+      fail(individualName + ": failed with exception " + e.toString());
     }
   }
 
