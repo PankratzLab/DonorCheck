@@ -77,14 +77,14 @@ public final class HaplotypeFrequencies {
         Haplotype haplotype = new Haplotype(types);
         Multimap<RaceGroup, Double> hapMap = MultimapBuilder.hashKeys().arrayListValues().build();
         // Values are stored as RaceCode frequencies, but we want to condense them to RaceGroups
-        for (RaceCode code : RaceCode.values()) {
-          hapMap.put(code.getRaceGroup(),
-              Double.parseDouble(next.get(code.toString() + FREQ_COL_SUFFIX)));
+        for (RaceGroup group : RaceGroup.values()) {
+          hapMap.put(group,
+              Double.parseDouble(next.get(group.toString() + FREQ_COL_SUFFIX)));
         }
         frequencyTableBuilder.put(haplotype, new HaplotypeFrequency(hapMap));
       });
 
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new IllegalStateException(e);
     }
   }
