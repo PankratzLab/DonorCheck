@@ -53,6 +53,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
@@ -386,26 +387,27 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
               break;
             }
           }
+          TableRow<?> tableRow = getTableRow();
+          if (Objects.nonNull(tableRow)) {
+            HaplotypeRow row = (HaplotypeRow) tableRow.getItem();
+            if (Objects.nonNull(row) && Objects.nonNull(row.haplotypeProperty())
+                && !HLAType.parseTypes(alleleText).isEmpty()) {
+              switch (CommonWellDocumented.getStatus(HLAType.valueOf(alleleText))) {
+                case UNKNOWN:
+                  getStyleClass().add(0, UK_ALLELE_CLASS);
+                  break;
+                case WELL_DOCUMENTED:
+                  getStyleClass().add(0, WD_ALLELE_CLASS);
+                  break;
+                case COMMON:
+                default:
+                  break;
+              }
 
-          HaplotypeRow row = (HaplotypeRow) getTableRow().getItem();
-          if (Objects.nonNull(row) && Objects.nonNull(row.haplotypeProperty())
-              && !HLAType.parseTypes(alleleText).isEmpty()) {
-            switch (CommonWellDocumented.getStatus(HLAType.valueOf(alleleText))) {
-              case UNKNOWN:
-                getStyleClass().add(0, UK_ALLELE_CLASS);
-                break;
-              case WELL_DOCUMENTED:
-                getStyleClass().add(0, WD_ALLELE_CLASS);
-                break;
-              case COMMON:
-              default:
-                break;
+              if (Double.compare(UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
+                getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
+              }
             }
-
-            if (Double.compare(UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
-              getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
-            }
-
           }
         }
       };
