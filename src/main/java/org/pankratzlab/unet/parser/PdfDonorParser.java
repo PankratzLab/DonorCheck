@@ -91,8 +91,10 @@ public class PdfDonorParser extends AbstractDonorFileParser {
         // }
       }
     } catch (InvalidPasswordException e) {
+      e.printStackTrace();
       throw new UnsupportedOperationException("PDF can not be encrypted");
     } catch (IOException e) {
+      e.printStackTrace();
       throw new RuntimeException(e);
     }
   }

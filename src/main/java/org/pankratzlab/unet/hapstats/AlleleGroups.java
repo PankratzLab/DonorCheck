@@ -22,14 +22,15 @@
 package org.pankratzlab.unet.hapstats;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.NullType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
@@ -102,7 +103,9 @@ public final class AlleleGroups {
         }
 
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
+      System.err.println("Failed to read allele group file: " + pathToGroupFile);
+      e.printStackTrace();
       throw new IllegalStateException("Failed to read allele group file: " + pathToGroupFile);
     }
 
@@ -113,19 +116,35 @@ public final class AlleleGroups {
    * Helper method to convert a locus + specificity string from a group file to an {@link HLAType}
    */
   private static HLAType getAllele(String locus, String specificity) {
-    return HLAType.valueOf(locus + specificity);
+    String alleleString = locus + "*" + specificity.replaceAll("[a-mo-zA-MO-Z]", "");
+    if (alleleString.toLowerCase().endsWith("n")) {
+      return NullType.valueOf(alleleString);
+    }
+    return HLAType.valueOf(alleleString);
   }
 
   public static HLAType getGroupAllele(String alleleString) {
     HLAType baseType = HLAType.valueOf(alleleString);
 
-    if (alleleString.toLowerCase().endsWith("g")) {
+    alleleString = alleleString.toLowerCase();
+
+    if (alleleString.endsWith("n")) {
+      return getUnknownGroupEquiv(NullType.valueOf(alleleString));
+    } else if (alleleString.endsWith("g")) {
       return getGGroup(baseType);
-    }
-    if (alleleString.toLowerCase().endsWith("p")) {
+    } else if (alleleString.endsWith("p")) {
       return getPGroup(baseType);
     }
+
     return baseType;
+  }
+
+  private static HLAType getUnknownGroupEquiv(NullType unknown) {
+    HLAType equiv = G_GROUP.get(unknown);
+    if (Objects.isNull(equiv)) {
+      equiv = P_GROUP.get(unknown);
+    }
+    return Objects.isNull(equiv) ? unknown : equiv;
   }
 
   /**
@@ -149,10 +168,6 @@ public final class AlleleGroups {
    */
   private static HLAType getGroupEquiv(ImmutableMap<HLAType, HLAType> groupMap, HLAType allele) {
     HLAType equiv = groupMap.get(allele);
-    if (equiv == null) {
-      equiv = allele;
-    }
-    equiv = new HLAType(equiv.locus(), equiv.spec());
-    return equiv;
+    return Objects.isNull(equiv) ? allele : equiv;
   }
 }

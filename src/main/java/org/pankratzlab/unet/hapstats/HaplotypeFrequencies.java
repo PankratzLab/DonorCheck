@@ -54,7 +54,14 @@ public final class HaplotypeFrequencies {
     buildTable(frequencyMapBuilder, BC_TABLE, "C", "B");
     buildTable(frequencyMapBuilder, DR_DQ_TABLE, "DRB3-4-5", "DRB1", "DQB1");
 
-    TABLES = frequencyMapBuilder.build();
+    ImmutableMap<Haplotype, HaplotypeFrequency> table = ImmutableMap.of();
+    try {
+      table = frequencyMapBuilder.build();
+    } catch (Exception e) {
+      System.err.println("Error building haplotype frequency table");
+      e.printStackTrace();
+    }
+    TABLES = table;
   }
 
   /**
@@ -84,6 +91,8 @@ public final class HaplotypeFrequencies {
       });
 
     } catch (Exception e) {
+      System.err.println("Error generating haplotype frequencies");
+      e.printStackTrace();
       throw new IllegalStateException(e);
     }
   }
@@ -93,14 +102,7 @@ public final class HaplotypeFrequencies {
    */
   private static HLAType makeType(CSVRecord record, String specificityHeader) {
     String alleleString = record.get(specificityHeader);
-    HLAType t = null;
-    if (!alleleString.endsWith("N")) {
-      // this is a null type which we do want to record
-      t = AlleleGroups.getGroupAllele(alleleString);
-    } else {
-      t = NullType.valueOf(alleleString);
-    }
-    return t;
+    return AlleleGroups.getGroupAllele(alleleString);
   }
 
   /**

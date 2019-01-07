@@ -21,7 +21,6 @@
  */
 package org.pankratzlab.unet.hapstats;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import org.jsoup.Jsoup;
@@ -95,7 +94,9 @@ public final class CommonWellDocumented {
         freqMapBuilder.put(e);
       });
       ALLELE_FREQS = freqMapBuilder.build();
-    } catch (IOException e) {
+    } catch (Exception e) {
+      System.err.println("Invalid Frequency file: " + ALLELE_FREQ_PATH);
+      e.printStackTrace();
       throw new IllegalStateException("Invalid Frequency file: " + ALLELE_FREQ_PATH);
     }
   }
