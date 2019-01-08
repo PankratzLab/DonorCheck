@@ -213,7 +213,13 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dr345Haplotype(Multimap<Strand, HLAType> types) {
-    dr345Haplotypes.putAll(types);
+    for (Strand originalKey : types.keySet()) {
+      Strand newKey = originalKey;
+      if (dr345Haplotypes.containsKey(newKey)) {
+        newKey = newKey.flip();
+      }
+      dr345Haplotypes.putAll(newKey, types.get(originalKey));
+    }
     return this;
   }
 
