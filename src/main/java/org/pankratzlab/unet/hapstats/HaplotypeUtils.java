@@ -21,6 +21,8 @@
  */
 package org.pankratzlab.unet.hapstats;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.NullType;
@@ -51,20 +53,20 @@ public final class HaplotypeUtils {
       // Convert ranges to individual alleles
       HLAType firstType = new HLAType(HLALocus.valueOf(locus), specString.split(RANGE_TOKEN)[0]);
       HLAType lastType = new HLAType(HLALocus.valueOf(locus), specString.split(RANGE_TOKEN)[1]);
+      List<Integer> newSpec = new ArrayList<>(lastType.spec());
       for (int rangeIndex = firstType.spec().get(1); rangeIndex <= lastType.spec()
           .get(1); rangeIndex++) {
-        haplotypeMap.put(Strand.values()[strandIndex],
-            new HLAType(firstType.locus(), firstType.spec().get(0), rangeIndex));
+        newSpec.set(1, rangeIndex);
+        haplotypeMap.put(Strand.values()[strandIndex], new HLAType(firstType.locus(), newSpec));
       }
     } else {
       HLALocus parsedLocus = HLALocus.valueOf(locus);
-      // Cap the spec at 2 positions
       HLAType rawType = new HLAType(parsedLocus, specString.replaceAll("N", ""));
       HLAType finalType;
       if (specString.endsWith("N")) {
-        finalType = new NullType(parsedLocus, rawType.spec().get(0), rawType.spec().get(1));
+        finalType = new NullType(parsedLocus, rawType.spec());
       } else {
-        finalType = new HLAType(parsedLocus, rawType.spec().get(0), rawType.spec().get(1));
+        finalType = new HLAType(parsedLocus, rawType.spec());
       }
       haplotypeMap.put(Strand.values()[strandIndex], finalType);
     }

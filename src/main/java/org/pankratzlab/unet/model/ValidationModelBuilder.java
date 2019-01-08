@@ -38,13 +38,14 @@ import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.NullType;
 import org.pankratzlab.hla.SeroLocus;
 import org.pankratzlab.hla.SeroType;
+import org.pankratzlab.unet.hapstats.AlleleGroups;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-import org.pankratzlab.unet.parser.util.DRAssociations;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+import org.pankratzlab.unet.parser.util.DRAssociations;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
@@ -275,7 +276,8 @@ public class ValidationModelBuilder {
 
     List<Multimap<Strand, HLAType>> presentTypesByLocus =
         typesByLocus.stream().filter(m -> !m.isEmpty()).collect(Collectors.toList());
-    presentTypesByLocus.forEach(this::prune);
+    presentTypesByLocus.forEach(this::pruneUnknown);
+    presentTypesByLocus.forEach(this::condenseGroups);
 
     if (!presentTypesByLocus.isEmpty()) {
       // 1. Recursively generate the set of all possible haplotype pairs
@@ -411,9 +413,27 @@ public class ValidationModelBuilder {
   }
 
   /**
+   * Replace all HLA types with their groups (condensing equivalent alleles)
+   */
+  private void condenseGroups(Multimap<Strand, HLAType> typesForStrand) {
+    for (Strand strand : typesForStrand.keySet()) {
+      Set<HLAType> condensed = new HashSet<>();
+      Collection<HLAType> uncondensed = typesForStrand.get(strand);
+
+      for (HLAType hlaType : uncondensed) {
+        condensed.add(AlleleGroups.getGGroup(hlaType));
+      }
+
+      // NB: making the values empty will break this loop by removing the key from the multimap :D
+      typesForStrand.replaceValues(strand, condensed);
+    }
+
+  }
+
+  /**
    * Filter out {@link Status#UNKNOWN} types and eliminate redundant strands
    */
-  private void prune(Multimap<Strand, HLAType> typesForStrand) {
+  private void pruneUnknown(Multimap<Strand, HLAType> typesForStrand) {
     // Homozygous
     if (Objects.equals(typesForStrand.get(Strand.FIRST), typesForStrand.get(Strand.SECOND))) {
       typesForStrand.removeAll(Strand.SECOND);
@@ -432,7 +452,8 @@ public class ValidationModelBuilder {
 
       // If we have any common or well-documented types, drop all unknown
       if (!cwdTypes.isEmpty()) {
-        values.removeAll(typesByStatus.get(Status.UNKNOWN));
+        // NB: making the values empty will break this loop by removing the key from the multimap :D
+        typesForStrand.replaceValues(strand, cwdTypes);
       }
     }
   }

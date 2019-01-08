@@ -35,7 +35,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 
 /**
- * Utility class for reporting common/well-documented status of alleles
+ * Utility class for reporting common/well-documented status of alleles. Uses full field alleles and
+ * P/G groups.
  */
 public final class CommonWellDocumented {
 

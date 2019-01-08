@@ -21,7 +21,6 @@
  */
 package org.pankratzlab.unet.hapstats;
 
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.HashSet;
@@ -38,7 +37,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 
 /**
- * Static utility class for accessing haplotype frequencies for B-C and DR-DQ haplotypes
+ * Static utility class for accessing haplotype frequencies for B-C and DR-DQ haplotypes. Uses
+ * two-field alleles and P/G groups.
  */
 public final class HaplotypeFrequencies {
   private static final String DR_DQ_TABLE = "/2013_DRB3-4-5_DRB1_DQB1.csv";
@@ -78,8 +78,7 @@ public final class HaplotypeFrequencies {
         Multimap<RaceGroup, Double> hapMap = MultimapBuilder.hashKeys().arrayListValues().build();
         // Values are stored as RaceCode frequencies, but we want to condense them to RaceGroups
         for (RaceGroup group : RaceGroup.values()) {
-          hapMap.put(group,
-              Double.parseDouble(next.get(group.toString() + FREQ_COL_SUFFIX)));
+          hapMap.put(group, Double.parseDouble(next.get(group.toString() + FREQ_COL_SUFFIX)));
         }
         frequencyTableBuilder.put(haplotype, new HaplotypeFrequency(hapMap));
       });
