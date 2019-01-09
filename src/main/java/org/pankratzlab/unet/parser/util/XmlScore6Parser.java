@@ -253,22 +253,22 @@ public class XmlScore6Parser {
       // Parse haplotypes
       if (C_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
-            ValidationModelBuilder::cHaplotype);
+            identityLocusMap(HLALocus.C), ValidationModelBuilder::cHaplotype);
       } else if (DQB_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
-            ValidationModelBuilder::dqHaplotype);
+            identityLocusMap(HLALocus.DQB1), ValidationModelBuilder::dqHaplotype);
       } else if (DRB_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
-            ValidationModelBuilder::drHaplotype);
+            identityLocusMap(HLALocus.DRB1), ValidationModelBuilder::drHaplotype);
         if (selectedDRB345Index > 0) {
           addHaplotypes(builder, resultCombinations.get(selectedDRB345Index),
-              ValidationModelBuilder::dr345Haplotype);
+              drb345Map(resultPairs), ValidationModelBuilder::dr345Haplotype);
         } else {
           builder.dr345Haplotype(ArrayListMultimap.create());
         }
       } else if (B_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
-            ValidationModelBuilder::bHaplotype);
+            identityLocusMap(HLALocus.B), ValidationModelBuilder::bHaplotype);
         Map<Strand, BwGroup> bwMap = new HashMap<>();
 
         // Build the Bw strand map
@@ -300,6 +300,27 @@ public class XmlScore6Parser {
       }
     }
 
+  }
+
+  private static Map<Strand, HLALocus> drb345Map(List<ResultCombination> resultPairs) {
+    Builder<Strand, HLALocus> mapBuilder = ImmutableMap.builder();
+    int strandIdx = 0;
+    for (int combinationIndex = 0; combinationIndex < resultPairs.size(); combinationIndex++) {
+      HLALocus locus =
+          DRAssociations.getDRBLocus(resultPairs.get(combinationIndex).getAntigenCombination());
+      if (Objects.nonNull(locus)) {
+        mapBuilder.put(Strand.values()[strandIdx++], locus);
+      }
+    }
+    return mapBuilder.build();
+  }
+
+  private static Map<Strand, HLALocus> identityLocusMap(HLALocus locus) {
+    Builder<Strand, HLALocus> mapBuilder = ImmutableMap.builder();
+    for (Strand strand : Strand.values()) {
+      mapBuilder.put(strand, locus);
+    }
+    return mapBuilder.build();
   }
 
   /**
@@ -427,6 +448,7 @@ public class XmlScore6Parser {
    * probable haplotypes.
    */
   private static void addHaplotypes(ValidationModelBuilder builder, Element resultCombination,
+      Map<Strand, HLALocus> locusMap,
       BiConsumer<ValidationModelBuilder, Multimap<Strand, HLAType>> haplotypeSetter) {
     for (int strandIndex = 1; strandIndex <= Strand.values().length; strandIndex++) {
       Elements results = resultCombination.getElementsByTag(ALLELE_COMBINATION_TAG + strandIndex);
@@ -445,6 +467,9 @@ public class XmlScore6Parser {
         if (allele.indexOf(LOCUS_SEPARATOR) > 0) {
           locus = allele.substring(0, allele.indexOf(LOCUS_SEPARATOR));
           allele = allele.substring(allele.indexOf(LOCUS_SEPARATOR) + 1, allele.length());
+        }
+        if (locus.isEmpty()) {
+          locus = locusMap.get(Strand.values()[strandIndex - 1]).toString();
         }
 
         // Replace suffix flags
