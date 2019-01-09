@@ -123,9 +123,9 @@ public final class HaplotypeFrequencies {
    *         two types
    */
   public static Double getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
-    Haplotype equivHaplotype =
-        new Haplotype(haplotype.getTypes().stream().map(AlleleGroups::getGGroup)
-            .map(HaplotypeFrequencies::adjustNulls).collect(Collectors.toSet()));
+    Haplotype equivHaplotype = new Haplotype(haplotype.getTypes().stream()
+        .map(AlleleGroups::getGGroup).map(HaplotypeFrequencies::adjustNulls)
+        .map(HaplotypeFrequencies::truncateFields).collect(Collectors.toSet()));
 
     if (!TABLES.containsKey(equivHaplotype)) {
       return 0.0;
@@ -142,6 +142,10 @@ public final class HaplotypeFrequencies {
     }
 
     return testType;
+  }
+
+  private static HLAType truncateFields(HLAType testType) {
+    return new HLAType(testType.locus(), testType.spec().subList(0, 2));
   }
 
 

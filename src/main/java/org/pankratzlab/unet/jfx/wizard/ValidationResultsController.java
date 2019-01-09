@@ -30,6 +30,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import javax.imageio.ImageIO;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.NullType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.BCHaplotypeRow;
@@ -112,10 +113,10 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private TableColumn<BCHaplotypeRow, String> bcEthnicityColumn;
 
   @FXML
-  private TableColumn<BCHaplotypeRow, String> haplotypeCAlleleColumn;
+  private TableColumn<BCHaplotypeRow, HLAType> haplotypeCAlleleColumn;
 
   @FXML
-  private TableColumn<BCHaplotypeRow, String> haplotypeBAlleleColumn;
+  private TableColumn<BCHaplotypeRow, HLAType> haplotypeBAlleleColumn;
 
   @FXML
   private TableColumn<BCHaplotypeRow, String> haplotypeBwColumn;
@@ -131,13 +132,13 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private TableColumn<DRDQHaplotypeRow, String> drdqEthnicityColumn;
 
   @FXML
-  private TableColumn<DRDQHaplotypeRow, String> haplotypeDRB345AlleleColumn;
+  private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDRB345AlleleColumn;
 
   @FXML
-  private TableColumn<DRDQHaplotypeRow, String> haplotypeDRB1AlleleColumn;
+  private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDRB1AlleleColumn;
 
   @FXML
-  private TableColumn<DRDQHaplotypeRow, String> haplotypeDQB1Column;
+  private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDQB1AlleleColumn;
 
   @FXML
   private TableColumn<DRDQHaplotypeRow, Double> drdqFrequencyColumn;
@@ -209,7 +210,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     assert drdqEthnicityColumn != null : "fx:id=\"drdqEthnicityColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert haplotypeDRB345AlleleColumn != null : "fx:id=\"haplotypeDRB345AlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert haplotypeDRB1AlleleColumn != null : "fx:id=\"haplotypeDRB1AlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert haplotypeDQB1Column != null : "fx:id=\"haplotypeDQB1Column\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeDQB1AlleleColumn != null : "fx:id=\"haplotypeDQB1Column\" was not injected: check your FXML file 'ValidationResults.fxml'.";
 
     // Configure validation results table columns
     rowLabelCol.setCellValueFactory(new PropertyValueFactory<>(ValidationRow.ID_PROP));
@@ -239,14 +240,14 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
         .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB345_PROP));
     haplotypeDRB1AlleleColumn
         .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB1_ALLELE_PROP));
-    haplotypeDQB1Column
+    haplotypeDQB1AlleleColumn
         .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DQB1_ALLELE_PROP));
     drdqFrequencyColumn
         .setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
 
     haplotypeDRB345AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
     haplotypeDRB1AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
-    haplotypeDQB1Column.setCellFactory(new HaplotypeCellFactory<>());
+    haplotypeDQB1AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
 
     // Record an image of the validation state when entering this page
     rootPane.addEventHandler(PageActivatedEvent.PAGE_ACTIVE, e -> performPageSetup());
@@ -371,14 +372,23 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
    * common
    */
   private static class HaplotypeCellFactory<T extends HaplotypeRow>
-      implements Callback<TableColumn<T, String>, TableCell<T, String>> {
+      implements Callback<TableColumn<T, HLAType>, TableCell<T, HLAType>> {
 
     @Override
-    public TableCell<T, String> call(TableColumn<T, String> param) {
-      return new TableCell<T, String>() {
+    public TableCell<T, HLAType> call(TableColumn<T, HLAType> param) {
+      return new TableCell<T, HLAType>() {
         @Override
-        protected void updateItem(String alleleText, boolean empty) {
-          setText(alleleText);
+        protected void updateItem(HLAType allele, boolean empty) {
+          if (empty) {
+            setText("");
+            return;
+          }
+
+          if (Objects.equals(NullType.UNREPORTED_DRB345, allele)) {
+            setText("Unreported");
+          } else {
+            setText(new HLAType(allele.locus(), allele.spec().subList(0, 2)).toString());
+          }
 
           ObservableList<String> styleList = getStyleClass();
           for (int i = 0; i < styleList.size(); i++) {
@@ -387,26 +397,24 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
               break;
             }
           }
+
+          switch (CommonWellDocumented.getStatus(allele)) {
+            case UNKNOWN:
+              getStyleClass().add(0, UK_ALLELE_CLASS);
+              break;
+            case WELL_DOCUMENTED:
+              getStyleClass().add(0, WD_ALLELE_CLASS);
+              break;
+            case COMMON:
+            default:
+              break;
+          }
+
           TableRow<?> tableRow = getTableRow();
           if (Objects.nonNull(tableRow)) {
             HaplotypeRow row = (HaplotypeRow) tableRow.getItem();
-            if (Objects.nonNull(row) && Objects.nonNull(row.haplotypeProperty())
-                && !HLAType.parseTypes(alleleText).isEmpty()) {
-              switch (CommonWellDocumented.getStatus(HLAType.valueOf(alleleText))) {
-                case UNKNOWN:
-                  getStyleClass().add(0, UK_ALLELE_CLASS);
-                  break;
-                case WELL_DOCUMENTED:
-                  getStyleClass().add(0, WD_ALLELE_CLASS);
-                  break;
-                case COMMON:
-                default:
-                  break;
-              }
-
-              if (Double.compare(UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
-                getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
-              }
+            if (Double.compare(UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
+              getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
             }
           }
         }

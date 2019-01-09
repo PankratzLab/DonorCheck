@@ -89,7 +89,7 @@
                       <TableColumn fx:id="drdqEthnicityColumn" prefWidth="75" text="Ethnicity" />
                       <TableColumn fx:id="haplotypeDRB345AlleleColumn" prefWidth="85" text="DRB345" />
                       <TableColumn fx:id="haplotypeDRB1AlleleColumn" prefWidth="85" text="DRB1" />
-                      <TableColumn fx:id="haplotypeDQB1Column" prefWidth="85" text="DQB1" />
+                      <TableColumn fx:id="haplotypeDQB1AlleleColumn" prefWidth="85" text="DQB1" />
                       <TableColumn fx:id="drdqFrequencyColumn" prefWidth="75" text="Frequency" />
                     </columns>
                      <columnResizePolicy>

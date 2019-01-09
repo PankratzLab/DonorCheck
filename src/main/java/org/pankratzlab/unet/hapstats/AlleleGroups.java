@@ -152,7 +152,7 @@ public final class AlleleGroups {
     if (equiv == null) {
       equiv = allele;
     }
-    equiv = new HLAType(equiv.locus(), equiv.spec().subList(0, 2));
+    equiv = new HLAType(equiv.locus(), equiv.spec());
     return equiv;
   }
 }

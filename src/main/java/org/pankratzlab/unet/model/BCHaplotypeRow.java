@@ -27,6 +27,8 @@ import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.collect.ImmutableMap;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 
@@ -38,8 +40,8 @@ public class BCHaplotypeRow extends AbstractHaplotypeRow {
   public static final String B_ALLELE_PROP = "alleleB";
   public static final String BW_GROUP_PROP = "bwGroup";
 
-  private final ReadOnlyStringWrapper alleleC;
-  private final ReadOnlyStringWrapper alleleB;
+  private final ReadOnlyObjectWrapper<HLAType> alleleC;
+  private final ReadOnlyObjectWrapper<HLAType> alleleB;
   private final ReadOnlyStringWrapper bwGroup;
 
   public BCHaplotypeRow(RaceGroup ethnicity, Haplotype haplotype,
@@ -64,8 +66,8 @@ public class BCHaplotypeRow extends AbstractHaplotypeRow {
       throw new IllegalArgumentException("Invalid B-C haplotype: " + haplotype.toShortString());
     }
 
-    alleleC = new ReadOnlyStringWrapper(c.toString());
-    alleleB = new ReadOnlyStringWrapper(b.toString());
+    alleleC = getAlleleWrapper(c);
+    alleleB = getAlleleWrapper(b);
     BwGroup group = BwGroup.Unknown;
     if (Objects.nonNull(bwMap) && bwMap.containsKey(b)) {
       group = bwMap.get(b);
@@ -77,14 +79,14 @@ public class BCHaplotypeRow extends AbstractHaplotypeRow {
   /**
    * @return Property for the C allele of this row's {@link Haplotype}
    */
-  public ReadOnlyStringProperty alleleCProperty() {
+  public ReadOnlyObjectProperty<HLAType> alleleCProperty() {
     return alleleC.getReadOnlyProperty();
   }
 
   /**
    * @return Property for the B allele of this row's {@link Haplotype}
    */
-  public ReadOnlyStringProperty alleleBProperty() {
+  public ReadOnlyObjectProperty<HLAType> alleleBProperty() {
     return alleleB.getReadOnlyProperty();
   }
 

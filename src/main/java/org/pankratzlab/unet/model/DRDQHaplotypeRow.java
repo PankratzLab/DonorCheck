@@ -23,11 +23,10 @@ package org.pankratzlab.unet.model;
 
 import java.util.Objects;
 import org.pankratzlab.hla.HLAType;
-import org.pankratzlab.hla.NullType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 
 /**
  * One row of a Haplotype table (showing all haplotypes for an individual)
@@ -37,9 +36,9 @@ public class DRDQHaplotypeRow extends AbstractHaplotypeRow {
   public static final String DQB1_ALLELE_PROP = "alleleDQB1";
   public static final String DRB345_PROP = "alleleDRB345";
 
-  private final ReadOnlyStringWrapper alleleDRB1;
-  private final ReadOnlyStringWrapper alleleDQB1;
-  private final ReadOnlyStringWrapper alleleDRB345;
+  private final ReadOnlyObjectWrapper<HLAType> alleleDRB1;
+  private final ReadOnlyObjectWrapper<HLAType> alleleDQB1;
+  private final ReadOnlyObjectWrapper<HLAType> alleleDRB345;
 
   public DRDQHaplotypeRow(RaceGroup ethnicity, Haplotype haplotype) {
     super(ethnicity, haplotype);
@@ -70,34 +69,29 @@ public class DRDQHaplotypeRow extends AbstractHaplotypeRow {
           "Invalid DRB345-DRB1-DQB1 haplotype: " + haplotype.toShortString());
     }
 
-    alleleDRB1 = new ReadOnlyStringWrapper(drb1.toString());
-    alleleDQB1 = new ReadOnlyStringWrapper(dqb1.toString());
-
-    String drb345String = drb345.toString();
-    if (Objects.equals(NullType.UNREPORTED_DRB345, drb345)) {
-      drb345String = "Unreported";
-    }
-    alleleDRB345 = new ReadOnlyStringWrapper(drb345String);
+    alleleDRB1 = getAlleleWrapper(drb1);
+    alleleDQB1 = getAlleleWrapper(dqb1);
+    alleleDRB345 = getAlleleWrapper(drb345);
   }
 
   /**
    * @return Property for the C allele of this row's {@link Haplotype}
    */
-  public ReadOnlyStringProperty alleleDRB1Property() {
+  public ReadOnlyObjectProperty<HLAType> alleleDRB1Property() {
     return alleleDRB1.getReadOnlyProperty();
   }
 
   /**
    * @return Property for the B allele of this row's {@link Haplotype}
    */
-  public ReadOnlyStringProperty alleleDQB1Property() {
+  public ReadOnlyObjectProperty<HLAType> alleleDQB1Property() {
     return alleleDQB1.getReadOnlyProperty();
   }
 
   /**
    * @return Property for the Bw group status of this row's B allele
    */
-  public ReadOnlyStringProperty alleleDRB345Property() {
+  public ReadOnlyObjectProperty<HLAType> alleleDRB345Property() {
     return alleleDRB345.getReadOnlyProperty();
   }
 }
