@@ -387,7 +387,11 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
           if (Objects.equals(NullType.UNREPORTED_DRB345, allele)) {
             setText("Unreported");
           } else {
-            setText(new HLAType(allele.locus(), allele.spec().subList(0, 2)).toString());
+            String alleleText = new HLAType(allele.locus(), allele.spec().subList(0, 2)).toString();
+            if (allele instanceof NullType) {
+              alleleText += "N";
+            }
+            setText(alleleText);
           }
 
           ObservableList<String> styleList = getStyleClass();
