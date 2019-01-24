@@ -39,6 +39,7 @@ import org.pankratzlab.unet.model.HaplotypeRow;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
 import com.google.common.collect.ImmutableSet;
+import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -417,7 +418,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
           TableRow<?> tableRow = getTableRow();
           if (Objects.nonNull(tableRow)) {
             HaplotypeRow row = (HaplotypeRow) tableRow.getItem();
-            if (Double.compare(UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
+            if (Objects.nonNull(row)
+                && Double.compare(UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
               getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
             }
           }
