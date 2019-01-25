@@ -237,11 +237,23 @@ public class PdfSureTyperParser {
         // This indicates a new locus is starting
         break;
       }
+      if (locus.startsWith("DRB") && line.startsWith("DRB") && !line.contains(locus)
+          && strandIndex >= 0) {
+        // DRB345 are all in one section - we do not want to accidentally mix DRB loci. We also
+        // check the strand index because we do not want to prematurely end iteration.
+        break;
+      }
 
       if (line.matches(locus + "[*w][0-9]+.*")) {
         // This is the first line of allele data. It is possible for it to appear without a
         // GENOTYPE_HEADER if both alleles are on the same page.
         strandIndex++;
+
+        if (!strandMap.isEmpty() && (locus.matches("DRB[345]"))) {
+          strandIndex++;
+          // Each DRB345 locus has to be parsed separately. It is possible the map could've been
+          // previously parsed, in which case we don't want to start from the first strand.
+        }
 
         // Skip the first token. The first token is the allele group pattern (e.g. B*02)
         tokenIndex++;
@@ -263,8 +275,13 @@ public class PdfSureTyperParser {
           continue;
         }
 
+        if (!token.contains(":")) {
+          // Not an allele specificity
+          continue;
+        }
+
         // Sanitize the token string
-        token = token.replaceAll("[^0-9:]", "");
+        token = token.replaceAll("[^0-9:nN-]", "");
 
         if (token.isEmpty()) {
           // Wasn't actually an allele
