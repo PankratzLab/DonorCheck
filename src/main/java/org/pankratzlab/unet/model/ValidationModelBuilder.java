@@ -200,7 +200,7 @@ public class ValidationModelBuilder {
     drb1Haplotypes.putAll(types);
 
     for (Strand strand : types.keySet()) {
-      SeroType drbType = types.get(strand).iterator().next().equiv();
+      SeroType drbType = types.get(strand).iterator().next().lowResEquiv();
       if (Objects.isNull(DRAssociations.getDRBLocus(drbType))) {
         dr345Haplotypes.put(strand, NullType.UNREPORTED_DRB345);
       }

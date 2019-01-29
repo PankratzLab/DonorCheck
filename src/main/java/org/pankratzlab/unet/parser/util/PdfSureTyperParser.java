@@ -125,7 +125,7 @@ public class PdfSureTyperParser {
 
     // Adjust DRB345 for unreported types
     for (Entry<Strand, HLAType> entry : haplotypeMap.get(HAPLOTYPE_DRB1).entries()) {
-      if (Objects.isNull(DRAssociations.getDRBLocus(entry.getValue().equivSafe()))) {
+      if (Objects.isNull(DRAssociations.getDRBLocus(entry.getValue().lowResEquiv()))) {
         // This DRB1 has an unreported DRB345 that needs to be manually registered
         Multimap<Strand, HLAType> drb345Map = haplotypeMap.get(HAPLOTYPE_DRB345);
         Strand unreportedStrand = entry.getKey();
