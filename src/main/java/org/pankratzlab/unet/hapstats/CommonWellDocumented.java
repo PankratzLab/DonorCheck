@@ -22,12 +22,15 @@
 package org.pankratzlab.unet.hapstats;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.hla.NullType;
 import org.pankratzlab.unet.parser.XmlDonorParser;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -121,7 +124,68 @@ public final class CommonWellDocumented {
       return ALLELE_FREQS.get(equivType);
     }
 
+    // Try adding :01's to the specificity
+    HLAType specModified = equivType;
+    while (Objects.nonNull((specModified = growSpec(specModified)))) {
+      if (ALLELE_FREQS.containsKey(specModified)) {
+        return ALLELE_FREQS.get(specModified);
+      }
+    }
+
+    // Try removing tailing :01's to the specificity
+    specModified = equivType;
+    while (Objects.nonNull((specModified = reduceSpec(specModified)))) {
+      if (ALLELE_FREQS.containsKey(specModified)) {
+        return ALLELE_FREQS.get(specModified);
+      }
+    }
+
     return Status.UNKNOWN;
+  }
+
+  /**
+   * @param equivType Input type to reduce
+   * @return The input {@link HLAType} with its tailing "01" field removed, or null if the allele
+   *         can not be reduced
+   */
+  private static HLAType reduceSpec(HLAType equivType) {
+    List<Integer> spec = equivType.spec();
+
+    if (spec.size() < 2 || spec.get(spec.size() - 1) != 1) {
+      // We can only remove a trailing "01 "specificity, and only if we have 3- or more fields
+      return null;
+    }
+
+    spec = spec.subList(0, spec.size() - 1);
+    return modifiedSpec(equivType, spec);
+  }
+
+  /**
+   * @param equivType Input type to expand
+   * @return The input {@link HLAType} with an additional "01" field, or null if the allele can not
+   *         be further expanded
+   */
+  private static HLAType growSpec(HLAType equivType) {
+    List<Integer> spec = new ArrayList<>(equivType.spec());
+
+    if (spec.size() >= 4) {
+      // We can only expand 2- and 3-field specificities
+      return null;
+    }
+
+    spec.add(1);
+
+    return modifiedSpec(equivType, spec);
+  }
+
+  /**
+   * Helper method to create an updated HLAType
+   */
+  private static HLAType modifiedSpec(HLAType equivType, List<Integer> spec) {
+    if (equivType instanceof NullType) {
+      return new NullType(equivType.locus(), spec);
+    }
+    return new HLAType(equivType.locus(), spec);
   }
 
   /**
