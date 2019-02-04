@@ -237,7 +237,7 @@ public class PdfSureTyperParser {
         // This indicates a new locus is starting
         break;
       }
-      if (locus.startsWith("DRB") && line.startsWith("DRB") && !line.contains(locus)
+      if (locus.startsWith("DRB") && line.matches("^DRB[0-9]\\*[0-9]+") && !line.contains(locus)
           && strandIndex >= 0) {
         // DRB345 are all in one section - we do not want to accidentally mix DRB loci. We also
         // check the strand index because we do not want to prematurely end iteration.
@@ -249,7 +249,7 @@ public class PdfSureTyperParser {
         // GENOTYPE_HEADER if both alleles are on the same page.
         strandIndex++;
 
-        if (!strandMap.isEmpty() && (locus.matches("DRB[345]"))) {
+        if (!strandMap.isEmpty() && locus.matches("DRB[345]") && !line.contains(locus)) {
           strandIndex++;
           // Each DRB345 locus has to be parsed separately. It is possible the map could've been
           // previously parsed, in which case we don't want to start from the first strand.
