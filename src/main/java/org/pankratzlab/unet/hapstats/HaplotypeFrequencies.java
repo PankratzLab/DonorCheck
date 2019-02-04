@@ -24,6 +24,7 @@ package org.pankratzlab.unet.hapstats;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -102,7 +103,30 @@ public final class HaplotypeFrequencies {
    */
   private static HLAType makeType(CSVRecord record, String specificityHeader) {
     String alleleString = record.get(specificityHeader);
-    return AlleleGroups.getGroupAllele(alleleString);
+    HLAType groupAllele = AlleleGroups.getGroupAllele(alleleString);
+    return truncateFields(groupAllele);
+  }
+
+  /**
+   * Any null type is treated as {@link NullType#UNREPORTED_DRB345}
+   */
+  private static HLAType adjustNulls(HLAType testType) {
+    if (testType.locus().isDRB345() && testType instanceof NullType) {
+      return NullType.UNREPORTED_DRB345;
+    }
+  
+    return testType;
+  }
+
+  /**
+   * Ensure we never list or look up an allele with more than 2-field specificity
+   */
+  private static HLAType truncateFields(HLAType testType) {
+    List<Integer> truncatedFields = testType.spec().subList(0, 2);
+    if (testType instanceof NullType) {
+      return new NullType(testType.locus(), truncatedFields);
+    }
+    return new HLAType(testType.locus(), truncatedFields);
   }
 
   /**
@@ -134,22 +158,6 @@ public final class HaplotypeFrequencies {
     }
     return TABLES.get(equivHaplotype).getFrequencyForEthnicity(ethnicity);
   }
-
-  /**
-   * Any null type is treated as {@link NullType#UNREPORTED_DRB345}
-   */
-  private static HLAType adjustNulls(HLAType testType) {
-    if (testType.locus().isDRB345() && testType instanceof NullType) {
-      return NullType.UNREPORTED_DRB345;
-    }
-
-    return testType;
-  }
-
-  private static HLAType truncateFields(HLAType testType) {
-    return new HLAType(testType.locus(), testType.spec().subList(0, 2));
-  }
-
 
   /**
    * Helper class linking {@link RaceGroup} and frequency values for a particular Haplotype
