@@ -235,11 +235,8 @@ public class ValidationModelBuilder {
     Multimap<RaceGroup, Haplotype> bcCwdHaplotypes =
         buildHaplotypes(ImmutableList.of(bHaplotypes, cHaplotypes));
 
-    long t = System.currentTimeMillis();
     Multimap<RaceGroup, Haplotype> drDqDR345Haplotypes =
         buildHaplotypes(ImmutableList.of(drb1Haplotypes, dqb1Haplotypes, dr345Haplotypes));
-    System.out
-        .println("Haplotype took: " + ((System.currentTimeMillis() - t) / 1000.0) + " seconds");
 
     frequencyTable.clear();
 
