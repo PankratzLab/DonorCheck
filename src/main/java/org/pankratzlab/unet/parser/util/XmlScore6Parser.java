@@ -40,6 +40,7 @@ import org.pankratzlab.hla.HLALocus;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.Strand;
@@ -410,16 +411,12 @@ public class XmlScore6Parser {
     SeroType antigen = null;
 
     String alleleString = getFirstValidType(
-        resultCombinations.getElementsByTag(ALLELE_COMBINATION_TAG + combinationIndex));
+        resultCombinations.getElementsByTag(ALLELE_COMBINATION_TAG + combinationIndex), locus);
     String antigenString = getFirstValidType(
         resultCombinations.getElementsByTag(SERO_COMBINATION_TAG + combinationIndex));
 
     // Ensure this is a recognized alleles
     try {
-      if (!alleleString.contains("*")) {
-        // picked a combination with no locus so we have to add it manually
-        alleleString = locus.toString() + alleleString;
-      }
       allele = HLAType.valueOf(alleleString);
       // This type is valid
     } catch (IllegalArgumentException e) {
@@ -555,19 +552,28 @@ public class XmlScore6Parser {
   }
 
   /**
+   * As {@link #getFirstValidType(Elements, String)} but will not take {@link CommonWellDocumented}
+   * status into consideration.
+   */
+  private static String getFirstValidType(Elements results) {
+    return getFirstValidType(results, null);
+  }
+
+  /**
    * @return {@code null} if there is no type at this position (homozygous or single DRB345);
    *         {@link #NULL_TYPE} if the allele is present but not expressed; {@link #UNDEFINED_TYPE}
    *         if the allele is expressed but has no serological equivalent.
    */
-  private static String getFirstValidType(Elements results) {
+  private static String getFirstValidType(Elements results, HLALocus locus) {
+    Status bestStatus = Objects.isNull(locus) ? Status.COMMON : null;
     String typeText = null;
     if (!results.isEmpty() && results.get(0).hasText()) {
       String type = null;
       String[] resultTypes = results.get(0).text().replaceAll("\\s+", "").split(RESULT_SEPARATOR);
 
-      for (int result =
-          0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type) || isNullType(type))
-              && result < resultTypes.length; result++) {
+      for (int result = 0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type)
+          || isNullType(type) || !Objects.equals(Status.COMMON, bestStatus))
+          && result < resultTypes.length; result++) {
         String tmp = resultTypes[result];
         if (tmp.isEmpty()) {
           // Sometimes a leading comma can create empty strings - skip these
@@ -586,18 +592,29 @@ public class XmlScore6Parser {
           // http://hla.alleles.org/nomenclature/naming.html
           continue;
         }
+        if (Objects.nonNull(tmp)) {
+          // Sometimes the inheritance structure of the types is listed. We only want the first
+          // (most specific) type, with the best CWD status
+          if (tmp.contains(PARENT_TYPE_SEPARATOR)) {
+            tmp = tmp.substring(0, tmp.indexOf(PARENT_TYPE_SEPARATOR));
+          }
+          if (Objects.nonNull(locus)) {
+            if (!tmp.contains("*")) {
+              tmp = locus.toString() + "*" + tmp;
+            }
+            // Make sure that this allele has a better CWD status than the last
+            Status currentStatus = CommonWellDocumented.getStatus(HLAType.valueOf(tmp));
+            if (Objects.nonNull(bestStatus)
+                && bestStatus.getWeight() >= currentStatus.getWeight()) {
+              continue;
+            }
+            bestStatus = currentStatus;
+          }
+        }
         type = tmp;
       }
+      typeText = type;
 
-      if (Objects.nonNull(type)) {
-        // Sometimes the inheritance structure of the types is listed. We only want the first (most
-        // specific) type.
-        if (type.contains(PARENT_TYPE_SEPARATOR)) {
-          type = type.substring(0, type.indexOf(PARENT_TYPE_SEPARATOR));
-        }
-
-        typeText = type;
-      }
     }
     return typeText;
   }
