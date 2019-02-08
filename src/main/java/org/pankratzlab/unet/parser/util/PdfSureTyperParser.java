@@ -249,7 +249,7 @@ public class PdfSureTyperParser {
         // GENOTYPE_HEADER if both alleles are on the same page.
         strandIndex++;
 
-        if (!strandMap.isEmpty() && locus.matches("DRB[345]") && !line.contains(locus)) {
+        if (!strandMap.isEmpty() && locus.matches("DRB[345]") && line.contains(locus)) {
           strandIndex++;
           // Each DRB345 locus has to be parsed separately. It is possible the map could've been
           // previously parsed, in which case we don't want to start from the first strand.
