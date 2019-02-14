@@ -42,6 +42,7 @@ import com.google.common.collect.MultimapBuilder;
  * two-field alleles and P/G groups.
  */
 public final class HaplotypeFrequencies {
+  public static final double UNKNOWN_HAP_CUTOFF = 0.00001;
   private static final String DR_DQ_TABLE = "/2013_DRB3-4-5_DRB1_DQB1.csv";
   private static final String BC_TABLE = "/2013_C_B.csv";
   private static final String FREQ_COL_SUFFIX = "_freq";
@@ -86,7 +87,11 @@ public final class HaplotypeFrequencies {
         Multimap<RaceGroup, Double> hapMap = MultimapBuilder.hashKeys().arrayListValues().build();
         // Values are stored as RaceCode frequencies, but we want to condense them to RaceGroups
         for (RaceGroup group : RaceGroup.values()) {
-          hapMap.put(group, Double.parseDouble(next.get(group.toString() + FREQ_COL_SUFFIX)));
+          double frequency = Double.parseDouble(next.get(group.toString() + FREQ_COL_SUFFIX));
+          if (Double.compare(UNKNOWN_HAP_CUTOFF, frequency) > 0) {
+            frequency = 0.0;
+          }
+          hapMap.put(group, frequency);
         }
         frequencyTableBuilder.put(haplotype, new HaplotypeFrequency(hapMap));
       });
@@ -114,7 +119,7 @@ public final class HaplotypeFrequencies {
     if (testType.locus().isDRB345() && testType instanceof NullType) {
       return NullType.UNREPORTED_DRB345;
     }
-  
+
     return testType;
   }
 

@@ -32,6 +32,7 @@ import javax.imageio.ImageIO;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.NullType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.BCHaplotypeRow;
 import org.pankratzlab.unet.model.DRDQHaplotypeRow;
@@ -66,7 +67,6 @@ import javafx.util.Callback;
  * Controller for viewing the final results status.
  */
 public class ValidationResultsController extends AbstractValidatingWizardController {
-  private static final double UNKNOWN_HAP_CUTOFF = 0.00001;
   private static final String INVALID_STYLE_CLASS = "invalid-cell";
   private static final String WD_ALLELE_CLASS = "well-documented-allele";
   private static final String UK_ALLELE_CLASS = "unknown-allele";
@@ -419,7 +419,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
           if (Objects.nonNull(tableRow)) {
             HaplotypeRow row = (HaplotypeRow) tableRow.getItem();
             if (Objects.nonNull(row)
-                && Double.compare(UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
+                && Double.compare(HaplotypeFrequencies.UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
               getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
             }
           }

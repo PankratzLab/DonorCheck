@@ -21,6 +21,7 @@
  */
 package org.pankratzlab.unet.model;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -552,11 +553,11 @@ public class ValidationModelBuilder {
         for (HLAType allele : haplotype.getTypes()) {
           switch (CommonWellDocumented.getStatus(allele)) {
             case COMMON:
-              // Add 2 points for common alleles
+              // Add 1 points for common alleles
               cwdScore += 1;
               break;
             case WELL_DOCUMENTED:
-              // Add 1 point for well-documented alleles
+              // Add 1/2 point for well-documented alleles
               cwdScore += 0.5;
               break;
             case UNKNOWN:
@@ -581,10 +582,16 @@ public class ValidationModelBuilder {
             noMissingCount++;
           }
         }
-        double s = (NO_MISSING_WEIGHT * noMissingCount) + cwdScore + frequency;
+        double s = (NO_MISSING_WEIGHT * noMissingCount)
+            + new BigDecimal(cwdScore).add(new BigDecimal(frequency)).doubleValue();
         scoresByEthnicity.put(e, s);
       }
 
+    }
+
+    @Override
+    public String toString() {
+      return super.toString() + " - " + scoresByEthnicity.toString();
     }
 
     /**
