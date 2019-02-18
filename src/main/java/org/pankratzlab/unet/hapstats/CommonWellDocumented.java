@@ -118,28 +118,34 @@ public final class CommonWellDocumented {
   }
 
   public static Status getStatus(HLAType type) {
-    HLAType equivType = AlleleGroups.getGGroup(type);
-
-    if (ALLELE_FREQS.containsKey(equivType)) {
-      return ALLELE_FREQS.get(equivType);
+    Status status = doGetStatus(type);
+    if (Status.UNKNOWN.equals(status)) {
+      HLAType equivType = AlleleGroups.getGGroup(type);
+      status = doGetStatus(equivType);
     }
+    return status;
+  }
 
+  private static Status doGetStatus(HLAType type) {
+    if (ALLELE_FREQS.containsKey(type)) {
+      return ALLELE_FREQS.get(type);
+    }
+  
     // Try adding :01's to the specificity
-    HLAType specModified = equivType;
+    HLAType specModified = type;
     while (Objects.nonNull((specModified = growSpec(specModified)))) {
       if (ALLELE_FREQS.containsKey(specModified)) {
         return ALLELE_FREQS.get(specModified);
       }
     }
-
+  
     // Try removing tailing :01's to the specificity
-    specModified = equivType;
+    specModified = type;
     while (Objects.nonNull((specModified = reduceSpec(specModified)))) {
       if (ALLELE_FREQS.containsKey(specModified)) {
         return ALLELE_FREQS.get(specModified);
       }
     }
-
     return Status.UNKNOWN;
   }
 
