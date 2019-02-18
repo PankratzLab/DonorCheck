@@ -630,7 +630,7 @@ public class ValidationModelBuilder {
         List<HLAType> t2 = makeList(o2);
         removeOverlapAndSort(t1, t2);
         for (int i = 0; i < t1.size() && i < t2.size(); i++) {
-          result += t1.get(i).compareTo(t2.get(i));
+          result += t2.get(i).compareTo(t1.get(i));
         }
       }
       return result;
@@ -642,7 +642,7 @@ public class ValidationModelBuilder {
      */
     private void removeOverlapAndSort(List<HLAType> t1, List<HLAType> t2) {
       Set<HLAType> overlap = new HashSet<>(t1);
-      t1.retainAll(t2);
+      overlap.retainAll(t2);
       t1.removeAll(overlap);
       t2.removeAll(overlap);
       Collections.sort(t1);
