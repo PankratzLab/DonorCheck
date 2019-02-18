@@ -524,19 +524,41 @@ public class XmlScore6Parser {
           "Found allele combinations with different sizes: " + refString + " - " + testString);
     }
 
+    List<Integer> refCounts = countSpec(reference);
+    List<Integer> testCounts = countSpec(test);
+
     int diff = 0;
 
     // Compare the lists until we find different types
-    for (int i = 0; i < reference.size() && diff == 0; i++) {
-      HLAType refType = reference.get(i);
-      HLAType testType = test.get(i);
-
-      diff = refType.compareTo(testType);
+    for (int i = 0; i < refCounts.size() && i < testCounts.size() && diff == 0; i++) {
+      diff = refCounts.get(i).compareTo(testCounts.get(i));
     }
 
     return diff;
   }
 
+
+  /**
+   * Helper method to combine the specificities of each allele in the given list. e.g. given alleles
+   * 01:01:01, 02:02:02, the return list output would be 03, 03, 03.
+   */
+  private static List<Integer> countSpec(List<HLAType> test) {
+    List<Integer> scoredSpecs = new ArrayList<>();
+
+    for (HLAType allele : test) {
+      List<Integer> spec = allele.spec();
+      for (int i = 0; i < spec.size(); i++) {
+        if (i < scoredSpecs.size()) {
+          int score = scoredSpecs.get(i) + spec.get(i);
+          scoredSpecs.set(i, score);
+        } else {
+          scoredSpecs.add(spec.get(i));
+        }
+      }
+    }
+
+    return scoredSpecs;
+  }
 
   /**
    * @return true iff the combination XML block contains a result combination of the given index
