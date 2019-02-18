@@ -544,7 +544,6 @@ public class ValidationModelBuilder {
 
     private ScoredHaplotypes(Collection<Haplotype> initialHaplotypes) {
       super();
-      int noMissingCount = 0;
       double cwdScore = 0;
 
       for (Haplotype haplotype : initialHaplotypes) {
@@ -568,7 +567,8 @@ public class ValidationModelBuilder {
       }
 
       for (RaceGroup e : RaceGroup.values()) {
-        double frequency = 1.0;
+        int noMissingCount = 0;
+        BigDecimal frequency = new BigDecimal(1.0);
         for (Haplotype haplotype : this) {
           // Add this haplotype to the table
           Double f = frequencyTable.get(haplotype, e);
@@ -577,13 +577,13 @@ public class ValidationModelBuilder {
             f = HaplotypeFrequencies.getFrequency(e, haplotype);
             frequencyTable.put(haplotype, e, f);
           }
-          if (f > 0) {
-            frequency *= f;
+          if (Double.compare(f, Double.MIN_VALUE) > 0) {
+            frequency = frequency.multiply(new BigDecimal(f));
             noMissingCount++;
           }
         }
         double s = (NO_MISSING_WEIGHT * noMissingCount)
-            + new BigDecimal(cwdScore).add(new BigDecimal(frequency)).doubleValue();
+            + new BigDecimal(cwdScore).add(frequency).doubleValue();
         scoresByEthnicity.put(e, s);
       }
 

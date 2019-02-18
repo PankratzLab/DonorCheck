@@ -89,7 +89,7 @@ public final class HaplotypeFrequencies {
         for (RaceGroup group : RaceGroup.values()) {
           double frequency = Double.parseDouble(next.get(group.toString() + FREQ_COL_SUFFIX));
           if (Double.compare(UNKNOWN_HAP_CUTOFF, frequency) > 0) {
-            frequency = 0.0;
+            frequency = Double.MIN_VALUE;
           }
           hapMap.put(group, frequency);
         }
