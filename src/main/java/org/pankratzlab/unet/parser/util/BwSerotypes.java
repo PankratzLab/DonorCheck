@@ -21,6 +21,8 @@
  */
 package org.pankratzlab.unet.parser.util;
 
+import java.util.Objects;
+import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
 import com.google.common.collect.ImmutableSet;
 
@@ -65,5 +67,20 @@ public final class BwSerotypes {
    */
   public static final BwGroup getBwGroup(SeroType antigen) {
     return getBwGroup(antigen.toString());
+  }
+
+  /**
+   * @return the {@link BwGroup} matching the equivalent {@link SeroType} of the given
+   *         {@link HLAType}
+   * @see #getBwGroup(String)
+   */
+  public static BwGroup getBwGroup(HLAType allele) {
+    // Try the 2-field specificity
+    BwGroup group = getBwGroup(new SeroType(allele.locus().sero(), allele.spec().subList(0, 2)));
+    if (Objects.equals(BwGroup.Unknown, group)) {
+      // Try the single-field specificity
+      group = getBwGroup(new SeroType(allele.locus().sero(), allele.spec().subList(0, 1)));
+    }
+    return group;
   }
 }

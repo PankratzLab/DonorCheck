@@ -22,6 +22,7 @@
 package org.pankratzlab.unet.parser.util;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -118,7 +119,23 @@ public class PdfSureTyperParser {
           currentLine = parseHaplotype(lines, ++currentLine, "DRB5", drb345Map, bwMap);
         } else {
           String locus = line.replaceAll("HLA-", "");
-          currentLine = parseHaplotype(lines, ++currentLine, locus, haplotypeMap.get(line), bwMap);
+          Multimap<Strand, HLAType> locusMap = haplotypeMap.get(line);
+          currentLine = parseHaplotype(lines, ++currentLine, locus, locusMap, bwMap);
+
+          if (HAPLOTYPE_B.equals(line)) {
+            for (Strand strand : bwMap.keySet()) {
+              BwGroup currentGroup = bwMap.get(strand);
+              Iterator<HLAType> iterator = locusMap.get(strand).iterator();
+              while (iterator.hasNext()) {
+                HLAType next = iterator.next();
+                BwGroup nextGroup = BwSerotypes.getBwGroup(next);
+                if (!Objects.equals(currentGroup, nextGroup)) {
+                  iterator.remove();
+                }
+              }
+            }
+            System.out.println();
+          }
         }
       }
     }
