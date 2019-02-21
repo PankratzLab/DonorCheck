@@ -44,8 +44,8 @@ public final class BwSerotypes {
 
   public static final ImmutableSet<String> BW6 = ImmutableSet.of("B7", "B0703", "B8", "B14", "B18",
       "B22", "B2708", "B35", "B39", "B3901", "B3902", "B40", "B4005", "B41", "B42", "B45", "B46",
-      "B48", "B50", "B54", "B55", "B56", "B60", "B61", "B62", "B64", "B65", "B67", "B70", "B71",
-      "B72", "B73", "B75", "B76", "B78", "B81", "B82");
+      "4702", "B48", "B50", "B54", "B55", "B56", "B60", "B61", "B62", "B64", "B65", "B67", "B70",
+      "B71", "B72", "B73", "B75", "B76", "B78", "B81", "B82");
 
   /**
    * @return the {@link BwGroup} matching the given antigen string
