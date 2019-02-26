@@ -22,7 +22,6 @@
 package org.pankratzlab.unet.parser.util;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -270,17 +269,10 @@ public class XmlScore6Parser {
       } else if (B_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
             identityLocusMap(HLALocus.B), ValidationModelBuilder::bHaplotype);
-        Map<Strand, BwGroup> bwMap = new HashMap<>();
 
-        // Build the Bw strand map
         for (int strandIdx = 0; strandIdx < resultPairs.size(); strandIdx++) {
-          bwMap.put(Strand.values()[strandIdx],
-              BwSerotypes.getBwGroup(resultPairs.get(strandIdx).getAntigenCombination()));
-        }
-        builder.bwHaplotype(bwMap);
-
-        // Update the appropriate builder flags
-        for (BwGroup bw : bwMap.values()) {
+          // Update the appropriate builder flags
+          BwGroup bw = BwSerotypes.getBwGroup(resultPairs.get(strandIdx).getAntigenCombination());
           switch (bw) {
             case Bw4:
               builder.bw4(true);
@@ -292,6 +284,7 @@ public class XmlScore6Parser {
               break;
           }
         }
+
       }
 
       // Finally, add the types to the model builder

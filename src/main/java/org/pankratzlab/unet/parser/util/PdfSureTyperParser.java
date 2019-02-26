@@ -22,7 +22,6 @@
 package org.pankratzlab.unet.parser.util;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -34,7 +33,6 @@ import org.pankratzlab.hla.NullType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -91,7 +89,6 @@ public class PdfSureTyperParser {
     haplotypeMap.put(HAPLOTYPE_DRB1, ArrayListMultimap.create());
     haplotypeMap.put(HAPLOTYPE_DQB1, ArrayListMultimap.create());
     haplotypeMap.put(HAPLOTYPE_DRB345, ArrayListMultimap.create());
-    Map<Strand, BwGroup> bwMap = new HashMap<>();
 
     // We now process the PDF text line-by-line.
     StringJoiner typeAssignment = new StringJoiner(" ");
@@ -114,28 +111,13 @@ public class PdfSureTyperParser {
         if (HAPLOTYPE_DRB345.equals(line)) {
           // Have to parse DRB3, 4 and 5 separately
           Multimap<Strand, HLAType> drb345Map = haplotypeMap.get(line);
-          parseHaplotype(lines, currentLine + 1, "DRB3", drb345Map, bwMap);
-          parseHaplotype(lines, currentLine + 1, "DRB4", drb345Map, bwMap);
-          currentLine = parseHaplotype(lines, ++currentLine, "DRB5", drb345Map, bwMap);
+          parseHaplotype(lines, currentLine + 1, "DRB3", drb345Map);
+          parseHaplotype(lines, currentLine + 1, "DRB4", drb345Map);
+          currentLine = parseHaplotype(lines, ++currentLine, "DRB5", drb345Map);
         } else {
           String locus = line.replaceAll("HLA-", "");
           Multimap<Strand, HLAType> locusMap = haplotypeMap.get(line);
-          currentLine = parseHaplotype(lines, ++currentLine, locus, locusMap, bwMap);
-
-          if (HAPLOTYPE_B.equals(line)) {
-            for (Strand strand : bwMap.keySet()) {
-              BwGroup currentGroup = bwMap.get(strand);
-              Iterator<HLAType> iterator = locusMap.get(strand).iterator();
-              while (iterator.hasNext()) {
-                HLAType next = iterator.next();
-                BwGroup nextGroup = BwSerotypes.getBwGroup(next);
-                if (!Objects.equals(currentGroup, nextGroup)) {
-                  iterator.remove();
-                }
-              }
-            }
-            System.out.println();
-          }
+          currentLine = parseHaplotype(lines, ++currentLine, locus, locusMap);
         }
       }
     }
@@ -162,7 +144,6 @@ public class PdfSureTyperParser {
     builder.dqHaplotype(haplotypeMap.get(HAPLOTYPE_DQB1));
     builder.drHaplotype(haplotypeMap.get(HAPLOTYPE_DRB1));
     builder.dr345Haplotype(haplotypeMap.get(HAPLOTYPE_DRB345));
-    builder.bwHaplotype(bwMap);
 
     BiConsumer<ValidationModelBuilder, String> setter = null;
     String prefix = "";
@@ -231,7 +212,7 @@ public class PdfSureTyperParser {
    * divided by HLA locus.
    */
   private static int parseHaplotype(String[] lines, int currentLine, String locus,
-      Multimap<Strand, HLAType> strandMap, Map<Strand, BwGroup> bwMap) {
+      Multimap<Strand, HLAType> strandMap) {
     // Sections start with a line containing JUST HLA_A/b/c etc..
     // Strands are marked by first type is always low res (group)
     // Read until we get to a semi-colon
@@ -280,11 +261,6 @@ public class PdfSureTyperParser {
       for (; tokenIndex < tokens.length
           && (strandIndex >= 0 && strandIndex < Strand.values().length); tokenIndex++) {
         String token = tokens[tokenIndex].trim();
-
-        // Explicitly parse the Bw antigen token
-        if (token.matches("B[0-9]+")) {
-          bwMap.put(Strand.values()[strandIndex], BwSerotypes.getBwGroup(token));
-        }
 
         if (locus.startsWith(token.replaceAll("[0-9*w]", "")) || token.equals(UNKNOWN_ANTIGEN)) {
           // These cases are either reiterations of the locus (e.g. B*) or antigen equivalents (B75,

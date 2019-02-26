@@ -237,7 +237,7 @@ public class ValidationTable {
       ValidationModel model) {
     for (RaceGroup ethnicity : RaceGroup.values()) {
       model.getBCHaplotypes().get(ethnicity).forEach(haplotype -> {
-        rows.add(new BCHaplotypeRow(ethnicity, haplotype, model.getBwMap()));
+        rows.add(new BCHaplotypeRow(ethnicity, haplotype));
       });
     } ;
   }

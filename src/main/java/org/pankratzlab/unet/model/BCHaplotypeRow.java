@@ -25,8 +25,8 @@ import java.util.Objects;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
+import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
-import com.google.common.collect.ImmutableMap;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -44,8 +44,7 @@ public class BCHaplotypeRow extends AbstractHaplotypeRow {
   private final ReadOnlyObjectWrapper<HLAType> alleleB;
   private final ReadOnlyStringWrapper bwGroup;
 
-  public BCHaplotypeRow(RaceGroup ethnicity, Haplotype haplotype,
-      ImmutableMap<HLAType, BwGroup> bwMap) {
+  public BCHaplotypeRow(RaceGroup ethnicity, Haplotype haplotype) {
     super(ethnicity, haplotype);
     HLAType c = null;
     HLAType b = null;
@@ -68,10 +67,7 @@ public class BCHaplotypeRow extends AbstractHaplotypeRow {
 
     alleleC = getAlleleWrapper(c);
     alleleB = getAlleleWrapper(b);
-    BwGroup group = BwGroup.Unknown;
-    if (Objects.nonNull(bwMap) && bwMap.containsKey(b)) {
-      group = bwMap.get(b);
-    }
+    BwGroup group = BwSerotypes.getBwGroup(b);
     bwGroup = new ReadOnlyStringWrapper(group.toString());
   }
 

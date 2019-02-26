@@ -23,17 +23,14 @@ package org.pankratzlab.unet.model;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import org.pankratzlab.hla.HLAType;
 import org.pankratzlab.hla.SeroType;
-import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.hapstats.Haplotype;
-import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+import org.pankratzlab.unet.hapstats.RaceGroup;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Multimap;
@@ -61,14 +58,13 @@ public class ValidationModel {
   private final ImmutableList<HLAType> dr53Locus;
   private final ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
-  private final ImmutableMap<HLAType, BwGroup> bwMap;
 
   public ValidationModel(String donorId, String source, Collection<SeroType> a,
       Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
       Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4,
       boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
       Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
-      Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes, Map<HLAType, BwGroup> bwAlleleMap) {
+      Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes) {
     this.donorId = donorId;
     this.source = source;
     aLocus = ImmutableSortedSet.copyOf(a);
@@ -87,7 +83,6 @@ public class ValidationModel {
 
     bcHaplotypes = ImmutableMultimap.copyOf(bcCwdHaplotypes);
     drdqHaplotypes = ImmutableMultimap.copyOf(drdqCwdHaplotypes);
-    bwMap = ImmutableMap.copyOf(bwAlleleMap);
   }
 
   public String getDonorId() {
@@ -194,10 +189,6 @@ public class ValidationModel {
     return drdqHaplotypes;
   }
 
-  public ImmutableMap<HLAType, BwGroup> getBwMap() {
-    return bwMap;
-  }
-
   private String inGroupString(boolean group) {
     return group ? "Positive" : "Negative";
   }
@@ -225,7 +216,6 @@ public class ValidationModel {
     result = prime * result + ((bcHaplotypes == null) ? 0 : bcHaplotypes.hashCode());
     result = prime * result + (bw4 ? 1231 : 1237);
     result = prime * result + (bw6 ? 1231 : 1237);
-    result = prime * result + ((bwMap == null) ? 0 : bwMap.hashCode());
     result = prime * result + ((cLocus == null) ? 0 : cLocus.hashCode());
     result = prime * result + ((donorId == null) ? 0 : donorId.hashCode());
     result = prime * result + ((dpbLocus == null) ? 0 : dpbLocus.hashCode());
@@ -267,11 +257,6 @@ public class ValidationModel {
     if (bw4 != other.bw4)
       return false;
     if (bw6 != other.bw6)
-      return false;
-    if (bwMap == null) {
-      if (other.bwMap != null)
-        return false;
-    } else if (!bwMap.equals(other.bwMap))
       return false;
     if (cLocus == null) {
       if (other.cLocus != null)

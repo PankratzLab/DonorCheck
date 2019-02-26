@@ -45,12 +45,15 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
+import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.unet.parser.util.DRAssociations;
 import com.google.common.base.Strings;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
@@ -82,7 +85,6 @@ public class ValidationModelBuilder {
   private List<HLAType> dr51Locus = new ArrayList<>();
   private List<HLAType> dr52Locus = new ArrayList<>();
   private List<HLAType> dr53Locus = new ArrayList<>();
-  private Map<Strand, BwGroup> bwHaplotypes;
   private Multimap<Strand, HLAType> bHaplotypes = HashMultimap.create();
   private Multimap<Strand, HLAType> cHaplotypes = HashMultimap.create();
   private Multimap<Strand, HLAType> drb1Haplotypes = HashMultimap.create();
@@ -189,12 +191,6 @@ public class ValidationModelBuilder {
     return this;
   }
 
-  public ValidationModelBuilder bwHaplotype(Map<Strand, BwGroup> bwMap) {
-    bwHaplotypes = makeIfNull(bwHaplotypes);
-    bwHaplotypes.putAll(bwMap);
-    return this;
-  }
-
   public ValidationModelBuilder cHaplotype(Multimap<Strand, HLAType> types) {
     cHaplotypes.putAll(types);
     return this;
@@ -233,43 +229,96 @@ public class ValidationModelBuilder {
    */
   public ValidationModel build() {
     ensureValidity();
-    Multimap<RaceGroup, Haplotype> bcCwdHaplotypes =
-        buildHaplotypes(ImmutableList.of(bHaplotypes, cHaplotypes));
+
+    Multimap<RaceGroup, Haplotype> bcCwdHaplotypes = buildBCHaplotypes(bHaplotypes, cHaplotypes);
 
     Multimap<RaceGroup, Haplotype> drDqDR345Haplotypes =
         buildHaplotypes(ImmutableList.of(drb1Haplotypes, dqb1Haplotypes, dr345Haplotypes));
 
     frequencyTable.clear();
 
-    Map<HLAType, BwGroup> bwAlleleMap = makeBwAlleleMap(bHaplotypes, bwHaplotypes);
     ValidationModel validationModel = new ValidationModel(donorId, source, aLocus, bLocus, cLocus,
         drbLocus, dqbLocus, dqaLocus, dpbLocus, bw4, bw6, dr51Locus, dr52Locus, dr53Locus,
-        bcCwdHaplotypes, drDqDR345Haplotypes, bwAlleleMap);
+        bcCwdHaplotypes, drDqDR345Haplotypes);
     return validationModel;
+  }
+
+  /**
+   * Helper method to build the B/C haplotypes. Extra filtering is needed based on the Bw groups.
+   */
+  private Multimap<RaceGroup, Haplotype> buildBCHaplotypes(Multimap<Strand, HLAType> bHaps,
+      Multimap<Strand, HLAType> cHaps) {
+    if (bw4 && bw6) {
+      // One strand is Bw4 and one is Bw6, but we can't know for sure which. So we try both
+      Multimap<Strand, HLAType> s4s6 = enforceBws(BwGroup.Bw4, BwGroup.Bw6, bHaps);
+      Multimap<Strand, HLAType> s6s4 = enforceBws(BwGroup.Bw4, BwGroup.Bw6, bHaps);
+      Multimap<RaceGroup, Haplotype> s4s6Haplotypes =
+          buildHaplotypes(ImmutableList.of(s4s6, cHaplotypes));
+      Multimap<RaceGroup, Haplotype> s6s4Haplotypes =
+          buildHaplotypes(ImmutableList.of(s6s4, cHaplotypes));
+
+      // Merge the bw4/bw6 sets
+      List<ScoredHaplotypes> scoredHaplotypePairs = new ArrayList<>();
+      for (RaceGroup raceGroup : RaceGroup.values()) {
+        scoredHaplotypePairs.add(new ScoredHaplotypes(s6s4Haplotypes.get(raceGroup)));
+        scoredHaplotypePairs.add(new ScoredHaplotypes(s4s6Haplotypes.get(raceGroup)));
+      }
+
+      // For each ethnicity pick best haplotype pairs from these sets
+      Multimap<RaceGroup, Haplotype> haplotypesByEthnicity = HashMultimap.create();
+
+      for (RaceGroup raceGroup : RaceGroup.values()) {
+        scoredHaplotypePairs.add(new ScoredHaplotypes(s6s4Haplotypes.get(raceGroup)));
+        scoredHaplotypePairs.add(new ScoredHaplotypes(s4s6Haplotypes.get(raceGroup)));
+      }
+      for (RaceGroup ethnicity : RaceGroup.values()) {
+
+        // Sort the haplotype pairs to find the most likely pairing for this ethnicity
+        ScoredHaplotypes max =
+            Collections.max(scoredHaplotypePairs, new EthnicityHaplotypeComp(ethnicity));
+
+        for (Haplotype t : max) {
+          haplotypesByEthnicity.put(ethnicity, t);
+        }
+      }
+      return haplotypesByEthnicity;
+    } else if (bw4)
+
+    {
+      // Both strands bw4
+      Multimap<Strand, HLAType> s4s4 = enforceBws(BwGroup.Bw4, BwGroup.Bw4, bHaps);
+      return buildHaplotypes(ImmutableList.of(s4s4, cHaplotypes));
+    } else if (bw6) {
+      // Both strands bw6
+      Multimap<Strand, HLAType> s6s6 = enforceBws(BwGroup.Bw6, BwGroup.Bw6, bHaps);
+      return buildHaplotypes(ImmutableList.of(s6s6, cHaplotypes));
+    }
+
+    return ArrayListMultimap.create();
+  }
+
+  /**
+   * Helper method to enforce a particular Bw strand alignment for any B alleles in the given
+   * multimap
+   */
+  private Multimap<Strand, HLAType> enforceBws(BwGroup strandOneGroup, BwGroup strandTwoGroup,
+      Multimap<Strand, HLAType> haplotypes) {
+    ListMultimap<Strand, HLAType> enforced = ArrayListMultimap.create(haplotypes);
+    for (HLAType t : haplotypes.get(Strand.FIRST)) {
+      if (!HLALocus.B.equals(t.locus()) || strandOneGroup.equals(BwSerotypes.getBwGroup(t))) {
+        enforced.put(Strand.FIRST, t);
+      }
+    }
+    for (HLAType t : haplotypes.get(Strand.SECOND)) {
+      if (!HLALocus.B.equals(t.locus()) || strandTwoGroup.equals(BwSerotypes.getBwGroup(t))) {
+        enforced.put(Strand.SECOND, t);
+      }
+    }
+    return enforced;
   }
 
   private boolean isPositive(String dr) {
     return !Objects.equals(dr, NEGATIVE_ALLELE);
-  }
-
-  /**
-   * @return Map all the possible alleles to their {@link BwGroup} (based on {@link Strand})
-   */
-  private Map<HLAType, BwGroup> makeBwAlleleMap(Multimap<Strand, HLAType> bHaps,
-      Map<Strand, BwGroup> bwHaps) {
-    Map<HLAType, BwGroup> bwMap = new HashMap<>();
-    if (Objects.nonNull(bHaps) && Objects.nonNull(bwHaps)) {
-      for (Strand strand : bHaps.keySet()) {
-        BwGroup bw = bwHaps.get(strand);
-        if (Objects.isNull(bw)) {
-          bw = BwGroup.Unknown;
-        }
-        for (HLAType allele : bHaps.get(strand)) {
-          bwMap.put(allele, bw);
-        }
-      }
-    }
-    return bwMap;
   }
 
   /**
