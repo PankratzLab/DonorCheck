@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import org.apache.jorphan.logging.LoggingManager;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -52,13 +50,11 @@ public class IntegrationTest {
     assertTrue("Validation failed - no directory provided.", Objects.nonNull(individualDir));
     String individualName = individualDir.getName();
 
-    assertTrue(
-        individualName + ": Can't validate individual. Directory doesn't exist:" + individualDir,
-        individualDir.exists());
+    assertTrue(individualName + ": Can't validate individual. Directory doesn't exist:"
+               + individualDir, individualDir.exists());
 
-    assertTrue(
-        individualName + ": Can't validate individual. Input not a directory: " + individualDir,
-        individualDir.isDirectory());
+    assertTrue(individualName + ": Can't validate individual. Input not a directory: "
+               + individualDir, individualDir.isDirectory());
   }
 
   @Test
@@ -73,10 +69,10 @@ public class IntegrationTest {
       List<ValidationModel> individualModels = parseIndividualFiles(individualDir);
 
       assertFalse(individualName + ": Can't validate individual. No model files found.",
-          individualModels.isEmpty());
+                  individualModels.isEmpty());
 
       assertFalse(individualName + ": Can't validate individual - only found one model file.",
-          individualModels.size() == 1);
+                  individualModels.size() == 1);
 
       testIfModelsAgree(individualModels);
     } catch (Exception e) {
@@ -96,9 +92,8 @@ public class IntegrationTest {
       ValidationModel test = individualModels.get(index);
       table.setSecondModel(test);
       table.getValidationRows();
-      Assert.assertTrue(
-          "Validation failed:\n" + base.toString() + "\n--was not equal to--\n" + test.toString(),
-          table.isValidProperty().get());
+      assertTrue("Validation failed:\n" + base.toString() + "\n--was not equal to--\n"
+                        + test.toString(), table.isValidProperty().get());
     }
   }
 
@@ -114,14 +109,14 @@ public class IntegrationTest {
       String individualFileName = individualFile.getName().toLowerCase();
 
       if (individualFile.isDirectory() && individualFileName.endsWith(DONORNET_HTML_DIR_SUFFIX)) {
-        File donorNetHtmlFile =
-            new File(individualFile.getAbsolutePath() + File.separator + DONORNET_HTML_FILE);
+        File donorNetHtmlFile = new File(individualFile.getAbsolutePath() + File.separator
+                                         + DONORNET_HTML_FILE);
         if (donorNetHtmlFile.exists()) {
           new HtmlDonorParser().parseModel(builder, donorNetHtmlFile);
           models.add(builder.build());
         }
       } else if (individualFileName.endsWith(DONORNET_XML_FILE)
-          || individualFileName.endsWith(SCORE6_XML_FILE)) {
+                 || individualFileName.endsWith(SCORE6_XML_FILE)) {
         new XmlDonorParser().parseModel(builder, individualFile);
         models.add(builder.build());
       } else if (individualFileName.endsWith(SURETYPER_PDF_FILE)) {
@@ -145,8 +140,7 @@ public class IntegrationTest {
       }
       return ImmutableList.copyOf(individuals);
     } else {
-      LoggingManager.getLoggerForClass()
-          .info("Not a valid test directory: " + dir.getAbsolutePath());
+      System.err.println("Not a valid test directory: " + dir.getAbsolutePath());
       return ImmutableList.of();
     }
   }

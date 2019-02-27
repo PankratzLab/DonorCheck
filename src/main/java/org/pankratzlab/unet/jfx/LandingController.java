@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
-import org.pankratzlab.hla.CurrentDirectoryProvider;
+import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.jfx.wizard.DownloadTutorialController;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;

@@ -23,7 +23,7 @@ package org.pankratzlab.unet.model;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;

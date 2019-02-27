@@ -28,9 +28,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import org.pankratzlab.hla.HLALocus;
-import org.pankratzlab.hla.HLAType;
-import org.pankratzlab.hla.NullType;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
+import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.NullType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 

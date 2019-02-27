@@ -22,8 +22,8 @@
 package org.pankratzlab.unet.parser.util;
 
 import java.util.Objects;
-import org.pankratzlab.hla.HLAType;
-import org.pankratzlab.hla.SeroType;
+import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.SeroType;
 import com.google.common.collect.ImmutableSet;
 
 /**

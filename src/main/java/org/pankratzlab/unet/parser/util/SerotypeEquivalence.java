@@ -21,9 +21,9 @@
  */
 package org.pankratzlab.unet.parser.util;
 
-import org.pankratzlab.hla.HLALocus;
-import org.pankratzlab.hla.HLAType;
-import org.pankratzlab.hla.SeroType;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
+import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.SeroType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 

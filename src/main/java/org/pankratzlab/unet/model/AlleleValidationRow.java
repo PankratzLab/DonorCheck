@@ -23,8 +23,7 @@ package org.pankratzlab.unet.model;
 
 import java.util.Objects;
 import javax.annotation.Nullable;
-import javax.jms.IllegalStateException;
-import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.HLAType;
 
 /**
  * {@link ValidationRow} for displaying {@link HLAType}s

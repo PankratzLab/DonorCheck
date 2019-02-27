@@ -19,25 +19,22 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.pankratzlab.unet.model;
+package org.pankratzlab.unet.deprecated.hla;
 
-import java.util.Objects;
+/**
+ * Marker interface for antigen loci
+ */
+public interface Locus<L> extends Comparable<L> {
+  public static int TIER_1 = 1;
+  public static int TIER_2 = 2;
 
-public class StringValidationRow extends ValidationRow<String> {
+  /**
+   * @return Name of this locus
+   */
+  String name();
 
-  public StringValidationRow(String rowLabel, String firstCol, String secondCol) {
-    super(rowLabel, firstCol, secondCol);
-  }
-
-  @Override
-  protected String getDisplayString(String toDisplay) throws IllegalStateException {
-    if (Objects.isNull(toDisplay)) {
-      return "";
-    }
-    return toDisplay;
-  }
-
-  public static StringValidationRow makeRow(String rowLabel, String firstCol, String secondCol) {
-    return new StringValidationRow(rowLabel, firstCol, secondCol);
-  }
+  /**
+   * @return Tier value of this locus
+   */
+  int tier();
 }

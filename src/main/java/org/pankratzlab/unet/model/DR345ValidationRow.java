@@ -23,9 +23,8 @@ package org.pankratzlab.unet.model;
 
 import java.util.Objects;
 import javax.annotation.Nullable;
-import javax.jms.IllegalStateException;
-import org.pankratzlab.hla.HLALocus;
-import org.pankratzlab.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
+import org.pankratzlab.unet.deprecated.hla.HLAType;
 import com.google.common.collect.ImmutableSet;
 
 /**
