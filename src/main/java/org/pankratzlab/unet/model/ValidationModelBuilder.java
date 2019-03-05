@@ -303,7 +303,7 @@ public class ValidationModelBuilder {
    */
   private Multimap<Strand, HLAType> enforceBws(BwGroup strandOneGroup, BwGroup strandTwoGroup,
       Multimap<Strand, HLAType> haplotypes) {
-    ListMultimap<Strand, HLAType> enforced = ArrayListMultimap.create(haplotypes);
+    ListMultimap<Strand, HLAType> enforced = ArrayListMultimap.create();
     for (HLAType t : haplotypes.get(Strand.FIRST)) {
       if (!HLALocus.B.equals(t.locus()) || strandOneGroup.equals(BwSerotypes.getBwGroup(t))) {
         enforced.put(Strand.FIRST, t);
