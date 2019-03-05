@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
 import javafx.application.Application;
+import javafx.application.HostServices;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
@@ -43,8 +44,14 @@ public class TypeValidationApp extends Application {
 
   private static final String APP_TITLE = "DonorNet Validation";
 
+  public static HostServices hostServices;
+
   @Override
   public void start(Stage primaryStage) throws Exception {
+    // Retain the HostServices for later
+    TypeValidationApp.hostServices = getHostServices();
+
+
     // Set the Title to the Stage
     primaryStage.setTitle(APP_TITLE);
     primaryStage.setResizable(true);
