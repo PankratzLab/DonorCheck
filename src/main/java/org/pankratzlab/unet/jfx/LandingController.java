@@ -33,13 +33,17 @@ import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
-import org.pankratzlab.unet.jfx.wizard.DownloadTutorialController;
+import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -56,6 +60,7 @@ public class LandingController {
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String XML_TUTORIAL = "/XMLDownloadTutorial.fxml";
   private static final String HTML_TUTORIAL = "/HTMLDownloadTutorial.fxml";
+  private static final String NMDP_DOWNLOAD = "/NMDPDownloadPrompt.fxml";
 
   private static final String INPUT_STEP = "/FileInput.fxml";
   private static final String RESULTS_STEP = "/ValidationResults.fxml";
@@ -75,49 +80,89 @@ public class LandingController {
   }
 
   @FXML
+  void chooseFreqTables(ActionEvent event) {
+    DownloadNMDPController dc = new DownloadNMDPController();
+    showTutorial(NMDP_DOWNLOAD, dc, "Set Frequency Directory");
+    if (dc.isDirty()) {
+      new Thread(JFXUtilHelper.createProgressTask(() -> {
+        HaplotypeFrequencies.doInitialization();
+      })).start();
+    }
+  }
+
+  @FXML
   void tutorialHTMLDownload(ActionEvent event) {
-    showTutorial(HTML_TUTORIAL, new DownloadTutorialController());
+    showTutorial(HTML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
   }
 
   @FXML
   void tutorialXMLDownload(ActionEvent event) {
-    showTutorial(XML_TUTORIAL, new DownloadTutorialController());
+    showTutorial(XML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
   }
 
   @FXML
   void runValidation(ActionEvent event) throws IOException {
-    ValidationTable table = new ValidationTable();
-    Wizard validationWizard = new Wizard(((Node) event.getSource()).getScene().getWindow());
-    validationWizard.setTitle("Donor Validation Wizard");
+    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
+      HaplotypeFrequencies.successfullyInitialized();
+    });
 
-    List<WizardPane> pages = new ArrayList<>();
-    makePage(pages, table, INPUT_STEP, new FileInputController());
-    makePage(pages, table, RESULTS_STEP, new ValidationResultsController());
+    EventHandler<WorkerStateEvent> doValidation = (w) -> {
+      Platform.runLater(() -> {
+        if (!HaplotypeFrequencies.successfullyInitialized()) {
+          Alert alert = new Alert(AlertType.INFORMATION,
+                                  "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
+                                                         + "Would you like to set these tables now?\n\n"
+                                                         + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+                                  ButtonType.YES, ButtonType.NO);
+          alert.setTitle("No haplotype freqnecies");
+          alert.setHeaderText("");
+          alert.showAndWait().filter(response -> response == ButtonType.YES)
+               .ifPresent(response -> chooseFreqTables(event));
+        }
 
-    pages.get(0).getButtonTypes();
+        ValidationTable table = new ValidationTable();
+        Wizard validationWizard = new Wizard(((Node) event.getSource()).getScene().getWindow());
+        validationWizard.setTitle("Donor Validation Wizard");
 
-    validationWizard.setFlow(new LinearFlow(pages));
+        List<WizardPane> pages = new ArrayList<>();
+        try {
+          makePage(pages, table, INPUT_STEP, new FileInputController());
+          makePage(pages, table, RESULTS_STEP, new ValidationResultsController());
+        } catch (IOException e) {
+          e.printStackTrace();
+          throw new IllegalStateException(e);
+        }
 
-    // show wizard and wait for response
-    validationWizard.showAndWait();
+        pages.get(0).getButtonTypes();
+
+        validationWizard.setFlow(new LinearFlow(pages));
+
+        // show wizard and wait for response
+        validationWizard.showAndWait();
+      });
+    };
+
+    runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
+
+    new Thread(runValidationTask).start();
   }
-
 
   /**
    * TODO
    */
-  private void showTutorial(String tutorialFxml, Object controller) {
+  private void showTutorial(String tutorialFxml, Object controller, String title) {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(tutorialFxml)) {
       FXMLLoader loader = new FXMLLoader();
+      loader.setController(controller);
       // NB: reading the controller from FMXL can cause problems
-
 
       Alert alert = new Alert(AlertType.NONE, "", ButtonType.OK);
       alert.getDialogPane().setContent(loader.load(is));
-      alert.setTitle("DonorNet Tutorial");
+      alert.setTitle(title);
       alert.setHeaderText("");
       alert.showAndWait();
     } catch (IOException e) {
+      e.printStackTrace();
       Alert alert = new Alert(AlertType.ERROR, "");
       alert.setHeaderText("Failed to read tutorial page definition: " + tutorialFxml);
       alert.showAndWait();
@@ -133,7 +178,7 @@ public class LandingController {
    * @throws IOException If errors during FXML reading
    */
   private void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML,
-      Object controller) throws IOException {
+                        Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems
@@ -146,6 +191,7 @@ public class LandingController {
         ((ValidatingWizardController) controller).setTable(table);
       }
     } catch (IOException e) {
+      e.printStackTrace();
       throw new IOException("Failed to read wizard page definition: " + pageFXML, e);
     }
   }

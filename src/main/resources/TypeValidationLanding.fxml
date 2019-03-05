@@ -154,6 +154,11 @@
               <MenuItem mnemonicParsing="false" onAction="#fileQuitAction" text="Quit" />
             </items>
           </Menu>
+            <Menu mnemonicParsing="false" text="Haplotypes">
+              <items>
+                <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set Frequency Tables..." />
+              </items>
+            </Menu>
             <Menu mnemonicParsing="false" text="Tutorials">
               <items>
                 <MenuItem mnemonicParsing="false" onAction="#tutorialXMLDownload" text="XML DonorNet Download" />

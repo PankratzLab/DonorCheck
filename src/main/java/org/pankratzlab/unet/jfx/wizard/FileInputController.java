@@ -44,9 +44,7 @@ import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -58,7 +56,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import javafx.stage.Stage;
 
 /**
  * Controller for adding donor data to the current {@link ValidationTable}
@@ -69,11 +66,11 @@ public class FileInputController extends AbstractValidatingWizardController {
 
   private static final String FILE_DISPLAY_CLASS = "file-display";
 
-  private ObservableList<ReadOnlyObjectWrapper<File>> selectedFileProperties =
-      FXCollections.observableArrayList();
+  private ObservableList<ReadOnlyObjectWrapper<File>> selectedFileProperties = FXCollections.observableArrayList();
 
-  private ObservableList<DonorFileParser> availableFileTypes = FXCollections.observableArrayList(
-      ImmutableList.of(new PdfDonorParser(), new XmlDonorParser(), new HtmlDonorParser()));
+  private ObservableList<DonorFileParser> availableFileTypes = FXCollections.observableArrayList(ImmutableList.of(new PdfDonorParser(),
+                                                                                                                  new XmlDonorParser(),
+                                                                                                                  new HtmlDonorParser()));
 
   private ObservableBooleanValue invalidBinding;
 
@@ -83,23 +80,24 @@ public class FileInputController extends AbstractValidatingWizardController {
   @FXML
   void initialize() {
     invalidBinding = Bindings.createBooleanBinding(() -> selectedFileProperties.isEmpty(),
-        selectedFileProperties);
+                                                   selectedFileProperties);
 
     inputFiles_VBox.getChildren()
-        .add(createFileBox(PdfDonorParser.class, ValidationTable::setFirstModel));
+                   .add(createFileBox(PdfDonorParser.class, ValidationTable::setFirstModel));
     inputFiles_VBox.getChildren()
-        .add(createFileBox(XmlDonorParser.class, ValidationTable::setSecondModel));
+                   .add(createFileBox(XmlDonorParser.class, ValidationTable::setSecondModel));
 
     rootPane().setInvalidBinding(invalidBinding);
   }
 
   private HBox createFileBox(Class<? extends DonorFileParser> defaultSelected,
-      BiConsumer<ValidationTable, ValidationModel> setter) {
+                             BiConsumer<ValidationTable, ValidationModel> setter) {
     ReadOnlyObjectWrapper<File> linkedFile = new ReadOnlyObjectWrapper<>();
 
     // Update the invalidation binding
     invalidBinding = JFXPropertyHelper.orHelper(invalidBinding,
-        Bindings.createBooleanBinding(() -> Objects.isNull(linkedFile.get()), linkedFile));
+                                                Bindings.createBooleanBinding(() -> Objects.isNull(linkedFile.get()),
+                                                                              linkedFile));
 
     rootPane().setInvalidBinding(invalidBinding);
 
@@ -116,7 +114,7 @@ public class FileInputController extends AbstractValidatingWizardController {
       }
     }
     comboBox.getSelectionModel().selectedItemProperty()
-        .addListener((v, o, n) -> linkedFile.set(null));
+            .addListener((v, o, n) -> linkedFile.set(null));
     comboBox.setPrefWidth(100);
 
     hbox.getChildren().add(comboBox);
@@ -129,69 +127,58 @@ public class FileInputController extends AbstractValidatingWizardController {
 
     // Link text field and file
     linkedFile.getReadOnlyProperty()
-        .addListener((b, o, n) -> updateFileDisplay(fileDisplay, linkedFile.get()));
+              .addListener((b, o, n) -> updateFileDisplay(fileDisplay, linkedFile.get()));
 
     hbox.getChildren().add(fileDisplay);
 
     Button chooseFileButton = new Button("Choose File");
     chooseFileButton.setFont(Font.font(16.0));
     chooseFileButton.setOnAction(e -> selectDonorFile(e,
-        comboBox.getSelectionModel().getSelectedItem(), setter, linkedFile));
+                                                      comboBox.getSelectionModel()
+                                                              .getSelectedItem(),
+                                                      setter, linkedFile));
     hbox.getChildren().add(chooseFileButton);
 
     return hbox;
   }
 
   private void selectDonorFile(ActionEvent event, DonorFileParser donorParser,
-      BiConsumer<ValidationTable, ValidationModel> setter, ReadOnlyObjectWrapper<File> linkedFile) {
+                               BiConsumer<ValidationTable, ValidationModel> setter,
+                               ReadOnlyObjectWrapper<File> linkedFile) {
 
     Optional<File> optionalFile = DonorNetUtils.getFile(((Node) event.getSource()),
-        donorParser.fileChooserHeader(), donorParser.initialName(),
-        donorParser.extensionDescription(), donorParser.extensionFilter(), true);
+                                                        donorParser.fileChooserHeader(),
+                                                        donorParser.initialName(),
+                                                        donorParser.extensionDescription(),
+                                                        donorParser.extensionFilter(), true);
 
     if (optionalFile.isPresent()) {
-      Stage progressStage = JFXUtilHelper.createProgressStage();
+      Task<Void> loadFileTask = JFXUtilHelper.createProgressTask(() -> {
+        File selectedFile = optionalFile.get();
 
-      Task<Void> loadFileTask = new Task<Void>() {
-        @Override
-        protected Void call() throws Exception {
-          Platform.runLater(() -> progressStage.show());
+        ValidationModelBuilder builder = new ValidationModelBuilder();
 
-          File selectedFile = optionalFile.get();
-
-          ValidationModelBuilder builder = new ValidationModelBuilder();
-
-          try {
-            donorParser.parseModel(builder, selectedFile);
-            setter.accept(getTable(), builder.build());
-            linkedFile.set(selectedFile);
-          } catch (Exception e) {
-            Platform.runLater(() -> {
-              Alert alert = new Alert(AlertType.ERROR);
-              alert.setHeaderText(donorParser.getErrorText()
-                  + "\nPlease notify the developers as this may indicate the data has changed."
-                  + "\nOffending file: " + selectedFile.getName());
-              alert.showAndWait();
-              e.printStackTrace();
-            });
-          }
-
-          CurrentDirectoryProvider.setBaseDir(selectedFile.getParentFile());
-          return null;
+        try {
+          donorParser.parseModel(builder, selectedFile);
+          setter.accept(getTable(), builder.build());
+          linkedFile.set(selectedFile);
+        } catch (Exception e) {
+          Platform.runLater(() -> {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setHeaderText(donorParser.getErrorText()
+                                + "\nPlease notify the developers as this may indicate the data has changed."
+                                + "\nOffending file: " + selectedFile.getName());
+            alert.showAndWait();
+            e.printStackTrace();
+          });
         }
-      };
 
-      EventHandler<WorkerStateEvent> closeStage = (w) -> {
-        Platform.runLater(() -> {
-          progressStage.close();
-        });
-      };
-      loadFileTask.setOnCancelled(closeStage);
-      loadFileTask.setOnFailed(closeStage);
-      loadFileTask.setOnSucceeded(closeStage);
+        CurrentDirectoryProvider.setBaseDir(selectedFile.getParentFile());
+      });
 
       new Thread(loadFileTask).start();
     }
+
   }
 
   private void updateFileDisplay(TextField fileDisplay, File file) {

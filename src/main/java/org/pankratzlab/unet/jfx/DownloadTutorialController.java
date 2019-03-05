@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.pankratzlab.unet.jfx.wizard;
+package org.pankratzlab.unet.jfx;
 
 import java.net.URL;
 import java.util.ResourceBundle;
