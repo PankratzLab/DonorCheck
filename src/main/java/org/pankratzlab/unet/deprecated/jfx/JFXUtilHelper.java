@@ -21,6 +21,10 @@
  */
 package org.pankratzlab.unet.deprecated.jfx;
 
+import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -47,7 +51,7 @@ public final class JFXUtilHelper {
    * Create an {@link Alert} with no header or graphic.
    */
   public static Alert makeContentOnlyAlert(AlertType alertType, String title, Node content,
-      ButtonType... buttons) {
+                                           ButtonType... buttons) {
     // create pop-up
     Alert alert = new Alert(alertType, "", buttons);
     alert.setTitle(title);
@@ -73,5 +77,42 @@ public final class JFXUtilHelper {
     loadingStage.setScene(loadingScene);
     loadingStage.centerOnScreen();
     return loadingStage;
+  }
+
+  /**
+   * Helper method to add hooks to close the given {@link Stage} when the given {@link Task}
+   * completes.
+   */
+  public static void addCloseHooks(Stage stage, Task<Void> task) {
+    EventHandler<WorkerStateEvent> closeStage = (w) -> {
+      Platform.runLater(() -> {
+        stage.close();
+      });
+    };
+    task.setOnCancelled(closeStage);
+    task.setOnFailed(closeStage);
+    task.setOnSucceeded(closeStage);
+  }
+
+  /**
+   * Helper method to combine {@link #createProgressStage()} and
+   * {@link #addCloseHooks(Stage, Task)}, generating a {@link Task} that creates and shows a
+   * progress dialog while running a {@link Runnable} and then closes the progress graphic when
+   * finished.
+   */
+  public static Task<Void> createProgressTask(Runnable runnable) {
+    Stage progressStage = createProgressStage();
+    Task<Void> progressTask = new Task<Void>() {
+
+      @Override
+      protected Void call() throws Exception {
+        Platform.runLater(() -> progressStage.show());
+        runnable.run();
+        return null;
+      }
+    };
+    addCloseHooks(progressStage, progressTask);
+
+    return progressTask;
   }
 }
