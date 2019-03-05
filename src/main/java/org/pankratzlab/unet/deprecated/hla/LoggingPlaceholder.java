@@ -55,9 +55,15 @@ public final class LoggingPlaceholder {
    * @param error Error dialog title
    */
   public static void reportError(String error) {
-    Alert alert = new Alert(AlertType.ERROR);
-    alert.setHeaderText(error);
-    alert.showAndWait();
+    report(error, AlertType.ERROR);
+  }
+
+  public static void report(String error, AlertType alertType) {
+    Platform.runLater(() -> {
+      Alert alert = new Alert(alertType);
+      alert.setHeaderText(error);
+      alert.showAndWait();
+    });
   }
 
   /**
@@ -69,15 +75,15 @@ public final class LoggingPlaceholder {
    */
   public static void reportError(Throwable exc, String title) {
     Platform.runLater(() -> {
-      StringBuilder sb = new StringBuilder("Please send the following to the developers:\n"
-                                           + "- A screenshot of this error\n"
-                                           + "- The input files (or MRN) that caused this error\n\n");
+      StringBuilder sb = new StringBuilder(
+          "Please send the following to the developers:\n" + "- A screenshot of this error\n"
+              + "- The input files (or MRN) that caused this error\n\n");
       sb.append(exc.getClass());
       sb.append(": ");
       sb.append(exc.getMessage());
       sb.append("\n");
       sb.append(Arrays.stream(exc.getStackTrace()).map(StackTraceElement::toString)
-                      .collect(Collectors.joining("\n")));
+          .collect(Collectors.joining("\n")));
       TextArea errorText = new TextArea(sb.toString());
       errorText.setWrapText(true);
       JFXUtilHelper.makeContentOnlyAlert(AlertType.ERROR, title, errorText).showAndWait();
