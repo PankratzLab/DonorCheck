@@ -42,7 +42,7 @@ public class TypeValidationApp extends Application {
 
   private static final String LANDING_FXML = "/TypeValidationLanding.fxml";
 
-  private static final String APP_TITLE = "DonorNet Validation";
+  private static final String APP_TITLE = "DonorCheck - a validation tool for DonorNet";
 
   public static HostServices hostServices;
 
