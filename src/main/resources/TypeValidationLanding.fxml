@@ -24,7 +24,7 @@
                <children>
                   <TextFlow>
                      <children>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="This tool can be used to validate a donor's typing before saving to DonorNet.&#10;&#10;Validation requires comparison of two typing documents for a particular donor.&#10;&#10;The following types are supported:">
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="This tool can be used to validate a donor's typing after saving to DonorNet.&#10;&#10;Validation requires comparison of two typing documents for a particular donor.&#10;&#10;The following types are supported:">
                            <font>
                               <Font size="18.0" />
                            </font>
