@@ -407,7 +407,7 @@
 				</property>
 			</activation>
 			<properties>
-				<winVer>win32</winVer>
+				<winVer>win86</winVer>
 			</properties>
 		</profile>
 
