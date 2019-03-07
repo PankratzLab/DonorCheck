@@ -1,3 +1,5 @@
+Image attributions
+     Check mark (By Quasar - http://en.wikipedia.org/wiki/Image:Check_mark_23x20_02.svg, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=3281711)
 
 Lists of 25 third-party dependencies.
      (BSD License) curvesapi (com.github.virtuald:curvesapi:1.04 - https://github.com/virtuald/curvesapi)

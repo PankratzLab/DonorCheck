@@ -29,6 +29,7 @@ import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
@@ -36,6 +37,8 @@ import javafx.stage.Stage;
  * {@link Application} enabling comparison of donor typing between analysis PDF and DonorNet XML.
  */
 public class TypeValidationApp extends Application {
+
+  private static final String ICON_PATH = "/icon.png";
 
   private static final Set<String> CSS_FILES =
       ImmutableSet.of("/resultTable.css", "/fileInput.css");
@@ -54,6 +57,7 @@ public class TypeValidationApp extends Application {
 
     // Set the Title to the Stage
     primaryStage.setTitle(APP_TITLE);
+    primaryStage.getIcons().add(new Image(TypeValidationApp.class.getResourceAsStream(ICON_PATH)));
     primaryStage.setResizable(true);
 
     // Load the FXML for the application landing pane

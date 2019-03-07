@@ -211,6 +211,9 @@
 						<mainClass>${mainClass}</mainClass>
 						<vendor>Division of Computational Pathology, UMTC</vendor>
 						<jfxMainAppJarName>${outname}-jfx.jar</jfxMainAppJarName>
+						<bundleArguments>
+							<icon>${project.basedir}/src/main/deploy/package/windows/donorCheck.ico</icon>
+						</bundleArguments>
 						<!-- See http://www.oracle.com/technetwork/java/hotspotfaq-138619.html#gc_heap_32bit -->
 						<jvmArgs>
 							<argument>-Xmx1g</argument>
