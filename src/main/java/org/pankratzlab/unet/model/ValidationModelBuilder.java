@@ -53,6 +53,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -251,11 +252,11 @@ public class ValidationModelBuilder {
     if (bw4 && bw6) {
       // One strand is Bw4 and one is Bw6, but we can't know for sure which. So we try both
       Multimap<Strand, HLAType> s4s6 = enforceBws(BwGroup.Bw4, BwGroup.Bw6, bHaps);
-      Multimap<Strand, HLAType> s6s4 = enforceBws(BwGroup.Bw4, BwGroup.Bw6, bHaps);
-      Multimap<RaceGroup, Haplotype> s4s6Haplotypes =
-          buildHaplotypes(ImmutableList.of(s4s6, cHaplotypes));
-      Multimap<RaceGroup, Haplotype> s6s4Haplotypes =
-          buildHaplotypes(ImmutableList.of(s6s4, cHaplotypes));
+      Multimap<Strand, HLAType> s6s4 = enforceBws(BwGroup.Bw6, BwGroup.Bw4, bHaps);
+      Multimap<RaceGroup, Haplotype> s4s6Haplotypes = s4s6.isEmpty() ? ImmutableMultimap.of()
+          : buildHaplotypes(ImmutableList.of(s4s6, cHaplotypes));
+      Multimap<RaceGroup, Haplotype> s6s4Haplotypes = s6s4.isEmpty() ? ImmutableMultimap.of()
+          : buildHaplotypes(ImmutableList.of(s6s4, cHaplotypes));
 
       // Merge the bw4/bw6 sets
       List<ScoredHaplotypes> scoredHaplotypePairs = new ArrayList<>();
@@ -540,13 +541,6 @@ public class ValidationModelBuilder {
     Collections.sort(dr51Locus);
     Collections.sort(dr52Locus);
     Collections.sort(dr53Locus);
-  }
-
-  private Map<Strand, BwGroup> makeIfNull(Map<Strand, BwGroup> bwMap) {
-    if (Objects.isNull(bwMap)) {
-      bwMap = new HashMap<>();
-    }
-    return bwMap;
   }
 
   /**
