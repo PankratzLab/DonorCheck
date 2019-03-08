@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- From https://github.com/google/styleguide/blob/911d9f4a7e3020578f4609860d7e5ede422a8f28/eclipse-java-google-style.xml -->
 <profiles version="13">
-<profile kind="CodeFormatterProfile" name="GoogleStyle" version="13">
+<profile kind="CodeFormatterProfile" name="DonorNet Style" version="13">
 <setting id="org.eclipse.jdt.core.formatter.comment.insert_new_line_before_root_tags" value="insert"/>
 <setting id="org.eclipse.jdt.core.formatter.disabling_tag" value="@formatter:off"/>
 <setting id="org.eclipse.jdt.core.formatter.insert_space_after_comma_in_annotation" value="insert"/>
