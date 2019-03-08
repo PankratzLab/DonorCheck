@@ -221,7 +221,7 @@
 						</jvmArgs>
 						<needShortcut>true</needShortcut>
 						<needMenu>true</needMenu>
-						<nativeReleaseVersion>${version}</nativeReleaseVersion>
+						<nativeReleaseVersion>${project.version}</nativeReleaseVersion>
 						<additionalAppResources>${resourcesDir}</additionalAppResources>
 						<manifestAttributes>
 							<!-- Add SCM revision from buildnumber plugin, if available. -->
@@ -508,50 +508,50 @@
 										<!-- Linux - .deb -->
 										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
 											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${version}.deb" />
+												file="${project.build.directory}/jfx/native/${outname}-${project.version}.deb" />
 											<ac:then>
 												<move
-													file="${project.build.directory}/jfx/native/${outname}-${version}.deb"
+													file="${project.build.directory}/jfx/native/${outname}-${project.version}.deb"
 													tofile="${project.build.directory}/jfx/native/${appName}-installer-linux.deb" />
 											</ac:then>
 										</ac:if>
 										<!-- Linux - .rpm -->
 										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
 											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${version}-1.x86_64.rpm" />
+												file="${project.build.directory}/jfx/native/${outname}-${project.version}-1.x86_64.rpm" />
 											<ac:then>
 												<move
-													file="${project.build.directory}/jfx/native/${outname}-${version}-1.x86_64.rpm"
+													file="${project.build.directory}/jfx/native/${outname}-${project.version}-1.x86_64.rpm"
 													tofile="${project.build.directory}/jfx/native/${appName}-installer-linux.rpm" />
 											</ac:then>
 										</ac:if>
 										<!-- Windows - .exe -->
 										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
 											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${version}.exe" />
+												file="${project.build.directory}/jfx/native/${outname}-${project.version}.exe" />
 											<ac:then>
 												<move
-													file="${project.build.directory}/jfx/native/${outname}-${version}.exe"
+													file="${project.build.directory}/jfx/native/${outname}-${project.version}.exe"
 													tofile="${project.build.directory}/jfx/native/${appName}-installer-${winVer}.exe" />
 											</ac:then>
 										</ac:if>
 										<!-- Windows - .msi -->
 										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
 											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${version}.msi" />
+												file="${project.build.directory}/jfx/native/${outname}-${project.version}.msi" />
 											<ac:then>
 												<move
-													file="${project.build.directory}/jfx/native/${outname}-${version}.msi"
+													file="${project.build.directory}/jfx/native/${outname}-${project.version}.msi"
 													tofile="${project.build.directory}/jfx/native/${appName}-installer-${winVer}.msi" />
 											</ac:then>
 										</ac:if>
 										<!-- OSX - .app -->
 										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
 											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${version}.app" />
+												file="${project.build.directory}/jfx/native/${outname}-${project.version}.app" />
 											<ac:then>
 												<move
-													file="${project.build.directory}/jfx/native/${outname}-${version}.app"
+													file="${project.build.directory}/jfx/native/${outname}-${project.version}.app"
 													tofile="${project.build.directory}/jfx/native/${appName}-installer-osx.app" />
 											</ac:then>
 										</ac:if>
