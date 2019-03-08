@@ -39,6 +39,7 @@ import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
+import com.google.common.base.Strings;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
@@ -110,14 +111,20 @@ public class LandingController {
       Platform.runLater(() -> {
         if (!HaplotypeFrequencies.successfullyInitialized()) {
           Alert alert = new Alert(AlertType.INFORMATION,
-                                  "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
-                                                         + "Would you like to set these tables now?\n\n"
-                                                         + "Note: you can adjust these tables any time from the 'Haplotype' menu",
-                                  ButtonType.YES, ButtonType.NO);
+              "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
+                  + "Would you like to set these tables now?\n\n"
+                  + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+              ButtonType.YES, ButtonType.NO);
           alert.setTitle("No haplotype freqnecies");
           alert.setHeaderText("");
           alert.showAndWait().filter(response -> response == ButtonType.YES)
-               .ifPresent(response -> chooseFreqTables(event));
+              .ifPresent(response -> chooseFreqTables(event));
+        } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
+          Alert alert =
+              new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
+          alert.setTitle("Missing Haplotype Table(s)");
+          alert.setHeaderText("");
+          alert.showAndWait();
         }
 
         ValidationTable table = new ValidationTable();
@@ -178,7 +185,7 @@ public class LandingController {
    * @throws IOException If errors during FXML reading
    */
   private void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML,
-                        Object controller) throws IOException {
+      Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems

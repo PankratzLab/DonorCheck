@@ -40,14 +40,12 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
-import org.pankratzlab.unet.deprecated.hla.LoggingPlaceholder;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
-import javafx.scene.control.Alert.AlertType;
 
 /**
  * Static utility class for accessing haplotype frequencies for B-C and DR-DQ haplotypes. Uses
@@ -64,6 +62,7 @@ public final class HaplotypeFrequencies {
 
   private static Map<Haplotype, HaplotypeFrequency> TABLES;
   private static Boolean initialized = null;
+  private static String missingTableMsg;
 
   private HaplotypeFrequencies() {}
 
@@ -115,10 +114,11 @@ public final class HaplotypeFrequencies {
     }
     TABLES = table;
 
+    missingTableMsg = "";
     if (!noTable.toString().isEmpty()) {
-      LoggingPlaceholder.report("The following frequency table(s) are missing. Corresponding haplotype frequencies will not be used.\n"
-                                + "You can update the path via the 'Haplotypes' menu.\n"
-                                + noTable.toString(), AlertType.WARNING);
+      missingTableMsg =
+          "The following frequency table(s) are missing. Corresponding haplotype frequencies will not be used.\n"
+              + noTable.toString() + "\n\nYou can edit the table paths via the 'Haplotypes' menu.";
     }
 
     initialized = !TABLES.isEmpty();
@@ -126,13 +126,21 @@ public final class HaplotypeFrequencies {
   }
 
   /**
+   * @return A description of any tables that failed to load in the last {@link #doInitialization()}
+   *         call. Empty if no missing tables.
+   */
+  public static String getMissingTableMessage() {
+    return missingTableMsg;
+  }
+
+  /**
    * Helper method to build a haplotype table from a CSV file from NMDP
    */
   private static void buildTable(Builder<Haplotype, HaplotypeFrequency> frequencyTableBuilder,
-                                 File frequencyFile, String... loci) {
+      File frequencyFile, String... loci) {
 
     try (InputStream is = new FileInputStream(frequencyFile);
-         HSSFWorkbook workbook = new HSSFWorkbook(is)) {
+        HSSFWorkbook workbook = new HSSFWorkbook(is)) {
 
       for (int sheetIdx = 0; sheetIdx < workbook.getNumberOfSheets(); sheetIdx++) {
         Iterator<Row> rows = workbook.getSheetAt(0).rowIterator();
@@ -238,10 +246,8 @@ public final class HaplotypeFrequencies {
   public static Double getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
     Double freq = 0.0;
     Haplotype equivHaplotype = new Haplotype(haplotype.getTypes().stream()
-                                                      .map(AlleleGroups::getGGroup)
-                                                      .map(HaplotypeFrequencies::adjustNulls)
-                                                      .map(HaplotypeFrequencies::truncateFields)
-                                                      .collect(Collectors.toSet()));
+        .map(AlleleGroups::getGGroup).map(HaplotypeFrequencies::adjustNulls)
+        .map(HaplotypeFrequencies::truncateFields).collect(Collectors.toSet()));
     if (TABLES.containsKey(equivHaplotype)) {
       freq = TABLES.get(equivHaplotype).getFrequencyForEthnicity(ethnicity);
     }
