@@ -306,12 +306,14 @@ public class ValidationModelBuilder {
       Multimap<Strand, HLAType> haplotypes) {
     ListMultimap<Strand, HLAType> enforced = ArrayListMultimap.create();
     for (HLAType t : haplotypes.get(Strand.FIRST)) {
-      if (!HLALocus.B.equals(t.locus()) || strandOneGroup.equals(BwSerotypes.getBwGroup(t))) {
+      if (!HLALocus.B.equals(t.locus()) || strandOneGroup.equals(BwSerotypes.getBwGroup(t))
+          || BwGroup.Unknown.equals(BwSerotypes.getBwGroup(t))) {
         enforced.put(Strand.FIRST, t);
       }
     }
     for (HLAType t : haplotypes.get(Strand.SECOND)) {
-      if (!HLALocus.B.equals(t.locus()) || strandTwoGroup.equals(BwSerotypes.getBwGroup(t))) {
+      if (!HLALocus.B.equals(t.locus()) || strandTwoGroup.equals(BwSerotypes.getBwGroup(t))
+          || BwGroup.Unknown.equals(BwSerotypes.getBwGroup(t))) {
         enforced.put(Strand.SECOND, t);
       }
     }
