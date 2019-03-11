@@ -248,7 +248,7 @@ public final class HaplotypeFrequencies {
     Haplotype equivHaplotype = new Haplotype(haplotype.getTypes().stream()
         .map(AlleleGroups::getGGroup).map(HaplotypeFrequencies::adjustNulls)
         .map(HaplotypeFrequencies::truncateFields).collect(Collectors.toSet()));
-    if (TABLES.containsKey(equivHaplotype)) {
+    if (Objects.nonNull(TABLES) && TABLES.containsKey(equivHaplotype)) {
       freq = TABLES.get(equivHaplotype).getFrequencyForEthnicity(ethnicity);
     }
     return freq;
