@@ -21,31 +21,102 @@
  */
 package org.pankratzlab.unet.parser.util;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Objects;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 
 /**
  * Contains static lists of Bw types. B-locus only, from http://hla.alleles.org/antigens/bw46.html
  */
 public final class BwSerotypes {
+  private static final char COMMENT = '#';
+
   private BwSerotypes() {
 
   }
 
   public static enum BwGroup {
-    Bw4, Bw6, Unknown;
+    Bw4("Bw4"), Bw6("Bw6"), Unknown("No entry");
+
+    private final String groupString;
+
+    private BwGroup(String groupString) {
+      this.groupString = groupString;
+    }
+
+    @Override
+    public String toString() {
+      return groupString;
+    }
   }
 
-  public static final ImmutableSet<String> BW4 =
-      ImmutableSet.of("B5", "B5102", "B5103", "B13", "B17", "B27", "B37", "B38", "B44", "B47",
-          "B49", "B51", "B52", "B53", "B57", "B58", "B59", "B63", "B77");
+  private static final String BW4_ANTIGEN_PATH = "/bw4Antigens.csv";
+  private static final String BW6_ANTIGEN_PATH = "/bw6Antigens.csv";
+  private static final String BW4_ALLELE_PATH = "/bw4Alleles.csv";
+  private static final String BW6_ALLELE_PATH = "/bw6Alleles.csv";
 
-  public static final ImmutableSet<String> BW6 = ImmutableSet.of("B7", "B0703", "B8", "B14", "B18",
-      "B22", "B2708", "B35", "B39", "B3901", "B3902", "B40", "B4005", "B41", "B42", "B45", "B46",
-      "4702", "B48", "B50", "B54", "B55", "B56", "B60", "B61", "B62", "B64", "B65", "B67", "B70",
-      "B71", "B72", "B73", "B75", "B76", "B78", "B81", "B82");
+  private static final ImmutableSet<String> BW4;
+  private static final ImmutableSet<String> BW6;
+  private static final ImmutableMap<HLAType, BwGroup> ALLELE_MAP;
+
+  // -- Initialize BW groups --
+  static {
+    BW4 = readAntigens(BW4_ANTIGEN_PATH);
+    BW6 = readAntigens(BW6_ANTIGEN_PATH);
+    ImmutableMap.Builder<HLAType, BwGroup> builder = ImmutableMap.builder();
+    mapAlleles(builder, BwGroup.Bw4, BW4_ALLELE_PATH);
+    mapAlleles(builder, BwGroup.Bw6, BW6_ALLELE_PATH);
+    ALLELE_MAP = builder.build();
+  }
+
+  /**
+   * Map all antigens in a csv file to the specified {@link BwGroup}
+   */
+  private static ImmutableSet<String> readAntigens(String antigenCsvPath) {
+    ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+    try (CSVParser parser = new CSVParser(
+        new BufferedReader(
+            new InputStreamReader(BwSerotypes.class.getResourceAsStream(antigenCsvPath))),
+        CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
+      for (CSVRecord record : parser) {
+        // Each element of a record is an antigen of the group for this file
+        builder.addAll(record);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      return ImmutableSet.of();
+    }
+    return builder.build();
+  }
+
+  /**
+   * Map all alleles in a csv file to the specified {@link BwGroup}
+   */
+  private static void mapAlleles(Builder<HLAType, BwGroup> builder, BwGroup bwGroup,
+      String alleleCsvPath) {
+    try (CSVParser parser = new CSVParser(
+        new BufferedReader(
+            new InputStreamReader(BwSerotypes.class.getResourceAsStream(alleleCsvPath))),
+        CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
+      for (CSVRecord record : parser) {
+        // Each element of a record is the specificity of a B allele for the group of this file
+        for (String specificity : record) {
+          builder.put(new HLAType(HLALocus.B, specificity), bwGroup);
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
   /**
    * @return the {@link BwGroup} matching the given antigen string
@@ -70,16 +141,21 @@ public final class BwSerotypes {
   }
 
   /**
-   * @return the {@link BwGroup} matching the equivalent {@link SeroType} of the given
-   *         {@link HLAType}
+   * @return the {@link BwGroup} of the given {@link HLAType}
    * @see #getBwGroup(String)
    */
   public static BwGroup getBwGroup(HLAType allele) {
     // Try the 2-field specificity
-    BwGroup group = getBwGroup(new SeroType(allele.locus().sero(), allele.spec().subList(0, 2)));
-    if (Objects.equals(BwGroup.Unknown, group)) {
-      // Try the single-field specificity
-      group = getBwGroup(new SeroType(allele.locus().sero(), allele.spec().subList(0, 1)));
+    HLAType twoField = new HLAType(allele.locus(), allele.spec().subList(0, 2));
+    BwGroup group;
+    if (ALLELE_MAP.containsKey(twoField)) {
+      group = ALLELE_MAP.get(twoField);
+    } else {
+      group = getBwGroup(new SeroType(twoField.locus().sero(), twoField.spec()));
+      if (Objects.equals(BwGroup.Unknown, group)) {
+        // Try the single-field specificity
+        group = getBwGroup(new SeroType(allele.locus().sero(), allele.spec().subList(0, 1)));
+      }
     }
     return group;
   }
