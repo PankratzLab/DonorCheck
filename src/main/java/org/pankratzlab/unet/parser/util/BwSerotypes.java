@@ -27,6 +27,7 @@ import java.util.Objects;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
@@ -147,16 +148,24 @@ public final class BwSerotypes {
   public static BwGroup getBwGroup(HLAType allele) {
     // Try the 2-field specificity
     HLAType twoField = new HLAType(allele.locus(), allele.spec().subList(0, 2));
-    BwGroup group;
+
+    BwGroup group = BwGroup.Unknown;
     if (ALLELE_MAP.containsKey(twoField)) {
+      // Check the known whitelist
       group = ALLELE_MAP.get(twoField);
+    } else if (AntigenDictionary.isValid(twoField)) {
+      // Check the antigen dictionary
+      group = getBwGroup(AntigenDictionary.lookup(twoField).iterator().next());
     } else {
+      // Try the naive two-field specificity
       group = getBwGroup(new SeroType(twoField.locus().sero(), twoField.spec()));
-      if (Objects.equals(BwGroup.Unknown, group)) {
-        // Try the single-field specificity
-        group = getBwGroup(new SeroType(allele.locus().sero(), allele.spec().subList(0, 1)));
-      }
     }
+
+    if (Objects.equals(BwGroup.Unknown, group)) {
+      // Try the single-field specificity
+      group = getBwGroup(new SeroType(allele.locus().sero(), allele.spec().subList(0, 1)));
+    }
+
     return group;
   }
 }
