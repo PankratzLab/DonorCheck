@@ -258,28 +258,32 @@ public class ValidationModelBuilder {
       Multimap<RaceGroup, Haplotype> s6s4Haplotypes = s6s4.isEmpty() ? ImmutableMultimap.of()
           : buildHaplotypes(ImmutableList.of(s6s4, cHaplotypes));
 
-      // Merge the bw4/bw6 sets
+      // Merge the bw4/bw6 sets into a combined Scoring set
       List<ScoredHaplotypes> scoredHaplotypePairs = new ArrayList<>();
       for (RaceGroup raceGroup : RaceGroup.values()) {
-        scoredHaplotypePairs.add(new ScoredHaplotypes(s6s4Haplotypes.get(raceGroup)));
-        scoredHaplotypePairs.add(new ScoredHaplotypes(s4s6Haplotypes.get(raceGroup)));
+        if (s6s4Haplotypes.containsKey(raceGroup)) {
+          scoredHaplotypePairs.add(new ScoredHaplotypes(s6s4Haplotypes.get(raceGroup)));
+        }
+
+        if (s4s6Haplotypes.containsKey(raceGroup)) {
+          scoredHaplotypePairs.add(new ScoredHaplotypes(s4s6Haplotypes.get(raceGroup)));
+        }
       }
 
       // For each ethnicity pick best haplotype pairs from these sets
       Multimap<RaceGroup, Haplotype> haplotypesByEthnicity = HashMultimap.create();
 
-      for (RaceGroup raceGroup : RaceGroup.values()) {
-        scoredHaplotypePairs.add(new ScoredHaplotypes(s6s4Haplotypes.get(raceGroup)));
-        scoredHaplotypePairs.add(new ScoredHaplotypes(s4s6Haplotypes.get(raceGroup)));
-      }
-      for (RaceGroup ethnicity : RaceGroup.values()) {
+      if (!scoredHaplotypePairs.isEmpty()) {
+        for (RaceGroup ethnicity : RaceGroup.values()) {
 
-        // Sort the haplotype pairs to find the most likely pairing for this ethnicity
-        ScoredHaplotypes max =
-            Collections.max(scoredHaplotypePairs, new EthnicityHaplotypeComp(ethnicity));
+          // Sort the haplotype pairs to find the most likely pairing for this ethnicity
+          ScoredHaplotypes max =
+              Collections.max(scoredHaplotypePairs, new EthnicityHaplotypeComp(ethnicity));
 
-        for (Haplotype t : max) {
-          haplotypesByEthnicity.put(ethnicity, t);
+          // Record each haplotype in the pair
+          for (Haplotype t : max) {
+            haplotypesByEthnicity.put(ethnicity, t);
+          }
         }
       }
       return haplotypesByEthnicity;
@@ -345,14 +349,16 @@ public class ValidationModelBuilder {
           possibleHaplotypePairs.stream().map(ScoredHaplotypes::new).collect(Collectors.toList());
 
       // 2. Then sort once for each ethnicity
-      for (RaceGroup ethnicity : RaceGroup.values()) {
+      if (!haplotypePairs.isEmpty()) {
+        for (RaceGroup ethnicity : RaceGroup.values()) {
 
-        // Sort the haplotype pairs to find the most likely pairing for this ethnicity
-        ScoredHaplotypes max =
-            Collections.max(haplotypePairs, new EthnicityHaplotypeComp(ethnicity));
+          // Sort the haplotype pairs to find the most likely pairing for this ethnicity
+          ScoredHaplotypes max =
+              Collections.max(haplotypePairs, new EthnicityHaplotypeComp(ethnicity));
 
-        for (Haplotype t : max) {
-          haplotypesByEthnicity.put(ethnicity, t);
+          for (Haplotype t : max) {
+            haplotypesByEthnicity.put(ethnicity, t);
+          }
         }
       }
     }
