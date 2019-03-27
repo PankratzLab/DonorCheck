@@ -76,6 +76,7 @@ public class IntegrationTest {
 
       testIfModelsAgree(individualModels);
     } catch (Exception e) {
+      e.printStackTrace(System.err);
       fail(individualName + ": failed with exception " + e.toString());
     }
   }
