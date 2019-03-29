@@ -156,7 +156,11 @@ public class PdfSureTyperParser {
         prefix = metadata.getTokenPrefix();
       } else if (setter != null) {
         // Erase the prefix from the current token and set the value on the model builder
-        setter.accept(builder, token.replace(prefix, ""));
+        token = token.replace(prefix, "");
+        token = token.replaceAll("[+]", "");
+
+        // Remove non-field characters
+        setter.accept(builder, token);
       }
     }
   }
