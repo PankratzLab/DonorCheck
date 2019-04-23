@@ -198,7 +198,7 @@ public class XmlScore6Parser {
 
         if (isDRB345) {
           // We can't derive the locus from the header for DRB
-          locusType = parseDRBCombination(currentCombination.toString());
+            locusType = parseDRBCombination(currentCombination.toString());
         } else {
           locusType = HLALocus.safeValueOf(locus.substring(locus.indexOf("-") + 1));
         }

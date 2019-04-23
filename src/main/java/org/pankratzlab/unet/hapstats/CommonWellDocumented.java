@@ -130,7 +130,7 @@ public final class CommonWellDocumented {
     if (ALLELE_FREQS.containsKey(type)) {
       return ALLELE_FREQS.get(type);
     }
-  
+
     // Try adding :01's to the specificity
     HLAType specModified = type;
     while (Objects.nonNull((specModified = growSpec(specModified)))) {
@@ -138,7 +138,7 @@ public final class CommonWellDocumented {
         return ALLELE_FREQS.get(specModified);
       }
     }
-  
+
     // Try removing tailing :01's to the specificity
     specModified = type;
     while (Objects.nonNull((specModified = reduceSpec(specModified)))) {
