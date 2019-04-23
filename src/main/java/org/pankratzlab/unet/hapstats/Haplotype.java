@@ -27,11 +27,12 @@ import java.util.StringJoiner;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.UnmodifiableIterator;
 
 /**
  * A {@link Haplotype} is a collection of types at different loci which co-occur together.
  */
-public class Haplotype {
+public class Haplotype implements Comparable<Haplotype> {
 
   private final ImmutableSortedSet<HLAType> types;
 
@@ -90,5 +91,16 @@ public class Haplotype {
   @Override
   public String toString() {
     return "Haplotype [types=" + types + "]";
+  }
+
+  @Override
+  public int compareTo(Haplotype o) {
+    UnmodifiableIterator<HLAType> myIterator = types.iterator();
+    UnmodifiableIterator<HLAType> otherIterator = o.types.iterator();
+    int c = 0;
+    while (myIterator.hasNext() && otherIterator.hasNext() && c == 0) {
+      c = myIterator.next().compareTo(otherIterator.next());
+    }
+    return c;
   }
 }

@@ -28,11 +28,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
@@ -59,6 +61,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Table;
+import com.google.common.collect.UnmodifiableIterator;
 
 /**
  * Mutable builder class for creating a {@link ValidationModel}.
@@ -588,7 +591,7 @@ public class ValidationModelBuilder {
   /**
    * Helper wrapper class to cache the scores for haplotypes
    */
-  private static class ScoredHaplotypes extends HashSet<Haplotype> {
+  private static class ScoredHaplotypes extends TreeSet<Haplotype> {
     private static final long serialVersionUID = 3780864438450985328L;
     private static final int NO_MISSING_WEIGHT = 10;
     private final Map<RaceGroup, Double> scoresByEthnicity = new HashMap<>();
@@ -655,7 +658,14 @@ public class ValidationModelBuilder {
 
     public int compareTo(ScoredHaplotypes o, RaceGroup e) {
       // Prefer larger frequencies for this ethnicity
-      return Double.compare(getScore(e), o.getScore(e));
+      int c = Double.compare(getScore(e), o.getScore(e));
+      Iterator<Haplotype> myIterator = iterator();
+      Iterator<Haplotype> otherIterator = o.iterator();
+      // Fall back to the haplotypes themselves
+      while (myIterator.hasNext() && otherIterator.hasNext() && c == 0) {
+        c = myIterator.next().compareTo(otherIterator.next());
+      }
+      return c;
     }
   }
 
