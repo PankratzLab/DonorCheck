@@ -22,6 +22,7 @@
 package org.pankratzlab.unet.parser.util;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -198,7 +199,14 @@ public class XmlScore6Parser {
 
         if (isDRB345) {
           // We can't derive the locus from the header for DRB
-            locusType = parseDRBCombination(currentCombination.toString());
+          locusType = parseDRBCombination(currentCombination.toString());
+          if (locusType == null) {
+            // NB: this situation is only known to arise when an individual is homozgygous with
+            // unexpressed DRB345s
+            // In this scenario, we can fall back to looking at the DRB1 alleles to figure out what
+            // we should find.
+            locusType = deduceDRB345Locus(resultPairs);
+          }
         } else {
           locusType = HLALocus.safeValueOf(locus.substring(locus.indexOf("-") + 1));
         }
@@ -296,6 +304,22 @@ public class XmlScore6Parser {
 
   }
 
+  /**
+   * Helper method to do a reverse lookup of sorts from DRB1 alleles to a DRB345 locus.
+   */
+  private static HLALocus deduceDRB345Locus(List<ResultCombination> drb1Combinations) {
+    Set<HLALocus> loci = new HashSet<>();
+    for (ResultCombination combination : drb1Combinations) {
+      loci.add(DRAssociations.getDRBLocus(combination.getAntigenCombination()));
+    }
+    if (loci.size() == 1) {
+      return loci.iterator().next();
+    }
+    throw new IllegalStateException(
+        "DRB345 alleles found without locus; interrogation of DRB1 alleles found " + loci.size()
+            + " distinct DRB345 loci");
+  }
+
   private static Map<Strand, HLALocus> drb345Map(List<ResultCombination> resultPairs) {
     Builder<Strand, HLALocus> mapBuilder = ImmutableMap.builder();
     int strandIdx = 0;
@@ -320,8 +344,7 @@ public class XmlScore6Parser {
   /**
    * Helper method to read an xml combination and check which DRB* locus is contained within.
    *
-   * @return The DRB locus discovered
-   * @throws IllegalArgumentException if no DRB locus found
+   * @return The DRB locus discovered, or null if it is not found
    */
   private static HLALocus parseDRBCombination(String xml) {
     Set<HLALocus> drbLoci =
@@ -332,7 +355,7 @@ public class XmlScore6Parser {
         return locus;
       }
     }
-    throw new IllegalArgumentException("XML does not contain DRB locus: " + xml);
+    return null;
   }
 
 
