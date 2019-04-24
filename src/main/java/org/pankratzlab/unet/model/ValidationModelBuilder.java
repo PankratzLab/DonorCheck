@@ -61,7 +61,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Table;
-import com.google.common.collect.UnmodifiableIterator;
 
 /**
  * Mutable builder class for creating a {@link ValidationModel}.
@@ -420,17 +419,15 @@ public class ValidationModelBuilder {
         // the second haplotype
         List<HLAType> secondStrandTypes = ImmutableList.copyOf(currentLocus.get(strand.flip()));
 
-        if (!secondStrandTypes.isEmpty()) {
-          // Heterozygous, so we will later need to iterate through the second strand types
-          setOrAdd(strandTwoOptionsByLocus, secondStrandTypes, locusIndex);
+        if (secondStrandTypes.isEmpty()) {
+          // This individual appeared homozygous so we just reuse the first strand types
+          secondStrandTypes = ImmutableList.copyOf(currentLocus.get(strand));
         }
+        // set up the second strand options to iterate over later
+        setOrAdd(strandTwoOptionsByLocus, secondStrandTypes, locusIndex);
 
-        // Recurse through each HLA type on the first strand for this locus
+        // Build the pairs: the cross product of strand 1 and strand 2 types.
         for (HLAType currentType : currentLocus.get(strand)) {
-          if (secondStrandTypes.isEmpty()) {
-            // Homozygous so the only option at this locus of the other haplotype is this same type
-            setOrAdd(strandTwoOptionsByLocus, ImmutableList.of(currentType), locusIndex);
-          }
           setOrAdd(currentHaplotypeAlleles, currentType, locusIndex);
 
           // Recurse
