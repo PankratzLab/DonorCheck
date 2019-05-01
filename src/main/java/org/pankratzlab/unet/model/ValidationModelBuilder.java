@@ -507,6 +507,10 @@ public class ValidationModelBuilder {
       typesForStrand.replaceValues(strand, condensed);
     }
 
+    // Homozygous
+    if (Objects.equals(typesForStrand.get(Strand.FIRST), typesForStrand.get(Strand.SECOND))) {
+      typesForStrand.removeAll(Strand.SECOND);
+    }
   }
 
   /**
