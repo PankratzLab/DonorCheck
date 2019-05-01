@@ -418,7 +418,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
           if (Objects.nonNull(tableRow)) {
             HaplotypeRow row = (HaplotypeRow) tableRow.getItem();
             if (Objects.nonNull(row)
-                && Double.compare(HaplotypeFrequencies.UNKNOWN_HAP_CUTOFF, row.frequencyProperty().get()) > 0) {
+                && HaplotypeFrequencies.UNKNOWN_HAP_CUTOFF.compareTo(row.frequencyProperty().get()) > 0) {
               getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
             }
           }

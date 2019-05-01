@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,8 +45,6 @@ import org.pankratzlab.unet.deprecated.hla.NullType;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.MultimapBuilder;
 
 /**
  * Static utility class for accessing haplotype frequencies for B-C and DR-DQ haplotypes. Uses
@@ -54,7 +53,7 @@ import com.google.common.collect.MultimapBuilder;
 public final class HaplotypeFrequencies {
 
   private static final String UNREPORTED_DRB345 = "DRBX*NNNN";
-  public static final double UNKNOWN_HAP_CUTOFF = 0.00001;
+  public static final BigDecimal UNKNOWN_HAP_CUTOFF = new BigDecimal(0.00001);
   private static final String FREQ_COL_SUFFIX = "_freq";
 
   public static final String NMDP_CB_PROP = "hla.nmdp.haplotype.bc";
@@ -174,13 +173,13 @@ public final class HaplotypeFrequencies {
             types.add(makeType(cell.toString()));
           }
           Haplotype haplotype = new Haplotype(types);
-          Multimap<RaceGroup, Double> hapMap = MultimapBuilder.hashKeys().arrayListValues().build();
-          // Values are stored as RaceCode frequencies, but we want to condense them to RaceGroups
+          Map<RaceGroup, BigDecimal> hapMap = new HashMap<>();
           for (RaceGroup group : RaceGroup.values()) {
             Cell cell = row.getCell(ethnicityMap.get(group));
-            double frequency = cell.getNumericCellValue();
-            if (Double.compare(UNKNOWN_HAP_CUTOFF, frequency) > 0) {
-              frequency = Double.MIN_VALUE;
+            BigDecimal frequency = new BigDecimal(cell.getNumericCellValue());
+
+            if (frequency.compareTo(UNKNOWN_HAP_CUTOFF) <= 0) {
+              frequency = BigDecimal.ZERO;
             }
             hapMap.put(group, frequency);
           }
@@ -233,7 +232,7 @@ public final class HaplotypeFrequencies {
    * @return The population frequency in the specified ethnicity of the haplotype containing these
    *         two types
    */
-  public static Double getFrequency(RaceGroup ethnicity, HLAType typeOne, HLAType typeTwo) {
+  public static BigDecimal getFrequency(RaceGroup ethnicity, HLAType typeOne, HLAType typeTwo) {
     return getFrequency(ethnicity, new Haplotype(typeOne, typeTwo));
   }
 
@@ -243,8 +242,8 @@ public final class HaplotypeFrequencies {
    * @return The population frequency in the specified ethnicity of the haplotype containing these
    *         two types
    */
-  public static Double getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
-    Double freq = 0.0;
+  public static BigDecimal getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
+    BigDecimal freq = BigDecimal.ZERO;
     Haplotype equivHaplotype = new Haplotype(haplotype.getTypes().stream()
         .map(AlleleGroups::getGGroup).map(HaplotypeFrequencies::adjustNulls)
         .map(HaplotypeFrequencies::truncateFields).collect(Collectors.toSet()));
@@ -259,17 +258,15 @@ public final class HaplotypeFrequencies {
    */
   private static class HaplotypeFrequency {
 
-    private final ImmutableMap<RaceGroup, Double> frequencyForEthnicity;
+    private final ImmutableMap<RaceGroup, BigDecimal> frequencyForEthnicity;
 
-    private HaplotypeFrequency(Multimap<RaceGroup, Double> hapMap) {
-      Builder<RaceGroup, Double> builder = ImmutableMap.builder();
-      for (RaceGroup group : hapMap.keySet()) {
-        builder.put(group, hapMap.get(group).stream().mapToDouble(Double::doubleValue).sum());
-      }
+    private HaplotypeFrequency(Map<RaceGroup, BigDecimal> hapMap) {
+      Builder<RaceGroup, BigDecimal> builder = ImmutableMap.builder();
+      builder.putAll(hapMap);
       this.frequencyForEthnicity = builder.build();
     }
 
-    private Double getFrequencyForEthnicity(RaceGroup e) {
+    private BigDecimal getFrequencyForEthnicity(RaceGroup e) {
       return frequencyForEthnicity.get(e);
     }
 

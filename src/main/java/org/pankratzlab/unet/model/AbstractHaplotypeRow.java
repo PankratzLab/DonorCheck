@@ -27,8 +27,6 @@ import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-import javafx.beans.property.ReadOnlyDoubleProperty;
-import javafx.beans.property.ReadOnlyDoubleWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -40,16 +38,16 @@ public abstract class AbstractHaplotypeRow implements HaplotypeRow {
   private final ReadOnlyStringWrapper ethnicityDisplay;
   private final ReadOnlyObjectWrapper<RaceGroup> ethnicity;
   private final ReadOnlyObjectWrapper<Haplotype> haplotype;
-  private final ReadOnlyDoubleWrapper frequencyProperty;
+  private final ReadOnlyObjectWrapper<BigDecimal> frequencyProperty;
 
   public AbstractHaplotypeRow(RaceGroup ethnicity, Haplotype haplotype) {
     super();
     this.ethnicity = new ReadOnlyObjectWrapper<>(ethnicity);
     ethnicityDisplay = new ReadOnlyStringWrapper(ethnicity.toString());
     this.haplotype = new ReadOnlyObjectWrapper<>(haplotype);
-    Double frequency = HaplotypeFrequencies.getFrequency(ethnicity, haplotype);
-    frequencyProperty = new ReadOnlyDoubleWrapper(
-        new BigDecimal(frequency).setScale(SIG_FIGS, RoundingMode.HALF_UP).doubleValue());
+    BigDecimal frequency = HaplotypeFrequencies.getFrequency(ethnicity, haplotype);
+    frequencyProperty =
+        new ReadOnlyObjectWrapper<>(frequency.setScale(SIG_FIGS, RoundingMode.HALF_UP));
   }
 
   /**
@@ -74,7 +72,7 @@ public abstract class AbstractHaplotypeRow implements HaplotypeRow {
   }
 
   @Override
-  public ReadOnlyDoubleProperty frequencyProperty() {
+  public ReadOnlyObjectProperty<BigDecimal> frequencyProperty() {
     return frequencyProperty.getReadOnlyProperty();
   }
 

@@ -21,9 +21,9 @@
  */
 package org.pankratzlab.unet.model;
 
+import java.math.BigDecimal;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 
@@ -37,5 +37,5 @@ public interface HaplotypeRow {
 
   ReadOnlyStringProperty ethnicityDisplayProperty();
 
-  ReadOnlyDoubleProperty frequencyProperty();
+  ReadOnlyObjectProperty<BigDecimal> frequencyProperty();
 }

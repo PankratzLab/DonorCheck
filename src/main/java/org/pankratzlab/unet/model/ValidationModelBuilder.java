@@ -76,7 +76,8 @@ public class ValidationModelBuilder {
 
   private static final Map<RaceGroup, EthnicityHaplotypeComp> comparators =
       new EnumMap<>(RaceGroup.class);
-  private static final Table<Haplotype, RaceGroup, Double> frequencyTable = HashBasedTable.create();
+  private static final Table<Haplotype, RaceGroup, BigDecimal> frequencyTable =
+      HashBasedTable.create();
   private static final String NEGATIVE_ALLELE = "N-Negative";
 
   {
@@ -620,14 +621,14 @@ public class ValidationModelBuilder {
         BigDecimal frequency = new BigDecimal(1.0);
         for (Haplotype haplotype : this) {
           // Add this haplotype to the table
-          Double f = frequencyTable.get(haplotype, e);
+          BigDecimal f = frequencyTable.get(haplotype, e);
           if (Objects.isNull(f)) {
             // Cache the frequency if unseen haplotype
             f = HaplotypeFrequencies.getFrequency(e, haplotype);
             frequencyTable.put(haplotype, e, f);
           }
-          if (Double.compare(f, Double.MIN_VALUE) > 0) {
-            frequency = frequency.multiply(new BigDecimal(f));
+          if (f.compareTo(BigDecimal.ZERO) > 0) {
+            frequency = frequency.multiply(f);
             noMissingCount++;
           }
         }
