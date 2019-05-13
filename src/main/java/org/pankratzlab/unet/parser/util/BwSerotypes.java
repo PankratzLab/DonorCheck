@@ -45,10 +45,9 @@ public final class BwSerotypes {
 
   private BwSerotypes() {}
 
+  // enumerated types for general classification of B antigens
   public static enum BwGroup {
-    Bw4("Bw4"),
-    Bw6("Bw6"),
-    Unknown("No entry");
+    Bw4("Bw4"), Bw6("Bw6"), Unknown("No entry");
 
     private final String groupString;
 
@@ -56,6 +55,7 @@ public final class BwSerotypes {
       this.groupString = groupString;
     }
 
+    // override to return string value for BwGroup's enumerated values
     @Override
     public String toString() {
       return groupString;
@@ -84,11 +84,11 @@ public final class BwSerotypes {
   /** Map all antigens in a csv file to the specified {@link BwGroup} */
   private static ImmutableSet<String> readAntigens(String antigenCsvPath) {
     ImmutableSet.Builder<String> builder = ImmutableSet.builder();
-    try (CSVParser parser =
-        new CSVParser(
-            new BufferedReader(
-                new InputStreamReader(BwSerotypes.class.getResourceAsStream(antigenCsvPath))),
-            CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
+    // read CSV files accounting for comment markers
+    try (CSVParser parser = new CSVParser(
+        new BufferedReader(
+            new InputStreamReader(BwSerotypes.class.getResourceAsStream(antigenCsvPath))),
+        CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
       for (CSVRecord record : parser) {
         // Each element of a record is an antigen of the group for this file
         builder.addAll(record);
@@ -100,14 +100,15 @@ public final class BwSerotypes {
     return builder.build();
   }
 
+
   /** Map all alleles in a csv file to the specified {@link BwGroup} */
-  private static void mapAlleles(
-      Builder<HLAType, BwGroup> builder, BwGroup bwGroup, String alleleCsvPath) {
-    try (CSVParser parser =
-        new CSVParser(
-            new BufferedReader(
-                new InputStreamReader(BwSerotypes.class.getResourceAsStream(alleleCsvPath))),
-            CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
+  private static void mapAlleles(Builder<HLAType, BwGroup> builder, BwGroup bwGroup,
+      String alleleCsvPath) {
+    // read CSV file accounting for comment markers
+    try (CSVParser parser = new CSVParser(
+        new BufferedReader(
+            new InputStreamReader(BwSerotypes.class.getResourceAsStream(alleleCsvPath))),
+        CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
       for (CSVRecord record : parser) {
         // Each element of a record is the specificity of a B allele for the group of this file
         for (String specificity : record) {

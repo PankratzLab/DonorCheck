@@ -193,6 +193,7 @@ public class PdfSureTyperParser {
             && !token.endsWith("N")) {
           type = token;
         }
+        // Separate type from the rest of the allele
         if (Objects.nonNull(type)) {
           if (type.contains(":")) {
             type = type.substring(0, type.indexOf(":"));

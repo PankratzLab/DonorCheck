@@ -1,0 +1,230 @@
+<?xml version="1.0" standalone="yes"?>
+<donorupload xmlns="xsddonorupload" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="1.5">
+  <donor>
+    <don_id>AFK1128</don_id>
+    <opo_ctr_cd>AOPO</opo_ctr_cd>
+    <lname>HLA</lname>
+    <fname>TEST</fname>
+    <mi xsi:nil="true" />
+    <abo>O</abo>
+    <dob>1980-01-01T00:00:00Z</dob>
+    <gender>M</gender>
+    <age_in_months>466</age_in_months>
+    <age_unit>Y</age_unit>
+    <hgt_cm>175.26</hgt_cm>
+    <wgt_kg>68.0389</wgt_kg>
+    <race>34427912192</race>
+    <cod>1</cod>
+    <cod_ostxt xsi:nil="true" />
+    <death_mech xsi:nil="true" />
+    <brain_death_dt xsi:nil="true" />
+    <death_circum xsi:nil="true" />
+    <admit_dt xsi:nil="true" />
+    <hypertension>1</hypertension>
+    <hypertens_compl_treatment xsi:nil="true" />
+    <clamp_dt xsi:nil="true" />
+    <clamp_tm_zone>4</clamp_tm_zone>
+    <dst_observed>Y</dst_observed>
+    <non_hr_beat>N</non_hr_beat>
+    <expand_donor_flg>False</expand_donor_flg>
+    <cardarrest_downtm xsi:nil="true" />
+    <cardarrest_downtm_duration xsi:nil="true" />
+    <cpr_admin xsi:nil="true" />
+    <cpr_admin_duration xsi:nil="true" />
+    <admit_course_txt xsi:nil="true" />
+    <hist_diabetes>1</hist_diabetes>
+    <hist_cad>U</hist_cad>
+    <prev_gastro_dis>N</prev_gastro_dis>
+    <chest_trauma xsi:nil="true" />
+    <hist_cancer xsi:nil="true" />
+    <cancer_oth_ostxt xsi:nil="true" />
+    <hist_cig>N</hist_cig>
+    <contin_cig xsi:nil="true" />
+    <alcohol_heavy xsi:nil="true" />
+    <hist_iv_druguse xsi:nil="true" />
+    <cdc_risk_hiv xsi:nil="true" />
+    <medical_soc_txt xsi:nil="true" />
+    <donor_hlts_txt xsi:nil="true" />
+    <kdpi>29</kdpi>
+    <vitalsignscomments xsi:nil="true" />
+    <toxscreen xsi:nil="true" />
+    <toxscreen_results xsi:nil="true" />
+    <otherspecify xsi:nil="true" />
+    <hba1c xsi:nil="true" />
+    <hba1c_dt xsi:nil="true" />
+    <meets_dbl_ki_criteria xsi:nil="true" />
+    <use_double_ki xsi:nil="true" />
+    <warm_ischemic_tm_min>30</warm_ischemic_tm_min>
+    <lt_ki_biopsy xsi:nil="true" />
+    <rt_ki_biopsy xsi:nil="true" />
+    <lt_ki_glomerul>5</lt_ki_glomerul>
+    <lt_ki_glomerul_count>100</lt_ki_glomerul_count>
+    <rt_ki_glomerul xsi:nil="true" />
+    <rt_ki_glomerul_count xsi:nil="true" />
+    <lt_ki_biop_ty xsi:nil="true" />
+    <rt_ki_biop_ty xsi:nil="true" />
+    <lk_txt xsi:nil="true" />
+    <rk_txt xsi:nil="true" />
+    <li_txt xsi:nil="true" />
+    <in_txt xsi:nil="true" />
+    <hr_txt xsi:nil="true" />
+    <ll_txt xsi:nil="true" />
+    <rl_txt xsi:nil="true" />
+    <pa_txt xsi:nil="true" />
+    <li_biopsy xsi:nil="true" />
+    <li_biopsy_txt xsi:nil="true" />
+    <intubated_dt xsi:nil="true" />
+    <chest_xray xsi:nil="true" />
+    <lv_eject xsi:nil="true" />
+    <lv_eject_meth xsi:nil="true" />
+    <shfrac xsi:nil="true" />
+    <length_left_lung xsi:nil="true" />
+    <length_right_lung xsi:nil="true" />
+    <width_aortic_knob xsi:nil="true" />
+    <width_diaphragm xsi:nil="true" />
+    <chest_circ_landmark xsi:nil="true" />
+    <dist_rcpa_lcpa xsi:nil="true" />
+    <septal_wall xsi:nil="true" />
+    <posterior_wall xsi:nil="true" />
+    <left_ki_pump_device xsi:nil="true" />
+    <right_ki_pump_device xsi:nil="true" />
+    <left_ki_pump_solution xsi:nil="true" />
+    <right_ki_pump_solution xsi:nil="true" />
+    <left_ki_pump_device_ostxt xsi:nil="true" />
+    <right_ki_pump_device_ostxt xsi:nil="true" />
+    <left_ki_pump_solution_ostxt xsi:nil="true" />
+    <right_ki_pump_solution_ostxt xsi:nil="true" />
+  </donor>
+  <donor_edit_labs>
+    <don_id>AFK1128</don_id>
+    <labs_dt>2018-11-27T09:00:00Z</labs_dt>
+    <sodium170 xsi:nil="true" />
+    <cl xsi:nil="true" />
+    <bun xsi:nil="true" />
+    <creatinine>1.00</creatinine>
+    <glucose xsi:nil="true" />
+    <co2 xsi:nil="true" />
+    <potassium xsi:nil="true" />
+    <bilirubin xsi:nil="true" />
+    <sgot xsi:nil="true" />
+    <sgpt xsi:nil="true" />
+    <globulin xsi:nil="true" />
+    <albumin xsi:nil="true" />
+    <liin_protein xsi:nil="true" />
+    <alkphos xsi:nil="true" />
+    <ldh xsi:nil="true" />
+    <prothrombin xsi:nil="true" />
+    <ptt xsi:nil="true" />
+    <inr xsi:nil="true" />
+    <amylase xsi:nil="true" />
+    <lipase xsi:nil="true" />
+    <lipase_upper xsi:nil="true" />
+    <bilirubin_direct xsi:nil="true" />
+    <bilirubin_indirect xsi:nil="true" />
+    <remote_row_key>4a4a31ab-395c-4297-938c-1ea7ab65199d</remote_row_key>
+  </donor_edit_labs>
+  <donor_edit_medsfluids>
+    <don_id>AFK1128</don_id>
+    <iv_fluids xsi:nil="true" />
+    <steroids xsi:nil="true" />
+    <steroids_ostxt xsi:nil="true" />
+    <diuretics xsi:nil="true" />
+    <diuretics_ostxt xsi:nil="true" />
+    <t3 xsi:nil="true" />
+    <t4 xsi:nil="true" />
+    <insulin xsi:nil="true" />
+    <antihypertensives xsi:nil="true" />
+    <vasodilators xsi:nil="true" />
+    <ddavp xsi:nil="true" />
+    <arginine xsi:nil="true" />
+    <insulin_begin_dt xsi:nil="true" />
+    <insulin_end_dt xsi:nil="true" />
+    <vasodilators_begin_dt xsi:nil="true" />
+    <vasodilators_end_dt xsi:nil="true" />
+    <arginine_begin_dt xsi:nil="true" />
+    <arginine_end_dt xsi:nil="true" />
+    <tpn xsi:nil="true" />
+    <iv_dextrose xsi:nil="true" />
+    <transfus_term xsi:nil="true" />
+    <other_blood xsi:nil="true" />
+    <other_blood_ostxt xsi:nil="true" />
+    <med1_ostxt xsi:nil="true" />
+    <med2_ostxt xsi:nil="true" />
+    <med3_ostxt xsi:nil="true" />
+    <heparin xsi:nil="true" />
+    <heparin_dosage xsi:nil="true" />
+    <heparin_begin_dt xsi:nil="true" />
+    <heparin_end_dt xsi:nil="true" />
+  </donor_edit_medsfluids>
+  <donor_edit_serologies>
+    <don_id>AFK1128</don_id>
+    <anti_hbc>N </anti_hbc>
+    <anti_hbcab_hemo_dil_cd>N </anti_hbcab_hemo_dil_cd>
+    <hbv_nat>N </hbv_nat>
+    <hbv_nat_hemo_dil_cd>N </hbv_nat_hemo_dil_cd>
+    <hbsag xsi:nil="true" />
+    <hbsag_hemo_dil_cd xsi:nil="true" />
+    <hbsab xsi:nil="true" />
+    <hbsab_hemo_dil_cd xsi:nil="true" />
+    <anti_hcv>N </anti_hcv>
+    <anti_hcv_hemo_dil_cd>N </anti_hcv_hemo_dil_cd>
+    <hcv_nat>N </hcv_nat>
+    <hcv_nat_hemo_dil_cd>N </hcv_nat_hemo_dil_cd>
+    <hiv>N </hiv>
+    <anti_hiv_hemo_dil_cd>N </anti_hiv_hemo_dil_cd>
+    <hiv_agab>N </hiv_agab>
+    <hiv_agab_hemo_dil_cd>N </hiv_agab_hemo_dil_cd>
+    <hiv_nat>N </hiv_nat>
+    <hiv_nat_hemo_dil_cd>N </hiv_nat_hemo_dil_cd>
+    <htlv xsi:nil="true" />
+    <anti_htlv_hemo_dil_cd xsi:nil="true" />
+    <cmv_stat>N </cmv_stat>
+    <anti_cmv_hemo_dil_cd>N </anti_cmv_hemo_dil_cd>
+    <syphilis xsi:nil="true" />
+    <syphilis_vdrl_hemo_dil_cd xsi:nil="true" />
+    <ebv_igg xsi:nil="true" />
+    <ebv_igg_hemo_dil_cd xsi:nil="true" />
+    <ebv_igm xsi:nil="true" />
+    <ebv_igm_hemo_dil_cd xsi:nil="true" />
+    <ebna xsi:nil="true" />
+    <ebna_hemo_dil_cd xsi:nil="true" />
+    <toxo_igg xsi:nil="true" />
+    <toxo_igg_hemo_dil_cd xsi:nil="true" />
+    <chagas_serology xsi:nil="true" />
+    <chagas_serology_hemo_dil_cd xsi:nil="true" />
+    <chagas_nat xsi:nil="true" />
+    <chagas_nat_hemo_dil_cd xsi:nil="true" />
+    <west_nile_serology xsi:nil="true" />
+    <west_nile_serology_hemo_dil_cd xsi:nil="true" />
+    <west_nile_nat xsi:nil="true" />
+    <west_nile_nat_hemo_dil_cd xsi:nil="true" />
+    <htlv_nat xsi:nil="true" />
+    <htlv_nat_hemo_dil_cd xsi:nil="true" />
+  </donor_edit_serologies>
+  <donor_edit_crossmatchhla>
+    <don_id>AFK1128</don_id>
+    <prelim_xmatch>Y</prelim_xmatch>
+    <a1>11</a1>
+    <a2>23</a2>
+    <b1>35</b1>
+    <b2>44</b2>
+    <bw4>95</bw4>
+    <bw6>95</bw6>
+    <c1>4</c1>
+    <c2 xsi:nil="true" />
+    <dr1>103</dr1>
+    <dr2>11</dr2>
+    <dr51>96</dr51>
+    <dr52>5</dr52>
+    <dr53>96</dr53>
+    <dq1>7</dq1>
+    <dq2>5</dq2>
+    <dqa1>1</dqa1>
+    <dqa2>25</dqa2>
+    <dp1>105</dp1>
+    <dp2>107</dp2>
+    <dr51_2>96</dr51_2>
+    <dr52_2>96</dr52_2>
+    <dr53_2>96</dr53_2>
+  </donor_edit_crossmatchhla>
+</donorupload>

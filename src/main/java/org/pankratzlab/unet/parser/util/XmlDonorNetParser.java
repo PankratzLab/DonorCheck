@@ -42,9 +42,13 @@ import com.google.common.collect.ImmutableSet;
 
 /** Parses downloaded DonorNet XML (un-saved - after saving, only HTML is supported) to a model. */
 public class XmlDonorNetParser {
+  // If Bw4 or Bw6 tag has either 96 or 6 the B antigen family is deemed to be negative
   private static final ImmutableSet<String> XML_FALSE = ImmutableSet.of("96", "6");
+  // If Bw4 or Bw6 tag has either 95 or 5 the B antigen family is deemed to be positive
   private static final ImmutableSet<String> XML_TRUE = ImmutableSet.of("95", "5");
+  // Used to identify that input is a DonorNet file
   public static final String ROOT_ELEMENT = "donorupload";
+  // Path to resources used for mapping DonorNet DQA, DPB and DRB XML elements
   private static final String DQA_MAP_PATH = "/DqaMap.xml";
   private static final String DPB_MAP_PATH = "/DpbMap.xml";
   private static final String DR51_MAP_PATH = "/DR51Map.xml";

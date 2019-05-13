@@ -203,7 +203,7 @@ public class XmlScore6Parser {
           // We can't derive the locus from the header for DRB
           locusType = parseDRBCombination(currentCombination.toString());
           if (locusType == null) {
-            // NB: this situation is only known to arise when an individual is homozgygous with
+            // NB: this situation is only known to arise when an individual is homozygous with
             // unexpressed DRB345s
             // In this scenario, we can fall back to looking at the DRB1 alleles to figure out what
             // we should find.

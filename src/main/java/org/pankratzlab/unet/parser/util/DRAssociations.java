@@ -52,14 +52,15 @@ public final class DRAssociations {
     DR_MAP = builder.build();
   }
 
-  private static void addMapping(
-      Builder<SeroType, HLALocus> builder, HLALocus drbLocus, String... drFields) {
-
+  // build function for creating the DRB table
+  private static void addMapping(Builder<SeroType, HLALocus> builder, HLALocus drbLocus,
+      String... drFields) {
     for (String dr : drFields) {
       builder.put(SeroType.valueOf("DR" + dr), drbLocus);
     }
   }
 
+  // create immutable map
   private static ImmutableMap<SeroType, HLALocus> drMap() {
     if (Objects.isNull(DR_MAP)) {
       init();
