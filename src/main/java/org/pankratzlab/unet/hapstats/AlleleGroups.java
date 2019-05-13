@@ -65,11 +65,12 @@ public final class AlleleGroups {
         new BufferedReader(
             new InputStreamReader(AlleleGroups.class.getResourceAsStream(pathToGroupFile)))) {
       String line;
-      // Delimiter is ;
-      // First entry is locus
-      // If no grouping, second entry is specificity
-      // If grouping, second entry is '/'-delimited list of equivalent specificities
-      // If grouping, third entry is the root allele specificity
+      /*
+       * Each line is rather a single allele or a list of alleles followed by the group those
+       * alleles belong to Delimiter is ; First element is locus If no grouping, second element is
+       * specificity If grouping, second element is '/'-delimited list of equivalent specificities
+       * If grouping, third element is the group allele specificity
+       */
       while ((line = groupFileReader.readLine()) != null) {
         if (line.startsWith(COMMENT_FLAG)) {
           continue;
@@ -124,6 +125,12 @@ public final class AlleleGroups {
     return HLAType.valueOf(alleleString);
   }
 
+  /**
+   * Accepts allele strings ending in n, g or p and decodes them to the appropriate g or p group
+   * 
+   * @param alleleString representation of an allele
+   * @return the g or p group allele if this allele is a member. Otherwise return allele
+   */
   public static HLAType getGroupAllele(String alleleString) {
     HLAType baseType = HLAType.valueOf(alleleString);
 
@@ -141,15 +148,18 @@ public final class AlleleGroups {
   }
 
   private static HLAType getUnknownGroupEquiv(NullType unknown) {
+    // Checking if unknown allele is in g group
     HLAType equiv = G_GROUP.get(unknown);
+    // If null unknown is not in g group and p group should be checked
     if (Objects.isNull(equiv)) {
       equiv = P_GROUP.get(unknown);
     }
+    // If equiv is still null then neither g group or p group
     return Objects.isNull(equiv) ? unknown : equiv;
   }
 
   /**
-   * @param allele
+   * @param allele key value to search G_Group for
    * @return
    */
   public static HLAType getGGroup(HLAType allele) {

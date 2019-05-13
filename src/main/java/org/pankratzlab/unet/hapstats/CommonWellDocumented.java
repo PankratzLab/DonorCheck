@@ -122,8 +122,14 @@ public final class CommonWellDocumented {
     return Status.UNKNOWN;
   }
 
+  /**
+   * @param type HLA allele
+   * @return Status from enum values
+   */
   public static Status getStatus(HLAType type) {
     Status status = doGetStatus(type);
+    // if status is unknown attempt getting the status from a common group
+    // only checking g group because overlap cough cause failures
     if (Status.UNKNOWN.equals(status)) {
       HLAType equivType = AlleleGroups.getGGroup(type);
       status = doGetStatus(equivType);
@@ -135,7 +141,7 @@ public final class CommonWellDocumented {
     if (ALLELE_FREQS.containsKey(type)) {
       return ALLELE_FREQS.get(type);
     }
-
+    // adding or removing trailing :01's does not change the allele specificity
     // Try adding :01's to the specificity
     HLAType specModified = type;
     while (Objects.nonNull((specModified = growSpec(specModified)))) {

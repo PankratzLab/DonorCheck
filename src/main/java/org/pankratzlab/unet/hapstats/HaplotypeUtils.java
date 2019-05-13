@@ -43,7 +43,7 @@ public final class HaplotypeUtils {
    * @param specString Sanitized specificity string, which may or may not represent a range of
    *     alleles (indicated by {@link #RANGE_TOKEN})
    * @param locus {@link HLALocus} string representation
-   * @param strandIndex {@link Strand} index
+   * @param strandIndex {@link Strand} index, a 0 for the first string and a 1 for the second.
    * @param haplotypeMap Map to populate
    */
   public static void parseAllelesToStrandMap(
