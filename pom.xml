@@ -36,9 +36,9 @@
 		<appName>donor-check</appName>
 		<mainClass>org.pankratzlab.unet.jfx.TypeValidationEntry</mainClass>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-                <!-- Controls the Java and Maven compliance versions -->
-                <maven.compiler.source>1.8</maven.compiler.source>
-                <maven.compiler.target>1.8</maven.compiler.target>
+		<!-- Controls the Java and Maven compliance versions -->
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
 		<winVer>na</winVer>
 	</properties>
 
@@ -105,12 +105,40 @@
 
 		<!-- JUnit - http://junit.org/ -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.11</version>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>5.4.2</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.junit.vintage</groupId>
+			<artifactId>junit-vintage-engine</artifactId>
+			<version>5.4.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-launcher</artifactId>
+			<version>1.4.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-runner</artifactId>
+			<version>1.4.2</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+		<dependency>
+    		<groupId>org.mockito</groupId>
+    		<artifactId>mockito-core</artifactId>
+    		<version>2.27.0</version>
+    		<scope>test</scope>
+		</dependency>
 	</dependencies>
+	
+
+	
 
 	<build>
 		<!-- Make "mvn" with no arguments do something reasonable (compile, test, 
@@ -172,7 +200,8 @@
 								<Specification-Version>${project.version}</Specification-Version>
 								<Compile-Time>${timestamp}</Compile-Time>
 								<Build-Type>Development</Build-Type>
-								<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
+								<Implementation-Vendor>(c)2018 Computational Pathology -
+									University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
 							</manifestEntries>
 						</archive>
 						<skipIfEmpty>true</skipIfEmpty>
@@ -197,7 +226,8 @@
 								<Specification-Version>${project.version}</Specification-Version>
 								<Compile-Time>${timestamp}</Compile-Time>
 								<Build-Type>Development</Build-Type>
-								<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
+								<Implementation-Vendor>(c)2018 Computational Pathology -
+									University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
 							</manifestEntries>
 						</archive>
 					</configuration>
@@ -232,7 +262,8 @@
 							<Specification-Version>${project.version}</Specification-Version>
 							<Compile-Time>${timestamp}</Compile-Time>
 							<Build-Type>Development</Build-Type>
-							<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
+							<Implementation-Vendor>(c)2018 Computational Pathology -
+								University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
 						</manifestAttributes>
 					</configuration>
 					<executions>
@@ -334,7 +365,8 @@
 					<configuration>
 						<licenseName>gpl_v2</licenseName>
 						<projectName>DonorCheck</projectName>
-						<organizationName>Computational Pathology - University of Minnesota</organizationName>
+						<organizationName>Computational Pathology - University of
+							Minnesota</organizationName>
 						<addJavaLicenseAfterPackage>false</addJavaLicenseAfterPackage>
 						<canUpdateDescription>true</canUpdateDescription>
 						<canUpdateCopyright>true</canUpdateCopyright>
