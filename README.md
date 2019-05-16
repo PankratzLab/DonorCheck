@@ -20,6 +20,10 @@ We currently provide pre-built installers for Windows only. Please select the ap
 
 This project is open source, distributed under the GPL v2 license. The application is free for use and redistribution.
 
+## Code Style
+
+We use Google's java code format. Current version: [1.6](https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-eclipse-plugin_1.6.0.jar)
+
 # Support
 
 Please [join our Google group](https://groups.google.com/a/umn.edu/forum/#!forum/donor_check) to keep up on the latest news and updates.
