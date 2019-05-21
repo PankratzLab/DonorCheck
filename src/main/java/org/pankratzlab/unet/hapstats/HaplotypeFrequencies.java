@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +54,10 @@ import com.google.common.collect.ImmutableMap.Builder;
 public final class HaplotypeFrequencies {
 
   private static final String UNREPORTED_DRB345 = "DRBX*NNNN";
-  public static final BigDecimal UNKNOWN_HAP_CUTOFF = new BigDecimal(0.00001);
+  public static final int UNKNOWN_HAP_SIG_FIGS = 5;
+  public static final RoundingMode UNKNOWN_HAP_ROUNDING_MODE = RoundingMode.HALF_UP;
+  public static final BigDecimal UNKNOWN_HAP_CUTOFF =
+      new BigDecimal(0.00001).setScale(UNKNOWN_HAP_SIG_FIGS, UNKNOWN_HAP_ROUNDING_MODE);
   private static final String FREQ_COL_SUFFIX = "_freq";
 
   public static final String NMDP_CB_PROP = "hla.nmdp.haplotype.bc";
@@ -178,7 +182,7 @@ public final class HaplotypeFrequencies {
             Cell cell = row.getCell(ethnicityMap.get(group));
             BigDecimal frequency = new BigDecimal(cell.getNumericCellValue());
 
-            if (frequency.compareTo(UNKNOWN_HAP_CUTOFF) <= 0) {
+            if (frequency.compareTo(UNKNOWN_HAP_CUTOFF) < 0) {
               frequency = BigDecimal.ZERO;
             }
             hapMap.put(group, frequency);

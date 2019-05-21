@@ -22,7 +22,6 @@
 package org.pankratzlab.unet.model;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
@@ -34,7 +33,6 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 
 public abstract class AbstractHaplotypeRow implements HaplotypeRow {
 
-  private static final int SIG_FIGS = 5;
   private final ReadOnlyStringWrapper ethnicityDisplay;
   private final ReadOnlyObjectWrapper<RaceGroup> ethnicity;
   private final ReadOnlyObjectWrapper<Haplotype> haplotype;
@@ -47,7 +45,8 @@ public abstract class AbstractHaplotypeRow implements HaplotypeRow {
     this.haplotype = new ReadOnlyObjectWrapper<>(haplotype);
     BigDecimal frequency = HaplotypeFrequencies.getFrequency(ethnicity, haplotype);
     frequencyProperty =
-        new ReadOnlyObjectWrapper<>(frequency.setScale(SIG_FIGS, RoundingMode.HALF_UP));
+        new ReadOnlyObjectWrapper<>(frequency.setScale(HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
+            HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE));
   }
 
   /**
