@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -29,9 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.UnmodifiableIterator;
 
-/**
- * A {@link Haplotype} is a collection of types at different loci which co-occur together.
- */
+/** A {@link Haplotype} is a collection of types at different loci which co-occur together. */
 public class Haplotype implements Comparable<Haplotype> {
 
   private final ImmutableSortedSet<HLAType> types;
@@ -47,16 +45,12 @@ public class Haplotype implements Comparable<Haplotype> {
     this(ImmutableSet.copyOf(types));
   }
 
-  /**
-   * @return The {@link HLAType}s linked by this haplotype
-   */
+  /** @return The {@link HLAType}s linked by this haplotype */
   public SortedSet<HLAType> getTypes() {
     return types;
   }
 
-  /**
-   * @return A short representation string
-   */
+  /** @return A short representation string */
   public String toShortString() {
     StringJoiner sj = new StringJoiner(" + ");
     types.forEach(t -> sj.add(t.toString()));
@@ -73,18 +67,13 @@ public class Haplotype implements Comparable<Haplotype> {
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
     Haplotype other = (Haplotype) obj;
     if (types == null) {
-      if (other.types != null)
-        return false;
-    } else if (!types.equals(other.types))
-      return false;
+      if (other.types != null) return false;
+    } else if (!types.equals(other.types)) return false;
     return true;
   }
 

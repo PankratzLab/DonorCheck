@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -42,27 +42,19 @@ import java.util.stream.Collectors;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 
-/**
- * Abstract superclass for general antigen information. Allows comparison and sorting.
- */
+/** Abstract superclass for general antigen information. Allows comparison and sorting. */
 public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
     implements Serializable, Comparable<A> {
 
   private static final long serialVersionUID = 5L;
 
-  /**
-   * Specificity delimiter
-   */
+  /** Specificity delimiter */
   public static final String SPEC_DELIM = ":";
 
-  /**
-   * Delimiter between locus and specificity
-   */
+  /** Delimiter between locus and specificity */
   public static final String LOCUS_DELIM = "*";
 
-  /**
-   * {@link Pattern} for matching antigen specificities.
-   */
+  /** {@link Pattern} for matching antigen specificities. */
   public static final Pattern SPEC_PATTERN =
       Pattern.compile("\\" + LOCUS_DELIM + "?([0-9]+[:[0-9]+]*)(?:\\(([0-9]+[:[0-9]+]*)\\))*");
 
@@ -113,23 +105,17 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
     specificity = p.stream().mapToInt(i -> i).toArray();
   }
 
-  /**
-   * @return The {@link Locus} for this {@link Antigen}
-   */
+  /** @return The {@link Locus} for this {@link Antigen} */
   public L locus() {
     return locus;
   }
 
-  /**
-   * @return The number of molecular positions known for this {@link Antigen}'s specificity
-   */
+  /** @return The number of molecular positions known for this {@link Antigen}'s specificity */
   public int resolution() {
     return specificity.length;
   }
 
-  /**
-   * @return Specificity of this {@link Antigen}
-   */
+  /** @return Specificity of this {@link Antigen} */
   public List<Integer> spec() {
     if (specList == null) {
       specList = ImmutableList.copyOf(Ints.asList(specificity));
@@ -137,20 +123,20 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
     return specList;
   }
 
-  /**
-   * @return The string representation of this specification
-   */
+  /** @return The string representation of this specification */
   public String specString() {
     if (spec().size() == 1) {
       return String.format("%d", spec().get(0));
     }
-    return spec().stream().map(i -> String.format("%02d", i))
+    return spec()
+        .stream()
+        .map(i -> String.format("%02d", i))
         .collect(Collectors.joining(getSpecDelim()));
   }
 
   /**
    * @return Distance between two {@link Antigen}s. Similar alleles will have smaller values.. e.g.
-   *         A*21:03 is closer to A*21:04 than to A*20:03
+   *     A*21:03 is closer to A*21:04 than to A*20:03
    */
   public int distance(A a) {
     // Heavily penalize alleles on other loci
@@ -196,7 +182,6 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
     return c;
   }
 
-
   @Override
   public int hashCode() {
     int code = hash;
@@ -212,17 +197,12 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
     Antigen<?, ?> other = (Antigen<?, ?>) obj;
-    if (locus != other.locus())
-      return false;
-    if (!Arrays.equals(specificity, other.specificity))
-      return false;
+    if (locus != other.locus()) return false;
+    if (!Arrays.equals(specificity, other.specificity)) return false;
     return true;
   }
 
@@ -234,27 +214,23 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
     return stringVal;
   }
 
-  /**
-   * Helper method for building the molecular position string
-   */
+  /** Helper method for building the molecular position string */
   private String toString(String locusString) {
 
     return locusString + getLocusDelim() + specString();
   }
 
-  /**
-   * @see #parse(int[])
-   */
+  /** @see #parse(int[]) */
   private List<Integer> parse(String[] p) {
     if (p.length == 1) {
       String spec = p[0];
-  
+
       int[] iVal = new int[1];
       Matcher matcher = SPEC_PATTERN.matcher(spec);
       matcher.find();
       // Extracts value from parens if they were present
       String val = matcher.group(2) != null ? matcher.group(2) : matcher.group(1);
-  
+
       if (val.contains(SPEC_DELIM)) {
         // Was passed XX:YY
         return parse(val.split(SPEC_DELIM));
@@ -279,23 +255,17 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
    */
   protected abstract List<Integer> parse(int[] pos);
 
-  /**
-   * @return The (optional) delimiter between locus and spec
-   */
+  /** @return The (optional) delimiter between locus and spec */
   protected String getLocusDelim() {
     return "";
   }
 
-  /**
-   * @return The (optional) delimiter between positions in the spec
-   */
+  /** @return The (optional) delimiter between positions in the spec */
   protected String getSpecDelim() {
     return "";
   }
 
-  /**
-   * @return true iff this text can be parsed according to the given type pattern
-   */
+  /** @return true iff this text can be parsed according to the given type pattern */
   public static boolean is(String text, Pattern typePattern) {
     if (text == null || text.isEmpty()) {
       return false;
@@ -310,14 +280,18 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
    */
   public static <L extends Locus<L>, T extends Antigen<L, T>> String toString(
       Collection<T> antigens) {
-    return antigens.stream().sorted().map(Antigen::toString).collect(Collectors.joining(", "))
+    return antigens
+        .stream()
+        .sorted()
+        .map(Antigen::toString)
+        .collect(Collectors.joining(", "))
         .toString();
   }
 
   /**
    * @param antigenString Input which may or may not complying to expected pattern formats.
    * @return A well-behaved, upcased,standardized representation of the input string, appropriate
-   *         for locus or antigen parsing.
+   *     for locus or antigen parsing.
    */
   public static String sanitize(String antigenString) {
     antigenString = antigenString.trim();
@@ -337,17 +311,17 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
   /**
    * Helper method to parse a sequence of {@link Antigen} types from a shorthand notation string
    *
-   * @param text String representing zero or more antigen types according to the given
-   *        {@code typeParser}. Shorthand notation omitting redundant loci is accepted, e.g.
-   *        {@code A21:03,15 B*2} would translate to {@code A*21:03, A*15, B*02}
+   * @param text String representing zero or more antigen types according to the given {@code
+   *     typeParser}. Shorthand notation omitting redundant loci is accepted, e.g. {@code A21:03,15
+   *     B*2} would translate to {@code A*21:03, A*15, B*02}
    * @param lociPattern A {@link Pattern} for parsing out the {@link Locus}
    * @param typeParser Method for converting individual locus + spec string combinations to a
-   *        particular type
+   *     particular type
    * @return A list of the <b>unique</b> and <b>non-null</b> antigens parsed from the text, in the
-   *         order of their first appearance
+   *     order of their first appearance
    */
-  public static <T extends Antigen<?, T>> List<T> parseTypes(String text, Pattern lociPattern,
-      Function<String, T> typeParser) {
+  public static <T extends Antigen<?, T>> List<T> parseTypes(
+      String text, Pattern lociPattern, Function<String, T> typeParser) {
     if (text == null || text.isEmpty()) {
       return Collections.emptyList();
     }
@@ -404,16 +378,18 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
   public static Pattern makePattern(List<String> strings) {
     // Remove redundant entries and then sort by length first and then normal string ordering,
     // with the intention that longer strings will take precedence.
-    TreeSet<String> sortedEntries = new TreeSet<>(new Comparator<String>() {
-      @Override
-      public int compare(String o1, String o2) {
-        int c = Integer.compare(o2.length(), o1.length());
-        if (c == 0) {
-          c = o1.compareTo(o2);
-        }
-        return c;
-      }
-    });
+    TreeSet<String> sortedEntries =
+        new TreeSet<>(
+            new Comparator<String>() {
+              @Override
+              public int compare(String o1, String o2) {
+                int c = Integer.compare(o2.length(), o1.length());
+                if (c == 0) {
+                  c = o1.compareTo(o2);
+                }
+                return c;
+              }
+            });
 
     StringJoiner patternJoiner = new StringJoiner("|", "(?i)(", ")");
 
@@ -430,9 +406,7 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
     return Pattern.compile(patternJoiner.toString());
   }
 
-  /**
-   * Abstract representation of an {@link Antigen} (unknown type)
-   */
+  /** Abstract representation of an {@link Antigen} (unknown type) */
   public static class RawType {
     private final String locus;
     private final String specificity;
@@ -458,16 +432,12 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
       specificity = spec;
     }
 
-    /**
-     * @return String representation of this {@link Antigen}'s {@link Locus}
-     */
+    /** @return String representation of this {@link Antigen}'s {@link Locus} */
     public String locus() {
       return locus;
     }
 
-    /**
-     * @return String representation for this {@link Antigen}'s specificity
-     */
+    /** @return String representation for this {@link Antigen}'s specificity */
     public String spec() {
       return specificity;
     }

@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -34,9 +34,7 @@ import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
-/**
- * {@link DonorFileParser} for HTML files. Currently this is restricted to DonorNet html
- */
+/** {@link DonorFileParser} for HTML files. Currently this is restricted to DonorNet html */
 public class HtmlDonorParser extends AbstractDonorFileParser {
 
   private static final String SELECTED_VALUE = "selected";
@@ -52,7 +50,6 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   private static final String EXTENSION_NAME = "html";
   private static final String EXTENSION = "DonorEdit." + EXTENSION_NAME;
   private static final String HTML_NEGATIVE = "Negative";
-
 
   @Override
   public String fileChooserHeader() {
@@ -108,10 +105,10 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
     }
   }
 
-  /**
-   * Helper method to translate the parsed HTML to a {@link ValidationModel}
-   */
-  private void buildModelFromHTML(ValidationModelBuilder builder, Document parsed,
+  /** Helper method to translate the parsed HTML to a {@link ValidationModel} */
+  private void buildModelFromHTML(
+      ValidationModelBuilder builder,
+      Document parsed,
       BiFunction<Document, String, Optional<String>> typeParser) {
 
     Element idElement = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, DONOR_ATTRIBUTE).get(0);
@@ -141,12 +138,9 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
     typeParser.apply(parsed, "DR52_2").ifPresent(s -> builder.dr52(decodeDR(s)));
     typeParser.apply(parsed, "DR53").ifPresent(s -> builder.dr53(decodeDR(s)));
     typeParser.apply(parsed, "DR53_2").ifPresent(s -> builder.dr53(decodeDR(s)));
-
   }
 
-  /**
-   * Helper method to remove unnecessary info from DR drop down selection options
-   */
+  /** Helper method to remove unnecessary info from DR drop down selection options */
   private String decodeDR(String dr) {
     int start = 0;
     int end = dr.length();
@@ -159,16 +153,14 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
     return dr.substring(start, end);
   }
 
-  /**
-   * Booleans are exported as a linear value which we have to translate to true/false
-   */
+  /** Booleans are exported as a linear value which we have to translate to true/false */
   private boolean decodeHTMLBoolean(String boolString) {
     return !boolString.contains(HTML_NEGATIVE);
   }
 
   /**
    * Helper method to extract the type text from HTML for a donor still editable
-   * 
+   *
    * @param parsed Parent {@link Document}
    * @param typeString The typing to look up (e.g. A1)
    * @return The value of the given type
@@ -183,7 +175,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
 
   /**
    * Helper method to extract the type text from HTML for a previously saved donor
-   * 
+   *
    * @param parsed Parent {@link Document}
    * @param typeString The typing to look up (e.g. A1)
    * @return The value of the given type
@@ -191,8 +183,10 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   private Optional<String> getSavedHTMLType(Document parsed, String typeString) {
     // All tags with type info start and end with these
 
-    return DonorNetUtils.getText(parsed.getAllElements().get(0)
-        .getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + typeString + HTML_SUFFIX));
+    return DonorNetUtils.getText(
+        parsed
+            .getAllElements()
+            .get(0)
+            .getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + typeString + HTML_SUFFIX));
   }
-
 }

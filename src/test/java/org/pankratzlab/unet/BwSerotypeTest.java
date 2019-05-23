@@ -9,9 +9,7 @@ import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 
-/**
- * Unit tests for {@link BwSerotypes}
- */
+/** Unit tests for {@link BwSerotypes} */
 public class BwSerotypeTest {
 
   @Test
@@ -40,5 +38,4 @@ public class BwSerotypeTest {
     // This allele is in the table
     assertEquals(BwGroup.Unknown, BwSerotypes.getBwGroup(new HLAType(HLALocus.B, "12:01")));
   }
-
 }

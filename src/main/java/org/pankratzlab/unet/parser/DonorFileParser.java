@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -24,29 +24,19 @@ package org.pankratzlab.unet.parser;
 import java.io.File;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
-/**
- * Common interface for parsing donor files
- */
+/** Common interface for parsing donor files */
 public interface DonorFileParser {
 
-  /**
-   * @return Display header when selecting a file
-   */
+  /** @return Display header when selecting a file */
   public String fileChooserHeader();
 
-  /**
-   * @return Initial file name when selecting a file
-   */
+  /** @return Initial file name when selecting a file */
   public String initialName();
 
-  /**
-   * @return File filter extension. Used to restrict file types.
-   */
+  /** @return File filter extension. Used to restrict file types. */
   public String extensionFilter();
 
-  /**
-   * @return Human-readable display text for extension filter
-   */
+  /** @return Human-readable display text for extension filter */
   public String extensionDescription();
 
   /**

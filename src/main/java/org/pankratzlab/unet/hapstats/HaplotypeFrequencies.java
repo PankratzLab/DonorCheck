@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -69,9 +69,7 @@ public final class HaplotypeFrequencies {
 
   private HaplotypeFrequencies() {}
 
-  /**
-   * @return True if {@link #doInitialization()} succeeded.
-   */
+  /** @return True if {@link #doInitialization()} succeeded. */
   public static boolean successfullyInitialized() {
     if (Objects.isNull(initialized)) {
       initialized = doInitialization();
@@ -81,9 +79,8 @@ public final class HaplotypeFrequencies {
 
   /**
    * Update the haplotype frequency tables.
-   * <p>
-   * NOTE: This should always be run off the JFX application thread
-   * </p>
+   *
+   * <p>NOTE: This should always be run off the JFX application thread
    *
    * @return true if at least one haplotype is read successfully.
    */
@@ -121,7 +118,8 @@ public final class HaplotypeFrequencies {
     if (!noTable.toString().isEmpty()) {
       missingTableMsg =
           "The following frequency table(s) are missing. Corresponding haplotype frequencies will not be used.\n"
-              + noTable.toString() + "\n\nYou can edit the table paths via the 'Haplotypes' menu.";
+              + noTable.toString()
+              + "\n\nYou can edit the table paths via the 'Haplotypes' menu.";
     }
 
     initialized = !TABLES.isEmpty();
@@ -130,17 +128,17 @@ public final class HaplotypeFrequencies {
 
   /**
    * @return A description of any tables that failed to load in the last {@link #doInitialization()}
-   *         call. Empty if no missing tables.
+   *     call. Empty if no missing tables.
    */
   public static String getMissingTableMessage() {
     return missingTableMsg;
   }
 
-  /**
-   * Helper method to build a haplotype table from a CSV file from NMDP
-   */
-  private static void buildTable(Builder<Haplotype, HaplotypeFrequency> frequencyTableBuilder,
-      File frequencyFile, String... loci) {
+  /** Helper method to build a haplotype table from a CSV file from NMDP */
+  private static void buildTable(
+      Builder<Haplotype, HaplotypeFrequency> frequencyTableBuilder,
+      File frequencyFile,
+      String... loci) {
 
     try (InputStream is = new FileInputStream(frequencyFile);
         HSSFWorkbook workbook = new HSSFWorkbook(is)) {
@@ -196,9 +194,7 @@ public final class HaplotypeFrequencies {
     }
   }
 
-  /**
-   * Convert a record to a {@link HLAType}
-   */
+  /** Convert a record to a {@link HLAType} */
   private static HLAType makeType(String alleleString) {
     if (alleleString.equals(UNREPORTED_DRB345)) {
       alleleString = NullType.UNREPORTED_DRB345.toString();
@@ -207,9 +203,7 @@ public final class HaplotypeFrequencies {
     return truncateFields(groupAllele);
   }
 
-  /**
-   * Any null type is treated as {@link NullType#UNREPORTED_DRB345}
-   */
+  /** Any null type is treated as {@link NullType#UNREPORTED_DRB345} */
   private static HLAType adjustNulls(HLAType testType) {
     if (testType.locus().isDRB345() && testType instanceof NullType) {
       return NullType.UNREPORTED_DRB345;
@@ -218,9 +212,7 @@ public final class HaplotypeFrequencies {
     return testType;
   }
 
-  /**
-   * Ensure we never list or look up an allele with more than 2-field specificity
-   */
+  /** Ensure we never list or look up an allele with more than 2-field specificity */
   private static HLAType truncateFields(HLAType testType) {
     List<Integer> truncatedFields = testType.spec().subList(0, 2);
     if (testType instanceof NullType) {
@@ -234,7 +226,7 @@ public final class HaplotypeFrequencies {
    * @param typeOne First type of target haplotype (order is arbitrary)
    * @param typeTwo Second type of target haplotype (order is arbitrary)
    * @return The population frequency in the specified ethnicity of the haplotype containing these
-   *         two types
+   *     two types
    */
   public static BigDecimal getFrequency(RaceGroup ethnicity, HLAType typeOne, HLAType typeTwo) {
     return getFrequency(ethnicity, new Haplotype(typeOne, typeTwo));
@@ -244,22 +236,26 @@ public final class HaplotypeFrequencies {
    * @param ethnicity Target ethnicity
    * @param haplotype Target haplotype
    * @return The population frequency in the specified ethnicity of the haplotype containing these
-   *         two types
+   *     two types
    */
   public static BigDecimal getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
     BigDecimal freq = BigDecimal.ZERO;
-    Haplotype equivHaplotype = new Haplotype(haplotype.getTypes().stream()
-        .map(AlleleGroups::getGGroup).map(HaplotypeFrequencies::adjustNulls)
-        .map(HaplotypeFrequencies::truncateFields).collect(Collectors.toSet()));
+    Haplotype equivHaplotype =
+        new Haplotype(
+            haplotype
+                .getTypes()
+                .stream()
+                .map(AlleleGroups::getGGroup)
+                .map(HaplotypeFrequencies::adjustNulls)
+                .map(HaplotypeFrequencies::truncateFields)
+                .collect(Collectors.toSet()));
     if (Objects.nonNull(TABLES) && TABLES.containsKey(equivHaplotype)) {
       freq = TABLES.get(equivHaplotype).getFrequencyForEthnicity(ethnicity);
     }
     return freq;
   }
 
-  /**
-   * Helper class linking {@link RaceGroup} and frequency values for a particular Haplotype
-   */
+  /** Helper class linking {@link RaceGroup} and frequency values for a particular Haplotype */
   private static class HaplotypeFrequency {
 
     private final ImmutableMap<RaceGroup, BigDecimal> frequencyForEthnicity;

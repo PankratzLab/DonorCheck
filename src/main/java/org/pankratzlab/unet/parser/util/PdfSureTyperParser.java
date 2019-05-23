@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -39,9 +39,7 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 
-/**
- * Specific parsing logic for SureTyper PDFs
- */
+/** Specific parsing logic for SureTyper PDFs */
 public class PdfSureTyperParser {
   private static final String SURE_TYPER = "SureTyper";
   private static final String SUMMARY_START = "SUMMARY";
@@ -75,9 +73,7 @@ public class PdfSureTyperParser {
   private static final String HAPLOTYPE_DRB345 = "HLA-DRB345";
   private static ImmutableMap<String, TypeSetter> metadataMap;
 
-  /**
-   * Helper method to process the individual type assignment tokens tokens
-   */
+  /** Helper method to process the individual type assignment tokens tokens */
   public static void parseTypes(ValidationModelBuilder builder, String[] lines) {
     if (metadataMap == null) {
       init();
@@ -171,8 +167,9 @@ public class PdfSureTyperParser {
    */
   private static int parseSummary(String[] lines, StringJoiner typeAssignment, int currentLine) {
     // go line-by-line, split on whitespace, look for DRB[3/4/5]* tokens and convert to line
-    final ImmutableSet<String> validLoci = ImmutableSet.of(HLALocus.DRB3.toString(),
-        HLALocus.DRB4.toString(), HLALocus.DRB5.toString());
+    final ImmutableSet<String> validLoci =
+        ImmutableSet.of(
+            HLALocus.DRB3.toString(), HLALocus.DRB4.toString(), HLALocus.DRB5.toString());
     boolean homozygous = false;
     for (; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine];
@@ -187,8 +184,10 @@ public class PdfSureTyperParser {
           // For homozygous cases that are reported, the locus appears twice.. once by itself, the
           // other with the allele designation.
           homozygous = true;
-        } else if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
-            || token.contains(HLALocus.DRB5 + "*")) && !token.endsWith("N")) {
+        } else if ((token.contains(HLALocus.DRB3 + "*")
+                || token.contains(HLALocus.DRB4 + "*")
+                || token.contains(HLALocus.DRB5 + "*"))
+            && !token.endsWith("N")) {
           type = token;
         }
         if (Objects.nonNull(type)) {
@@ -203,20 +202,18 @@ public class PdfSureTyperParser {
           }
           typeAssignment.add(typeAssignmentEntry);
         }
-
       }
     }
 
     return currentLine;
-
   }
 
   /**
    * Helper method to parse the possible haplotypes. These are long lists of possible alleles,
    * divided by HLA locus.
    */
-  private static int parseHaplotype(String[] lines, int currentLine, String locus,
-      Multimap<Strand, HLAType> strandMap) {
+  private static int parseHaplotype(
+      String[] lines, int currentLine, String locus, Multimap<Strand, HLAType> strandMap) {
     // Sections start with a line containing JUST HLA_A/b/c etc..
     // Strands are marked by first type is always low res (group)
     // Read until we get to a semi-colon
@@ -239,7 +236,9 @@ public class PdfSureTyperParser {
         // This indicates a new locus is starting
         break;
       }
-      if (locus.startsWith("DRB") && line.matches("^DRB[0-9]\\*[0-9]+") && !line.contains(locus)
+      if (locus.startsWith("DRB")
+          && line.matches("^DRB[0-9]\\*[0-9]+")
+          && !line.contains(locus)
           && strandIndex >= 0) {
         // DRB345 are all in one section - we do not want to accidentally mix DRB loci. We also
         // check the strand index because we do not want to prematurely end iteration.
@@ -262,8 +261,9 @@ public class PdfSureTyperParser {
       }
 
       // If we're on a valid strand, parse the tokens to alleles
-      for (; tokenIndex < tokens.length
-          && (strandIndex >= 0 && strandIndex < Strand.values().length); tokenIndex++) {
+      for (;
+          tokenIndex < tokens.length && (strandIndex >= 0 && strandIndex < Strand.values().length);
+          tokenIndex++) {
         String token = tokens[tokenIndex].trim();
 
         if (locus.startsWith(token.replaceAll("[0-9*w]", "")) || token.equals(UNKNOWN_ANTIGEN)) {
@@ -300,8 +300,10 @@ public class PdfSureTyperParser {
   private static int parseAssignment(String[] lines, StringJoiner typeAssignment, int currentLine) {
     String line = null;
     // Read until we hit the end of the typing
-    for (; currentLine < lines.length
-        && !(line = lines[currentLine].trim()).contains(TYPING_STOP_TOKEN); currentLine++) {
+    for (;
+        currentLine < lines.length
+            && !(line = lines[currentLine].trim()).contains(TYPING_STOP_TOKEN);
+        currentLine++) {
       // Building the type assignment lines
       typeAssignment.add(line);
     }
@@ -359,11 +361,8 @@ public class PdfSureTyperParser {
     }
   }
 
-  /**
-   * Helper method to call for unsupported loci/tokens
-   */
+  /** Helper method to call for unsupported loci/tokens */
   private static void noOp(ValidationModelBuilder builder, String value) {
     // Nothing to do
   }
-
 }

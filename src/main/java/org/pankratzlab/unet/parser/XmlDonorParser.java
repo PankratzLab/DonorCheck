@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -32,9 +32,7 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.XmlDonorNetParser;
 import org.pankratzlab.unet.parser.util.XmlScore6Parser;
 
-/**
- * {@link DonorFileParser} entry point for XML files
- */
+/** {@link DonorFileParser} entry point for XML files */
 public class XmlDonorParser extends AbstractDonorFileParser {
 
   private static final String BODY_TAG = "body";
@@ -46,7 +44,6 @@ public class XmlDonorParser extends AbstractDonorFileParser {
   private static final String EXTENSION_DESC = "DonorNet, SCORE6";
   private static final String EXTENSION_NAME = "xml";
   private static final String EXTENSION = "*." + EXTENSION_NAME;
-
 
   @Override
   public String fileChooserHeader() {
@@ -68,18 +65,15 @@ public class XmlDonorParser extends AbstractDonorFileParser {
     return EXTENSION;
   }
 
-
   @Override
   public String extensionDescription() {
     return EXTENSION_DESC;
   }
 
-
   @Override
   protected String getDisplayString() {
     return DISPLAY_STRING;
   }
-
 
   @Override
   protected String extensionName() {
@@ -106,6 +100,4 @@ public class XmlDonorParser extends AbstractDonorFileParser {
       throw new IllegalStateException("Invalid XML file: " + file);
     }
   }
-
-
 }

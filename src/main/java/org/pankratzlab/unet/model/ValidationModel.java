@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -59,10 +59,21 @@ public class ValidationModel {
   private final ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
 
-  public ValidationModel(String donorId, String source, Collection<SeroType> a,
-      Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
-      Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<HLAType> dpb, boolean bw4,
-      boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
+  public ValidationModel(
+      String donorId,
+      String source,
+      Collection<SeroType> a,
+      Collection<SeroType> b,
+      Collection<SeroType> c,
+      Collection<SeroType> drb,
+      Collection<SeroType> dqb,
+      Collection<SeroType> dqa,
+      Collection<HLAType> dpb,
+      boolean bw4,
+      boolean bw6,
+      List<HLAType> dr51,
+      List<HLAType> dr52,
+      List<HLAType> dr53,
       Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
       Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes) {
     this.donorId = donorId;
@@ -232,87 +243,54 @@ public class ValidationModel {
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
     ValidationModel other = (ValidationModel) obj;
     if (aLocus == null) {
-      if (other.aLocus != null)
-        return false;
-    } else if (!aLocus.equals(other.aLocus))
-      return false;
+      if (other.aLocus != null) return false;
+    } else if (!aLocus.equals(other.aLocus)) return false;
     if (bLocus == null) {
-      if (other.bLocus != null)
-        return false;
-    } else if (!bLocus.equals(other.bLocus))
-      return false;
+      if (other.bLocus != null) return false;
+    } else if (!bLocus.equals(other.bLocus)) return false;
     if (bcHaplotypes == null) {
-      if (other.bcHaplotypes != null)
-        return false;
-    } else if (!bcHaplotypes.equals(other.bcHaplotypes))
-      return false;
-    if (bw4 != other.bw4)
-      return false;
-    if (bw6 != other.bw6)
-      return false;
+      if (other.bcHaplotypes != null) return false;
+    } else if (!bcHaplotypes.equals(other.bcHaplotypes)) return false;
+    if (bw4 != other.bw4) return false;
+    if (bw6 != other.bw6) return false;
     if (cLocus == null) {
-      if (other.cLocus != null)
-        return false;
-    } else if (!cLocus.equals(other.cLocus))
-      return false;
+      if (other.cLocus != null) return false;
+    } else if (!cLocus.equals(other.cLocus)) return false;
     if (donorId == null) {
-      if (other.donorId != null)
-        return false;
-    } else if (!donorId.equals(other.donorId))
-      return false;
+      if (other.donorId != null) return false;
+    } else if (!donorId.equals(other.donorId)) return false;
     if (dpbLocus == null) {
-      if (other.dpbLocus != null)
-        return false;
-    } else if (!dpbLocus.equals(other.dpbLocus))
-      return false;
+      if (other.dpbLocus != null) return false;
+    } else if (!dpbLocus.equals(other.dpbLocus)) return false;
     if (dqaLocus == null) {
-      if (other.dqaLocus != null)
-        return false;
-    } else if (!dqaLocus.equals(other.dqaLocus))
-      return false;
+      if (other.dqaLocus != null) return false;
+    } else if (!dqaLocus.equals(other.dqaLocus)) return false;
     if (dqbLocus == null) {
-      if (other.dqbLocus != null)
-        return false;
-    } else if (!dqbLocus.equals(other.dqbLocus))
-      return false;
+      if (other.dqbLocus != null) return false;
+    } else if (!dqbLocus.equals(other.dqbLocus)) return false;
     if (dr51Locus == null) {
-      if (other.dr51Locus != null)
-        return false;
-    } else if (!dr51Locus.equals(other.dr51Locus))
-      return false;
+      if (other.dr51Locus != null) return false;
+    } else if (!dr51Locus.equals(other.dr51Locus)) return false;
     if (dr52Locus == null) {
-      if (other.dr52Locus != null)
-        return false;
-    } else if (!dr52Locus.equals(other.dr52Locus))
-      return false;
+      if (other.dr52Locus != null) return false;
+    } else if (!dr52Locus.equals(other.dr52Locus)) return false;
     if (dr53Locus == null) {
-      if (other.dr53Locus != null)
-        return false;
-    } else if (!dr53Locus.equals(other.dr53Locus))
-      return false;
+      if (other.dr53Locus != null) return false;
+    } else if (!dr53Locus.equals(other.dr53Locus)) return false;
     if (drbLocus == null) {
-      if (other.drbLocus != null)
-        return false;
-    } else if (!drbLocus.equals(other.drbLocus))
-      return false;
+      if (other.drbLocus != null) return false;
+    } else if (!drbLocus.equals(other.drbLocus)) return false;
     if (drdqHaplotypes == null) {
-      if (other.drdqHaplotypes != null)
-        return false;
-    } else if (!drdqHaplotypes.equals(other.drdqHaplotypes))
-      return false;
+      if (other.drdqHaplotypes != null) return false;
+    } else if (!drdqHaplotypes.equals(other.drdqHaplotypes)) return false;
     if (source == null) {
-      if (other.source != null)
-        return false;
-    } else if (!source.equals(other.source))
-      return false;
+      if (other.source != null) return false;
+    } else if (!source.equals(other.source)) return false;
     return true;
   }
 
@@ -339,8 +317,8 @@ public class ValidationModel {
     return sj.toString();
   }
 
-  private void addHaplotypes(StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes,
-      String title) {
+  private void addHaplotypes(
+      StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes, String title) {
     sj.add(title);
     for (RaceGroup e : RaceGroup.values()) {
       sj.add("\t" + e.toString());
@@ -348,7 +326,6 @@ public class ValidationModel {
           haplotypes.get(e).stream().map(Haplotype::toString).sorted().collect(Collectors.toList());
       hapStrings.forEach(s -> sj.add("\t" + s));
     }
-
   }
 
   private void addPair(StringJoiner sj, Object s1, Object s2) {
@@ -375,5 +352,4 @@ public class ValidationModel {
     }
     sj.add(pair);
   }
-
 }

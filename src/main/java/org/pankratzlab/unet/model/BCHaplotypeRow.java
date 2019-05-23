@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -32,9 +32,7 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 
-/**
- * One row of a Haplotype table (showing all haplotypes for an individual)
- */
+/** One row of a Haplotype table (showing all haplotypes for an individual) */
 public class BCHaplotypeRow extends AbstractHaplotypeRow {
   public static final String C_ALLELE_PROP = "alleleC";
   public static final String B_ALLELE_PROP = "alleleB";
@@ -58,7 +56,6 @@ public class BCHaplotypeRow extends AbstractHaplotypeRow {
           break;
         default:
           break;
-
       }
     }
     if (Objects.isNull(b) || Objects.isNull(c)) {
@@ -71,26 +68,18 @@ public class BCHaplotypeRow extends AbstractHaplotypeRow {
     bwGroup = new ReadOnlyStringWrapper(group.toString());
   }
 
-
-  /**
-   * @return Property for the C allele of this row's {@link Haplotype}
-   */
+  /** @return Property for the C allele of this row's {@link Haplotype} */
   public ReadOnlyObjectProperty<HLAType> alleleCProperty() {
     return alleleC.getReadOnlyProperty();
   }
 
-  /**
-   * @return Property for the B allele of this row's {@link Haplotype}
-   */
+  /** @return Property for the B allele of this row's {@link Haplotype} */
   public ReadOnlyObjectProperty<HLAType> alleleBProperty() {
     return alleleB.getReadOnlyProperty();
   }
 
-  /**
-   * @return Property for the Bw group status of this row's B allele
-   */
+  /** @return Property for the Bw group status of this row's B allele */
   public ReadOnlyStringProperty bwGroupProperty() {
     return bwGroup.getReadOnlyProperty();
   }
-
 }

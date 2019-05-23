@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -27,9 +27,7 @@ import org.pankratzlab.unet.deprecated.hla.SeroType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
-/**
- * Utility class recording the mapping of genotypes to reported serotypes
- */
+/** Utility class recording the mapping of genotypes to reported serotypes */
 public final class SerotypeEquivalence {
 
   private static final ImmutableMap<HLAType, SeroType> equivalencies;
@@ -37,7 +35,7 @@ public final class SerotypeEquivalence {
   static {
     // Build the equivalencies map
     Builder<HLAType, SeroType> builder = ImmutableMap.builder();
-    //TODO would be nice to read this from a file instead
+    // TODO would be nice to read this from a file instead
 
     // -- B Locus --
     put(builder, "64", HLALocus.B, "14:01");
@@ -77,8 +75,8 @@ public final class SerotypeEquivalence {
     equivalencies = builder.build();
   }
 
-  private static void put(Builder<HLAType, SeroType> builder, String serotypeSpec, HLALocus locus,
-      String... hlaSpecs) {
+  private static void put(
+      Builder<HLAType, SeroType> builder, String serotypeSpec, HLALocus locus, String... hlaSpecs) {
     SeroType s = new SeroType(locus.sero(), serotypeSpec);
 
     for (String allele : hlaSpecs) {
@@ -89,7 +87,7 @@ public final class SerotypeEquivalence {
 
   /**
    * @return The {@link SeroType} equivalent for the 2-field input genotype, or {@code null} if no
-   *         explicit mapping exists.
+   *     explicit mapping exists.
    */
   public static SeroType get(HLAType allele) {
     if (allele.spec().size() > 2) {

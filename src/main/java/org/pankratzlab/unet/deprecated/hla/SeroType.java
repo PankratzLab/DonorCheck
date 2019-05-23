@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -28,29 +28,22 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * {@link Antigen} implementation for serological antigens
- */
+/** {@link Antigen} implementation for serological antigens */
 public class SeroType extends Antigen<SeroLocus, SeroType> {
   private static final long serialVersionUID = 6L;
 
-  /**
-   * Match {@link SeroLocus} strings
-   */
+  /** Match {@link SeroLocus} strings */
   public static final Pattern LOCI_PATTERN;
 
-  /**
-   * As {@link #TYPE_PATTERN} but will match locus-only strings
-   */
+  /** As {@link #TYPE_PATTERN} but will match locus-only strings */
   public static final Pattern PARTIAL_PATTERN;
 
   /**
    * Matches string representations of {@link SeroType}s
-   * <p>
-   * Group 1 is the {@link SeroLocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
-   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the
-   * {@link Matcher#group(int)} api)
-   * </p>
+   *
+   * <p>Group 1 is the {@link SeroLocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
+   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the {@link
+   * Matcher#group(int)} api)
    */
   public static final Pattern TYPE_PATTERN;
 
@@ -58,37 +51,27 @@ public class SeroType extends Antigen<SeroLocus, SeroType> {
 
   private int revision = LATEST_REVISION;
 
-  /**
-   * @see SeroType#SeroType(String, int...)
-   */
+  /** @see SeroType#SeroType(String, int...) */
   public SeroType(String l, String... p) {
     this(SeroLocus.safeValueOf(l), p);
   }
 
-  /**
-   * Auto-parses {@link SeroLocus} value
-   */
+  /** Auto-parses {@link SeroLocus} value */
   public SeroType(String l, int... p) {
     this(SeroLocus.safeValueOf(l), p);
   }
 
-  /**
-   * @see Antigen#Antigen(Locus, String...)
-   */
+  /** @see Antigen#Antigen(Locus, String...) */
   public SeroType(SeroLocus l, String... p) {
     super(l, p);
   }
 
-  /**
-   * @see Antigen#Antigen(Locus, int...)
-   */
+  /** @see Antigen#Antigen(Locus, int...) */
   public SeroType(SeroLocus l, int... p) {
     super(l, p);
   }
 
-  /**
-   * @see Antigen#Antigen(Locus, List)
-   */
+  /** @see Antigen#Antigen(Locus, List) */
   public SeroType(SeroLocus l, List<Integer> p) {
     super(l, p);
   }
@@ -115,9 +98,7 @@ public class SeroType extends Antigen<SeroLocus, SeroType> {
     return values;
   }
 
-  /**
-   * @see Antigen#is(String, Pattern)
-   */
+  /** @see Antigen#is(String, Pattern) */
   public static boolean is(String text) {
     return Antigen.is(text, TYPE_PATTERN);
   }
@@ -133,17 +114,13 @@ public class SeroType extends Antigen<SeroLocus, SeroType> {
     return antigenSet;
   }
 
-  /**
-   * A {@link SeroType} representation of the given string
-   */
+  /** A {@link SeroType} representation of the given string */
   public static SeroType valueOf(String typeString) {
     RawType rt = new RawType(typeString, TYPE_PATTERN);
     return new SeroType(rt.locus(), rt.spec());
   }
 
-  /**
-   * @see Antigen#parseTypes(String, java.util.regex.Pattern, java.util.function.Function)
-   */
+  /** @see Antigen#parseTypes(String, java.util.regex.Pattern, java.util.function.Function) */
   public static List<SeroType> parseTypes(String text) {
     return Antigen.parseTypes(text, LOCI_PATTERN, SeroType::valueOf);
   }

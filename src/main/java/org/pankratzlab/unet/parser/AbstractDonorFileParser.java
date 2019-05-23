@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -26,9 +26,7 @@ import java.security.InvalidParameterException;
 import org.apache.commons.io.FilenameUtils;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
-/**
- * Abstract superclass for {@link DonorFileParser} for common operations.
- */
+/** Abstract superclass for {@link DonorFileParser} for common operations. */
 public abstract class AbstractDonorFileParser implements DonorFileParser {
 
   @Override
@@ -47,14 +45,10 @@ public abstract class AbstractDonorFileParser implements DonorFileParser {
     return getDisplayString();
   }
 
-  /**
-   * @return Label to display to users (to select between different file types)
-   */
+  /** @return Label to display to users (to select between different file types) */
   protected abstract String getDisplayString();
 
-  /**
-   * @return Extension string for checking (e.g. no file separator"
-   */
+  /** @return Extension string for checking (e.g. no file separator" */
   protected abstract String extensionName();
 
   /**

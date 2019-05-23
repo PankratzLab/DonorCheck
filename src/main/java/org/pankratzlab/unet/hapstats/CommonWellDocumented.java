@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -55,7 +55,9 @@ public final class CommonWellDocumented {
   private static ImmutableMap<HLAType, Status> ALLELE_FREQS;
 
   public static enum Status {
-    COMMON(1.0), WELL_DOCUMENTED(0.5), UNKNOWN(0.0);
+    COMMON(1.0),
+    WELL_DOCUMENTED(0.5),
+    UNKNOWN(0.0);
 
     private final double weight;
 
@@ -93,9 +95,12 @@ public final class CommonWellDocumented {
           cwdMap.put(HLAType.valueOf(freqKey), freqVal);
         }
       }
-      cwdMap.entries().forEach(e -> {
-        freqMapBuilder.put(e);
-      });
+      cwdMap
+          .entries()
+          .forEach(
+              e -> {
+                freqMapBuilder.put(e);
+              });
       ALLELE_FREQS = freqMapBuilder.build();
     } catch (Exception e) {
       System.err.println("Invalid Frequency file: " + ALLELE_FREQ_PATH);
@@ -104,9 +109,7 @@ public final class CommonWellDocumented {
     }
   }
 
-  /**
-   * @return A numeric weight whether the input allele is common, well-documented or unknown.
-   */
+  /** @return A numeric weight whether the input allele is common, well-documented or unknown. */
   private static Status getCwdWeight(String cwdText) {
     switch (cwdText) {
       case COMMON_FLAG:
@@ -152,7 +155,7 @@ public final class CommonWellDocumented {
   /**
    * @param equivType Input type to reduce
    * @return The input {@link HLAType} with its tailing "01" field removed, or null if the allele
-   *         can not be reduced
+   *     can not be reduced
    */
   private static HLAType reduceSpec(HLAType equivType) {
     List<Integer> spec = equivType.spec();
@@ -169,7 +172,7 @@ public final class CommonWellDocumented {
   /**
    * @param equivType Input type to expand
    * @return The input {@link HLAType} with an additional "01" field, or null if the allele can not
-   *         be further expanded
+   *     be further expanded
    */
   private static HLAType growSpec(HLAType equivType) {
     List<Integer> spec = new ArrayList<>(equivType.spec());
@@ -184,9 +187,7 @@ public final class CommonWellDocumented {
     return modifiedSpec(equivType, spec);
   }
 
-  /**
-   * Helper method to create an updated HLAType
-   */
+  /** Helper method to create an updated HLAType */
   private static HLAType modifiedSpec(HLAType equivType, List<Integer> spec) {
     if (equivType instanceof NullType) {
       return new NullType(equivType.locus(), spec);
@@ -207,6 +208,4 @@ public final class CommonWellDocumented {
     }
     return score;
   }
-
-
 }

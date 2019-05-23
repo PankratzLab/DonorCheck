@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -69,9 +69,7 @@ public class ValidationTable {
     secondModelWrapper.addListener((v, o, n) -> generateRows());
   }
 
-  /**
-   * @return The donor ID for this validation (if available)
-   */
+  /** @return The donor ID for this validation (if available) */
   public String getId() {
     if (firstModelWrapper != null) {
       return firstModelWrapper.get().getDonorId();
@@ -90,72 +88,54 @@ public class ValidationTable {
     return secondSourceWrapper.getReadOnlyProperty();
   }
 
-  /**
-   * @return An image of the validation state
-   */
+  /** @return An image of the validation state */
   public WritableImage getValidationImage() {
     return validationImage;
   }
 
-  /**
-   * @param validationImage An image representation of the validation state
-   */
+  /** @param validationImage An image representation of the validation state */
   public void setValidationImage(WritableImage validationImage) {
     this.validationImage = validationImage;
   }
 
-  /**
-   * @param model New {@link ValidationModel} for the first column in the table
-   */
+  /** @param model New {@link ValidationModel} for the first column in the table */
   public void setFirstModel(ValidationModel model) {
     firstSourceWrapper.set(model.getSource());
     firstModelWrapper.set(model);
   }
 
-  /**
-   * @param model New {@link ValidationModel} for the second column in the table
-   */
+  /** @param model New {@link ValidationModel} for the second column in the table */
   public void setSecondModel(ValidationModel model) {
     secondSourceWrapper.set(model.getSource());
     secondModelWrapper.set(model);
   }
 
-  /**
-   * @return A {@link BooleanProperty} tracking the validity of the complete table
-   */
+  /** @return A {@link BooleanProperty} tracking the validity of the complete table */
   public ReadOnlyBooleanProperty isValidProperty() {
     return isValidWrapper.getReadOnlyProperty();
   }
 
-  /**
-   * @return The {@link ValidationRow}s for this model, e.g. for display
-   */
+  /** @return The {@link ValidationRow}s for this model, e.g. for display */
   public ReadOnlyListProperty<ValidationRow<?>> getValidationRows() {
     return validationRows.getReadOnlyProperty();
   }
 
-  /**
-   * @return The B-C Haplotype rows for this model, e.g. for display
-   */
+  /** @return The B-C Haplotype rows for this model, e.g. for display */
   public ReadOnlyListProperty<BCHaplotypeRow> getBCHaplotypeRows() {
     return bcHaplotypeRows.getReadOnlyProperty();
   }
 
-  /**
-   * @return The DRB1-DQB1-DRB345 Haplotype rows for this model, e.g. for display
-   */
+  /** @return The DRB1-DQB1-DRB345 Haplotype rows for this model, e.g. for display */
   public ReadOnlyListProperty<DRDQHaplotypeRow> getDRDQHaplotypeRows() {
     return drdqHaplotypeRows.getReadOnlyProperty();
   }
 
-  /**
-   * Helper method to translate the wrapped {@link ValidationModel}s to rows for display.
-   */
+  /** Helper method to translate the wrapped {@link ValidationModel}s to rows for display. */
   private void generateRows() {
     // FIXME the row labels and row type should probably be linked in the ValidationModel
     validationRows.clear();
-    makeValidationRow(validationRows, "Donor ID", ValidationModel::getDonorId,
-        StringValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "Donor ID", ValidationModel::getDonorId, StringValidationRow::makeRow);
     makeValidationRow(validationRows, "A", ValidationModel::getA1, AntigenValidationRow::makeRow);
     makeValidationRow(validationRows, "A", ValidationModel::getA2, AntigenValidationRow::makeRow);
 
@@ -168,38 +148,38 @@ public class ValidationTable {
     makeValidationRow(validationRows, "C", ValidationModel::getC1, AntigenValidationRow::makeRow);
     makeValidationRow(validationRows, "C", ValidationModel::getC2, AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB1,
-        AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB2,
-        AntigenValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DRB1", ValidationModel::getDRB1, AntigenValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DRB1", ValidationModel::getDRB2, AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB1,
-        AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB2,
-        AntigenValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DQB1", ValidationModel::getDQB1, AntigenValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DQB1", ValidationModel::getDQB2, AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA1,
-        AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA2,
-        AntigenValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DQA1", ValidationModel::getDQA1, AntigenValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DQA1", ValidationModel::getDQA2, AntigenValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB1,
-        AlleleValidationRow::makeRow);
-    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB2,
-        AlleleValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DPB1", ValidationModel::getDPB1, AlleleValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DPB1", ValidationModel::getDPB2, AlleleValidationRow::makeRow);
 
-    makeValidationRow(validationRows, "DR51 1", ValidationModel::getDR51_1,
-        DR345ValidationRow::makeRow);
-    makeValidationRow(validationRows, "DR51 2", ValidationModel::getDR51_2,
-        DR345ValidationRow::makeRow);
-    makeValidationRow(validationRows, "DR52 1", ValidationModel::getDR52_1,
-        DR345ValidationRow::makeRow);
-    makeValidationRow(validationRows, "DR52 2", ValidationModel::getDR52_2,
-        DR345ValidationRow::makeRow);
-    makeValidationRow(validationRows, "DR53 1", ValidationModel::getDR53_1,
-        DR345ValidationRow::makeRow);
-    makeValidationRow(validationRows, "DR53 2", ValidationModel::getDR53_2,
-        DR345ValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DR51 1", ValidationModel::getDR51_1, DR345ValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DR51 2", ValidationModel::getDR51_2, DR345ValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DR52 1", ValidationModel::getDR52_1, DR345ValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DR52 2", ValidationModel::getDR52_2, DR345ValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DR53 1", ValidationModel::getDR53_1, DR345ValidationRow::makeRow);
+    makeValidationRow(
+        validationRows, "DR53 2", ValidationModel::getDR53_2, DR345ValidationRow::makeRow);
 
     // A Table is valid if all its Rows are valid
     ObservableBooleanValue validBinding = null;
@@ -218,25 +198,33 @@ public class ValidationTable {
     }
   }
 
-  private void makeDRDQHaplotypeRows(ReadOnlyListWrapper<DRDQHaplotypeRow> rows,
-      ValidationModel model) {
+  private void makeDRDQHaplotypeRows(
+      ReadOnlyListWrapper<DRDQHaplotypeRow> rows, ValidationModel model) {
     for (RaceGroup ethnicity : RaceGroup.values()) {
-      model.getDRDQHaplotypes().get(ethnicity).forEach(haplotype -> {
-        rows.add(new DRDQHaplotypeRow(ethnicity, haplotype));
-      });
-    } ;
+      model
+          .getDRDQHaplotypes()
+          .get(ethnicity)
+          .forEach(
+              haplotype -> {
+                rows.add(new DRDQHaplotypeRow(ethnicity, haplotype));
+              });
+    }
+    ;
   }
 
-  /**
-   * Use the given model to populate a list of {@link BCHaplotypeRow}s
-   */
-  private void makeBCHaplotypeRows(ReadOnlyListWrapper<BCHaplotypeRow> rows,
-      ValidationModel model) {
+  /** Use the given model to populate a list of {@link BCHaplotypeRow}s */
+  private void makeBCHaplotypeRows(
+      ReadOnlyListWrapper<BCHaplotypeRow> rows, ValidationModel model) {
     for (RaceGroup ethnicity : RaceGroup.values()) {
-      model.getBCHaplotypes().get(ethnicity).forEach(haplotype -> {
-        rows.add(new BCHaplotypeRow(ethnicity, haplotype));
-      });
-    } ;
+      model
+          .getBCHaplotypes()
+          .get(ethnicity)
+          .forEach(
+              haplotype -> {
+                rows.add(new BCHaplotypeRow(ethnicity, haplotype));
+              });
+    }
+    ;
   }
 
   /**
@@ -253,13 +241,16 @@ public class ValidationTable {
 
   /**
    * Helper method to create a {@link ValidationRow}
-   * 
+   *
    * @param rows Destination collection to populate
    * @param rowLabel Description of this row (first column)
    * @param getter Method to use to retrieve this row's value
    */
-  private <T> void makeValidationRow(List<ValidationRow<?>> rows, String rowLabel,
-      Function<ValidationModel, T> getter, RowBuilder<T> builder) {
+  private <T> void makeValidationRow(
+      List<ValidationRow<?>> rows,
+      String rowLabel,
+      Function<ValidationModel, T> getter,
+      RowBuilder<T> builder) {
     rows.add(builder.makeRow(rowLabel, getFirstField(getter), getSecondField(getter)));
   }
 
@@ -281,10 +272,10 @@ public class ValidationTable {
 
   /**
    * @return The value of the given getter in the given model, or {@code null} if the target model
-   *         is null.
+   *     is null.
    */
-  private <T> T getValueFromModel(Function<ValidationModel, T> getter,
-      ReadOnlyObjectWrapper<ValidationModel> wrapper) {
+  private <T> T getValueFromModel(
+      Function<ValidationModel, T> getter, ReadOnlyObjectWrapper<ValidationModel> wrapper) {
     if (Objects.isNull(wrapper.get())) {
       return null;
     }

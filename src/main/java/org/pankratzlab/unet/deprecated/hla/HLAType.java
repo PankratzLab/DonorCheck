@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -31,29 +31,22 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import com.google.common.primitives.Ints;
 
-/**
- * {@link Antigen} implementation for HLA antigens
- */
+/** {@link Antigen} implementation for HLA antigens */
 public class HLAType extends Antigen<HLALocus, HLAType> {
   private static final long serialVersionUID = 6L;
 
-  /**
-   * As {@link #TYPE_PATTERN} but will match locus-only strings
-   */
+  /** As {@link #TYPE_PATTERN} but will match locus-only strings */
   public static final Pattern PARTIAL_PATTERN;
 
-  /**
-   * Match {@link HLALocus} strings
-   */
+  /** Match {@link HLALocus} strings */
   public static final Pattern LOCI_PATTERN;
 
   /**
    * Matches string representations of {@link HLAType}s
-   * <p>
-   * Group 1 is the {@link HLALocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
-   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the
-   * {@link Matcher#group(int)} api)
-   * </p>
+   *
+   * <p>Group 1 is the {@link HLALocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
+   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the {@link
+   * Matcher#group(int)} api)
    */
   public static final Pattern TYPE_PATTERN;
 
@@ -61,51 +54,41 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
 
   private int revision = LATEST_REVISION;
 
-  /**
-   * @see HLAType#HLAType(String, int...)
-   */
+  /** @see HLAType#HLAType(String, int...) */
   public HLAType(String l, String... p) {
     this(HLALocus.valueOf(sanitize(l)), p);
   }
 
-  /**
-   * Auto-parses {@link HLALocus}
-   */
+  /** Auto-parses {@link HLALocus} */
   public HLAType(String l, int... p) {
     this(HLALocus.valueOf(sanitize(l)), p);
   }
 
-  /**
-   * @see Antigen#Antigen(Locus, String...)
-   */
+  /** @see Antigen#Antigen(Locus, String...) */
   public HLAType(HLALocus l, String... p) {
     super(l, p);
   }
 
-  /**
-   * @see Antigen#Antigen(Locus, int...)
-   */
+  /** @see Antigen#Antigen(Locus, int...) */
   public HLAType(HLALocus l, int... p) {
     super(l, p);
   }
 
-  /**
-   * @see Antigen#Antigen(Locus, List)
-   */
+  /** @see Antigen#Antigen(Locus, List) */
   public HLAType(HLALocus l, List<Integer> p) {
     super(l, p);
   }
 
   /**
    * Note: this method is similar to {@link AntigenDictionary#lookup(HLAType)}, with two exceptions:
+   *
    * <ul>
-   * <li>In the case of multiple {@link SeroType} mappings, only the first will be returned</li>
-   * <li>If there is no explicit mapping for this type, a {@code SeroType} will be created using the
-   * equivalent {@link SeroLocus} and the first value in this type's {@link #spec()}</li>
+   *   <li>In the case of multiple {@link SeroType} mappings, only the first will be returned
+   *   <li>If there is no explicit mapping for this type, a {@code SeroType} will be created using
+   *       the equivalent {@link SeroLocus} and the first value in this type's {@link #spec()}
    * </ul>
    *
    * @return {@link SeroType} equivalent of this antigen
-   *
    * @throws IllegalStateException If this type has ambiguous serotype equivalencies
    */
   public SeroType equiv() {
@@ -140,7 +123,7 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
 
   /**
    * @return The {@link SeroType} equivalent of this allele without a lookup in antigen equivalences
-   *         table.
+   *     table.
    */
   public SeroType lowResEquiv() {
     return new SeroType(locus().sero(), spec().get(0));
@@ -163,16 +146,12 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
     return values;
   }
 
-  /**
-   * @see Antigen#is(String, Pattern)
-   */
+  /** @see Antigen#is(String, Pattern) */
   public static boolean is(String text) {
     return Antigen.is(text, TYPE_PATTERN);
   }
 
-  /**
-   * @return Set of {@link HLAType}s parsed from the input strings, per {@link #valueOf(String)}
-   */
+  /** @return Set of {@link HLAType}s parsed from the input strings, per {@link #valueOf(String)} */
   public static Set<HLAType> valueOf(String... alleles) {
     Set<HLAType> alleleSet = new LinkedHashSet<>();
     for (String allele : alleles) {
@@ -181,9 +160,7 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
     return alleleSet;
   }
 
-  /**
-   * @return A {@link HLAType} representation of the given string
-   */
+  /** @return A {@link HLAType} representation of the given string */
   public static HLAType valueOf(String typeString) {
     RawType rt = new RawType(typeString, TYPE_PATTERN);
     return new HLAType(rt.locus(), rt.spec());
@@ -204,18 +181,14 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
     return type;
   }
 
-  /**
-   * @see Antigen#parseTypes(String, java.util.regex.Pattern, Function)
-   */
+  /** @see Antigen#parseTypes(String, java.util.regex.Pattern, Function) */
   public static List<HLAType> parseTypes(String text) {
     return parseTypes(text, HLAType::valueOf);
   }
 
-  /**
-   * @see Antigen#parseTypes(String, java.util.regex.Pattern, Function)
-   */
-  public static <T extends Antigen<?, T>> List<T> parseTypes(String text,
-      Function<String, T> typeFunction) {
+  /** @see Antigen#parseTypes(String, java.util.regex.Pattern, Function) */
+  public static <T extends Antigen<?, T>> List<T> parseTypes(
+      String text, Function<String, T> typeFunction) {
     return Antigen.parseTypes(text, LOCI_PATTERN, typeFunction);
   }
 
@@ -223,8 +196,9 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
     // Static initializer to create patterns
     // See also SeroType
 
-    LOCI_PATTERN = makePattern(
-        Arrays.stream(HLALocus.values()).map(HLALocus::name).collect(Collectors.toList()));
+    LOCI_PATTERN =
+        makePattern(
+            Arrays.stream(HLALocus.values()).map(HLALocus::name).collect(Collectors.toList()));
 
     TYPE_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + SPEC_PATTERN.pattern());
     PARTIAL_PATTERN =

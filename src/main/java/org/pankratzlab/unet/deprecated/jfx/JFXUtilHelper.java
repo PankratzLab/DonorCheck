@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -38,20 +38,16 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-/**
- * Static utility class providing common JavaFX funcitons
- */
+/** Static utility class providing common JavaFX funcitons */
 public final class JFXUtilHelper {
 
   private JFXUtilHelper() {
     // Prevent instantiation of static utility class
   }
 
-  /**
-   * Create an {@link Alert} with no header or graphic.
-   */
-  public static Alert makeContentOnlyAlert(AlertType alertType, String title, Node content,
-                                           ButtonType... buttons) {
+  /** Create an {@link Alert} with no header or graphic. */
+  public static Alert makeContentOnlyAlert(
+      AlertType alertType, String title, Node content, ButtonType... buttons) {
     // create pop-up
     Alert alert = new Alert(alertType, "", buttons);
     alert.setTitle(title);
@@ -62,9 +58,7 @@ public final class JFXUtilHelper {
     return alert;
   }
 
-  /**
-   * @return A modal stage pre-built with a progress indicator
-   */
+  /** @return A modal stage pre-built with a progress indicator */
   public static Stage createProgressStage() {
     ProgressIndicator pi = new ProgressIndicator();
     VBox root = new VBox(pi);
@@ -84,33 +78,35 @@ public final class JFXUtilHelper {
    * completes.
    */
   public static void addCloseHooks(Stage stage, Task<Void> task) {
-    EventHandler<WorkerStateEvent> closeStage = (w) -> {
-      Platform.runLater(() -> {
-        stage.close();
-      });
-    };
+    EventHandler<WorkerStateEvent> closeStage =
+        (w) -> {
+          Platform.runLater(
+              () -> {
+                stage.close();
+              });
+        };
     task.setOnCancelled(closeStage);
     task.setOnFailed(closeStage);
     task.setOnSucceeded(closeStage);
   }
 
   /**
-   * Helper method to combine {@link #createProgressStage()} and
-   * {@link #addCloseHooks(Stage, Task)}, generating a {@link Task} that creates and shows a
-   * progress dialog while running a {@link Runnable} and then closes the progress graphic when
-   * finished.
+   * Helper method to combine {@link #createProgressStage()} and {@link #addCloseHooks(Stage,
+   * Task)}, generating a {@link Task} that creates and shows a progress dialog while running a
+   * {@link Runnable} and then closes the progress graphic when finished.
    */
   public static Task<Void> createProgressTask(Runnable runnable) {
     Stage progressStage = createProgressStage();
-    Task<Void> progressTask = new Task<Void>() {
+    Task<Void> progressTask =
+        new Task<Void>() {
 
-      @Override
-      protected Void call() throws Exception {
-        Platform.runLater(() -> progressStage.show());
-        runnable.run();
-        return null;
-      }
-    };
+          @Override
+          protected Void call() throws Exception {
+            Platform.runLater(() -> progressStage.show());
+            runnable.run();
+            return null;
+          }
+        };
     addCloseHooks(progressStage, progressTask);
 
     return progressTask;

@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -32,10 +32,9 @@ import javafx.beans.value.ObservableBooleanValue;
  * {@link WizardPane} subclass which binds the {@link Wizard}'s invalid property to a specified
  * {@link ObservableBooleanValue}. This allows control over whether or not the wizard can be
  * advanced/completed.
- * <p>
- * Also updates the {@link Wizard#titleProperty()} based on the current
- * {@link WizardPane#getUserData()}
- * </p>
+ *
+ * <p>Also updates the {@link Wizard#titleProperty()} based on the current {@link
+ * WizardPane#getUserData()}
  */
 public class ValidatingWizardPane extends WizardPane {
 
@@ -62,5 +61,4 @@ public class ValidatingWizardPane extends WizardPane {
     // Notify any listeners that we are active
     fireEvent(new PageActivatedEvent());
   }
-
 }

@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -56,9 +56,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 
-/**
- * Parses SCORE6 QType format to donor model
- */
+/** Parses SCORE6 QType format to donor model */
 public class XmlScore6Parser {
 
   // -- Allele patterns for unique types --
@@ -168,9 +166,7 @@ public class XmlScore6Parser {
     }
   }
 
-  /**
-   * Add a locus's block to the builder
-   */
+  /** Add a locus's block to the builder */
   private static void processLocus(ValidationModelBuilder builder, Element typedLocus) {
     Optional<String> tag = DonorNetUtils.getText(typedLocus.getElementsByTag(LOCUS_TAG));
     if (tag.isPresent()) {
@@ -180,8 +176,11 @@ public class XmlScore6Parser {
       }
 
       // Each locus has one allele results block which contains potential allele pairs
-      Elements resultCombinations = typedLocus.getElementsByTag(ALLELE_RESULTS_TAG).get(0)
-          .getElementsByTag(RESULT_COMBINATION_TAG);
+      Elements resultCombinations =
+          typedLocus
+              .getElementsByTag(ALLELE_RESULTS_TAG)
+              .get(0)
+              .getElementsByTag(RESULT_COMBINATION_TAG);
 
       int selectedResultIndex = -1;
       int selectedDRB345Index = -1;
@@ -260,23 +259,38 @@ public class XmlScore6Parser {
 
       // Parse haplotypes
       if (C_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
-            identityLocusMap(HLALocus.C), ValidationModelBuilder::cHaplotype);
+        addHaplotypes(
+            builder,
+            resultCombinations.get(selectedResultIndex),
+            identityLocusMap(HLALocus.C),
+            ValidationModelBuilder::cHaplotype);
       } else if (DQB_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
-            identityLocusMap(HLALocus.DQB1), ValidationModelBuilder::dqHaplotype);
+        addHaplotypes(
+            builder,
+            resultCombinations.get(selectedResultIndex),
+            identityLocusMap(HLALocus.DQB1),
+            ValidationModelBuilder::dqHaplotype);
       } else if (DRB_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
-            identityLocusMap(HLALocus.DRB1), ValidationModelBuilder::drHaplotype);
+        addHaplotypes(
+            builder,
+            resultCombinations.get(selectedResultIndex),
+            identityLocusMap(HLALocus.DRB1),
+            ValidationModelBuilder::drHaplotype);
         if (selectedDRB345Index > 0) {
-          addHaplotypes(builder, resultCombinations.get(selectedDRB345Index),
-              drb345Map(resultPairs), ValidationModelBuilder::dr345Haplotype);
+          addHaplotypes(
+              builder,
+              resultCombinations.get(selectedDRB345Index),
+              drb345Map(resultPairs),
+              ValidationModelBuilder::dr345Haplotype);
         } else {
           builder.dr345Haplotype(ArrayListMultimap.create());
         }
       } else if (B_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
-            identityLocusMap(HLALocus.B), ValidationModelBuilder::bHaplotype);
+        addHaplotypes(
+            builder,
+            resultCombinations.get(selectedResultIndex),
+            identityLocusMap(HLALocus.B),
+            ValidationModelBuilder::bHaplotype);
 
         for (int strandIdx = 0; strandIdx < resultPairs.size(); strandIdx++) {
           // Update the appropriate builder flags
@@ -292,7 +306,6 @@ public class XmlScore6Parser {
               break;
           }
         }
-
       }
 
       // Finally, add the types to the model builder
@@ -301,12 +314,9 @@ public class XmlScore6Parser {
         metadataMap.get(locus).accept(builder, specString);
       }
     }
-
   }
 
-  /**
-   * Helper method to do a reverse lookup of sorts from DRB1 alleles to a DRB345 locus.
-   */
+  /** Helper method to do a reverse lookup of sorts from DRB1 alleles to a DRB345 locus. */
   private static HLALocus deduceDRB345Locus(List<ResultCombination> drb1Combinations) {
     Set<HLALocus> loci = new HashSet<>();
     for (ResultCombination combination : drb1Combinations) {
@@ -316,7 +326,8 @@ public class XmlScore6Parser {
       return loci.iterator().next();
     }
     throw new IllegalStateException(
-        "DRB345 alleles found without locus; interrogation of DRB1 alleles found " + loci.size()
+        "DRB345 alleles found without locus; interrogation of DRB1 alleles found "
+            + loci.size()
             + " distinct DRB345 loci");
   }
 
@@ -358,48 +369,44 @@ public class XmlScore6Parser {
     return null;
   }
 
-
   /**
    * @return The counts of each DRB345 equivalent locus in the given list of DRB1 combinations, per
-   *         the mapping defined in {@link DRAssociations#getDRBLocus(SeroType)}
+   *     the mapping defined in {@link DRAssociations#getDRBLocus(SeroType)}
    */
   private static Multiset<HLALocus> countDRB1(List<ResultCombination> resultPairs) {
     Multiset<HLALocus> drCounts = EnumMultiset.create(HLALocus.class);
 
-    resultPairs.forEach(result -> {
-      HLALocus drbLocus = DRAssociations.getDRBLocus(result.getAntigenCombination());
+    resultPairs.forEach(
+        result -> {
+          HLALocus drbLocus = DRAssociations.getDRBLocus(result.getAntigenCombination());
 
-      if (drbLocus != null) {
-        drCounts.add(drbLocus);
-      }
-    });
+          if (drbLocus != null) {
+            drCounts.add(drbLocus);
+          }
+        });
 
     return drCounts;
   }
 
-  /**
-   * @return The counts of each DRB345 locus in the given list of DRB345 combinations.
-   */
+  /** @return The counts of each DRB345 locus in the given list of DRB345 combinations. */
   private static Multiset<HLALocus> countDRB345(List<ResultCombination> resultPairs) {
     Multiset<HLALocus> drCounts = EnumMultiset.create(HLALocus.class);
 
-    resultPairs.forEach(result -> {
-      HLALocus drbLocus = result.getAlleleCombination().locus();
+    resultPairs.forEach(
+        result -> {
+          HLALocus drbLocus = result.getAlleleCombination().locus();
 
-      if (drbLocus != null) {
-        drCounts.add(drbLocus);
-      }
-    });
+          if (drbLocus != null) {
+            drCounts.add(drbLocus);
+          }
+        });
 
     return drCounts;
   }
 
-
-  /**
-   * Parse the allele + antigen pairs from a result combination
-   */
-  private static List<ResultCombination> parseResultCombinations(Element currentCombination,
-      HLALocus locus) {
+  /** Parse the allele + antigen pairs from a result combination */
+  private static List<ResultCombination> parseResultCombinations(
+      Element currentCombination, HLALocus locus) {
     List<ResultCombination> combinations = new ArrayList<>();
     for (int combination = 1; combination <= 4; combination++) {
       ResultCombination nextResult = null;
@@ -415,21 +422,21 @@ public class XmlScore6Parser {
     return combinations;
   }
 
-  /**
-   * Parse a particular allele + antigen pair from a single result combination
-   */
-  private static ResultCombination parseCombination(Element resultCombinations,
-      int combinationIndex, HLALocus locus) {
+  /** Parse a particular allele + antigen pair from a single result combination */
+  private static ResultCombination parseCombination(
+      Element resultCombinations, int combinationIndex, HLALocus locus) {
     if (!hasCombination(resultCombinations, combinationIndex)) {
       return null;
     }
     HLAType allele = null;
     SeroType antigen = null;
 
-    String alleleString = getFirstValidType(
-        resultCombinations.getElementsByTag(ALLELE_COMBINATION_TAG + combinationIndex), locus);
-    String antigenString = getFirstValidType(
-        resultCombinations.getElementsByTag(SERO_COMBINATION_TAG + combinationIndex));
+    String alleleString =
+        getFirstValidType(
+            resultCombinations.getElementsByTag(ALLELE_COMBINATION_TAG + combinationIndex), locus);
+    String antigenString =
+        getFirstValidType(
+            resultCombinations.getElementsByTag(SERO_COMBINATION_TAG + combinationIndex));
 
     // Ensure this is a recognized alleles
     try {
@@ -455,12 +462,13 @@ public class XmlScore6Parser {
     return new ResultCombination(antigen, allele);
   }
 
-
   /**
    * Read all possible alleles in a result combination. These will be used to compute the most
    * probable haplotypes.
    */
-  private static void addHaplotypes(ValidationModelBuilder builder, Element resultCombination,
+  private static void addHaplotypes(
+      ValidationModelBuilder builder,
+      Element resultCombination,
       Map<Strand, HLALocus> locusMap,
       BiConsumer<ValidationModelBuilder, Multimap<Strand, HLAType>> haplotypeSetter) {
     for (int strandIndex = 1; strandIndex <= Strand.values().length; strandIndex++) {
@@ -499,23 +507,30 @@ public class XmlScore6Parser {
    * @param reference Base list
    * @param test List to compare to base
    * @return true if the test list contains a more frequent allele pairing than the reference set.
-   *         If the frequency is the same, the specificity values will be compared - preferring
-   *         lower values.
+   *     If the frequency is the same, the specificity values will be compared - preferring lower
+   *     values.
    */
-  private static boolean isTestListPreferred(List<ResultCombination> referenceCombinations,
-      List<ResultCombination> testCombinations) {
+  private static boolean isTestListPreferred(
+      List<ResultCombination> referenceCombinations, List<ResultCombination> testCombinations) {
     if (Objects.isNull(testCombinations) || testCombinations.isEmpty()) {
       return false;
     }
 
-    List<HLAType> reference = referenceCombinations.stream()
-        .map(ResultCombination::getAlleleCombination).collect(Collectors.toList());
-    List<HLAType> test = testCombinations.stream().map(ResultCombination::getAlleleCombination)
-        .collect(Collectors.toList());
+    List<HLAType> reference =
+        referenceCombinations
+            .stream()
+            .map(ResultCombination::getAlleleCombination)
+            .collect(Collectors.toList());
+    List<HLAType> test =
+        testCombinations
+            .stream()
+            .map(ResultCombination::getAlleleCombination)
+            .collect(Collectors.toList());
 
     // Test if test has higher frequency alleles
-    int diff = Double.compare(CommonWellDocumented.cwdScore(reference),
-        CommonWellDocumented.cwdScore(test));
+    int diff =
+        Double.compare(
+            CommonWellDocumented.cwdScore(reference), CommonWellDocumented.cwdScore(test));
 
     if (diff == 0) {
       // Test if test contains alleles with smaller spec
@@ -529,7 +544,7 @@ public class XmlScore6Parser {
 
   /**
    * @return As {@link Comparable#compareTo} when comparing each allele in the given lists, based
-   *         purely on specificity numbers.
+   *     purely on specificity numbers.
    */
   private static int compareSpec(List<HLAType> reference, List<HLAType> test) {
     if (!Objects.equals(reference.size(), test.size())) {
@@ -553,7 +568,6 @@ public class XmlScore6Parser {
     return diff;
   }
 
-
   /**
    * Helper method to combine the specificities of each allele in the given list. e.g. given alleles
    * 01:01:01, 02:02:02, the return list output would be 03, 03, 03.
@@ -576,9 +590,7 @@ public class XmlScore6Parser {
     return scoredSpecs;
   }
 
-  /**
-   * @return true iff the combination XML block contains a result combination of the given index
-   */
+  /** @return true iff the combination XML block contains a result combination of the given index */
   private static boolean hasCombination(Element resultCombinations, int combinationIndex) {
     for (String combinationTag : ImmutableSet.of(ALLELE_COMBINATION_TAG, SERO_COMBINATION_TAG)) {
       Elements results = resultCombinations.getElementsByTag(combinationTag + combinationIndex);
@@ -598,9 +610,9 @@ public class XmlScore6Parser {
   }
 
   /**
-   * @return {@code null} if there is no type at this position (homozygous or single DRB345);
-   *         {@link #NULL_TYPE} if the allele is present but not expressed; {@link #UNDEFINED_TYPE}
-   *         if the allele is expressed but has no serological equivalent.
+   * @return {@code null} if there is no type at this position (homozygous or single DRB345); {@link
+   *     #NULL_TYPE} if the allele is present but not expressed; {@link #UNDEFINED_TYPE} if the
+   *     allele is expressed but has no serological equivalent.
    */
   private static String getFirstValidType(Elements results, HLALocus locus) {
     Status bestStatus = Objects.isNull(locus) ? Status.COMMON : null;
@@ -609,9 +621,13 @@ public class XmlScore6Parser {
       String type = null;
       String[] resultTypes = results.get(0).text().replaceAll("\\s+", "").split(RESULT_SEPARATOR);
 
-      for (int result = 0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type)
-          || isNullType(type) || !Objects.equals(Status.COMMON, bestStatus))
-          && result < resultTypes.length; result++) {
+      for (int result = 0;
+          (Strings.isNullOrEmpty(type)
+                  || UNDEFINED_TYPE.equals(type)
+                  || isNullType(type)
+                  || !Objects.equals(Status.COMMON, bestStatus))
+              && result < resultTypes.length;
+          result++) {
         String tmp = resultTypes[result];
         if (tmp.isEmpty()) {
           // Sometimes a leading comma can create empty strings - skip these
@@ -652,21 +668,16 @@ public class XmlScore6Parser {
         type = tmp;
       }
       typeText = type;
-
     }
     return typeText;
   }
 
-  /**
-   * @return True if the given allele string indicates a type that is not expressed
-   */
+  /** @return True if the given allele string indicates a type that is not expressed */
   private static boolean isNullType(String allele) {
     return NULL_TYPE.equals(allele) || allele.matches(NOT_EXPRESSED);
   }
 
-  /**
-   * @return The specificity of alleles with special lookup rules
-   */
+  /** @return The specificity of alleles with special lookup rules */
   private static String getAlleleLookup(ResultCombination combination) {
     SeroType st = SerotypeEquivalence.get(combination.getAlleleCombination());
     if (st != null) {
@@ -677,9 +688,7 @@ public class XmlScore6Parser {
     return getAlleleSpec(combination);
   }
 
-  /**
-   * @return The {@link HLAType} specificity of an allele + antigen pairing
-   */
+  /** @return The {@link HLAType} specificity of an allele + antigen pairing */
   private static String getAlleleSpec(ResultCombination combination) {
     // Standard operating procedure is to just report the first field of the allele
     HLAType hlaType = combination.getAlleleCombination();
@@ -704,8 +713,8 @@ public class XmlScore6Parser {
     private final SeroType antigenCombination;
     private final HLAType alleleCombination;
 
-    public ResultCombination(@Nonnull SeroType antigenCombination,
-        @Nonnull HLAType alleleCombination) {
+    public ResultCombination(
+        @Nonnull SeroType antigenCombination, @Nonnull HLAType alleleCombination) {
       super();
       try {
         Objects.requireNonNull(antigenCombination);
@@ -719,8 +728,11 @@ public class XmlScore6Parser {
 
     @Override
     public String toString() {
-      return "ResultCombination [antigenCombination=" + antigenCombination + ", alleleCombination="
-          + alleleCombination + "]";
+      return "ResultCombination [antigenCombination="
+          + antigenCombination
+          + ", alleleCombination="
+          + alleleCombination
+          + "]";
     }
 
     public SeroType getAntigenCombination() {

@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -41,31 +41,25 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 
-/**
- * Controller to facilitate the user changing the directory of the nmdp input.
- */
+/** Controller to facilitate the user changing the directory of the nmdp input. */
 public class DownloadNMDPController {
 
-  private static final Hyperlink NMDP_URL = new Hyperlink("http://frequency.nmdp.org/NMDPFrequencies2011/");
+  private static final Hyperlink NMDP_URL =
+      new Hyperlink("http://frequency.nmdp.org/NMDPFrequencies2011/");
 
   private StringProperty cbString;
   private StringProperty drdqString;
   private boolean dirty;
 
-  @FXML
-  private ResourceBundle resources;
+  @FXML private ResourceBundle resources;
 
-  @FXML
-  private URL location;
+  @FXML private URL location;
 
-  @FXML
-  private AnchorPane rootPane;
+  @FXML private AnchorPane rootPane;
 
-  @FXML
-  private TextField cbTable;
+  @FXML private TextField cbTable;
 
-  @FXML
-  private TextField drdqTable;
+  @FXML private TextField drdqTable;
 
   @FXML
   void openDownload(ActionEvent event) {
@@ -94,9 +88,12 @@ public class DownloadNMDPController {
 
   @FXML
   void initialize() {
-    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
-    assert cbTable != null : "fx:id=\"cbTable\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
-    assert drdqTable != null : "fx:id=\"drdqTable\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
+    assert rootPane != null
+        : "fx:id=\"rootPane\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
+    assert cbTable != null
+        : "fx:id=\"cbTable\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
+    assert drdqTable != null
+        : "fx:id=\"drdqTable\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
     dirty = false;
 
     cbString = new SimpleStringProperty();
@@ -106,9 +103,7 @@ public class DownloadNMDPController {
     init(drdqString, drdqTable, HaplotypeFrequencies.NMDP_DRDQ_PROP);
   }
 
-  /**
-   * Link together a local property, text display and global property
-   */
+  /** Link together a local property, text display and global property */
   private void init(StringProperty localProp, TextField tableField, String propertyName) {
     tableField.textProperty().bind(localProp);
     String nmdpProp = HLAProperties.get().getProperty(propertyName);
@@ -121,18 +116,16 @@ public class DownloadNMDPController {
       }
     }
 
-    localProp.addListener((obs, o, n) -> {
-      if (!Strings.isNullOrEmpty(n) && Files.exists(Paths.get(n))) {
-        HLAProperties.get().setProperty(propertyName, n);
-        dirty = true;
-      }
-    });
-
+    localProp.addListener(
+        (obs, o, n) -> {
+          if (!Strings.isNullOrEmpty(n) && Files.exists(Paths.get(n))) {
+            HLAProperties.get().setProperty(propertyName, n);
+            dirty = true;
+          }
+        });
   }
 
-  /**
-   * @return True if this controller was used to modify any properties
-   */
+  /** @return True if this controller was used to modify any properties */
   public boolean isDirty() {
     return dirty;
   }

@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -38,9 +38,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 
-/**
- * Parses downloaded DonorNet XML (un-saved - after saving, only HTML is supported) to a model.
- */
+/** Parses downloaded DonorNet XML (un-saved - after saving, only HTML is supported) to a model. */
 public class XmlDonorNetParser {
   private static final ImmutableSet<String> XML_FALSE = ImmutableSet.of("96", "6");
   private static final ImmutableSet<String> XML_TRUE = ImmutableSet.of("95", "5");
@@ -58,9 +56,7 @@ public class XmlDonorNetParser {
   private static ImmutableMap<String, String> dr52Map;
   private static ImmutableMap<String, String> dr53Map;
 
-  /**
-   * Helper method to translate the parsed XML to a {@link ValidationModel}
-   */
+  /** Helper method to translate the parsed XML to a {@link ValidationModel} */
   public static void buildModelFromXML(ValidationModelBuilder builder, Document doc) {
     if (Objects.isNull(dqaMap)) {
       init();
@@ -95,9 +91,7 @@ public class XmlDonorNetParser {
     getXMLTagVal(donorRoot, "dr53_2").ifPresent(s -> builder.dr53(decodeValue(dr53Map, s)));
   }
 
-  /**
-   * Booleans are exported as a linear value which we have to translate to true/false
-   */
+  /** Booleans are exported as a linear value which we have to translate to true/false */
   private static boolean decodeXMLBoolean(String boolCode) {
     if (XML_TRUE.contains(boolCode)) {
       return true;
@@ -107,7 +101,6 @@ public class XmlDonorNetParser {
     throw new IllegalArgumentException("Unrecognized boolean code: " + boolCode);
   }
 
-
   /**
    * For the loci that are stored as linear values, we have to map those values to the corresponding
    * specificity.
@@ -116,14 +109,13 @@ public class XmlDonorNetParser {
     return valueMap.get(valueCode);
   }
 
-
   /**
    * Helper method to extract the text of a particular tag.
-   * 
+   *
    * @param donorBlock Parent {@link Element}
    * @param tag XML Tag of interest
    * @return An {@link Optional} containing either the text value of the tag, or {@code} null if the
-   *         tag wasn't present or was empty.
+   *     tag wasn't present or was empty.
    */
   private static Optional<String> getXMLTagVal(Element donorBlock, String tag) {
     Elements elements = donorBlock.getElementsByTag(tag);
@@ -143,9 +135,9 @@ public class XmlDonorNetParser {
   }
 
   /**
-   * @param donorNetMapPath File containing {@link #XML_TAG} elements, each having a
-   *        {@link #XML_ATTR} attribute which needs to be mapped to the corresponding string value
-   *        of that tag.
+   * @param donorNetMapPath File containing {@link #XML_TAG} elements, each having a {@link
+   *     #XML_ATTR} attribute which needs to be mapped to the corresponding string value of that
+   *     tag.
    * @return The mapping defined in the input file
    */
   private static ImmutableMap<String, String> populateFromFile(String donorNetMapPath) {
@@ -163,6 +155,5 @@ public class XmlDonorNetParser {
     }
 
     return builder.build();
-
   }
 }

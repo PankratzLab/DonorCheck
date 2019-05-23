@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -45,27 +45,23 @@ public abstract class AbstractHaplotypeRow implements HaplotypeRow {
     this.haplotype = new ReadOnlyObjectWrapper<>(haplotype);
     BigDecimal frequency = HaplotypeFrequencies.getFrequency(ethnicity, haplotype);
     frequencyProperty =
-        new ReadOnlyObjectWrapper<>(frequency.setScale(HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
-            HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE));
+        new ReadOnlyObjectWrapper<>(
+            frequency.setScale(
+                HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
+                HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE));
   }
 
-  /**
-   * @return Property for this row's {@link RaceGroup}
-   */
+  /** @return Property for this row's {@link RaceGroup} */
   public ReadOnlyObjectProperty<RaceGroup> ethnicityProperty() {
     return ethnicity.getReadOnlyProperty();
   }
 
-  /**
-   * @return Property for a display string for this row's {@link RaceGroup}
-   */
+  /** @return Property for a display string for this row's {@link RaceGroup} */
   public ReadOnlyStringProperty ethnicityDisplayProperty() {
     return ethnicityDisplay.getReadOnlyProperty();
   }
 
-  /**
-   * @return Property for this row's {@link Haplotype}
-   */
+  /** @return Property for this row's {@link Haplotype} */
   public ReadOnlyObjectProperty<Haplotype> haplotypeProperty() {
     return haplotype.getReadOnlyProperty();
   }

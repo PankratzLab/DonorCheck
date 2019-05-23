@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -37,9 +37,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Window;
 
-/**
- * Utility class with shared methods for use with the DonorNet application
- */
+/** Utility class with shared methods for use with the DonorNet application */
 public final class DonorNetUtils {
 
   private DonorNetUtils() {
@@ -51,8 +49,13 @@ public final class DonorNetUtils {
    *
    * @see #getFile(Node, String, String, String, String, boolean)
    */
-  public static Optional<File> getFile(@Nullable ActionEvent event, String title,
-      String initialName, String extensionDescription, String extension, boolean open) {
+  public static Optional<File> getFile(
+      @Nullable ActionEvent event,
+      String title,
+      String initialName,
+      String extensionDescription,
+      String extension,
+      boolean open) {
     Node source = null;
     if (Objects.nonNull(event)) {
       source = (Node) event.getSource();
@@ -65,10 +68,15 @@ public final class DonorNetUtils {
    *
    * @see #getFile(Node, String, String, Map, boolean)
    */
-  public static Optional<File> getFile(Node node, String title, String initialName,
-      String extensionDescription, String extension, boolean open) {
-    return getFile(node, title, initialName, ImmutableMap.of(extensionDescription, extension),
-        open);
+  public static Optional<File> getFile(
+      Node node,
+      String title,
+      String initialName,
+      String extensionDescription,
+      String extension,
+      boolean open) {
+    return getFile(
+        node, title, initialName, ImmutableMap.of(extensionDescription, extension), open);
   }
 
   /**
@@ -81,13 +89,14 @@ public final class DonorNetUtils {
    * @param open Whether to show the open or save dialog
    * @return An {@link Optional} wrapper around the file selected by the user
    */
-  public static Optional<File> getFile(Node node, String title, String initialName,
-      Map<String, String> extensionMap, boolean open) {
+  public static Optional<File> getFile(
+      Node node, String title, String initialName, Map<String, String> extensionMap, boolean open) {
     CurrentDirectoryProvider.setInitialFileName(initialName);
     FileChooser fileChooser = CurrentDirectoryProvider.getFileChooser();
     fileChooser.setTitle(title);
     for (Entry<String, String> descriptionToFilter : extensionMap.entrySet()) {
-      fileChooser.getExtensionFilters()
+      fileChooser
+          .getExtensionFilters()
           .add(new ExtensionFilter(descriptionToFilter.getKey(), descriptionToFilter.getValue()));
     }
     Window owner = null;
@@ -97,7 +106,7 @@ public final class DonorNetUtils {
     File selectedFile = null;
 
     try {
-        selectedFile = open ? fileChooser.showOpenDialog(owner) : fileChooser.showSaveDialog(owner);
+      selectedFile = open ? fileChooser.showOpenDialog(owner) : fileChooser.showSaveDialog(owner);
     } catch (Exception e) {
       LoggingPlaceholder.reportError(e);
     }

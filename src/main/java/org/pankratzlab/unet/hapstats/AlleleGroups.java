@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -59,8 +59,9 @@ public final class AlleleGroups {
   private static ImmutableMap<HLAType, HLAType> buildGroup(String pathToGroupFile) {
     Builder<HLAType, HLAType> builder = ImmutableMap.builder();
     Map<HLAType, HLAType> typeMap = new HashMap<>();
-    try (BufferedReader groupFileReader = new BufferedReader(
-        new InputStreamReader(AlleleGroups.class.getResourceAsStream(pathToGroupFile)))) {
+    try (BufferedReader groupFileReader =
+        new BufferedReader(
+            new InputStreamReader(AlleleGroups.class.getResourceAsStream(pathToGroupFile)))) {
       String line;
       // Delimiter is ;
       // First entry is locus
@@ -99,9 +100,7 @@ public final class AlleleGroups {
         for (HLAType equivAllele : equivs) {
           builder.put(equivAllele, rootAllele);
           typeMap.put(equivAllele, rootAllele);
-
         }
-
       }
     } catch (Exception e) {
       System.err.println("Failed to read allele group file: " + pathToGroupFile);
@@ -163,9 +162,7 @@ public final class AlleleGroups {
     return getGroupEquiv(P_GROUP, allele);
   }
 
-  /**
-   * Helper method to look up an allele in a group map
-   */
+  /** Helper method to look up an allele in a group map */
   private static HLAType getGroupEquiv(ImmutableMap<HLAType, HLAType> groupMap, HLAType allele) {
     HLAType equiv = groupMap.get(allele);
     return Objects.isNull(equiv) ? allele : equiv;

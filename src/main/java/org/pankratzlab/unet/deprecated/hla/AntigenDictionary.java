@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -35,9 +35,7 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.SetMultimap;
 
-/**
- * Persistent map of {@link HLAType}s to equivalent {@link SeroType}s. Use when converting.
- */
+/** Persistent map of {@link HLAType}s to equivalent {@link SeroType}s. Use when converting. */
 public final class AntigenDictionary implements Serializable {
   private static final long serialVersionUID = 10L;
 
@@ -65,8 +63,8 @@ public final class AntigenDictionary implements Serializable {
   private final SetMultimap<SeroType, HLAType> seroDict;
   private final Set<HLAType> validTypes;
 
-  private AntigenDictionary(SetMultimap<HLAType, SeroType> hla, SetMultimap<SeroType, HLAType> sero,
-      Set<HLAType> valid) {
+  private AntigenDictionary(
+      SetMultimap<HLAType, SeroType> hla, SetMultimap<SeroType, HLAType> sero, Set<HLAType> valid) {
     hlaDict = hla;
     seroDict = sero;
     validTypes = valid;
@@ -92,32 +90,24 @@ public final class AntigenDictionary implements Serializable {
     return get(map.seroDict, sero);
   }
 
-  /**
-   * @return All {@link HLAType}s known to this map
-   */
+  /** @return All {@link HLAType}s known to this map */
   public static Set<HLAType> validHLA() {
     init();
     return map.validTypes;
   }
 
-  /**
-   * @return All {@link SeroType}s known to this map
-   */
+  /** @return All {@link SeroType}s known to this map */
   public static Set<SeroType> validSero() {
     init();
     return map.seroDict.keySet();
   }
 
-  /**
-   * @return true if the type is in the {@link #validHLA()} set
-   */
+  /** @return true if the type is in the {@link #validHLA()} set */
   public static boolean isValid(HLAType type) {
     return validHLA().contains(type);
   }
 
-  /**
-   * @return true if the type is in the {@link #validSero()} set
-   */
+  /** @return true if the type is in the {@link #validSero()} set */
   public static boolean isValid(SeroType type) {
     return validSero().contains(type);
   }
@@ -148,27 +138,21 @@ public final class AntigenDictionary implements Serializable {
     return dictionary.get(key);
   }
 
-  /**
-   * Helper method to double lock the {@link #loadDictionaries()} method
-   */
+  /** Helper method to double lock the {@link #loadDictionaries()} method */
   private static void init() {
     if (map == null) {
       loadDictionaries();
     }
   }
 
-  /**
-   * Build the dictionaries. Syncrhonized to ensured they are initialized only once
-   */
+  /** Build the dictionaries. Syncrhonized to ensured they are initialized only once */
   private static synchronized void loadDictionaries() {
     if (map == null) {
       parseDictionaries();
     }
   }
 
-  /**
-   * If a cached map can be loaded, do so. If not, we parse the
-   */
+  /** If a cached map can be loaded, do so. If not, we parse the */
   private static void parseDictionaries() {
     if (readCachedMap()) {
       return;
@@ -178,8 +162,12 @@ public final class AntigenDictionary implements Serializable {
     // NB: what's considered a valid HLA type diverges from the HLA map keyset and thus must be
     // tracked separately
     Builder<HLAType> validHLATypes = ImmutableSet.builder();
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-        AntigenDictionary.class.getClassLoader().getResourceAsStream(MASTER_MAP_RECORDS)));) {
+    try (BufferedReader reader =
+        new BufferedReader(
+            new InputStreamReader(
+                AntigenDictionary.class
+                    .getClassLoader()
+                    .getResourceAsStream(MASTER_MAP_RECORDS))); ) {
       while (reader.ready()) {
         // Read one mapping at a time
         String line = reader.readLine();

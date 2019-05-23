@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -41,12 +41,12 @@ import com.google.common.collect.ImmutableSet;
 public final class BwSerotypes {
   private static final char COMMENT = '#';
 
-  private BwSerotypes() {
-
-  }
+  private BwSerotypes() {}
 
   public static enum BwGroup {
-    Bw4("Bw4"), Bw6("Bw6"), Unknown("No entry");
+    Bw4("Bw4"),
+    Bw6("Bw6"),
+    Unknown("No entry");
 
     private final String groupString;
 
@@ -79,15 +79,14 @@ public final class BwSerotypes {
     ALLELE_MAP = builder.build();
   }
 
-  /**
-   * Map all antigens in a csv file to the specified {@link BwGroup}
-   */
+  /** Map all antigens in a csv file to the specified {@link BwGroup} */
   private static ImmutableSet<String> readAntigens(String antigenCsvPath) {
     ImmutableSet.Builder<String> builder = ImmutableSet.builder();
-    try (CSVParser parser = new CSVParser(
-        new BufferedReader(
-            new InputStreamReader(BwSerotypes.class.getResourceAsStream(antigenCsvPath))),
-        CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
+    try (CSVParser parser =
+        new CSVParser(
+            new BufferedReader(
+                new InputStreamReader(BwSerotypes.class.getResourceAsStream(antigenCsvPath))),
+            CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
       for (CSVRecord record : parser) {
         // Each element of a record is an antigen of the group for this file
         builder.addAll(record);
@@ -99,15 +98,14 @@ public final class BwSerotypes {
     return builder.build();
   }
 
-  /**
-   * Map all alleles in a csv file to the specified {@link BwGroup}
-   */
-  private static void mapAlleles(Builder<HLAType, BwGroup> builder, BwGroup bwGroup,
-      String alleleCsvPath) {
-    try (CSVParser parser = new CSVParser(
-        new BufferedReader(
-            new InputStreamReader(BwSerotypes.class.getResourceAsStream(alleleCsvPath))),
-        CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
+  /** Map all alleles in a csv file to the specified {@link BwGroup} */
+  private static void mapAlleles(
+      Builder<HLAType, BwGroup> builder, BwGroup bwGroup, String alleleCsvPath) {
+    try (CSVParser parser =
+        new CSVParser(
+            new BufferedReader(
+                new InputStreamReader(BwSerotypes.class.getResourceAsStream(alleleCsvPath))),
+            CSVFormat.DEFAULT.withCommentMarker(COMMENT))) {
       for (CSVRecord record : parser) {
         // Each element of a record is the specificity of a B allele for the group of this file
         for (String specificity : record) {
