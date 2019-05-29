@@ -28,7 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
+
 import javax.annotation.Nullable;
+
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
@@ -39,7 +41,9 @@ import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
+
 import com.google.common.base.Strings;
+
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;

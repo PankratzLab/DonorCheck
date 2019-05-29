@@ -24,9 +24,11 @@ package org.pankratzlab.unet.model;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;

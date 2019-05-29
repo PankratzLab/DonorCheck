@@ -23,10 +23,12 @@ package org.pankratzlab.unet.hapstats;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.model.Strand;
+
 import com.google.common.collect.Multimap;
 
 /** Static utility class for haplotype operations */

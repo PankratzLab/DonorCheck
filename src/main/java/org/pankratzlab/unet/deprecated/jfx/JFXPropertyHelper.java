@@ -22,6 +22,7 @@
 package org.pankratzlab.unet.deprecated.jfx;
 
 import javax.annotation.Nullable;
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.Property;
 import javafx.beans.value.ObservableBooleanValue;

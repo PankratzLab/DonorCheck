@@ -22,8 +22,10 @@
 package org.pankratzlab.unet.model;
 
 import java.math.BigDecimal;
+
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
+
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 

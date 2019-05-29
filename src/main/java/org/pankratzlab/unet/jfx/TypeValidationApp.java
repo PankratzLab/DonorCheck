@@ -24,7 +24,9 @@ package org.pankratzlab.unet.jfx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
+
 import com.google.common.collect.ImmutableSet;
+
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.fxml.FXMLLoader;

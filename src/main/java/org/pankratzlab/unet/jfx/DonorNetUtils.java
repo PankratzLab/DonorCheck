@@ -26,11 +26,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+
 import javax.annotation.Nullable;
+
 import org.jsoup.select.Elements;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.hla.LoggingPlaceholder;
+
 import com.google.common.collect.ImmutableMap;
+
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.stage.FileChooser;

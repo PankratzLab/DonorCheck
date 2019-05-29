@@ -22,10 +22,12 @@
 package org.pankratzlab.unet.model;
 
 import java.math.BigDecimal;
+
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
+
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;

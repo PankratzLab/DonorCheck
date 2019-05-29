@@ -22,11 +22,13 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
+
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;

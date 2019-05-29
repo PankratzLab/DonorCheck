@@ -25,6 +25,7 @@ import java.io.File;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
@@ -36,7 +37,9 @@ import org.pankratzlab.unet.parser.DonorFileParser;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
+
 import com.google.common.collect.ImmutableList;
+
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;

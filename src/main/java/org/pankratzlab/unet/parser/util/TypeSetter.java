@@ -22,6 +22,7 @@
 package org.pankratzlab.unet.parser.util;
 
 import java.util.function.BiConsumer;
+
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
 /**

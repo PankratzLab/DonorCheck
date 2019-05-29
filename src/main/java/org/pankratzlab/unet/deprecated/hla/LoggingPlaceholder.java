@@ -23,7 +23,9 @@ package org.pankratzlab.unet.deprecated.hla;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
+
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
+
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;

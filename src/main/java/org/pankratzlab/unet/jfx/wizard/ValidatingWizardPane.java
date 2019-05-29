@@ -22,8 +22,10 @@
 package org.pankratzlab.unet.jfx.wizard;
 
 import java.util.Objects;
+
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.WizardPane;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.value.ObservableBooleanValue;

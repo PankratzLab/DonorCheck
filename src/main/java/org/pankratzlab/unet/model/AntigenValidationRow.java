@@ -22,7 +22,9 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
+
 import javax.annotation.Nullable;
+
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 
 /** {@link ValidationRow} for displaying {@link SeroType}s */

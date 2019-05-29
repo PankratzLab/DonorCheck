@@ -1,6 +1,7 @@
 package org.pankratzlab.unet;
 
 import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;

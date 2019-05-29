@@ -24,7 +24,9 @@ package org.pankratzlab.unet.hapstats;
 import java.util.Collection;
 import java.util.SortedSet;
 import java.util.StringJoiner;
+
 import org.pankratzlab.unet.deprecated.hla.HLAType;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.UnmodifiableIterator;

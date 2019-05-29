@@ -28,7 +28,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
+
 import javax.imageio.ImageIO;
+
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
@@ -39,7 +41,9 @@ import org.pankratzlab.unet.model.DRDQHaplotypeRow;
 import org.pankratzlab.unet.model.HaplotypeRow;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
+
 import com.google.common.collect.ImmutableSet;
+
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;

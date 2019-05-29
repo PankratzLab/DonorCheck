@@ -22,9 +22,12 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
+
 import javax.annotation.Nullable;
+
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
+
 import com.google.common.collect.ImmutableSet;
 
 /**

@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
@@ -51,6 +52,7 @@ import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.unet.parser.util.DRAssociations;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;

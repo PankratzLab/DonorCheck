@@ -23,7 +23,9 @@ package org.pankratzlab.unet.jfx.wizard;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+
 import org.pankratzlab.unet.model.ValidationTable;
+
 import javafx.fxml.FXML;
 
 /**

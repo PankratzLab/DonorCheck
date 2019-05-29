@@ -27,10 +27,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.ResourceBundle;
+
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
+
 import com.google.common.base.Strings;
+
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;

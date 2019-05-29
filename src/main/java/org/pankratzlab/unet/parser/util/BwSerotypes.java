@@ -24,6 +24,7 @@ package org.pankratzlab.unet.parser.util;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Objects;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -31,6 +32,7 @@ import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;

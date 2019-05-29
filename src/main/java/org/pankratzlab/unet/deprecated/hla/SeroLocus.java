@@ -24,6 +24,7 @@ package org.pankratzlab.unet.deprecated.hla;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import com.google.common.collect.ImmutableList;
 
 /** {@link Locus} implementation for serological types */

@@ -5,11 +5,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeNotNull;
 import static org.junit.Assume.assumeTrue;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -19,6 +21,7 @@ import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
+
 import com.google.common.collect.ImmutableList;
 
 /**
