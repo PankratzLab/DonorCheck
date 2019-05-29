@@ -100,9 +100,7 @@
 			<artifactId>log4j-core</artifactId>
 			<version>2.11.1</version>
 		</dependency>
-
 		<!-- Test scope dependencies - not included in .jars built with Maven -->
-
 		<!-- JUnit - http://junit.org/ -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -200,8 +198,7 @@
 								<Specification-Version>${project.version}</Specification-Version>
 								<Compile-Time>${timestamp}</Compile-Time>
 								<Build-Type>Development</Build-Type>
-								<Implementation-Vendor>(c)2018 Computational Pathology -
-									University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
+								<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
 							</manifestEntries>
 						</archive>
 						<skipIfEmpty>true</skipIfEmpty>
@@ -226,8 +223,7 @@
 								<Specification-Version>${project.version}</Specification-Version>
 								<Compile-Time>${timestamp}</Compile-Time>
 								<Build-Type>Development</Build-Type>
-								<Implementation-Vendor>(c)2018 Computational Pathology -
-									University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
+								<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
 							</manifestEntries>
 						</archive>
 					</configuration>
@@ -262,8 +258,7 @@
 							<Specification-Version>${project.version}</Specification-Version>
 							<Compile-Time>${timestamp}</Compile-Time>
 							<Build-Type>Development</Build-Type>
-							<Implementation-Vendor>(c)2018 Computational Pathology -
-								University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
+							<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
 						</manifestAttributes>
 					</configuration>
 					<executions>
@@ -365,8 +360,7 @@
 					<configuration>
 						<licenseName>gpl_v2</licenseName>
 						<projectName>DonorCheck</projectName>
-						<organizationName>Computational Pathology - University of
-							Minnesota</organizationName>
+						<organizationName>Computational Pathology - University of Minnesota</organizationName>
 						<addJavaLicenseAfterPackage>false</addJavaLicenseAfterPackage>
 						<canUpdateDescription>true</canUpdateDescription>
 						<canUpdateCopyright>true</canUpdateCopyright>
