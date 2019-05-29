@@ -25,14 +25,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
+
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -47,7 +50,8 @@ public class PdfSureTyperParser {
   private static final String HLA_PREFIX = "HLA";
   private static final String UNKNOWN_ANTIGEN = "-";
   private static final String WHITESPACE_REGEX = "\\s+";
-  private static final String TYPING_STOP_TOKEN = SURE_TYPER;
+  private static final Set<String> TYPING_STOP_TOKENS =
+      ImmutableSet.of(SURE_TYPER, "INTERNAL", "REVIEW");
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
   private static final int DONOR_ID_INDEX = 2;
@@ -209,6 +213,20 @@ public class PdfSureTyperParser {
   }
 
   /**
+   * Helper method to check if any of the given flags are contained in the given line
+   *
+   * @return true if a flag is found
+   */
+  private static boolean containsFlag(Set<String> flags, String line) {
+    for (String flag : flags) {
+      if (line.contains(flag)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Helper method to parse the possible haplotypes. These are long lists of possible alleles,
    * divided by HLA locus.
    */
@@ -300,10 +318,11 @@ public class PdfSureTyperParser {
   private static int parseAssignment(String[] lines, StringJoiner typeAssignment, int currentLine) {
     String line = null;
     // Read until we hit the end of the typing
-    for (;
-        currentLine < lines.length
-            && !(line = lines[currentLine].trim()).contains(TYPING_STOP_TOKEN);
-        currentLine++) {
+    for (; currentLine < lines.length; currentLine++) {
+      line = lines[currentLine].trim();
+      if (containsFlag(TYPING_STOP_TOKENS, line)) {
+        break;
+      }
       // Building the type assignment lines
       typeAssignment.add(line);
     }
