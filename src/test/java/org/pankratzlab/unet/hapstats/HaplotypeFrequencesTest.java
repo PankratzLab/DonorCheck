@@ -1,6 +1,8 @@
 package org.pankratzlab.unet.hapstats;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,8 +42,8 @@ public class HaplotypeFrequencesTest {
 
   @Test
   public void HaplotypeFrequences_getFrequency() {
-    assertEquals(0.0, HaplotypeFrequencies.getFrequency(RaceGroup.CAU,
+    assertEquals(BigDecimal.ZERO, HaplotypeFrequencies.getFrequency(RaceGroup.CAU,
         HLAType.valueOf("C*15:02:02:02G"), HLAType.valueOf("C*15:01G")));
-    assertEquals(0.0, HaplotypeFrequencies.getFrequency(RaceGroup.AFA, haplotypeFull));
+    assertEquals(BigDecimal.ZERO, HaplotypeFrequencies.getFrequency(RaceGroup.AFA, haplotypeFull));
   }
 }

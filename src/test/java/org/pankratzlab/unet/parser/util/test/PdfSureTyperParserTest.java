@@ -22,11 +22,12 @@ public class PdfSureTyperParserTest {
   private static final String Test_File2 = "UnitTestPDFTyper_2.pdf";
   private static final String Test_File3 = "UnitTestPDFTyper_3.pdf";
   private static final String Test_File4 = "UnitTestPDFTyper_4.pdf";
+  private static final String Test_File5 = "UnitTestPDFTyper_5.pdf";
 
   @DisplayName("Donor ID parsing")
   @ParameterizedTest(name = "{0}")
   @CsvSource({Test_File1 + ", AFJQ146", Test_File2 + ", AFLE337", Test_File3 + ", AFK3449",
-      Test_File4 + ", AFK3166"})
+      Test_File4 + ", AFK3166", Test_File5 + ", AGEZ412"})
   public void twoDRB3_PdfSureTyperTest_getDonorId(String fileName, String donorId) {
     assertEquals(donorId, createModel(fileName).getDonorId());
   }
@@ -41,7 +42,9 @@ public class PdfSureTyperParserTest {
         Arguments.of(Test_File3, new SeroType("A", 2), new SeroType("A", 3), new SeroType("B", 57),
             new SeroType("B", 65), new SeroType("C", 06), new SeroType("C", 8)),
         Arguments.of(Test_File4, new SeroType("A", 3), new SeroType("A", 24), new SeroType("B", 27),
-            new SeroType("B", 35), new SeroType("C", 02), new SeroType("C", 04)));
+            new SeroType("B", 35), new SeroType("C", 02), new SeroType("C", 04)),
+    Arguments.of(Test_File5, new SeroType("A", 2), new SeroType("A", 24), new SeroType("B", 18),
+            new SeroType("B", 35), new SeroType("C", 04), new SeroType("C", 07)));
   }
 
   @DisplayName("Allele A, B and C parsing")
@@ -62,7 +65,7 @@ public class PdfSureTyperParserTest {
   @DisplayName("Bw4 and Bw6 parsing")
   @ParameterizedTest(name = "{0}")
   @CsvSource({Test_File1 + ", Positive, Positive", Test_File2 + ", Positive, Positive",
-      Test_File3 + ", Positive, Positive", Test_File4 + ", Negative, Positive"})
+      Test_File3 + ", Positive, Positive", Test_File4 + ", Negative, Positive", Test_File5 + ", Negative, Positive"})
   public void PdfSureTyperTest_isBw(String fileName, String Bw4Result, String Bw6Result) {
     ValidationModel model = createModel(fileName);
     assertEquals(Bw4Result, model.isBw4());
@@ -76,6 +79,8 @@ public class PdfSureTyperParserTest {
             null),
         Arguments.of(Test_File3, null, null, new HLAType("DRB3", 3), null, null, null),
         Arguments.of(Test_File4, null, null, null, null, new HLAType("DRB4", 1),
+            new HLAType("DRB4", 1)),
+    Arguments.of(Test_File5, null, null, null, null, new HLAType("DRB4", 1),
             new HLAType("DRB4", 1)));
   }
 
