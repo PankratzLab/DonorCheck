@@ -23,7 +23,6 @@ package org.pankratzlab.unet.parser;
 
 import java.io.File;
 import java.security.InvalidParameterException;
-
 import org.apache.commons.io.FilenameUtils;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 
@@ -32,7 +31,7 @@ public abstract class AbstractDonorFileParser implements DonorFileParser {
 
   @Override
   public void parseModel(ValidationModelBuilder builder, File file) {
-    if (!FilenameUtils.isExtension(file.getName(), extensionName())) {
+    if (!FilenameUtils.isExtension(file.getName().toLowerCase(), extensionName())) {
       throw new InvalidParameterException("Unknown File Type: " + file.getName());
     }
 

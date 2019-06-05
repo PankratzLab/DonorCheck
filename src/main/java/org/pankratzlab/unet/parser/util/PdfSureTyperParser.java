@@ -28,14 +28,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
-
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -50,8 +48,10 @@ public class PdfSureTyperParser {
   private static final String HLA_PREFIX = "HLA";
   private static final String UNKNOWN_ANTIGEN = "-";
   private static final String WHITESPACE_REGEX = "\\s+";
+
   private static final Set<String> TYPING_STOP_TOKENS =
-      ImmutableSet.of(SURE_TYPER, "INTERNAL", "REVIEW");
+      ImmutableSet.of(SURE_TYPER, "INTERNAL", "REVIEW", "NOTES");
+
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
   private static final int DONOR_ID_INDEX = 2;
@@ -158,7 +158,6 @@ public class PdfSureTyperParser {
         // Erase the prefix from the current token and set the value on the model builder
         token = token.replace(prefix, "");
         token = token.replaceAll("[+]", "");
-
         // Remove non-field characters
         setter.accept(builder, token);
       }
