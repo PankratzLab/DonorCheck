@@ -101,16 +101,24 @@ public class PdfSureTyperParserTest {
   private ValidationModel createModel(String input) {
     ValidationModelBuilder builder = new ValidationModelBuilder();
     builder.source(input);
-    File file = new File(getClass().getClassLoader().getResource(input).getFile());
-    try (PDDocument pdf = PDDocument.load(file)) {
-      PDFTextStripper tStripper = new PDFTextStripper();
-      tStripper.setSortByPosition(true);
-      // Extract all text from the PDF and split it into lines
-      String pdfText = tStripper.getText(pdf);
-      String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
-      PdfSureTyperParser.parseTypes(builder, pdfLines);
-    } catch (IOException e) {
-      e.printStackTrace();
+    try {
+      File file = new File(getClass().getClassLoader().getResource(input).getFile());
+      try (PDDocument pdf = PDDocument.load(file)) {
+        PDFTextStripper tStripper = new PDFTextStripper();
+        tStripper.setSortByPosition(true);
+        // Extract all text from the PDF and split it into lines
+        String pdfText = tStripper.getText(pdf);
+        String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
+        if (pdfText.contains("SureTyper")) {
+          PdfSureTyperParser.parseTypes(builder, pdfLines);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      }
+    } catch (Exception e) {
+      System.err.println("Missing resource file:  " + input);
+
       throw new RuntimeException(e);
     }
     ValidationModel model = null;
