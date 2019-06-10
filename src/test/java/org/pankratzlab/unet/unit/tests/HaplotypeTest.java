@@ -1,4 +1,4 @@
-package org.pankratzlab.unet.hapstats;
+package org.pankratzlab.unet.unit.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.hapstats.Haplotype;
 
 public class HaplotypeTest {
   private static final List<HLAType> listOfAlleles =

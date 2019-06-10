@@ -1,10 +1,11 @@
-package org.pankratzlab.unet.hapstats;
+package org.pankratzlab.unet.unit.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
+import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;

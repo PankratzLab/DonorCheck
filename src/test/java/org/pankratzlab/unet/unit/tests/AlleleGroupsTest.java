@@ -1,4 +1,4 @@
-package org.pankratzlab.unet.hapstats;
+package org.pankratzlab.unet.unit.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package org.pankratzlab.unet.parser.util.test;
+package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.File;

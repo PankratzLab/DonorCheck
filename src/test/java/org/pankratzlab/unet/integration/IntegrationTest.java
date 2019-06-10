@@ -1,4 +1,4 @@
-package org.pankratzlab.unet;
+package org.pankratzlab.unet.integration;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
