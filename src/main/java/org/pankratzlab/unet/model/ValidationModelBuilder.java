@@ -238,6 +238,7 @@ public class ValidationModelBuilder {
 
   /** @return The immutable {@link ValidationModel} based on the current builder state. */
   public ValidationModel build() {
+    correctDRHomozygosity();
     ensureValidity();
 
     Multimap<RaceGroup, Haplotype> bcCwdHaplotypes = buildBCHaplotypes(bHaplotypes, cHaplotypes);
@@ -266,6 +267,17 @@ public class ValidationModelBuilder {
             bcCwdHaplotypes,
             drDqDR345Haplotypes);
     return validationModel;
+  }
+
+  /** If the DR assignment is homozygous, ensure the DR51/52/53 assignment is homozygous as well */
+  private void correctDRHomozygosity() {
+    if (drbLocus.size() == 1) {
+      for (List<HLAType> dr : ImmutableList.of(dr51Locus, dr52Locus, dr53Locus)) {
+        if (dr.size() == 1) {
+          dr.add(dr.get(0));
+        }
+      }
+    }
   }
 
   /**
