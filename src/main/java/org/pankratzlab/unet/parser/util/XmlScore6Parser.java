@@ -222,7 +222,7 @@ public class XmlScore6Parser {
         if (isDRB345) {
           toUpdate = drb345Pairs;
 
-          // Ensure we only check DRB345 combinations that are consistent with the DRB1 result
+          // Ensure we only check DRB345 combinations that are consistent with the DRB1 result  
           Multiset<HLALocus> countDRB1 = countDRB1(resultPairs);
           Multiset<HLALocus> countDRB345 = countDRB345(combinations);
           if (countDRB345.size() > countDRB1.size() || !countDRB1.containsAll(countDRB345)) {
@@ -529,7 +529,10 @@ public class XmlScore6Parser {
             .stream()
             .map(ResultCombination::getAlleleCombination)
             .collect(Collectors.toList());
-
+    // If the lists are not equal size return the larger list
+    if(reference.size()!= test.size()) {
+    	return reference.size() < test.size();
+    }
     // Test if test has higher frequency alleles
     int diff =
         Double.compare(
