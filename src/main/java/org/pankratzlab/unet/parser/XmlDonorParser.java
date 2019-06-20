@@ -32,6 +32,7 @@ import org.jsoup.nodes.Document;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.XmlDonorNetParser;
 import org.pankratzlab.unet.parser.util.XmlScore6Parser;
+import org.pankratzlab.unet.parser.util.XmlSureTyperParser;
 
 /** {@link DonorFileParser} entry point for XML files */
 public class XmlDonorParser extends AbstractDonorFileParser {
@@ -42,7 +43,7 @@ public class XmlDonorParser extends AbstractDonorFileParser {
 
   private static final String FILE_CHOOSER_HEADER = "Select Donor Typing XML";
   private static final String INITIAL_NAME = "";
-  private static final String EXTENSION_DESC = "DonorNet, SCORE6";
+  private static final String EXTENSION_DESC = "DonorNet, SCORE6, LinkSēq";
   private static final String EXTENSION_NAME = "xml";
   private static final String EXTENSION = "*." + EXTENSION_NAME;
 
@@ -93,6 +94,8 @@ public class XmlDonorParser extends AbstractDonorFileParser {
           XmlDonorNetParser.buildModelFromXML(builder, parsed);
         } else if (XmlScore6Parser.ROOT_ELEMENT.equals(rootElement)) {
           XmlScore6Parser.buildModelFromXML(builder, parsed);
+        } else if (XmlSureTyperParser.ROOT_ELEMENT.equals(rootElement)) {
+          XmlSureTyperParser.buildModelFromXML(builder, parsed);
         }
       } else {
         throw new InvalidParameterException("Unknown File Type: " + file.getName());

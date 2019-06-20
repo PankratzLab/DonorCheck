@@ -75,7 +75,7 @@
                         </TextFlow>
                         <TextFlow textAlignment="CENTER" GridPane.rowIndex="1">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="SureTyper">
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="LinkSēq">
                                  <font>
                                     <Font size="20.0" />
                                  </font></Text>
@@ -99,7 +99,7 @@
                         </TextFlow>
                         <TextFlow textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="PDF">
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="XML, PDF">
                                  <font>
                                     <Font size="20.0" />
                                  </font></Text>
