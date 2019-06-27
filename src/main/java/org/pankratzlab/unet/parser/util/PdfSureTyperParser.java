@@ -159,6 +159,8 @@ public class PdfSureTyperParser {
         token = token.replace(prefix, "");
         token = token.replaceAll("[+]", "");
         // Remove non-field characters
+        // Shorten the allele designation to allele group and specific HLA protein. Further fields can not be entered into UNOS 
+        token = token.indexOf(":", 3) == -1 ? token:token.substring(0, token.indexOf(":", 3));
         setter.accept(builder, token);
       }
     }
@@ -284,7 +286,7 @@ public class PdfSureTyperParser {
           tokenIndex++) {
         String token = tokens[tokenIndex].trim();
 
-        if (locus.startsWith(token.replaceAll("[0-9*w]", "")) || token.equals(UNKNOWN_ANTIGEN)) {
+        if (locus.startsWith(token.replaceAll("[0-9*w:]", "")) || token.equals(UNKNOWN_ANTIGEN)) {
           // These cases are either reiterations of the locus (e.g. B*) or antigen equivalents (B75,
           // Cw)
           continue;
