@@ -160,10 +160,6 @@ public class PdfSureTyperParser {
         // Erase the prefix from the current token and set the value on the model builder
         token = token.replace(prefix, "");
         token = token.replaceAll("[+]", "");
-        // Remove non-field characters
-        // Shorten the allele designation to allele group and specific HLA protein. Further fields
-        // can not be entered into UNOS
-        token = token.indexOf(":", 3) == -1 ? token : token.substring(0, token.indexOf(":", 3));
         setter.accept(builder, token);
       }
     }

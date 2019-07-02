@@ -184,7 +184,16 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder dpb(String dpbType) {
     dpbLocus = makeIfNull(dpbLocus);
-    dpbLocus.add(new HLAType(HLALocus.DPB1, dpbType));
+    // Shorten the allele designation to allele group and specific HLA protein. Further fields can
+    // not be entered into UNOS
+    if (!Strings.isNullOrEmpty(dpbType)) {
+      HLAType tmpDPB1 = new HLAType(HLALocus.DPB1, dpbType);
+      if (tmpDPB1.spec().size() > 2) {
+        tmpDPB1 =
+            new HLAType(HLALocus.DPB1, new int[] {tmpDPB1.spec().get(0), tmpDPB1.spec().get(1)});
+      }
+      dpbLocus.add(tmpDPB1);
+    }
     return this;
   }
 
