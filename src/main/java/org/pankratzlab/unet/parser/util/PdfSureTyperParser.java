@@ -28,12 +28,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
+
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -159,8 +161,9 @@ public class PdfSureTyperParser {
         token = token.replace(prefix, "");
         token = token.replaceAll("[+]", "");
         // Remove non-field characters
-        // Shorten the allele designation to allele group and specific HLA protein. Further fields can not be entered into UNOS 
-        token = token.indexOf(":", 3) == -1 ? token:token.substring(0, token.indexOf(":", 3));
+        // Shorten the allele designation to allele group and specific HLA protein. Further fields
+        // can not be entered into UNOS
+        token = token.indexOf(":", 3) == -1 ? token : token.substring(0, token.indexOf(":", 3));
         setter.accept(builder, token);
       }
     }
