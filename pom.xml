@@ -7,7 +7,7 @@
 
 	<groupId>org.pankratzlab</groupId>
 	<artifactId>donor-check</artifactId>
-	<version>0.0.6-SNAPSHOT</version>
+	<version>0.0.6</version>
 	<packaging>jar</packaging>
 
 	<description>A stand-alone tool for validating DonorNet typing entries.</description>
@@ -197,7 +197,7 @@
 								<Specification-Title>DonorCheck</Specification-Title>
 								<Specification-Version>${project.version}</Specification-Version>
 								<Compile-Time>${timestamp}</Compile-Time>
-								<Build-Type>Development</Build-Type>
+								<Build-Type>Beta</Build-Type>
 								<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
 							</manifestEntries>
 						</archive>
