@@ -44,15 +44,15 @@ import com.google.common.collect.Multimap;
 
 /** Specific parsing logic for SureTyper PDFs */
 public class PdfSureTyperParser {
-  private static final String SURE_TYPER = "SureTyper";
+  private static final String PAGE_END = "page \\d+ of \\d+";
   private static final String SUMMARY_START = "SUMMARY";
-  private static final String SUMMARY_END = SURE_TYPER;
+  private static final String SUMMARY_END = "LABORATORY ASSIGNMENT";
   private static final String HLA_PREFIX = "HLA";
   private static final String UNKNOWN_ANTIGEN = "-";
   private static final String WHITESPACE_REGEX = "\\s+";
 
   private static final Set<String> TYPING_STOP_TOKENS =
-      ImmutableSet.of(SURE_TYPER, "INTERNAL", "REVIEW", "NOTES");
+      ImmutableSet.of("page", "INTERNAL", "REVIEW", "NOTES");
 
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
@@ -99,7 +99,6 @@ public class PdfSureTyperParser {
     // creating a stream of tokens.
     for (int currentLine = 0; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine].trim();
-
       if (line.startsWith(PATIENT_ID_TOKEN)) {
         // The patient ID value is at a particular position in the line starting with this token
         builder.donorId(line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX]);
@@ -247,7 +246,7 @@ public class PdfSureTyperParser {
       int tokenIndex = 0;
 
       // Check if we are at a strand break
-      if (line.startsWith(SURE_TYPER) || line.contains(GENOTYPE_HEADER)) {
+      if (line.startsWith(PAGE_END) || line.contains(GENOTYPE_HEADER)) {
         // These indicate page breaks and have nothing to do with the data
         continue;
       }
