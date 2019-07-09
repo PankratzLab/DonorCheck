@@ -1,9 +1,11 @@
 package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.stream.Stream;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.DisplayName;
@@ -206,7 +208,7 @@ public class PdfSureTyperParserTest {
         throw new RuntimeException(e);
       }
     } catch (Exception e) {
-      System.err.println("Missing resource file:  " + input);
+      System.err.println("Error:  " + e);
       throw new RuntimeException(e);
     }
     ValidationModel model = null;
