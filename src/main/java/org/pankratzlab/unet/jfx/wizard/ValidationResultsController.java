@@ -402,7 +402,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
             }
           }
 
-          switch (CommonWellDocumented.getStatus(allele)) {
+          switch (CommonWellDocumented.getEquivStatus(allele)) {
             case UNKNOWN:
               getStyleClass().add(0, UK_ALLELE_CLASS);
               break;

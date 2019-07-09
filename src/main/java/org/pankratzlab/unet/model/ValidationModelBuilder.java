@@ -569,7 +569,7 @@ public class ValidationModelBuilder {
       Multimap<Status, HLAType> typesByStatus =
           MultimapBuilder.enumKeys(Status.class).hashSetValues().build();
       Collection<HLAType> values = typesForStrand.get(strand);
-      values.forEach(t -> typesByStatus.put(CommonWellDocumented.getStatus(t), t));
+      values.forEach(t -> typesByStatus.put(CommonWellDocumented.getEquivStatus(t), t));
 
       Set<HLAType> cwdTypes = new HashSet<>();
       cwdTypes.addAll(typesByStatus.get(Status.COMMON));
@@ -644,7 +644,7 @@ public class ValidationModelBuilder {
         add(haplotype);
 
         for (HLAType allele : haplotype.getTypes()) {
-          switch (CommonWellDocumented.getStatus(allele)) {
+          switch (CommonWellDocumented.getEquivStatus(allele)) {
             case COMMON:
               // Add 1 points for common alleles
               cwdScore = cwdScore.add(BigDecimal.ONE);
