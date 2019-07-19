@@ -44,15 +44,14 @@ import com.google.common.collect.Multimap;
 
 /** Specific parsing logic for SureTyper PDFs */
 public class PdfSureTyperParser {
-  private static final String PAGE_END = "page \\d+ of \\d+";
+  private static final String PAGE_END = "page";
   private static final String SUMMARY_START = "SUMMARY";
-  private static final String SUMMARY_END = "LABORATORY ASSIGNMENT";
+  private static final String SUMMARY_END = PAGE_END;
   private static final String HLA_PREFIX = "HLA";
-  private static final String UNKNOWN_ANTIGEN = "-";
   private static final String WHITESPACE_REGEX = "\\s+";
 
   private static final Set<String> TYPING_STOP_TOKENS =
-      ImmutableSet.of("page", "INTERNAL", "REVIEW", "NOTES");
+      ImmutableSet.of(PAGE_END, "INTERNAL", "REVIEW", "NOTES");
 
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
@@ -91,10 +90,10 @@ public class PdfSureTyperParser {
     haplotypeMap.put(HAPLOTYPE_DRB1, ArrayListMultimap.create());
     haplotypeMap.put(HAPLOTYPE_DQB1, ArrayListMultimap.create());
     haplotypeMap.put(HAPLOTYPE_DRB345, ArrayListMultimap.create());
+    haplotypeMap.put("HLA-DR", haplotypeMap.get(HAPLOTYPE_DRB1));
 
     // We now process the PDF text line-by-line.
     StringJoiner typeAssignment = new StringJoiner(" ");
-
     // All the type assignment strings are joined together and then split on whitespace,
     // creating a stream of tokens.
     for (int currentLine = 0; currentLine < lines.length; currentLine++) {
@@ -116,7 +115,7 @@ public class PdfSureTyperParser {
           parseHaplotype(lines, currentLine + 1, "DRB4", drb345Map);
           currentLine = parseHaplotype(lines, ++currentLine, "DRB5", drb345Map);
         } else {
-          String locus = line.replaceAll("HLA-", "");
+          String locus = HaplotypeUtils.lineToLocus(line);
           Multimap<Strand, HLAType> locusMap = haplotypeMap.get(line);
           currentLine = parseHaplotype(lines, ++currentLine, locus, locusMap);
         }
@@ -136,19 +135,15 @@ public class PdfSureTyperParser {
         drb345Map.put(unreportedStrand, NullType.UNREPORTED_DRB345);
       }
     }
-
     builder.bw4(false);
     builder.bw6(false);
-
     builder.bHaplotype(haplotypeMap.get(HAPLOTYPE_B));
     builder.cHaplotype(haplotypeMap.get(HAPLOTYPE_C));
     builder.dqHaplotype(haplotypeMap.get(HAPLOTYPE_DQB1));
     builder.drHaplotype(haplotypeMap.get(HAPLOTYPE_DRB1));
     builder.dr345Haplotype(haplotypeMap.get(HAPLOTYPE_DRB345));
-
     BiConsumer<ValidationModelBuilder, String> setter = null;
     String prefix = "";
-
     for (String token : typeAssignment.toString().split(WHITESPACE_REGEX)) {
       if (metadataMap.containsKey(token)) {
         // When we encounter a section key we update the prefix string and the field setter
@@ -234,7 +229,6 @@ public class PdfSureTyperParser {
       String[] lines, int currentLine, String locus, Multimap<Strand, HLAType> strandMap) {
     // Sections start with a line containing JUST HLA_A/b/c etc..
     // Strands are marked by first type is always low res (group)
-    // Read until we get to a semi-colon
 
     String line = null;
     int strandIndex = -1;
@@ -242,7 +236,7 @@ public class PdfSureTyperParser {
     for (; currentLine < lines.length && strandIndex < Strand.values().length; currentLine++) {
       line = lines[currentLine].trim();
 
-      String[] tokens = line.split(WHITESPACE_REGEX);
+      String[] tokens = line.split("\\;|,|\\*|[a-mo-z]\\s");
       int tokenIndex = 0;
 
       // Check if we are at a strand break
@@ -254,16 +248,15 @@ public class PdfSureTyperParser {
         // This indicates a new locus is starting
         break;
       }
-      if (locus.startsWith("DRB")
-          && line.matches("^DRB[0-9]\\*[0-9]+")
-          && !line.contains(locus)
-          && strandIndex >= 0) {
-        // DRB345 are all in one section - we do not want to accidentally mix DRB loci. We also
-        // check the strand index because we do not want to prematurely end iteration.
-        break;
+      if (locus.startsWith("DRB") && !line.contains(locus) && strandIndex >= 0) {
+        if (line.matches("DRB[345].*") || line.matches("^DRB[0-9]\\*[0-9]+")) {
+          // DRB345 are all in one section - we do not want to accidentally mix DRB loci. We also
+          // check the strand index because we do not want to prematurely end iteration.
+          break;
+        }
       }
 
-      if (line.matches(locus + "[*w][0-9]+.*")) {
+      if (line.matches(locus + "[*w][0-9]+.*") || line.startsWith(locus + " " + locus)) {
         // This is the first line of allele data. It is possible for it to appear without a
         // GENOTYPE_HEADER if both alleles are on the same page.
         strandIndex++;
@@ -278,16 +271,15 @@ public class PdfSureTyperParser {
         tokenIndex++;
       }
 
-      // If we're on a valid strand, parse the tokens to alleles
       for (;
           tokenIndex < tokens.length && (strandIndex >= 0 && strandIndex < Strand.values().length);
           tokenIndex++) {
-        String token = tokens[tokenIndex].trim();
 
-        if (locus.startsWith(token.replaceAll("[0-9*w:]", "")) || token.equals(UNKNOWN_ANTIGEN)) {
-          // These cases are either reiterations of the locus (e.g. B*) or antigen equivalents (B75,
-          // Cw)
-          continue;
+        String token = tokens[tokenIndex].replaceAll("\\s+", "");
+
+        // if the dash is at the end it is not a range.
+        if (token.endsWith("-")) {
+          token = token.replaceAll("-", "");
         }
 
         if (!token.contains(":")) {
@@ -302,7 +294,6 @@ public class PdfSureTyperParser {
           // Wasn't actually an allele
           continue;
         }
-
         HaplotypeUtils.parseAllelesToStrandMap(token, locus, strandIndex, strandMap);
       }
 

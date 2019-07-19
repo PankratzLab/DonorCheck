@@ -72,4 +72,27 @@ public final class HaplotypeUtils {
       haplotypeMap.put(Strand.values()[strandIndex], finalType);
     }
   }
+  /**
+   * Helper method to return locus{@link HLALocus} string representations from input lines
+   *
+   * @param line string from input that begins with "HLA-"
+   * @param locus {@link HLALocus} string representation
+   */
+  public static String lineToLocus(String line) {
+    line = line.trim();
+    switch (line) {
+      case "HLA-B":
+        return "B";
+      case "HLA-C":
+        return "C";
+      case "HLA-DRB1":
+      case "HLA-DR":
+        return "DRB1";
+      case "HLA-DQB1":
+        return "DQB1";
+      default:
+        System.err.println("HaplotypeUtils; invalid title line to create locus with: " + line);
+        throw new IllegalArgumentException();
+    }
+  }
 }
