@@ -14,7 +14,7 @@ We currently provide pre-built installers for Windows only. Please select the ap
 
 * [Windows 64-bit](https://github.com/PankratzLab/DonorCheck/releases/latest/download/donor-check-installer-win64.exe)
 
-* [Windows 32-bit](https://github.com/PankratzLab/DonorCheck/releases/latest/download/donor-check-installer-win32.exe) (typically older systems)
+* [Windows 32-bit](https://github.com/PankratzLab/DonorCheck/releases/latest/download/donor-check-installer-win86.exe) (typically older systems)
 
 # Code use
 
