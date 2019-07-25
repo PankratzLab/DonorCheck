@@ -30,7 +30,7 @@ import java.io.File;
 public class Info {
   public static final String MANIFEST_MAIN = "Main-Class";
   public static final String HLA_HOME =
-      System.getProperty("user.home") + File.separator + ".hla_root" + File.separator;
+      System.getProperty("user.home") + File.separator + ".donor_check" + File.separator;
   /** Filename of the last requested version */
   public static final String VERSION_TO_LOAD = HLA_HOME + ".version.load.ser";
 
