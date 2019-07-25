@@ -124,16 +124,19 @@ public final class CommonWellDocumented {
 
   /**
    * @param type HLA allele
-   * @return Status from enum values
+   * @return Common/Well-documented status of the allele
    */
   public static Status getStatus(HLAType type) {
+    return doGetStatus(type);
+  }
+
+  /**
+   * @param type HLA allele
+   * @return Common/Well-documented status of the allele. If the base allele is unknown, we will
+   *     check G-group equivalents.
+   */
+  public static Status getEquivStatus(HLAType type) {
     Status status = doGetStatus(type);
-    // if status is unknown attempt getting the status from a common group
-    // only checking g group because overlap cough cause failures
-    if (Status.UNKNOWN.equals(status)) {
-      HLAType equivType = AlleleGroups.getGGroup(type);
-      status = doGetStatus(equivType);
-    }
     return status;
   }
 

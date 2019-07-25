@@ -23,6 +23,8 @@ public class XMLScore6ParserTest {
   private static final String Test_File2 = "UnitTestXMLScore6_2.xml";
   private static final String Test_File3 = "UnitTestXMLScore6_3.xml";
   private static final String Test_File4 = "UnitTestXMLScore6_4.xml";
+  private static final String Test_File5 = "UnitTestXMLScore6_5.xml";
+  private static final String Test_File6 = "UnitTestXMLScore6_6.xml";
 
   @DisplayName("Donor ID parsing")
   @ParameterizedTest(name = "{0}")
@@ -30,7 +32,9 @@ public class XMLScore6ParserTest {
     Test_File1 + ", AFJQ146",
     Test_File2 + ", AFLG047",
     Test_File3 + ", AFK3387",
-    Test_File4 + ", AFLK097"
+    Test_File4 + ", AFLK097",
+    Test_File5 + ", AGFJ449",
+    Test_File6 + ", AFK3449"
   })
   public void twoDRB3_XMLScore6ParserTest_getDonorId(String fileName, String donorId) {
     assertEquals(donorId, createModel(fileName).getDonorId());
@@ -70,7 +74,23 @@ public class XMLScore6ParserTest {
             new SeroType("B", 44),
             new SeroType("B", 51),
             new SeroType("C", 15),
-            new SeroType("C", 16)));
+            new SeroType("C", 16)),
+        Arguments.of(
+                Test_File5,
+                new SeroType("A", 2),
+                new SeroType("A", 3),
+                new SeroType("B", 44),
+                new SeroType("B", 62),
+                new SeroType("C", 7),
+                new SeroType("C", 9)),
+        Arguments.of(
+                Test_File6,
+                new SeroType("A", 2),
+                new SeroType("A", 3),
+                new SeroType("B", 57),
+                new SeroType("B", 65),
+                new SeroType("C", 6),
+                new SeroType("C", 8)));
   }
 
   @DisplayName("Allele A, B and C parsing")
@@ -99,7 +119,9 @@ public class XMLScore6ParserTest {
     Test_File1 + ", Positive, Positive",
     Test_File2 + ", Negative, Positive",
     Test_File3 + ", Positive, Negative",
-    Test_File4 + ", Positive, Negative"
+    Test_File4 + ", Positive, Negative",
+    Test_File5 + ", Positive, Positive",
+    Test_File6 + ", Positive, Positive"
   })
   public void XMLScore6ParserTest_isBw(String fileName, String Bw4Result, String Bw6Result) {
     ValidationModel model = createModel(fileName);
@@ -114,7 +136,11 @@ public class XMLScore6ParserTest {
         Arguments.of(Test_File2, null, null, new HLAType("DRB3", 2), null, null, null),
         Arguments.of(Test_File3, null, null, null, null, null, null),
         Arguments.of(
-            Test_File4, null, null, null, null, new HLAType("DRB4", 1), new HLAType("DRB4", 1)));
+            Test_File4, null, null, null, null, new HLAType("DRB4", 1), new HLAType("DRB4", 1)),
+        Arguments.of(
+                Test_File5, null, null, new HLAType("DRB3",2), new HLAType("DRB3",2), null, null),
+        Arguments.of(
+                Test_File6, null, null, new HLAType("DRB3",3), null, null, null));
   }
 
   @DisplayName("DRB345 parsing")

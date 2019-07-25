@@ -81,9 +81,7 @@ public class PdfDonorParser extends AbstractDonorFileParser {
         String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
 
         // Pass the text to the appropriate parser
-        if (pdfText.contains(SURETYPER)) {
-          PdfSureTyperParser.parseTypes(builder, pdfLines);
-        }
+        PdfSureTyperParser.parseTypes(builder, pdfLines);
         // FIXME currently not well supported
         // else if (pdfText.contains(QTYPER)) {
         // PdfQTyperParser.parseTypes(builder, pdfLines);

@@ -529,7 +529,10 @@ public class XmlScore6Parser {
             .stream()
             .map(ResultCombination::getAlleleCombination)
             .collect(Collectors.toList());
-
+    // If the lists are not equal size return the larger list
+    if (reference.size() != test.size()) {
+      return reference.size() < test.size();
+    }
     // Test if test has higher frequency alleles
     int diff =
         Double.compare(

@@ -184,7 +184,16 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder dpb(String dpbType) {
     dpbLocus = makeIfNull(dpbLocus);
-    dpbLocus.add(new HLAType(HLALocus.DPB1, dpbType));
+    // Shorten the allele designation to allele group and specific HLA protein. Further fields can
+    // not be entered into UNOS
+    if (!Strings.isNullOrEmpty(dpbType)) {
+      HLAType tmpDPB1 = new HLAType(HLALocus.DPB1, dpbType);
+      if (tmpDPB1.spec().size() > 2) {
+        tmpDPB1 =
+            new HLAType(HLALocus.DPB1, new int[] {tmpDPB1.spec().get(0), tmpDPB1.spec().get(1)});
+      }
+      dpbLocus.add(tmpDPB1);
+    }
     return this;
   }
 
@@ -560,7 +569,7 @@ public class ValidationModelBuilder {
       Multimap<Status, HLAType> typesByStatus =
           MultimapBuilder.enumKeys(Status.class).hashSetValues().build();
       Collection<HLAType> values = typesForStrand.get(strand);
-      values.forEach(t -> typesByStatus.put(CommonWellDocumented.getStatus(t), t));
+      values.forEach(t -> typesByStatus.put(CommonWellDocumented.getEquivStatus(t), t));
 
       Set<HLAType> cwdTypes = new HashSet<>();
       cwdTypes.addAll(typesByStatus.get(Status.COMMON));
@@ -635,7 +644,7 @@ public class ValidationModelBuilder {
         add(haplotype);
 
         for (HLAType allele : haplotype.getTypes()) {
-          switch (CommonWellDocumented.getStatus(allele)) {
+          switch (CommonWellDocumented.getEquivStatus(allele)) {
             case COMMON:
               // Add 1 points for common alleles
               cwdScore = cwdScore.add(BigDecimal.ONE);
