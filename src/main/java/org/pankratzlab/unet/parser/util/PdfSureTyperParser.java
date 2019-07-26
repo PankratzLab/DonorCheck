@@ -44,6 +44,7 @@ import com.google.common.collect.Multimap;
 
 /** Specific parsing logic for SureTyper PDFs */
 public class PdfSureTyperParser {
+  private static final String DRB345_REGEX = "DRB[345]";
   private static final String PAGE_END = "page";
   private static final String SUMMARY_START = "SUMMARY";
   private static final String SUMMARY_END = PAGE_END;
@@ -236,7 +237,7 @@ public class PdfSureTyperParser {
     for (; currentLine < lines.length && strandIndex < Strand.values().length; currentLine++) {
       line = lines[currentLine].trim();
 
-      String[] tokens = line.split("\\;|,|\\*|[a-mo-z]\\s");
+      String[] tokens = line.split("\\s+|;");
       int tokenIndex = 0;
 
       // Check if we are at a strand break
@@ -248,29 +249,38 @@ public class PdfSureTyperParser {
         // This indicates a new locus is starting
         break;
       }
-      if (locus.startsWith("DRB") && !line.contains(locus) && strandIndex >= 0) {
-        if (line.matches("DRB[345].*") || line.matches("^DRB[0-9]\\*[0-9]+")) {
-          // DRB345 are all in one section - we do not want to accidentally mix DRB loci. We also
-          // check the strand index because we do not want to prematurely end iteration.
-          break;
-        }
-      }
 
-      if (line.matches(locus + "[*w][0-9]+.*") || line.startsWith(locus + " " + locus)) {
-        // This is the first line of allele data. It is possible for it to appear without a
-        // GENOTYPE_HEADER if both alleles are on the same page.
+      // DRB345 are unfortunately handled differently than other haplotype sections, and are not
+      // consistent between SureTyper versions
+      boolean isDRB345Locus = locus.matches(DRB345_REGEX);
+
+      // Check if this is the first line of the allele data we're interested in, which will be
+      // marked by a token in the form of:
+      // A*01
+      // Cw10
+      // DRB3
+      if (line.matches(locus + "[*w][0-9]+.*") || (isDRB345Locus && tokens[0].equals(locus))) {
+
+        // Now we have to ensure we're parsing the target DRB345 locus
+        if (isDRB345Locus) {
+          if (!line.contains(locus)) {
+            // This is the wrong allele section - could be a DRB1 or other DRB345
+            continue;
+          } else if (!strandMap.isEmpty()) {
+            // We are starting our target locus here, but we have already parsed something (a
+            // different DRB345) to the strand map. So we want to start at the next strand index
+            strandIndex++;
+          }
+        }
+
         strandIndex++;
-
-        if (!strandMap.isEmpty() && locus.matches("DRB[345]") && line.contains(locus)) {
-          strandIndex++;
-          // Each DRB345 locus has to be parsed separately. It is possible the map could've been
-          // previously parsed, in which case we don't want to start from the first strand.
-        }
 
         // Skip the first token. The first token is the allele group pattern (e.g. B*02)
         tokenIndex++;
       }
 
+      // Here we start parsing lines to alleles, but only if we've confirmed the allele section has
+      // started strandIndex > 0)
       for (;
           tokenIndex < tokens.length && (strandIndex >= 0 && strandIndex < Strand.values().length);
           tokenIndex++) {
