@@ -137,6 +137,13 @@ public final class CommonWellDocumented {
    */
   public static Status getEquivStatus(HLAType type) {
     Status status = doGetStatus(type);
+    // if status is unknown attempt getting the status from a common group
+    // only checking g group because overlap cough cause failures
+    if (Status.UNKNOWN.equals(status)) {
+      HLAType equivType = AlleleGroups.getGGroup(type);
+      status = doGetStatus(equivType);
+    }
+
     return status;
   }
 
