@@ -1,10 +1,11 @@
 package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.io.File;
-import java.io.FileInputStream;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.stream.Stream;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
@@ -141,17 +142,12 @@ public class XMLDonorParserTest {
   private ValidationModel createModel(String input) {
     ValidationModelBuilder builder = new ValidationModelBuilder();
     builder.source(input);
-    try {
-      File file = new File(getClass().getClassLoader().getResource(input).getFile());
-      try (FileInputStream xmlStream = new FileInputStream(file)) {
-        Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
-        XmlDonorNetParser.buildModelFromXML(builder, parsed);
-      } catch (IOException e) {
-        throw new IllegalStateException("Invalid XML file: " + file);
-      }
-    } catch (Exception e) {
-      System.err.println("Missing resource file:  " + input);
-      throw new RuntimeException(e);
+    try (InputStream xmlStream = getClass().getClassLoader().getResourceAsStream(input)) {
+      Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
+      XmlDonorNetParser.buildModelFromXML(builder, parsed);
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw new IllegalStateException("Invalid XML file: " + input);
     }
     ValidationModel model = null;
     model = builder.build();

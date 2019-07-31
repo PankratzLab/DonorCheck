@@ -2,7 +2,6 @@ package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.stream.Stream;
 
@@ -217,21 +216,15 @@ public class PdfSureTyperParserTest {
   private ValidationModel createModel(String input) {
     ValidationModelBuilder builder = new ValidationModelBuilder();
     builder.source(input);
-    try {
-      File file = new File(getClass().getClassLoader().getResource(input).getFile());
-      try (PDDocument pdf = PDDocument.load(file)) {
-        PDFTextStripper tStripper = new PDFTextStripper();
-        tStripper.setSortByPosition(true);
-        // Extract all text from the PDF and split it into lines
-        String pdfText = tStripper.getText(pdf);
-        String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
-        PdfSureTyperParser.parseTypes(builder, pdfLines);
-      } catch (IOException e) {
-        e.printStackTrace();
-        throw new RuntimeException(e);
-      }
-    } catch (Exception e) {
-      System.err.println("Error:  " + e);
+    try (PDDocument pdf = PDDocument.load(getClass().getClassLoader().getResourceAsStream(input))) {
+      PDFTextStripper tStripper = new PDFTextStripper();
+      tStripper.setSortByPosition(true);
+      // Extract all text from the PDF and split it into lines
+      String pdfText = tStripper.getText(pdf);
+      String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
+      PdfSureTyperParser.parseTypes(builder, pdfLines);
+    } catch (IOException e) {
+      e.printStackTrace();
       throw new RuntimeException(e);
     }
     ValidationModel model = null;

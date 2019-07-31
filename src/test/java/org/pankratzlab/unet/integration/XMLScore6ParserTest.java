@@ -1,10 +1,11 @@
 package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.io.File;
-import java.io.FileInputStream;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.stream.Stream;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
@@ -76,21 +77,21 @@ public class XMLScore6ParserTest {
             new SeroType("C", 15),
             new SeroType("C", 16)),
         Arguments.of(
-                Test_File5,
-                new SeroType("A", 2),
-                new SeroType("A", 3),
-                new SeroType("B", 44),
-                new SeroType("B", 62),
-                new SeroType("C", 7),
-                new SeroType("C", 9)),
+            Test_File5,
+            new SeroType("A", 2),
+            new SeroType("A", 3),
+            new SeroType("B", 44),
+            new SeroType("B", 62),
+            new SeroType("C", 7),
+            new SeroType("C", 9)),
         Arguments.of(
-                Test_File6,
-                new SeroType("A", 2),
-                new SeroType("A", 3),
-                new SeroType("B", 57),
-                new SeroType("B", 65),
-                new SeroType("C", 6),
-                new SeroType("C", 8)));
+            Test_File6,
+            new SeroType("A", 2),
+            new SeroType("A", 3),
+            new SeroType("B", 57),
+            new SeroType("B", 65),
+            new SeroType("C", 6),
+            new SeroType("C", 8)));
   }
 
   @DisplayName("Allele A, B and C parsing")
@@ -138,9 +139,8 @@ public class XMLScore6ParserTest {
         Arguments.of(
             Test_File4, null, null, null, null, new HLAType("DRB4", 1), new HLAType("DRB4", 1)),
         Arguments.of(
-                Test_File5, null, null, new HLAType("DRB3",2), new HLAType("DRB3",2), null, null),
-        Arguments.of(
-                Test_File6, null, null, new HLAType("DRB3",3), null, null, null));
+            Test_File5, null, null, new HLAType("DRB3", 2), new HLAType("DRB3", 2), null, null),
+        Arguments.of(Test_File6, null, null, new HLAType("DRB3", 3), null, null, null));
   }
 
   @DisplayName("DRB345 parsing")
@@ -166,17 +166,12 @@ public class XMLScore6ParserTest {
   private ValidationModel createModel(String input) {
     ValidationModelBuilder builder = new ValidationModelBuilder();
     builder.source(input);
-    try {
-      File file = new File(getClass().getClassLoader().getResource(input).getFile());
-      try (FileInputStream xmlStream = new FileInputStream(file)) {
-        Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
-        XmlScore6Parser.buildModelFromXML(builder, parsed);
-      } catch (IOException e) {
-        throw new IllegalStateException("Invalid XML file: " + file);
-      }
-    } catch (Exception e) {
-      System.err.println("Missing resource file:  " + input);
-      throw new RuntimeException(e);
+    try (InputStream xmlStream = getClass().getClassLoader().getResourceAsStream(input)) {
+      Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
+      XmlScore6Parser.buildModelFromXML(builder, parsed);
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw new IllegalStateException("Invalid XML file: " + input);
     }
     ValidationModel model = null;
     model = builder.build();
