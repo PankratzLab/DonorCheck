@@ -1,10 +1,13 @@
 package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.stream.Stream;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
@@ -12,18 +15,23 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.parser.util.XmlSureTyperParser;
 
 public class XMLSureTyperParserTest {
+  // test files located in test/resources
   private static final String Test_File1 = "UnitTestXMLSureTyper.xml";
   private static final String Test_File2 = "UnitTestXMLSureTyper_2.xml";
   private static final String Test_File3 = "UnitTestXMLSureTyper_3.xml";
   private static final String Test_File4 = "UnitTestXMLSureTyper_4.xml";
 
+  // create parameters to be used as CSV source for checking Donor ID parsing
   @DisplayName("Donor ID parsing")
   @ParameterizedTest(name = "{0}")
   @CsvSource({
@@ -32,6 +40,10 @@ public class XMLSureTyperParserTest {
     Test_File3 + ", AFK3166",
     Test_File4 + ", AFLG065"
   })
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param donorId expected Donor ID for each respective donor file
+   */
   public void twoDRB3_XMLSureTyperParserTest_getDonorId(String fileName, String donorId) {
     assertEquals(donorId, createModel(fileName).getDonorId());
   }
@@ -73,6 +85,15 @@ public class XMLSureTyperParserTest {
             new SeroType("C", 8)));
   }
 
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param A1 first expected laboratory assigned serotype for HLA-A
+   * @param A2 second expected laboratory assigned serotype for HLA-A
+   * @param B1 first expected laboratory assigned serotype for HLA-B
+   * @param B2 second expected laboratory assigned serotype for HLA-B
+   * @param C1 first expected laboratory assigned serotype for HLA-C
+   * @param C2 second expected laboratory assigned serotype for HLA-C
+   */
   @DisplayName("Allele A, B and C parsing")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetABC")
@@ -93,6 +114,7 @@ public class XMLSureTyperParserTest {
     assertEquals(C2, model.getC2());
   }
 
+  // create parameters to be used as CSV source for checking Bw4 and Bw6 parsing
   @DisplayName("Bw4 and Bw6 parsing")
   @ParameterizedTest(name = "{0}")
   @CsvSource({
@@ -101,6 +123,11 @@ public class XMLSureTyperParserTest {
     Test_File3 + ", Negative, Positive",
     Test_File4 + ", Positive, Positive"
   })
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param Bw4Result expected Bw4 result(Positive or Negative)
+   * @param Bw6Result expected Bw6 result(Positive or Negative)
+   */
   public void XMLSureTyperParserTest_isBw(String fileName, String Bw4Result, String Bw6Result) {
     ValidationModel model = createModel(fileName);
     assertEquals(Bw4Result, model.isBw4());
@@ -117,6 +144,15 @@ public class XMLSureTyperParserTest {
         Arguments.of(Test_File4, null, null, null, null, new HLAType("DRB4", 1), null));
   }
 
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param DR51_1 first expected DRB5 results
+   * @param DR51_2 second expected DRB5 results
+   * @param DR52_1 first expected DRB3 results
+   * @param DR52_2 second expected DRB3 results
+   * @param DR53_1 first expected DRB4 results
+   * @param DR53_2 second expected DRB4 results
+   */
   @DisplayName("DRB345 parsing")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetDRB")
@@ -136,7 +172,186 @@ public class XMLSureTyperParserTest {
     assertEquals(DR53_1, model.getDR53_1());
     assertEquals(DR53_2, model.getDR53_2());
   }
+  // create the parameters to be used as a method source for the haplotype allele parser to run
+  // through
+  private static Stream<Arguments> testHaplotype() {
+    return Stream.of(
+        Arguments.of(
+            Test_File1,
+            "\n\tCAU\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*57:01:01, C*06:02:01]]\n\tAFA\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*57:01:01, C*06:02:01]]\n\tAPI\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*57:01:01, C*06:02:01]]\n\tHIS\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*57:01:01, C*06:02:01]]\n\tNAM\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*57:01:01, C*06:02:01]]\nDR-DQ Haplotype\n\tCAU\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*03:03:02]]\n\tHaplotype [types=[DRB1*13:02:01, DRB3*03:01:01, DQB1*06:04:01]]\n\tAFA\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*03:03:02]]\n\tHaplotype [types=[DRB1*13:02:01, DRB3*03:01:01, DQB1*06:09:01]]\n\tAPI\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*03:03:02]]\n\tHaplotype [types=[DRB1*13:02:01, DRB3*03:01:01, DQB1*06:04:01]]\n\tHIS\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*03:03:02]]\n\tHaplotype [types=[DRB1*13:02:01, DRB3*03:01:01, DQB1*06:04:01]]\n\tNAM\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*03:03:02]]\n\tHaplotype [types=[DRB1*13:02:01, DRB3*03:01:01, DQB1*06:04:01]]"),
+        Arguments.of(
+            Test_File2,
+            "\n\tCAU\n\tHaplotype [types=[B*48:01:01, C*08:03:01]]\n\tHaplotype [types=[B*58:02:01, C*06:02:01]]\n\tAFA\n\tHaplotype [types=[B*48:01:01, C*08:01:01]]\n\tHaplotype [types=[B*58:02:01, C*06:02:01]]\n\tAPI\n\tHaplotype [types=[B*48:01:01, C*08:01:01]]\n\tHaplotype [types=[B*58:02:01, C*06:02:01]]\n\tHIS\n\tHaplotype [types=[B*48:01:01, C*08:01:01]]\n\tHaplotype [types=[B*58:02:01, C*06:02:01]]\n\tNAM\n\tHaplotype [types=[B*48:01:01, C*08:01:01]]\n\tHaplotype [types=[B*58:02:01, C*06:02:01]]\nDR-DQ Haplotype\n\tCAU\n\tHaplotype [types=[DRB1*03:01:01, DRB3*02:02:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*04:01:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tAFA\n\tHaplotype [types=[DRB1*03:01:01, DRB3*02:02:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*04:05:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tAPI\n\tHaplotype [types=[DRB1*03:01:01, DRB3*02:02:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*04:03:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHIS\n\tHaplotype [types=[DRB1*03:01:01, DRB3*02:02:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*04:07:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tNAM\n\tHaplotype [types=[DRB1*03:01:01, DRB3*02:02:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*04:04:01, DRB4*01:01:01, DQB1*03:02:01]]"),
+        Arguments.of(
+            Test_File3,
+            "\n\tCAU\n\tHaplotype [types=[B*27:08, C*02:10:01]]\n\tHaplotype [types=[B*35:01:01, C*04:01:01]]\n\tAFA\n\tHaplotype [types=[B*27:08, C*02:10:01]]\n\tHaplotype [types=[B*35:01:01, C*04:01:01]]\n\tAPI\n\tHaplotype [types=[B*27:08, C*02:10:01]]\n\tHaplotype [types=[B*35:01:01, C*04:01:01]]\n\tHIS\n\tHaplotype [types=[B*27:08, C*02:10:01]]\n\tHaplotype [types=[B*35:01:01, C*04:01:01]]\n\tNAM\n\tHaplotype [types=[B*27:08, C*02:10:01]]\n\tHaplotype [types=[B*35:01:01, C*04:01:01]]\nDR-DQ Haplotype\n\tCAU\n\tHaplotype [types=[DRB1*04:01:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*02:01:01]]\n\tAFA\n\tHaplotype [types=[DRB1*04:05:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*02:01:01]]\n\tAPI\n\tHaplotype [types=[DRB1*04:03:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*02:01:01]]\n\tHIS\n\tHaplotype [types=[DRB1*04:07:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*02:01:01]]\n\tNAM\n\tHaplotype [types=[DRB1*04:04:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*07:01:01, DRB4*01:01:01, DQB1*02:01:01]]"),
+        Arguments.of(
+            Test_File4,
+            "\n\tCAU\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*53:01:01, C*04:01:01]]\n\tAFA\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*53:01:01, C*04:01:01]]\n\tAPI\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*53:01:01, C*04:01:01]]\n\tHIS\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*53:01:01, C*04:01:01]]\n\tNAM\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*53:01:01, C*04:01:01]]\nDR-DQ Haplotype\n\tCAU\n\tHaplotype [types=[DRB1*01:01:01, DRB3*00:00N, DQB1*05:01:01]]\n\tHaplotype [types=[DRB1*04:01:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tAFA\n\tHaplotype [types=[DRB1*01:02:01, DRB3*00:00N, DQB1*05:01:01]]\n\tHaplotype [types=[DRB1*04:05:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tAPI\n\tHaplotype [types=[DRB1*01:01:01, DRB3*00:00N, DQB1*05:01:01]]\n\tHaplotype [types=[DRB1*04:03:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHIS\n\tHaplotype [types=[DRB1*01:01:01, DRB3*00:00N, DQB1*05:01:01]]\n\tHaplotype [types=[DRB1*04:07:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tNAM\n\tHaplotype [types=[DRB1*01:01:01, DRB3*00:00N, DQB1*05:01:01]]\n\tHaplotype [types=[DRB1*04:04:01, DRB4*01:01:01, DQB1*03:02:01]]"));
+  }
 
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param expectedHaplotype string expected as the output of the string version of {@link
+   *     ValidationModel} when split to just be haplotype section
+   */
+  @DisplayName("Haplotype Alleles parsing")
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("testHaplotype")
+  public void XMLSureTyperParserTest_haplotype(String fileName, String expectedHaplotype) {
+    // get test/resource file path for frequency files
+    String CBFilePath = getClass().getClassLoader().getResource("C_B.xls").getFile();
+    String DRDQFilePath =
+        getClass().getClassLoader().getResource("DRB3-4-5_DRB1_DQB1.xls").getFile();
+    // set {@link HaplotypeFrequencies} to the frequencies file path
+    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, CBFilePath);
+    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, DRDQFilePath);
+    // initialize frequency tables
+    HaplotypeFrequencies.doInitialization();
+    ValidationModel model = createModel(fileName);
+    if (HaplotypeFrequencies.successfullyInitialized()) {
+      assertEquals(expectedHaplotype, model.toString().split("B-C Haplotype")[1]);
+    } else {
+      System.err.println("Error: Frequency files not loaded in");
+    }
+  }
+
+  // create the parameters to be used as a method source for the haplotype BC frequency test to run
+  // through
+  // five races, two strands per race and for each race the lesser value must go first in the array
+  private static Stream<Arguments> testBCHaplotypeFrequency() {
+    double[] freq1 = {
+      .02719, .03371, .00664, 0.02134, 0.00155, 0.03078, .01043, 0.04161, 0.0207, 0.02662
+    };
+    double[] freq2 = {
+      0.00013, .00042, 0.00034, 0.04008, 0.00007, 0.0123, 0.00365, 0.01583, 0.00217, 0.01307
+    };
+    double[] freq3 = {0, .05588, 0, .05482, 0, .03018, 0, .06563, 0, .08644};
+    double[] freq4 = {.00363, .02719, .02134, .1079, .00079, .00155, .0153, .04161, .00804, .0207};
+
+    return Stream.of(
+        Arguments.of(Test_File1, createBigDecimalRoundedFrequencyArray(freq1)),
+        Arguments.of(Test_File2, createBigDecimalRoundedFrequencyArray(freq2)),
+        Arguments.of(Test_File3, createBigDecimalRoundedFrequencyArray(freq3)),
+        Arguments.of(Test_File4, createBigDecimalRoundedFrequencyArray(freq4)));
+  }
+
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param expectedBCFrequencyArray an array of BigDecimals for expected frequencies in CAU, AFA,
+   *     API, HIS, NAM order
+   */
+  @SuppressWarnings("restriction")
+  @DisplayName("Haplotype BC Frequency parsing")
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("testBCHaplotypeFrequency")
+  public void XMLSureTyperParserTest_BCHaplotypeFrequency(
+      String fileName, BigDecimal[] expectedBCFrequencyArray) {
+    String CBFilePath = getClass().getClassLoader().getResource("C_B.xls").getFile();
+    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, CBFilePath);
+    if (HaplotypeFrequencies.successfullyInitialized()) {
+      ValidationModel model = createModel(fileName);
+      ValidationTable table = new ValidationTable();
+      table.setFirstModel(model);
+      table.setSecondModel(model);
+      // iterate through haplotype frequency data
+      for (int i = 0; i < 10; i = i + 2) {
+        BigDecimal haplotypeFrequencyStrandOne =
+            table.getBCHaplotypeRows().get(i).frequencyProperty().getValue().stripTrailingZeros();
+        BigDecimal haplotypeFrequencyStrandTwo =
+            table
+                .getBCHaplotypeRows()
+                .get(i + 1)
+                .frequencyProperty()
+                .getValue()
+                .stripTrailingZeros();
+        // BCHaplotypeRows are sorted by race, but individual haplotypes may be in either order
+        if (haplotypeFrequencyStrandOne.compareTo(haplotypeFrequencyStrandTwo) < 0) {
+          assertEquals(expectedBCFrequencyArray[i], haplotypeFrequencyStrandOne);
+          assertEquals(expectedBCFrequencyArray[i + 1], haplotypeFrequencyStrandTwo);
+        } else {
+          assertEquals(expectedBCFrequencyArray[i], haplotypeFrequencyStrandTwo);
+          assertEquals(expectedBCFrequencyArray[i + 1], haplotypeFrequencyStrandOne);
+        }
+      }
+    } else {
+      System.err.println("Error: Frequency files not loaded in.");
+    }
+  }
+
+  // create the parameters to be used as a method source for the haplotype DRDQ frequency test to
+  // run through
+  // five races, two strands per race and for each race the lesser value must go first in the array
+  private static Stream<Arguments> testDRDQHaplotypeFrequency() {
+    double[] freq1 = {
+      0.03364, 0.03741, 0.00295, 0.03757, 0.01847, 0.02507, 0.01206, 0.02784, 0.02339, 0.02771
+    };
+    double[] freq2 = {
+      0.01961, 0.04557, 0.01512, 0.05172, 0.03671, 0.05492, 0.03637, 0.06337, 0.01776, 0.04735
+    };
+    double[] freq3 = {
+      0.04557, 0.09595, 0.01512, 0.09746, 0.03671, 0.07397, 0.06337, 0.09536, 0.04735, 0.07928
+    };
+    double[] freq4 = {
+      0.04557, 0.08444, 0.01512, 0.04014, 0.02642, 0.03671, 0.04482, 0.06337, 0.04735, 0.06747
+    };
+
+    return Stream.of(
+        Arguments.of(Test_File1, createBigDecimalRoundedFrequencyArray(freq1)),
+        Arguments.of(Test_File2, createBigDecimalRoundedFrequencyArray(freq2)),
+        Arguments.of(Test_File3, createBigDecimalRoundedFrequencyArray(freq3)),
+        Arguments.of(Test_File4, createBigDecimalRoundedFrequencyArray(freq4)));
+  }
+
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param expectedDRDQFrequencyArray an array of BigDecimals for expected frequencies in CAU, AFA,
+   *     API, HIS, NAM order
+   */
+  @SuppressWarnings("restriction")
+  @DisplayName("Haplotype DRDQ Frequency parsing")
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("testDRDQHaplotypeFrequency")
+  public void XMLSureTyperParserTest_DRDQHaplotypeFrequency(
+      String fileName, BigDecimal[] expectedDRDQFrequencyArray) {
+    String DRDQFilePath =
+        getClass().getClassLoader().getResource("DRB3-4-5_DRB1_DQB1.xls").getFile();
+    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, DRDQFilePath);
+    HaplotypeFrequencies.doInitialization();
+    if (HaplotypeFrequencies.successfullyInitialized()) {
+      ValidationModel model = createModel(fileName);
+      ValidationTable table = new ValidationTable();
+      table.setFirstModel(model);
+      table.setSecondModel(model);
+      // iterate through haplotype frequency data
+      for (int i = 0; i < 10; i = i + 2) {
+        BigDecimal haplotypeFrequencyStrandOne =
+            table.getDRDQHaplotypeRows().get(i).frequencyProperty().getValue().stripTrailingZeros();
+        BigDecimal haplotypeFrequencyStrandTwo =
+            table
+                .getDRDQHaplotypeRows()
+                .get(i + 1)
+                .frequencyProperty()
+                .getValue()
+                .stripTrailingZeros();
+        // DRDQHaplotypeRows are sorted by race, but individual haplotypes may be in either order
+        if (haplotypeFrequencyStrandOne.compareTo(haplotypeFrequencyStrandTwo) < 0) {
+          assertEquals(expectedDRDQFrequencyArray[i], haplotypeFrequencyStrandOne);
+          assertEquals(expectedDRDQFrequencyArray[i + 1], haplotypeFrequencyStrandTwo);
+        } else {
+          assertEquals(expectedDRDQFrequencyArray[i], haplotypeFrequencyStrandTwo);
+          assertEquals(expectedDRDQFrequencyArray[i + 1], haplotypeFrequencyStrandOne);
+        }
+      }
+    } else {
+      System.err.println("Error: Frequency files not loaded in.");
+    }
+  }
+
+  /**
+   * @param input String of the file name in the resources directory being used to create the model
+   * @return {@link ValidationModel}
+   */
   private ValidationModel createModel(String input) {
     ValidationModelBuilder builder = new ValidationModelBuilder();
     builder.source(input);
@@ -152,8 +367,24 @@ public class XMLSureTyperParserTest {
       System.err.println("Missing resource file:  " + input);
       throw new RuntimeException(e);
     }
-    ValidationModel model = null;
-    model = builder.build();
+    ValidationModel model = builder.build();
     return model;
+  }
+
+  /**
+   * @param frequencies an array of doubles for expected frequency results
+   * @return an array of BigDecimals rounded in the same fashion as the frequency table output
+   */
+  private static BigDecimal[] createBigDecimalRoundedFrequencyArray(double[] frequencies) {
+    BigDecimal[] returnArray = new BigDecimal[10];
+    for (int i = 0; i < 10; i++) {
+      returnArray[i] =
+          new BigDecimal(frequencies[i])
+              .setScale(
+                  HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
+                  HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE)
+              .stripTrailingZeros();
+    }
+    return returnArray;
   }
 }
