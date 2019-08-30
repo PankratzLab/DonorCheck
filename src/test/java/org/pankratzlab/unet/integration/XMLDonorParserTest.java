@@ -20,11 +20,13 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.XmlDonorNetParser;
 
 public class XMLDonorParserTest {
+  // test files located in test/resources
   private static final String Test_File1 = "UnitTestXMLDonorNet.xml";
   private static final String Test_File2 = "UnitTestXMLDonorNet_2.xml";
   private static final String Test_File3 = "UnitTestXMLDonorNet_3.xml";
   private static final String Test_File4 = "UnitTestXMLDonorNet_4.xml";
 
+  // create parameters to be used as CSV source for checking Donor ID parsing
   @DisplayName("Donor ID parsing")
   @ParameterizedTest(name = "{0}")
   @CsvSource({
@@ -33,6 +35,10 @@ public class XMLDonorParserTest {
     Test_File3 + ", AFK3387",
     Test_File4 + ", AFLK097"
   })
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param donorId expected Donor ID for each respective donor file
+   */
   public void twoDRB3_XMLDonorParserTest_getDonorId(String fileName, String donorId) {
     assertEquals(donorId, createModel(fileName).getDonorId());
   }
@@ -73,7 +79,15 @@ public class XMLDonorParserTest {
             new SeroType("C", 15),
             new SeroType("C", 16)));
   }
-
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param A1 first expected laboratory assigned serotype for HLA-A
+   * @param A2 second expected laboratory assigned serotype for HLA-A
+   * @param B1 first expected laboratory assigned serotype for HLA-B
+   * @param B2 second expected laboratory assigned serotype for HLA-B
+   * @param C1 first expected laboratory assigned serotype for HLA-C
+   * @param C2 second expected laboratory assigned serotype for HLA-C
+   */
   @DisplayName("Allele A, B and C parsing")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetABC")
@@ -94,6 +108,7 @@ public class XMLDonorParserTest {
     assertEquals(C2, model.getC2());
   }
 
+  // create parameters to be used as CSV source for checking Bw4 and Bw6 parsing
   @DisplayName("Bw4 and Bw6 parsing")
   @ParameterizedTest(name = "{0}")
   @CsvSource({
@@ -102,6 +117,11 @@ public class XMLDonorParserTest {
     Test_File3 + ", Positive, Negative",
     Test_File4 + ", Positive, Negative"
   })
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param Bw4Result expected Bw4 result(Positive or Negative)
+   * @param Bw6Result expected Bw6 result(Positive or Negative)
+   */
   public void XMLDonorParserTest_isBw(String fileName, String Bw4Result, String Bw6Result) {
     ValidationModel model = createModel(fileName);
     assertEquals(Bw4Result, model.isBw4());
@@ -118,7 +138,15 @@ public class XMLDonorParserTest {
         Arguments.of(
             Test_File4, null, null, null, null, new HLAType("DRB4", 1), new HLAType("DRB4", 1)));
   }
-
+  /**
+   * @param fileName String file name for test file being passed to createModel
+   * @param DR51_1 first expected DRB5 results
+   * @param DR51_2 second expected DRB5 results
+   * @param DR52_1 first expected DRB3 results
+   * @param DR52_2 second expected DRB3 results
+   * @param DR53_1 first expected DRB4 results
+   * @param DR53_2 second expected DRB4 results
+   */
   @DisplayName("DRB345 parsing")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetDRB")
@@ -138,7 +166,10 @@ public class XMLDonorParserTest {
     assertEquals(DR53_1, model.getDR53_1());
     assertEquals(DR53_2, model.getDR53_2());
   }
-
+  /**
+   * @param input String of the file name in the resources directory being used to create the model
+   * @return {@link ValidationModel}
+   */
   private ValidationModel createModel(String input) {
     ValidationModelBuilder builder = new ValidationModelBuilder();
     builder.source(input);
