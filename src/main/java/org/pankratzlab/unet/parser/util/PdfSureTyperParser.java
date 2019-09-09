@@ -47,14 +47,18 @@ public class PdfSureTyperParser {
   private static final String DRB345_REGEX = "DRB[345]";
   private static final String PAGE_END = "page";
   private static final String SUMMARY_START = "SUMMARY";
-  private static final String SUMMARY_END = PAGE_END;
+  private static final String SUMMARY_END = "ALLELES";
   private static final String HLA_PREFIX = "HLA";
   private static final String WHITESPACE_REGEX = "\\s+";
 
   private static final Set<String> TYPING_STOP_TOKENS =
       ImmutableSet.of(PAGE_END, "INTERNAL", "REVIEW", "NOTES");
+  // Set of strings to ensure typeAssignment only gets filled with appropriate values
+  private static final Set<String> HLA_TYPE_TOKENS =
+      ImmutableSet.of("A", "B", "C", "DRB", "DQA", "DQB", "Bw", "DPA", "DPB");
 
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
+  private static final String SESSION_HISTORY_TOKEN = "SESSION HISTORY";
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
   private static final int DONOR_ID_INDEX = 2;
   private static final String PATIENT_ID_TOKEN = "Patient ID:";
@@ -99,7 +103,11 @@ public class PdfSureTyperParser {
     // creating a stream of tokens.
     for (int currentLine = 0; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine].trim();
-      if (line.startsWith(PATIENT_ID_TOKEN)) {
+      // If we have parsed to session history we need to break because it contains repeats of key
+      // words
+      if (line.equals(SESSION_HISTORY_TOKEN)) {
+        break;
+      } else if (line.startsWith(PATIENT_ID_TOKEN)) {
         // The patient ID value is at a particular position in the line starting with this token
         builder.donorId(line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX]);
       } else if (line.trim().equals(SUMMARY_START)) {
@@ -318,14 +326,18 @@ public class PdfSureTyperParser {
    */
   private static int parseAssignment(String[] lines, StringJoiner typeAssignment, int currentLine) {
     String line = null;
+    // Flag to allow for if Laboratory Assignment and results are on separate pages.
+    boolean parsed = false;
     // Read until we hit the end of the typing
     for (; currentLine < lines.length; currentLine++) {
       line = lines[currentLine].trim();
-      if (containsFlag(TYPING_STOP_TOKENS, line)) {
+      if (containsFlag(TYPING_STOP_TOKENS, line) && parsed) {
         break;
+      } else if (containsFlag(HLA_TYPE_TOKENS, line)) {
+        // Building the type assignment lines
+        typeAssignment.add(line);
+        parsed = true;
       }
-      // Building the type assignment lines
-      typeAssignment.add(line);
     }
     return --currentLine;
   }
