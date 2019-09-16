@@ -1,10 +1,8 @@
 package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.io.IOException;
 import java.util.stream.Stream;
-
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +26,7 @@ public class PdfSureTyperParserTest {
   private static final String Test_File7 = "UnitTestPDFTyper_7.pdf";
   private static final String Test_File8 = "UnitTestPDFTyper_8.pdf";
   private static final String Test_File9 = "UnitTestPDFTyper_9.pdf";
-  // private static final String Test_File10 = "UnitTestPDFTyper_10.pdf";
+  private static final String Test_File10 = "UnitTestPDFTyper_X.pdf";
 
   @DisplayName("Donor ID parsing")
   @ParameterizedTest(name = "{0}")
@@ -42,7 +40,7 @@ public class PdfSureTyperParserTest {
     Test_File7 + ", AGDX065",
     Test_File8 + ", AGEA128",
     Test_File9 + ", SABR",
-    // Test_File10 + ", Patient"
+    Test_File10 + ", AGID359"
   })
   public void twoDRB3_PdfSureTyperTest_getDonorId(String fileName, String donorId) {
     assertEquals(donorId, createModel(fileName).getDonorId());
@@ -122,15 +120,15 @@ public class PdfSureTyperParserTest {
             new SeroType("B", 45),
             new SeroType("B", 65),
             new SeroType("C", 6),
-            new SeroType("C", 8)));
-    //        Arguments.of(
-    //            Test_File10,
-    //            new SeroType("A", 3),
-    //            null,
-    //            new SeroType("B", 57),
-    //            new SeroType("B", 60),
-    //            new SeroType("C", 6),
-    //            new SeroType("C", 10)));
+            new SeroType("C", 8)),
+        Arguments.of(
+            Test_File10,
+            new SeroType("A", 1),
+            new SeroType("A", 31),
+            new SeroType("B", 8),
+            new SeroType("B", 60),
+            new SeroType("C", 7),
+            new SeroType("C", 10)));
   }
 
   @DisplayName("Allele A, B and C parsing")
@@ -164,8 +162,8 @@ public class PdfSureTyperParserTest {
     Test_File6 + ", Positive, Negative",
     Test_File7 + ", Negative, Positive",
     Test_File8 + ", Positive, Positive",
-    Test_File9 + ", Negative, Positive"
-    //    Test_File10 + ", Positive, Positive"
+    Test_File9 + ", Negative, Positive",
+    Test_File10 + ", Negative, Positive"
   })
   public void PdfSureTyperTest_isBw(String fileName, String Bw4Result, String Bw6Result) {
     ValidationModel model = createModel(fileName);
@@ -189,8 +187,9 @@ public class PdfSureTyperParserTest {
         Arguments.of(
             Test_File8, null, null, new HLAType("DRB3", 2), null, new HLAType("DRB4", 1), null),
         Arguments.of(
-            Test_File9, null, null, new HLAType("DRB3", 2), null, new HLAType("DRB4", 1), null));
-    //        Arguments.of(Test_File10, null, null, null, null, new HLAType("DRB4", 1), null));
+            Test_File9, null, null, new HLAType("DRB3", 2), null, new HLAType("DRB4", 1), null),
+        Arguments.of(
+            Test_File10, null, null, new HLAType("DRB3", 2), null, new HLAType("DRB4", 1), null));
   }
 
   @DisplayName("DRB345 parsing")
