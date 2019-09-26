@@ -1,12 +1,10 @@
 package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.stream.Stream;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
@@ -235,6 +233,8 @@ public class XMLScore6ParserTest {
     HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, DRDQFilePath);
     HaplotypeFrequencies.doInitialization();
     ValidationModel model = createModel(fileName);
+    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, "hla.nmdp.haplotype.bc");
+    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, "hla.nmdp.haplotype.drdq");
     if (HaplotypeFrequencies.successfullyInitialized()) {
       assertEquals(expectedHaplotype, model.toString().split("B-C Haplotype")[1]);
     } else {
@@ -303,6 +303,7 @@ public class XMLScore6ParserTest {
                 .frequencyProperty()
                 .getValue()
                 .stripTrailingZeros();
+        HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, "hla.nmdp.haplotype.bc");
         // BCHaplotypeRows are sorted by race, but individual haplotypes may be in either order
         if (haplotypeFrequencyStrandOne.compareTo(haplotypeFrequencyStrandTwo) < 0) {
           assertEquals(expectedBCFrequencyArray[i], haplotypeFrequencyStrandOne);
@@ -378,6 +379,8 @@ public class XMLScore6ParserTest {
                 .frequencyProperty()
                 .getValue()
                 .stripTrailingZeros();
+        HLAProperties.get()
+            .setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, "hla.nmdp.haplotype.drdq");
         // DRDQHaplotypeRows are sorted by race, but individual haplotypes may be in either order
         if (haplotypeFrequencyStrandOne.compareTo(haplotypeFrequencyStrandTwo) < 0) {
           assertEquals(expectedDRDQFrequencyArray[i], haplotypeFrequencyStrandOne);

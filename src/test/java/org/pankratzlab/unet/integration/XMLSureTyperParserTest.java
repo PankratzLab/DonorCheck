@@ -1,13 +1,11 @@
 package org.pankratzlab.unet.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.stream.Stream;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
@@ -209,6 +207,8 @@ public class XMLSureTyperParserTest {
     // initialize frequency tables
     HaplotypeFrequencies.doInitialization();
     ValidationModel model = createModel(fileName);
+    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, "hla.nmdp.haplotype.bc");
+    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, "hla.nmdp.haplotype.drdq");
     if (HaplotypeFrequencies.successfullyInitialized()) {
       assertEquals(expectedHaplotype, model.toString().split("B-C Haplotype")[1]);
     } else {
@@ -245,10 +245,11 @@ public class XMLSureTyperParserTest {
   @DisplayName("Haplotype BC Frequency parsing")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testBCHaplotypeFrequency")
-  public void XMLSureTyperParserTest_BCHaplotypeFrequency(
+  public void XMLScore6ParserTest_BCHaplotypeFrequency(
       String fileName, BigDecimal[] expectedBCFrequencyArray) {
     String CBFilePath = getClass().getClassLoader().getResource("C_B.xls").getFile();
     HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, CBFilePath);
+    HaplotypeFrequencies.doInitialization();
     if (HaplotypeFrequencies.successfullyInitialized()) {
       ValidationModel model = createModel(fileName);
       ValidationTable table = new ValidationTable();
@@ -265,6 +266,7 @@ public class XMLSureTyperParserTest {
                 .frequencyProperty()
                 .getValue()
                 .stripTrailingZeros();
+        HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, "hla.nmdp.haplotype.bc");
         // BCHaplotypeRows are sorted by race, but individual haplotypes may be in either order
         if (haplotypeFrequencyStrandOne.compareTo(haplotypeFrequencyStrandTwo) < 0) {
           assertEquals(expectedBCFrequencyArray[i], haplotypeFrequencyStrandOne);
@@ -334,6 +336,7 @@ public class XMLSureTyperParserTest {
                 .frequencyProperty()
                 .getValue()
                 .stripTrailingZeros();
+        HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, "hla.nmdp.haplotype.bc");
         // DRDQHaplotypeRows are sorted by race, but individual haplotypes may be in either order
         if (haplotypeFrequencyStrandOne.compareTo(haplotypeFrequencyStrandTwo) < 0) {
           assertEquals(expectedDRDQFrequencyArray[i], haplotypeFrequencyStrandOne);
