@@ -37,14 +37,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
-
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -80,6 +78,17 @@ public final class HaplotypeFrequencies {
   }
 
   /**
+   * Used to test frequency table parsing
+   *
+   * @param bcTablePath file path for BC haplotype frequency file
+   * @param drdqTablePath file path for DRDQ haplotype frequency file
+   * @return true if at least one haplotype is read successfully
+   */
+  public static boolean doInitialization(String bcTablePath, String drdqTablePath) {
+    return completeDoInitialization(bcTablePath, drdqTablePath);
+  }
+
+  /**
    * Update the haplotype frequency tables.
    *
    * <p>NOTE: This should always be run off the JFX application thread
@@ -87,10 +96,21 @@ public final class HaplotypeFrequencies {
    * @return true if at least one haplotype is read successfully.
    */
   public static boolean doInitialization() {
+    String bcTablePath = HLAProperties.get().getProperty(NMDP_CB_PROP);
+    String drdqTablePath = HLAProperties.get().getProperty(NMDP_DRDQ_PROP);
+    return completeDoInitialization(bcTablePath, drdqTablePath);
+  }
+  /**
+   * initialize and build haplotype frequency tables
+   *
+   * @param bcTablePath file path for BC haplotype frequency file
+   * @param drdqTablePath file path for DRDQ haplotype frequency file
+   * @return true if at least one haplotype is read successfully
+   */
+  private static boolean completeDoInitialization(String bcTablePath, String drdqTablePath) {
     Builder<Haplotype, HaplotypeFrequency> frequencyMapBuilder = ImmutableMap.builder();
     StringJoiner noTable = new StringJoiner("\n");
 
-    String bcTablePath = HLAProperties.get().getProperty(NMDP_CB_PROP);
     File bcTableFile;
     if (!Strings.isNullOrEmpty(bcTablePath) && (bcTableFile = new File(bcTablePath)).exists()) {
       buildTable(frequencyMapBuilder, bcTableFile, "C", "B");
@@ -98,7 +118,6 @@ public final class HaplotypeFrequencies {
       noTable.add("CB");
     }
 
-    String drdqTablePath = HLAProperties.get().getProperty(NMDP_DRDQ_PROP);
     File drdqTableFile;
     if (!Strings.isNullOrEmpty(drdqTablePath)
         && (drdqTableFile = new File(drdqTablePath)).exists()) {
