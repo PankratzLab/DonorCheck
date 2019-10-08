@@ -1,17 +1,20 @@
 package org.pankratzlab.unet.integration;
 
 import java.math.BigDecimal;
+
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.BCHaplotypeRow;
 import org.pankratzlab.unet.model.DRDQHaplotypeRow;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationTable;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 
 public class HaplotypeTestingUtils {
+  /** Load in haplotype frequency tables for testing */
   public static void initiateFreqTablesTesting() {
     // get test/resource file path for frequency files
     String bcFilePath =
@@ -25,6 +28,11 @@ public class HaplotypeTestingUtils {
     HaplotypeFrequencies.doInitialization(bcFilePath, drdqFilePath);
   }
 
+  /**
+   * @param freqArray array of doubles for expected frequencies in CAU, AFA, API, HIS and NAM order
+   * @return SetMultimap<RaceGroup,BigDecimal> joining the expected frequencies with their
+   *     respective ethnicity
+   */
   public static SetMultimap<RaceGroup, BigDecimal> createTestMultimap(double[] freqArray) {
     SetMultimap<RaceGroup, BigDecimal> outputMultimap = HashMultimap.create();
     RaceGroup ethnicitiesArr[] = {
@@ -39,7 +47,7 @@ public class HaplotypeTestingUtils {
       RaceGroup.NAM,
       RaceGroup.NAM
     };
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < freqArray.length; i++) {
       outputMultimap.put(ethnicitiesArr[i], roundBigDecimal(freqArray[i]));
     }
     return outputMultimap;
@@ -57,6 +65,11 @@ public class HaplotypeTestingUtils {
         .stripTrailingZeros();
   }
 
+  /**
+   * @param model the {@link ValidationModel} the parser is being tested on
+   * @param expectedBCMultimap map of ethnicities with the expected frequencies
+   * @return String of the difference between the expected and generated frequencies
+   */
   @SuppressWarnings("restriction")
   public static String testBCHaplotypes(
       ValidationModel model, SetMultimap<RaceGroup, BigDecimal> expectedBCMultimap) {
@@ -82,6 +95,11 @@ public class HaplotypeTestingUtils {
         + expectedGeneratedDifference.toString();
   }
 
+  /**
+   * @param model the {@link ValidationModel} the parser is being tested on
+   * @param expectedDRDQMultimap map of ethnicities with the expected frequencies
+   * @return String of the difference between the expected and generated frequencies
+   */
   @SuppressWarnings("restriction")
   public static String testDRDQHaplotypes(
       ValidationModel model, SetMultimap<RaceGroup, BigDecimal> expectedDRDQMultimap) {
