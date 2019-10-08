@@ -7,19 +7,20 @@ import java.math.BigDecimal;
 import java.util.stream.Stream;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
+import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.parser.util.XmlScore6Parser;
+import com.google.common.collect.SetMultimap;
 
 public class XMLScore6ParserTest {
   // test files located in test/resources
@@ -29,6 +30,12 @@ public class XMLScore6ParserTest {
   private static final String Test_File4 = "UnitTestXMLScore6_4.xml";
   private static final String Test_File5 = "UnitTestXMLScore6_5.xml";
   private static final String Test_File6 = "UnitTestXMLScore6_6.xml";
+
+  // populate the haplotype frequency tables for testing
+  @BeforeAll
+  private static void init() {
+    HaplotypeTestingUtils.initiateFreqTablesTesting();
+  }
 
   // create parameters to be used as CSV source for checking Donor ID parsing
   @DisplayName("Donor ID parsing")
@@ -224,17 +231,7 @@ public class XMLScore6ParserTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("testHaplotype")
   public void XMLScore6ParserTest_haplotype(String fileName, String expectedHaplotype) {
-    // get test/resource file path for frequency tables
-    String CBFilePath = getClass().getClassLoader().getResource("C_B.xls").getFile();
-    String DRDQFilePath =
-        getClass().getClassLoader().getResource("DRB3-4-5_DRB1_DQB1.xls").getFile();
-    // set {@link HaplotypeFrequencies} to frequency table path
-    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, CBFilePath);
-    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, DRDQFilePath);
-    HaplotypeFrequencies.doInitialization();
     ValidationModel model = createModel(fileName);
-    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, "hla.nmdp.haplotype.bc");
-    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, "hla.nmdp.haplotype.drdq");
     if (HaplotypeFrequencies.successfullyInitialized()) {
       assertEquals(expectedHaplotype, model.toString().split("B-C Haplotype")[1]);
     } else {
@@ -244,7 +241,7 @@ public class XMLScore6ParserTest {
 
   // create the parameters to be used as a method source for the haplotype BC frequency test to run
   // through
-  // five races, two strands per race and for each race the lesser value must go first in the array
+  // Expected results frequencies in CAU, AFA, API, HIS, NAM order
   private static Stream<Arguments> testBCHaplotypeFrequency() {
     double[] freq1 = {
       0.01611, 0.123, 0.02804, 0.05984, 0.00287, 0.02923, 0.02362, 0.05652, 0.01377, 0.09628
@@ -266,53 +263,28 @@ public class XMLScore6ParserTest {
     };
 
     return Stream.of(
-        Arguments.of(Test_File1, createBigDecimalRoundedFrequencyArray(freq1)),
-        Arguments.of(Test_File2, createBigDecimalRoundedFrequencyArray(freq2)),
-        Arguments.of(Test_File3, createBigDecimalRoundedFrequencyArray(freq3)),
-        Arguments.of(Test_File4, createBigDecimalRoundedFrequencyArray(freq4)),
-        Arguments.of(Test_File5, createBigDecimalRoundedFrequencyArray(freq5)),
-        Arguments.of(Test_File6, createBigDecimalRoundedFrequencyArray(freq6)));
+        Arguments.of(Test_File1, HaplotypeTestingUtils.createTestMultimap(freq1)),
+        Arguments.of(Test_File2, HaplotypeTestingUtils.createTestMultimap(freq2)),
+        Arguments.of(Test_File3, HaplotypeTestingUtils.createTestMultimap(freq3)),
+        Arguments.of(Test_File4, HaplotypeTestingUtils.createTestMultimap(freq4)),
+        Arguments.of(Test_File5, HaplotypeTestingUtils.createTestMultimap(freq5)),
+        Arguments.of(Test_File6, HaplotypeTestingUtils.createTestMultimap(freq6)));
   }
   /**
    * @param fileName String file name for test file being passed to createModel
-   * @param expectedBCFrequencyArray an array of BigDecimals for expected frequencies in CAU, AFA,
-   *     API, HIS, NAM order
+   * @param expectedBCMultimap a multimap of RaceGroup ethnicities with BigDecimal expected
+   *     frequencies
    */
-  @SuppressWarnings("restriction")
   @DisplayName("Haplotype BC Frequency parsing")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testBCHaplotypeFrequency")
   public void XMLScore6ParserTest_BCHaplotypeFrequency(
-      String fileName, BigDecimal[] expectedBCFrequencyArray) {
-    String CBFilePath = getClass().getClassLoader().getResource("C_B.xls").getFile();
-    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, CBFilePath);
-    HaplotypeFrequencies.doInitialization();
+      String fileName, SetMultimap<RaceGroup, BigDecimal> expectedBCMultimap) {
     if (HaplotypeFrequencies.successfullyInitialized()) {
       ValidationModel model = createModel(fileName);
-      ValidationTable table = new ValidationTable();
-      table.setFirstModel(model);
-      table.setSecondModel(model);
-      // iterate through haplotype frequency data
-      for (int i = 0; i < 10; i = i + 2) {
-        BigDecimal haplotypeFrequencyStrandOne =
-            table.getBCHaplotypeRows().get(i).frequencyProperty().getValue().stripTrailingZeros();
-        BigDecimal haplotypeFrequencyStrandTwo =
-            table
-                .getBCHaplotypeRows()
-                .get(i + 1)
-                .frequencyProperty()
-                .getValue()
-                .stripTrailingZeros();
-        HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_CB_PROP, "hla.nmdp.haplotype.bc");
-        // BCHaplotypeRows are sorted by race, but individual haplotypes may be in either order
-        if (haplotypeFrequencyStrandOne.compareTo(haplotypeFrequencyStrandTwo) < 0) {
-          assertEquals(expectedBCFrequencyArray[i], haplotypeFrequencyStrandOne);
-          assertEquals(expectedBCFrequencyArray[i + 1], haplotypeFrequencyStrandTwo);
-        } else {
-          assertEquals(expectedBCFrequencyArray[i], haplotypeFrequencyStrandTwo);
-          assertEquals(expectedBCFrequencyArray[i + 1], haplotypeFrequencyStrandOne);
-        }
-      }
+      assertEquals(
+          "Difference between generated and expected: {}Difference between expected and generated: {}",
+          HaplotypeTestingUtils.testBCHaplotypes(model, expectedBCMultimap));
     } else {
       System.err.println("Error: Frequency files not loaded in.");
     }
@@ -320,7 +292,8 @@ public class XMLScore6ParserTest {
 
   // create the parameters to be used as a method source for the haplotype DRDQ frequency test to
   // run through
-  // five races, two strands per race and for each race the lesser value must go first in the array
+  //
+  // Expected results frequencies in CAU, AFA, API, HIS, NAM order
   private static Stream<Arguments> testDRDQHaplotypeFrequency() {
     double[] freq1 = {
       0.00078, 0.00282, 0.03548, 0.05223, 0.00012, 0.00016, 0.00497, 0.01253, 0.00372, 0.00474
@@ -342,54 +315,28 @@ public class XMLScore6ParserTest {
     };
 
     return Stream.of(
-        Arguments.of(Test_File1, createBigDecimalRoundedFrequencyArray(freq1)),
-        Arguments.of(Test_File2, createBigDecimalRoundedFrequencyArray(freq2)),
-        Arguments.of(Test_File3, createBigDecimalRoundedFrequencyArray(freq3)),
-        Arguments.of(Test_File4, createBigDecimalRoundedFrequencyArray(freq4)),
-        Arguments.of(Test_File5, createBigDecimalRoundedFrequencyArray(freq5)),
-        Arguments.of(Test_File6, createBigDecimalRoundedFrequencyArray(freq6)));
+        Arguments.of(Test_File1, HaplotypeTestingUtils.createTestMultimap(freq1)),
+        Arguments.of(Test_File2, HaplotypeTestingUtils.createTestMultimap(freq2)),
+        Arguments.of(Test_File3, HaplotypeTestingUtils.createTestMultimap(freq3)),
+        Arguments.of(Test_File4, HaplotypeTestingUtils.createTestMultimap(freq4)),
+        Arguments.of(Test_File5, HaplotypeTestingUtils.createTestMultimap(freq5)),
+        Arguments.of(Test_File6, HaplotypeTestingUtils.createTestMultimap(freq6)));
   }
   /**
    * @param fileName String file name for test file being passed to createModel
-   * @param expectedDRDQFrequencyArray an array of BigDecimals for expected frequencies in CAU, AFA,
-   *     API, HIS, NAM order
+   * @param expectedDRDQMultimap a multimap of RaceGroup ethnicities with BigDecimal expected
+   *     frequencies
    */
-  @SuppressWarnings("restriction")
   @DisplayName("Haplotype DRDQ Frequency parsing")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testDRDQHaplotypeFrequency")
   public void XMLScore6ParserTest_DRDQHaplotypeFrequency(
-      String fileName, BigDecimal[] expectedDRDQFrequencyArray) {
-    String DRDQFile = getClass().getClassLoader().getResource("DRB3-4-5_DRB1_DQB1.xls").getFile();
-    HLAProperties.get().setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, DRDQFile);
-    HaplotypeFrequencies.doInitialization();
+      String fileName, SetMultimap<RaceGroup, BigDecimal> expectedDRDQMultimap) {
     if (HaplotypeFrequencies.successfullyInitialized()) {
       ValidationModel model = createModel(fileName);
-      ValidationTable table = new ValidationTable();
-      table.setFirstModel(model);
-      table.setSecondModel(model);
-      // iterate through haplotype frequency data
-      for (int i = 0; i < 10; i = i + 2) {
-        BigDecimal haplotypeFrequencyStrandOne =
-            table.getDRDQHaplotypeRows().get(i).frequencyProperty().getValue().stripTrailingZeros();
-        BigDecimal haplotypeFrequencyStrandTwo =
-            table
-                .getDRDQHaplotypeRows()
-                .get(i + 1)
-                .frequencyProperty()
-                .getValue()
-                .stripTrailingZeros();
-        HLAProperties.get()
-            .setProperty(HaplotypeFrequencies.NMDP_DRDQ_PROP, "hla.nmdp.haplotype.drdq");
-        // DRDQHaplotypeRows are sorted by race, but individual haplotypes may be in either order
-        if (haplotypeFrequencyStrandOne.compareTo(haplotypeFrequencyStrandTwo) < 0) {
-          assertEquals(expectedDRDQFrequencyArray[i], haplotypeFrequencyStrandOne);
-          assertEquals(expectedDRDQFrequencyArray[i + 1], haplotypeFrequencyStrandTwo);
-        } else {
-          assertEquals(expectedDRDQFrequencyArray[i], haplotypeFrequencyStrandTwo);
-          assertEquals(expectedDRDQFrequencyArray[i + 1], haplotypeFrequencyStrandOne);
-        }
-      }
+      assertEquals(
+          "Difference between generated and expected: {}Difference between expected and generated: {}",
+          HaplotypeTestingUtils.testDRDQHaplotypes(model, expectedDRDQMultimap));
     } else {
       System.err.println("Error: Frequency files not loaded in.");
     }
@@ -408,21 +355,5 @@ public class XMLScore6ParserTest {
     ValidationModel model = null;
     model = builder.build();
     return model;
-  }
-  /**
-   * @param frequencies an array of doubles for expected frequency results
-   * @return an array of BigDecimals rounded in the same fashion as the frequency table output
-   */
-  private static BigDecimal[] createBigDecimalRoundedFrequencyArray(double[] frequencies) {
-    BigDecimal[] returnArray = new BigDecimal[10];
-    for (int i = 0; i < 10; i++) {
-      returnArray[i] =
-          new BigDecimal(frequencies[i])
-              .setScale(
-                  HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
-                  HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE)
-              .stripTrailingZeros();
-    }
-    return returnArray;
   }
 }
