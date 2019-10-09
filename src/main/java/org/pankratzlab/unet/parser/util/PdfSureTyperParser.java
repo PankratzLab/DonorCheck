@@ -28,14 +28,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
-
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -308,7 +306,7 @@ public class PdfSureTyperParser {
         // Sanitize the token string
         token = token.replaceAll("[^0-9:nN-]", "");
 
-        if (token.isEmpty()) {
+        if (!token.matches(".*[0-9].*")) {
           // Wasn't actually an allele
           continue;
         }
