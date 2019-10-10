@@ -33,6 +33,7 @@ public class PdfSureTyperParserTest {
   private static final String Test_File8 = "UnitTestPDFTyper_8.pdf";
   private static final String Test_File9 = "UnitTestPDFTyper_9.pdf";
   private static final String Test_File10 = "UnitTestPDFTyper_X.pdf";
+  private static final String Test_File11 = "UnitTestPDFTyper_11.pdf";
 
   // populate the haplotype frequency tables for testing
   @BeforeAll
@@ -53,7 +54,8 @@ public class PdfSureTyperParserTest {
     Test_File7 + ", AGDX065",
     Test_File8 + ", AGEA128",
     Test_File9 + ", SABR",
-    Test_File10 + ", AGID359"
+    Test_File10 + ", AGID359",
+    Test_File11 + ", AGJG190"
   })
   /**
    * @param fileName String file name for test file being passed to createModel
@@ -145,7 +147,15 @@ public class PdfSureTyperParserTest {
             new SeroType("B", 8),
             new SeroType("B", 60),
             new SeroType("C", 7),
-            new SeroType("C", 10)));
+            new SeroType("C", 10)),
+        Arguments.of(
+            Test_File11,
+            new SeroType("A", 1),
+            new SeroType("A", 3),
+            new SeroType("B", 7),
+            new SeroType("B", 8),
+            new SeroType("C", 7),
+            null));
   }
   /**
    * @param fileName String file name for test file being passed to createModel
@@ -189,7 +199,8 @@ public class PdfSureTyperParserTest {
     Test_File7 + ", Negative, Positive",
     Test_File8 + ", Positive, Positive",
     Test_File9 + ", Negative, Positive",
-    Test_File10 + ", Negative, Positive"
+    Test_File10 + ", Negative, Positive",
+    Test_File11 + ", Negative, Positive"
   })
   /**
    * @param fileName String file name for test file being passed to createModel
@@ -220,7 +231,9 @@ public class PdfSureTyperParserTest {
         Arguments.of(
             Test_File9, null, null, new HLAType("DRB3", 2), null, new HLAType("DRB4", 1), null),
         Arguments.of(
-            Test_File10, null, null, new HLAType("DRB3", 2), null, new HLAType("DRB4", 1), null));
+            Test_File10, null, null, new HLAType("DRB3", 2), null, new HLAType("DRB4", 1), null),
+        Arguments.of(
+            Test_File11, null, null, new HLAType("DRB3", 1), new HLAType("DRB3", 1), null, null));
   }
   /**
    * @param fileName String file name for test file being passed to createModel
@@ -283,7 +296,10 @@ public class PdfSureTyperParserTest {
             "\n\tCAU\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*45:01:01, C*06:02:01]]\n\tAFA\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*45:01:01, C*06:02:01]]\n\tAPI\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*45:01:01, C*06:02:01]]\n\tHIS\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*45:01:01, C*06:02:01]]\n\tNAM\n\tHaplotype [types=[B*14:02:01, C*08:02:01]]\n\tHaplotype [types=[B*45:01:01, C*06:02:01]]\nDR-DQ Haplotype\n\tCAU\n\tHaplotype [types=[DRB1*09:01:02, DRB4*01:01:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*11:01:02, DRB3*02:02:01, DQB1*06:02:01]]\n\tAFA\n\tHaplotype [types=[DRB1*09:01:02, DRB4*01:01:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*11:01:02, DRB3*02:02:01, DQB1*06:02:01]]\n\tAPI\n\tHaplotype [types=[DRB1*09:01:02, DRB4*01:01:01, DQB1*06:02:01]]\n\tHaplotype [types=[DRB1*11:19:01, DRB3*02:02:01, DQB1*02:01:01]]\n\tHIS\n\tHaplotype [types=[DRB1*09:01:02, DRB4*01:01:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*11:01:02, DRB3*02:02:01, DQB1*06:02:01]]\n\tNAM\n\tHaplotype [types=[DRB1*09:01:02, DRB4*01:01:01, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*11:01:02, DRB3*02:02:01, DQB1*06:02:01]]"),
         Arguments.of(
             Test_File10,
-            "\n\tCAU\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\n\tAFA\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\n\tAPI\n\tHaplotype [types=[B*08:01:01, C*07:02:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\n\tHIS\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\n\tNAM\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\nDR-DQ Haplotype\n\tCAU\n\tHaplotype [types=[DRB1*04:01:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]\n\tAFA\n\tHaplotype [types=[DRB1*04:05:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]\n\tAPI\n\tHaplotype [types=[DRB1*04:03:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]\n\tHIS\n\tHaplotype [types=[DRB1*04:07:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]\n\tNAM\n\tHaplotype [types=[DRB1*04:04:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]"));
+            "\n\tCAU\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\n\tAFA\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\n\tAPI\n\tHaplotype [types=[B*08:01:01, C*07:02:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\n\tHIS\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\n\tNAM\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tHaplotype [types=[B*40:01:01, C*03:04:02]]\nDR-DQ Haplotype\n\tCAU\n\tHaplotype [types=[DRB1*04:01:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]\n\tAFA\n\tHaplotype [types=[DRB1*04:05:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]\n\tAPI\n\tHaplotype [types=[DRB1*04:03:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]\n\tHIS\n\tHaplotype [types=[DRB1*04:07:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]\n\tNAM\n\tHaplotype [types=[DRB1*04:04:01, DRB4*01:01:01, DQB1*03:02:01]]\n\tHaplotype [types=[DRB1*13:01:01, DRB3*01:01:02, DQB1*06:03:01]]"),
+        Arguments.of(
+            Test_File11,
+            "\n\tCAU\n\tHaplotype [types=[B*07:02:01, C*07:02:01]]\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tAFA\n\tHaplotype [types=[B*07:02:01, C*07:02:01]]\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tAPI\n\tHaplotype [types=[B*07:02:01, C*07:02:01]]\n\tHaplotype [types=[B*08:01:01, C*07:02:01]]\n\tHIS\n\tHaplotype [types=[B*07:02:01, C*07:02:01]]\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\n\tNAM\n\tHaplotype [types=[B*07:02:01, C*07:02:01]]\n\tHaplotype [types=[B*08:01:01, C*07:01:01]]\nDR-DQ Haplotype\n\tCAU\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tAFA\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tAPI\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tHIS\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tNAM\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]\n\tHaplotype [types=[DRB1*03:01:01, DRB3*01:01:02, DQB1*02:01:01]]"));
   }
   /**
    * @param fileName String file name for test file being passed to createModel
@@ -334,6 +350,9 @@ public class PdfSureTyperParserTest {
     double[] freq10 = {
       0.0492, 0.10394, 0.01131, 0.02734, 0.01588, 0.03027, 0.01481, 0.03867, 0.04881, 0.07723
     };
+    double[] freq11 = {
+      0.123, 0.10394, 0.02734, 0.05984, 0.01588, 0.02923, 0.05652, 0.03867, 0.09628, 0.07723
+    };
 
     return Stream.of(
         Arguments.of(Test_File1, HaplotypeTestingUtils.createTestMultimap(freq1)),
@@ -345,7 +364,8 @@ public class PdfSureTyperParserTest {
         Arguments.of(Test_File7, HaplotypeTestingUtils.createTestMultimap(freq7)),
         Arguments.of(Test_File8, HaplotypeTestingUtils.createTestMultimap(freq8)),
         Arguments.of(Test_File9, HaplotypeTestingUtils.createTestMultimap(freq9)),
-        Arguments.of(Test_File10, HaplotypeTestingUtils.createTestMultimap(freq10)));
+        Arguments.of(Test_File10, HaplotypeTestingUtils.createTestMultimap(freq10)),
+        Arguments.of(Test_File11, HaplotypeTestingUtils.createTestMultimap(freq11)));
   }
 
   /**
@@ -401,6 +421,9 @@ public class PdfSureTyperParserTest {
     double[] freq10 = {
       0.03588, 0.04557, 0.01512, 0.0194, 0.02211, 0.03671, 0.0276, 0.06337, 0.024, 0.04735
     };
+    double[] freq11 = {
+      .09431, 0.09431, 0.0175, 0.0175, 0.0014, 0.0014, 0.03374, 0.03374, 0.0707, 0.0707
+    };
 
     return Stream.of(
         Arguments.of(Test_File1, HaplotypeTestingUtils.createTestMultimap(freq1)),
@@ -412,7 +435,8 @@ public class PdfSureTyperParserTest {
         Arguments.of(Test_File7, HaplotypeTestingUtils.createTestMultimap(freq7)),
         Arguments.of(Test_File8, HaplotypeTestingUtils.createTestMultimap(freq8)),
         Arguments.of(Test_File9, HaplotypeTestingUtils.createTestMultimap(freq9)),
-        Arguments.of(Test_File10, HaplotypeTestingUtils.createTestMultimap(freq10)));
+        Arguments.of(Test_File10, HaplotypeTestingUtils.createTestMultimap(freq10)),
+        Arguments.of(Test_File11, HaplotypeTestingUtils.createTestMultimap(freq11)));
   }
 
   /**
