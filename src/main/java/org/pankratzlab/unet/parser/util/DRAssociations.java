@@ -22,7 +22,7 @@
 package org.pankratzlab.unet.parser.util;
 
 import java.util.Objects;
-
+import java.util.Optional;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 
@@ -70,13 +70,12 @@ public final class DRAssociations {
 
   /**
    * @param drType {@link SeroType} representation of a DRB1 antigen
-   * @return The corresponding DRB345 {@link HLALocus} or {@code null} if no match.
+   * @return an Optional with the corresponding DRB345 {@link HLALocus} or {@code null} if no match.
    */
-  public static HLALocus getDRBLocus(SeroType drType) {
+  public static Optional<HLALocus> getDRBLocus(SeroType drType) {
     if (Objects.nonNull(drType) && drMap().containsKey(drType)) {
-      return drMap().get(drType);
+      return Optional.of(drMap().get(drType));
     }
-
-    return null;
+    return Optional.ofNullable(null);
   }
 }
