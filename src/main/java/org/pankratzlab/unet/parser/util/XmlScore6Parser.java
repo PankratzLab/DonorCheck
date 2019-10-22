@@ -323,7 +323,7 @@ public class XmlScore6Parser {
   private static HLALocus deduceDRB345Locus(List<ResultCombination> drb1Combinations) {
     Set<HLALocus> loci = new HashSet<>();
     for (ResultCombination combination : drb1Combinations) {
-      loci.add(DRAssociations.getDRBLocus(combination.getAntigenCombination()));
+      DRAssociations.getDRBLocus(combination.getAntigenCombination()).ifPresent(v -> loci.add(v));
     }
     if (loci.size() == 1) {
       return loci.iterator().next();
@@ -338,10 +338,10 @@ public class XmlScore6Parser {
     Builder<Strand, HLALocus> mapBuilder = ImmutableMap.builder();
     int strandIdx = 0;
     for (int combinationIndex = 0; combinationIndex < resultPairs.size(); combinationIndex++) {
-      HLALocus locus =
+      Optional<HLALocus> locus =
           DRAssociations.getDRBLocus(resultPairs.get(combinationIndex).getAntigenCombination());
-      if (Objects.nonNull(locus)) {
-        mapBuilder.put(Strand.values()[strandIdx++], locus);
+      if (locus.isPresent()) {
+        mapBuilder.put(Strand.values()[strandIdx++], locus.get());
       }
     }
     return mapBuilder.build();
@@ -381,11 +381,8 @@ public class XmlScore6Parser {
 
     resultPairs.forEach(
         result -> {
-          HLALocus drbLocus = DRAssociations.getDRBLocus(result.getAntigenCombination());
-
-          if (drbLocus != null) {
-            drCounts.add(drbLocus);
-          }
+          DRAssociations.getDRBLocus(result.getAntigenCombination())
+              .ifPresent(v -> drCounts.add(v));
         });
 
     return drCounts;
