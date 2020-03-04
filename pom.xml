@@ -24,6 +24,24 @@
 		</developer>
 	</developers>
 
+	<repositories>
+		<repository>
+			<id>central</id>
+			<url>https://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
+			<id>github-donor-check</id>
+			<url>https://maven.pkg.github.com/PankratzLab/DonorCheck</url>
+		</repository>
+	</repositories>
+
+	<distributionManagement>
+		<repository>
+			<id>github-donor-check</id>
+			<url>https://maven.pkg.github.com/PankratzLab/DonorCheck</url>
+		</repository>
+	</distributionManagement>
+
 	<scm>
 		<connection>scm:git:git://github.com/PankratzLab/DonorCheck</connection>
 		<developerConnection>scm:git:git@github.com:PankratzLab/DonorCheck</developerConnection>
