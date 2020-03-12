@@ -32,9 +32,7 @@ import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
-
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -48,7 +46,6 @@ import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.EnumMultiset;
@@ -438,28 +435,31 @@ public class XmlScore6Parser {
         getFirstValidType(
             resultCombinations.getElementsByTag(SERO_COMBINATION_TAG + combinationIndex));
 
-    // Ensure this is a recognized alleles
-    try {
-      allele = HLAType.valueOf(alleleString);
-      // This type is valid
-    } catch (IllegalArgumentException e) {
-      // These types are invalid
-    }
-
-    if (Objects.nonNull(antigenString)) {
-      if (NULL_TYPE.equals(antigenString)) {
-        // This combination isn't expressed
-        return null;
+    if (alleleString != null) {
+      // Ensure this is a recognized alleles
+      try {
+        allele = HLAType.valueOf(alleleString);
+        // This type is valid
+      } catch (IllegalArgumentException e) {
+        // These types are invalid
       }
-      if (UNDEFINED_TOKENS.contains(antigenString)) {
-        // No serological equivalent defined so we just take the first position of the allele spec
-        antigen = new SeroType(allele.locus().sero(), allele.spec().get(0));
-      } else {
-        antigen = SeroType.valueOf(antigenString);
-      }
-    }
 
-    return new ResultCombination(antigen, allele);
+      if (Objects.nonNull(antigenString)) {
+        if (NULL_TYPE.equals(antigenString)) {
+          // This combination isn't expressed
+          return null;
+        }
+        if (UNDEFINED_TOKENS.contains(antigenString)) {
+          // No serological equivalent defined so we just take the first position of the allele spec
+          antigen = new SeroType(allele.locus().sero(), allele.spec().get(0));
+        } else {
+          antigen = SeroType.valueOf(antigenString);
+        }
+      }
+
+      return new ResultCombination(antigen, allele);
+    }
+    return null;
   }
 
   /**
