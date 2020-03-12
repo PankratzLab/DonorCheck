@@ -39,7 +39,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 
@@ -304,6 +303,9 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
       // if we created a **, condense!
       antigenString.replace("\\*\\*", "*");
     }
+
+    // remove anything in parenthesis after the value
+    antigenString = antigenString.split("\\(")[0];
 
     // Upcase for enum matching
     return antigenString.toUpperCase();
