@@ -455,77 +455,8 @@
 	</build>
 	<profiles>
 		<profile>
-			<id>32bitstuff</id>
-			<activation>
-				<property>
-					<name>sun.arch.data.model</name>
-					<value>32</value>
-				</property>
-			</activation>
-			<properties>
-				<winVer>win86</winVer>
-			</properties>
-		</profile>
-
-		<profile>
-			<id>64bitstuff</id>
-			<activation>
-				<property>
-					<name>sun.arch.data.model</name>
-					<value>64</value>
-				</property>
-			</activation>
-			<properties>
-				<winVer>win64</winVer>
-			</properties>
-		</profile>
-		<profile>
-			<id>assemble</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version>
-						<configuration>
-							<finalName>${outname}</finalName>
-							<appendAssemblyId>false</appendAssemblyId>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
-						</configuration>
-						<executions>
-							<execution>
-								<id>make-assembly</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>chmod-jar</id>
-								<phase>package</phase>
-								<configuration>
-									<target>
-										<chmod file="${project.build.directory}/${outname}.jar"
-											perm="ugo+rx" />
-									</target>
-								</configuration>
-								<goals>
-									<goal>run</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<profile>
-			<id>donorcheck</id>
+			<!-- This profile is used to create an installer for new releases -->
+			<id>jfx-installer</id>
 			<build>
 				<plugins>
 					<plugin>
@@ -611,6 +542,79 @@
 													tofile="${project.build.directory}/jfx/native/${appName}-installer-osx.app" />
 											</ac:then>
 										</ac:if>
+									</target>
+								</configuration>
+								<goals>
+									<goal>run</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<!-- This profile is enabled automatically when building with a 32-bit JVM -->
+			<id>32bitstuff</id>
+			<activation>
+				<property>
+					<name>sun.arch.data.model</name>
+					<value>32</value>
+				</property>
+			</activation>
+			<properties>
+				<winVer>win86</winVer>
+			</properties>
+		</profile>
+
+		<profile>
+			<!-- This profile is enabled automatically when building with a 64-bit JVM -->
+			<id>64bitstuff</id>
+			<activation>
+				<property>
+					<name>sun.arch.data.model</name>
+					<value>64</value>
+				</property>
+			</activation>
+			<properties>
+				<winVer>win64</winVer>
+			</properties>
+		</profile>
+		<profile>
+			<!-- This profile is used to build a self-contained .jar. The preferred method of distribution is a javafx installer: see profile 'jfx-installer'. -->
+			<id>assemble</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.4</version>
+						<configuration>
+							<finalName>${outname}</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+						</configuration>
+						<executions>
+							<execution>
+								<id>make-assembly</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>chmod-jar</id>
+								<phase>package</phase>
+								<configuration>
+									<target>
+										<chmod file="${project.build.directory}/${outname}.jar"
+											perm="ugo+rx" />
 									</target>
 								</configuration>
 								<goals>
