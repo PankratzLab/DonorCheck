@@ -69,7 +69,9 @@ public class XmlScore6Parser {
 
   // - Specific allele values -
   private static final String UNDEFINED_TYPE = "Undefined";
-  private static final Set<String> UNDEFINED_TOKENS = ImmutableSet.of(UNDEFINED_TYPE, "-");
+  private static final String UNDEFINED_TYPE2 = "undefined";
+  private static final Set<String> UNDEFINED_TOKENS =
+      ImmutableSet.of(UNDEFINED_TYPE, UNDEFINED_TYPE2, "-");
   private static final String NULL_TYPE = "Null";
 
   // -- XML Tags required for parsing --
@@ -94,6 +96,9 @@ public class XmlScore6Parser {
 
   // -- Delimiter for parent hierarchies --
   private static final String PARENT_TYPE_SEPARATOR = "/";
+
+  // -- These came into use after nomenclature had switched to molecular --
+  private static final Set<String> DISREGARD_SERO = ImmutableSet.of("DQA1", "DPA1", "DPB1");
 
   // -- Map to which value to use for each locus
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, String>> metadataMap;
@@ -422,11 +427,6 @@ public class XmlScore6Parser {
   /** Parse a particular allele + antigen pair from a single result combination */
   private static ResultCombination parseCombination(
       Element resultCombinations, int combinationIndex, HLALocus locus) {
-    if (!hasCombination(resultCombinations, combinationIndex)) {
-      return null;
-    }
-    HLAType allele = null;
-    SeroType antigen = null;
 
     String alleleString =
         getFirstValidType(
@@ -434,6 +434,13 @@ public class XmlScore6Parser {
     String antigenString =
         getFirstValidType(
             resultCombinations.getElementsByTag(SERO_COMBINATION_TAG + combinationIndex));
+
+    if (!hasCombination(resultCombinations, combinationIndex)
+        && !DISREGARD_SERO.contains(locus.toString())) {
+      return null;
+    }
+    HLAType allele = null;
+    SeroType antigen = null;
 
     if (alleleString != null) {
       // Ensure this is a recognized alleles
@@ -444,19 +451,18 @@ public class XmlScore6Parser {
         // These types are invalid
       }
 
-      if (Objects.nonNull(antigenString)) {
-        if (NULL_TYPE.equals(antigenString)) {
+      if (Objects.nonNull(antigenString) || DISREGARD_SERO.contains(locus.toString())) {
+        if (NULL_TYPE.equals(antigenString) && !DISREGARD_SERO.contains(locus.toString())) {
           // This combination isn't expressed
           return null;
         }
-        if (UNDEFINED_TOKENS.contains(antigenString)) {
+        if (UNDEFINED_TOKENS.contains(antigenString) || DISREGARD_SERO.contains(locus.toString())) {
           // No serological equivalent defined so we just take the first position of the allele spec
           antigen = new SeroType(allele.locus().sero(), allele.spec().get(0));
         } else {
           antigen = SeroType.valueOf(antigenString);
         }
       }
-
       return new ResultCombination(antigen, allele);
     }
     return null;
