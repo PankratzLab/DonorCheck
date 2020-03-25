@@ -50,10 +50,10 @@ public class PdfSureTyperParser {
   private static final String WHITESPACE_REGEX = "\\s+";
 
   private static final Set<String> TYPING_STOP_TOKENS =
-      ImmutableSet.of(PAGE_END, "INTERNAL", "REVIEW", "NOTES");
+      ImmutableSet.of("ALLELES", "INTERNAL", "REVIEW", "NOTES");
   // Set of strings to ensure typeAssignment only gets filled with appropriate values
-  private static final Set<String> HLA_TYPE_TOKENS =
-      ImmutableSet.of("A", "B", "C", "DRB", "DQA", "DQB", "Bw", "DPA", "DPB");
+  private static final Set<String> HLA_TOKENS =
+      ImmutableSet.of("DRB", "DPA", "DPB", "HLA", "DQA", "DQB");
 
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
   private static final String SESSION_HISTORY_TOKEN = "SESSION HISTORY";
@@ -157,7 +157,7 @@ public class PdfSureTyperParser {
         TypeSetter metadata = metadataMap.get(token);
         setter = metadata.getSetter();
         prefix = metadata.getTokenPrefix();
-      } else if (setter != null) {
+      } else if (setter != null && token.matches(".*\\d.*")) {
         // Erase the prefix from the current token and set the value on the model builder
         token = token.replace(prefix, "");
         token = token.replaceAll("[+]", "");
@@ -324,17 +324,14 @@ public class PdfSureTyperParser {
    */
   private static int parseAssignment(String[] lines, StringJoiner typeAssignment, int currentLine) {
     String line = null;
-    // Flag to allow for if Laboratory Assignment and results are on separate pages.
-    boolean parsed = false;
     // Read until we hit the end of the typing
     for (; currentLine < lines.length; currentLine++) {
       line = lines[currentLine].trim();
-      if (containsFlag(TYPING_STOP_TOKENS, line) && parsed) {
+      if (containsFlag(TYPING_STOP_TOKENS, line)) {
         break;
-      } else if (containsFlag(HLA_TYPE_TOKENS, line)) {
+      } else if (containsFlag(HLA_TOKENS, line)) {
         // Building the type assignment lines
         typeAssignment.add(line);
-        parsed = true;
       }
     }
     return --currentLine;
