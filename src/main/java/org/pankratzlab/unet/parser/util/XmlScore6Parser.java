@@ -32,7 +32,9 @@ import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import javax.annotation.Nonnull;
+
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -46,6 +48,7 @@ import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.EnumMultiset;
@@ -311,6 +314,12 @@ public class XmlScore6Parser {
               break;
           }
         }
+      } else if (DPB_HEADER.equals(locus)) {
+        addHaplotypes(
+            builder,
+            resultCombinations.get(selectedResultIndex),
+            identityLocusMap(HLALocus.DPB1),
+            ValidationModelBuilder::dpHaplotype);
       }
 
       // Finally, add the types to the model builder

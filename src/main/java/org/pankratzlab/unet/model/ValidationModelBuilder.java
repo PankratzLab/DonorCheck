@@ -105,6 +105,7 @@ public class ValidationModelBuilder {
   private Multimap<Strand, HLAType> cHaplotypes = HashMultimap.create();
   private Multimap<Strand, HLAType> drb1Haplotypes = HashMultimap.create();
   private Multimap<Strand, HLAType> dqb1Haplotypes = HashMultimap.create();
+  private Multimap<Strand, HLAType> dpb1Haplotypes = HashMultimap.create();
   private Multimap<Strand, HLAType> dr345Haplotypes = HashMultimap.create();
 
   /** @param donorId Unique identifying string for this donor */
@@ -234,6 +235,11 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder dpHaplotype(Multimap<Strand, HLAType> types) {
+    dpb1Haplotypes.putAll(types);
+    return this;
+  }
+
   public ValidationModelBuilder dr345Haplotype(Multimap<Strand, HLAType> types) {
     for (Strand originalKey : types.keySet()) {
       Strand newKey = originalKey;
@@ -243,6 +249,13 @@ public class ValidationModelBuilder {
       dr345Haplotypes.putAll(newKey, types.get(originalKey));
     }
     return this;
+  }
+
+  public ImmutableMultimap<Strand, HLAType> getDpbHaplotypes() {
+    // FIXME this is a horrible hack that doesn't belong here but is a consequence of tying the
+    // parsers to the validation model. We just want a way to extract DPB1 haplotypes for the MACUI
+    // controller.
+    return ImmutableMultimap.copyOf(dpb1Haplotypes);
   }
 
   /** @return The immutable {@link ValidationModel} based on the current builder state. */

@@ -37,6 +37,7 @@ import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
+import org.pankratzlab.unet.jfx.macui.MACUIController;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
@@ -61,6 +62,7 @@ import javafx.scene.layout.BorderPane;
 public class LandingController {
 
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
+  private static final String MACUI_ENTRY = "/MACUIConversionPanel.fxml";
   private static final String XML_TUTORIAL = "/XMLDownloadTutorial.fxml";
   private static final String HTML_TUTORIAL = "/HTMLDownloadTutorial.fxml";
   private static final String NMDP_DOWNLOAD = "/NMDPDownloadPrompt.fxml";
@@ -101,6 +103,26 @@ public class LandingController {
   @FXML
   void tutorialXMLDownload(ActionEvent event) {
     showTutorial(XML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
+  }
+
+  @FXML
+  void macConversionScore6(ActionEvent event) {
+    MACUIController controller = new MACUIController();
+    try (InputStream is = TypeValidationApp.class.getResourceAsStream(MACUI_ENTRY)) {
+      FXMLLoader loader = new FXMLLoader();
+      loader.setController(controller);
+
+      Alert alert = new Alert(AlertType.NONE, "", ButtonType.OK);
+      alert.getDialogPane().setContent(loader.load(is));
+      alert.setTitle("Select Donor Score6 analysis file");
+      alert.setHeaderText("");
+      alert.showAndWait();
+    } catch (IOException e) {
+      e.printStackTrace();
+      Alert alert = new Alert(AlertType.ERROR, "");
+      alert.setHeaderText("Failed to read page definition: " + MACUI_ENTRY);
+      alert.showAndWait();
+    }
   }
 
   @FXML
