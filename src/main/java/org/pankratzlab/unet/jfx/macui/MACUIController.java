@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.LabelledType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
@@ -117,7 +118,8 @@ public class MACUIController {
                         format(a.spec().get(0))
                             + ":"
                             + format(a.spec().get(1))
-                            + (a instanceof NullType ? "N" : ""))
+                            + (a instanceof NullType ? "N" : "")
+                            + (a instanceof LabelledType ? ((LabelledType) a).getLabel() : ""))
                 .distinct()
                 .collect(Collectors.joining("/"));
     return result;

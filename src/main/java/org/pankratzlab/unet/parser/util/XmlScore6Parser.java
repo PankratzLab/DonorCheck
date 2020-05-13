@@ -508,9 +508,6 @@ public class XmlScore6Parser {
           locus = locusMap.get(Strand.values()[strandIndex - 1]).toString();
         }
 
-        // Replace suffix flags
-        allele.replaceAll("[LSCAQ]", "");
-
         HaplotypeUtils.parseAllelesToStrandMap(allele, locus, strandIndex - 1, haplotypeMap);
       }
 
