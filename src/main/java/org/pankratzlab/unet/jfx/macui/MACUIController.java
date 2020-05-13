@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.Strand;
@@ -106,8 +107,17 @@ public class MACUIController {
             + "*"
             + values
                 .stream()
+                // Ignore null types with > 2 fields. Because we're truncating to 2 fields,
+                // converting something like 04:01:01:24N to 04:01N is incorrect - the N designation
+                // only applied to that specific 4-field allele.
+                .filter(a -> !(a instanceof NullType) || a.spec().size() < 3)
                 .sorted()
-                .map(a -> format(a.spec().get(0)) + ":" + format(a.spec().get(1)))
+                .map(
+                    a ->
+                        format(a.spec().get(0))
+                            + ":"
+                            + format(a.spec().get(1))
+                            + (a instanceof NullType ? "N" : ""))
                 .distinct()
                 .collect(Collectors.joining("/"));
     return result;
