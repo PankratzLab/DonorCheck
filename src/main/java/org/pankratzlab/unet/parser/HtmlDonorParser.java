@@ -95,6 +95,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
       // Test for saved or unsaved HTML state
       // No selected elements means this has been saved previously
       Elements selectedElements = parsed.getElementsByAttribute(SELECTED_ATTRIBUTE);
+      builder.sourceType("DonorNet");
 
       if (selectedElements.isEmpty()) {
         buildModelFromHTML(builder, parsed, this::getSavedHTMLType);
@@ -107,10 +108,8 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   }
 
   /** Helper method to translate the parsed HTML to a {@link ValidationModel} */
-  private void buildModelFromHTML(
-      ValidationModelBuilder builder,
-      Document parsed,
-      BiFunction<Document, String, Optional<String>> typeParser) {
+  private void buildModelFromHTML(ValidationModelBuilder builder, Document parsed,
+                                  BiFunction<Document, String, Optional<String>> typeParser) {
 
     Element idElement = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, DONOR_ATTRIBUTE).get(0);
     builder.donorId(idElement.val());
@@ -167,10 +166,10 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
    * @return The value of the given type
    */
   private Optional<String> getUnsavedHTMLType(Document parsed, String typeString) {
-    Element typeRow =
-        parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + typeString).get(0);
-    Elements selectedOption =
-        typeRow.getElementsByAttributeValue(SELECTED_ATTRIBUTE, SELECTED_VALUE);
+    Element typeRow = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + typeString)
+                            .get(0);
+    Elements selectedOption = typeRow.getElementsByAttributeValue(SELECTED_ATTRIBUTE,
+                                                                  SELECTED_VALUE);
     return DonorNetUtils.getText(selectedOption);
   }
 
@@ -184,10 +183,9 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   private Optional<String> getSavedHTMLType(Document parsed, String typeString) {
     // All tags with type info start and end with these
 
-    return DonorNetUtils.getText(
-        parsed
-            .getAllElements()
-            .get(0)
-            .getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + typeString + HTML_SUFFIX));
+    return DonorNetUtils.getText(parsed.getAllElements().get(0)
+                                       .getElementsByAttributeValue(HTML_TYPE_ATTR,
+                                                                    HTML_PREFIX + typeString
+                                                                                    + HTML_SUFFIX));
   }
 }

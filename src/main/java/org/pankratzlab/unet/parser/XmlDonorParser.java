@@ -91,10 +91,13 @@ public class XmlDonorParser extends AbstractDonorFileParser {
 
         // Based on XML contents, pass to specific XML parser
         if (XmlDonorNetParser.ROOT_ELEMENT.equals(rootElement)) {
+          builder.sourceType("DonorNet");
           XmlDonorNetParser.buildModelFromXML(builder, parsed);
         } else if (XmlScore6Parser.ROOT_ELEMENT.equals(rootElement)) {
+          builder.sourceType("Score6");
           XmlScore6Parser.buildModelFromXML(builder, parsed);
         } else if (XmlSureTyperParser.ROOT_ELEMENT.equals(rootElement)) {
+          builder.sourceType("SureTyper");
           XmlSureTyperParser.buildModelFromXML(builder, parsed);
         }
       } else {

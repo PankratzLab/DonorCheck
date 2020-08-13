@@ -69,16 +69,15 @@ import com.google.common.collect.Table;
 /**
  * Mutable builder class for creating a {@link ValidationModel}.
  *
- * <p>Use the locus-specific setters to build up the donor typing. Each must be called at least once
+ * <p>
+ * Use the locus-specific setters to build up the donor typing. Each must be called at least once
  * (for homozygous) and at most twice (for heterozygous). Each requires on the specificty string for
  * the given locus (e.g. "24" for A24).
  */
 public class ValidationModelBuilder {
 
-  private static final Map<RaceGroup, EthnicityHaplotypeComp> comparators =
-      new EnumMap<>(RaceGroup.class);
-  private static final Table<Haplotype, RaceGroup, BigDecimal> frequencyTable =
-      HashBasedTable.create();
+  private static final Map<RaceGroup, EthnicityHaplotypeComp> comparators = new EnumMap<>(RaceGroup.class);
+  private static final Table<Haplotype, RaceGroup, BigDecimal> frequencyTable = HashBasedTable.create();
   private static final String NEGATIVE_ALLELE = "N-Negative";
 
   {
@@ -89,6 +88,7 @@ public class ValidationModelBuilder {
 
   private String donorId;
   private String source;
+  private String sourceType;
   private Set<SeroType> aLocus;
   private Set<SeroType> bLocus;
   private Set<SeroType> cLocus;
@@ -117,6 +117,12 @@ public class ValidationModelBuilder {
   /** @param source Name for the source of this model */
   public ValidationModelBuilder source(String source) {
     this.source = source;
+    return this;
+  }
+
+  /** @param source Name for the source of this model */
+  public ValidationModelBuilder sourceType(String sourceType) {
+    this.sourceType = sourceType;
     return this;
   }
 
@@ -190,8 +196,8 @@ public class ValidationModelBuilder {
     if (!Strings.isNullOrEmpty(dpbType)) {
       HLAType tmpDPB1 = new HLAType(HLALocus.DPB1, dpbType);
       if (tmpDPB1.spec().size() > 2) {
-        tmpDPB1 =
-            new HLAType(HLALocus.DPB1, new int[] {tmpDPB1.spec().get(0), tmpDPB1.spec().get(1)});
+        tmpDPB1 = new HLAType(HLALocus.DPB1,
+                              new int[] {tmpDPB1.spec().get(0), tmpDPB1.spec().get(1)});
       }
       dpbLocus.add(tmpDPB1);
     }
@@ -265,29 +271,17 @@ public class ValidationModelBuilder {
 
     Multimap<RaceGroup, Haplotype> bcCwdHaplotypes = buildBCHaplotypes(bHaplotypes, cHaplotypes);
 
-    Multimap<RaceGroup, Haplotype> drDqDR345Haplotypes =
-        buildHaplotypes(ImmutableList.of(drb1Haplotypes, dqb1Haplotypes, dr345Haplotypes));
+    Multimap<RaceGroup, Haplotype> drDqDR345Haplotypes = buildHaplotypes(ImmutableList.of(drb1Haplotypes,
+                                                                                          dqb1Haplotypes,
+                                                                                          dr345Haplotypes));
 
     frequencyTable.clear();
 
-    ValidationModel validationModel =
-        new ValidationModel(
-            donorId,
-            source,
-            aLocus,
-            bLocus,
-            cLocus,
-            drbLocus,
-            dqbLocus,
-            dqaLocus,
-            dpbLocus,
-            bw4,
-            bw6,
-            dr51Locus,
-            dr52Locus,
-            dr53Locus,
-            bcCwdHaplotypes,
-            drDqDR345Haplotypes);
+    ValidationModel validationModel = new ValidationModel(donorId, source, sourceType, aLocus,
+                                                          bLocus, cLocus, drbLocus, dqbLocus,
+                                                          dqaLocus, dpbLocus, bw4, bw6, dr51Locus,
+                                                          dr52Locus, dr53Locus, bcCwdHaplotypes,
+                                                          drDqDR345Haplotypes);
     return validationModel;
   }
 
@@ -305,20 +299,18 @@ public class ValidationModelBuilder {
   /**
    * Helper method to build the B/C haplotypes. Extra filtering is needed based on the Bw groups.
    */
-  private Multimap<RaceGroup, Haplotype> buildBCHaplotypes(
-      Multimap<Strand, HLAType> bHaps, Multimap<Strand, HLAType> cHaps) {
+  private Multimap<RaceGroup, Haplotype> buildBCHaplotypes(Multimap<Strand, HLAType> bHaps,
+                                                           Multimap<Strand, HLAType> cHaps) {
     if (bw4 && bw6) {
       // One strand is Bw4 and one is Bw6, but we can't know for sure which. So we try both
       Multimap<Strand, HLAType> s4s6 = enforceBws(BwGroup.Bw4, BwGroup.Bw6, bHaps);
       Multimap<Strand, HLAType> s6s4 = enforceBws(BwGroup.Bw6, BwGroup.Bw4, bHaps);
-      Multimap<RaceGroup, Haplotype> s4s6Haplotypes =
-          s4s6.isEmpty()
-              ? ImmutableMultimap.of()
-              : buildHaplotypes(ImmutableList.of(s4s6, cHaplotypes));
-      Multimap<RaceGroup, Haplotype> s6s4Haplotypes =
-          s6s4.isEmpty()
-              ? ImmutableMultimap.of()
-              : buildHaplotypes(ImmutableList.of(s6s4, cHaplotypes));
+      Multimap<RaceGroup, Haplotype> s4s6Haplotypes = s4s6.isEmpty() ? ImmutableMultimap.of()
+                                                                     : buildHaplotypes(ImmutableList.of(s4s6,
+                                                                                                        cHaplotypes));
+      Multimap<RaceGroup, Haplotype> s6s4Haplotypes = s6s4.isEmpty() ? ImmutableMultimap.of()
+                                                                     : buildHaplotypes(ImmutableList.of(s6s4,
+                                                                                                        cHaplotypes));
 
       // Merge the bw4/bw6 sets into a combined Scoring set
       List<ScoredHaplotypes> scoredHaplotypePairs = new ArrayList<>();
@@ -339,8 +331,8 @@ public class ValidationModelBuilder {
         for (RaceGroup ethnicity : RaceGroup.values()) {
 
           // Sort the haplotype pairs to find the most likely pairing for this ethnicity
-          ScoredHaplotypes max =
-              Collections.max(scoredHaplotypePairs, new EthnicityHaplotypeComp(ethnicity));
+          ScoredHaplotypes max = Collections.max(scoredHaplotypePairs,
+                                                 new EthnicityHaplotypeComp(ethnicity));
 
           // Record each haplotype in the pair
           for (Haplotype t : max) {
@@ -366,19 +358,17 @@ public class ValidationModelBuilder {
    * Helper method to enforce a particular Bw strand alignment for any B alleles in the given
    * multimap
    */
-  private Multimap<Strand, HLAType> enforceBws(
-      BwGroup strandOneGroup, BwGroup strandTwoGroup, Multimap<Strand, HLAType> haplotypes) {
+  private Multimap<Strand, HLAType> enforceBws(BwGroup strandOneGroup, BwGroup strandTwoGroup,
+                                               Multimap<Strand, HLAType> haplotypes) {
     ListMultimap<Strand, HLAType> enforced = ArrayListMultimap.create();
     for (HLAType t : haplotypes.get(Strand.FIRST)) {
-      if (!HLALocus.B.equals(t.locus())
-          || strandOneGroup.equals(BwSerotypes.getBwGroup(t))
+      if (!HLALocus.B.equals(t.locus()) || strandOneGroup.equals(BwSerotypes.getBwGroup(t))
           || BwGroup.Unknown.equals(BwSerotypes.getBwGroup(t))) {
         enforced.put(Strand.FIRST, t);
       }
     }
     for (HLAType t : haplotypes.get(Strand.SECOND)) {
-      if (!HLALocus.B.equals(t.locus())
-          || strandTwoGroup.equals(BwSerotypes.getBwGroup(t))
+      if (!HLALocus.B.equals(t.locus()) || strandTwoGroup.equals(BwSerotypes.getBwGroup(t))
           || BwGroup.Unknown.equals(BwSerotypes.getBwGroup(t))) {
         enforced.put(Strand.SECOND, t);
       }
@@ -391,14 +381,15 @@ public class ValidationModelBuilder {
   }
 
   /** @return A table of the highest-probability haplotypes for each ethnicity */
-  private Multimap<RaceGroup, Haplotype> buildHaplotypes(
-      List<Multimap<Strand, HLAType>> typesByLocus) {
+  private Multimap<RaceGroup, Haplotype> buildHaplotypes(List<Multimap<Strand, HLAType>> typesByLocus) {
     Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity = new HashMap<>();
-    Multimap<RaceGroup, Haplotype> haplotypesByEthnicity =
-        MultimapBuilder.enumKeys(RaceGroup.class).arrayListValues().build();
+    Multimap<RaceGroup, Haplotype> haplotypesByEthnicity = MultimapBuilder.enumKeys(RaceGroup.class)
+                                                                          .arrayListValues()
+                                                                          .build();
 
-    List<Multimap<Strand, HLAType>> presentTypesByLocus =
-        typesByLocus.stream().filter(m -> !m.isEmpty()).collect(Collectors.toList());
+    List<Multimap<Strand, HLAType>> presentTypesByLocus = typesByLocus.stream()
+                                                                      .filter(m -> !m.isEmpty())
+                                                                      .collect(Collectors.toList());
     presentTypesByLocus.forEach(this::pruneUnknown);
     presentTypesByLocus.forEach(this::condenseGroups);
 
@@ -420,18 +411,17 @@ public class ValidationModelBuilder {
    *
    * @param maxScorePairsByEthnicity Collection to populate with possible haplotype pairs
    * @param typesByLocus List of mappings, one per locus, of {@link Strand} to possible alleles for
-   *     that strand.
+   *          that strand.
    */
-  private void generateHaplotypePairs(
-      Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity,
-      List<Multimap<Strand, HLAType>> typesByLocus) {
+  private void generateHaplotypePairs(Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity,
+                                      List<Multimap<Strand, HLAType>> typesByLocus) {
     // Overview:
     // 1. Recurse through strand 1 sets - for each locus, record the possible complementary options
     // 2. At the terminal strand 1 step, start recursing through the possible strand 2 options
     // 3. At the terminal strand 2 step, create a ScoredHaplotype for the pair
 
-    generateStrandOneHaplotypes(
-        maxScorePairsByEthnicity, typesByLocus, new ArrayList<>(), new ArrayList<>(), 0);
+    generateStrandOneHaplotypes(maxScorePairsByEthnicity, typesByLocus, new ArrayList<>(),
+                                new ArrayList<>(), 0);
   }
 
   /**
@@ -439,23 +429,22 @@ public class ValidationModelBuilder {
    *
    * @param maxScorePairsByEthnicity Collection to populate with possible haplotype pairs
    * @param typesByLocus List of mappings, one per locus, of {@link Strand} to possible alleles for
-   *     that strand.
+   *          that strand.
    * @param currentHaplotypeAlleles Current alleles of the first haplotype
    * @param strandTwoOptionsByLocus List of allele options, by locus, to populate for complementary
-   *     haplotype generation.
+   *          haplotype generation.
    * @param locusIndex Current locus index in the {@code strandTwoOptionsByLocus} list
    */
-  private void generateStrandOneHaplotypes(
-      Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity,
-      List<Multimap<Strand, HLAType>> typesByLocus,
-      List<HLAType> currentHaplotypeAlleles,
-      List<List<HLAType>> strandTwoOptionsByLocus,
-      int locusIndex) {
+  private void generateStrandOneHaplotypes(Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity,
+                                           List<Multimap<Strand, HLAType>> typesByLocus,
+                                           List<HLAType> currentHaplotypeAlleles,
+                                           List<List<HLAType>> strandTwoOptionsByLocus,
+                                           int locusIndex) {
     if (locusIndex == typesByLocus.size()) {
       // Terminal step - we now have one haplotype; recursively generate the second
       Haplotype firstHaplotype = new Haplotype(currentHaplotypeAlleles);
-      generateStrandTwoHaplotypes(
-          maxScorePairsByEthnicity, firstHaplotype, strandTwoOptionsByLocus, new ArrayList<>(), 0);
+      generateStrandTwoHaplotypes(maxScorePairsByEthnicity, firstHaplotype, strandTwoOptionsByLocus,
+                                  new ArrayList<>(), 0);
     } else {
       // Recursive step -
       Multimap<Strand, HLAType> currentLocus = typesByLocus.get(locusIndex);
@@ -464,8 +453,8 @@ public class ValidationModelBuilder {
       // alignment of the alleles - including whether they are heterozygous or homozygous.
       // However at the first locus we do not need to consider Strand1 + Strand2 AND
       // Strand2 + Strand1, as the resulting haplotype pairs would mirror each other.
-      Set<Strand> firstStrandsSet =
-          locusIndex == 0 ? ImmutableSet.of(Strand.FIRST) : currentLocus.keySet();
+      Set<Strand> firstStrandsSet = locusIndex == 0 ? ImmutableSet.of(Strand.FIRST)
+                                                    : currentLocus.keySet();
 
       // Build the combinations of strand1 + strand2 alleles at this locus
       for (Strand strandOne : firstStrandsSet) {
@@ -483,12 +472,9 @@ public class ValidationModelBuilder {
           setOrAdd(currentHaplotypeAlleles, currentType, locusIndex);
 
           // Recurse to the next locus
-          generateStrandOneHaplotypes(
-              maxScorePairsByEthnicity,
-              typesByLocus,
-              currentHaplotypeAlleles,
-              strandTwoOptionsByLocus,
-              locusIndex + 1);
+          generateStrandOneHaplotypes(maxScorePairsByEthnicity, typesByLocus,
+                                      currentHaplotypeAlleles, strandTwoOptionsByLocus,
+                                      locusIndex + 1);
         }
       }
     }
@@ -500,26 +486,23 @@ public class ValidationModelBuilder {
    * @param maxScorePairsByEthnicity Collection to populate with possible haplotype pairs
    * @param firstHaplotype The fixed, complementary haplotype
    * @param strandTwoOptionsByLocus List of allele options, by locus, to use when generating
-   *     haplotypes
+   *          haplotypes
    * @param currentHaplotypeAlleles Current alleles of the second haplotype
    * @param locusIndex Current locus index in the {@code strandTwoOptionsByLocus} list
    */
-  private void generateStrandTwoHaplotypes(
-      Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity,
-      Haplotype firstHaplotype,
-      List<List<HLAType>> strandTwoOptionsByLocus,
-      List<HLAType> currentHaplotypeAlleles,
-      int locusIndex) {
+  private void generateStrandTwoHaplotypes(Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity,
+                                           Haplotype firstHaplotype,
+                                           List<List<HLAType>> strandTwoOptionsByLocus,
+                                           List<HLAType> currentHaplotypeAlleles, int locusIndex) {
     if (locusIndex == strandTwoOptionsByLocus.size()) {
       // Terminal step - we now have two haplotypes so we score them and compare
-      ScoredHaplotypes scored =
-          new ScoredHaplotypes(
-              ImmutableList.of(firstHaplotype, new Haplotype(currentHaplotypeAlleles)));
+      ScoredHaplotypes scored = new ScoredHaplotypes(ImmutableList.of(firstHaplotype,
+                                                                      new Haplotype(currentHaplotypeAlleles)));
 
       for (RaceGroup ethnicity : RaceGroup.values()) {
         if (!maxScorePairsByEthnicity.containsKey(ethnicity)
-            || comparators.get(ethnicity).compare(maxScorePairsByEthnicity.get(ethnicity), scored)
-                < 0) {
+            || comparators.get(ethnicity).compare(maxScorePairsByEthnicity.get(ethnicity),
+                                                  scored) < 0) {
           maxScorePairsByEthnicity.put(ethnicity, scored);
         }
       }
@@ -528,12 +511,9 @@ public class ValidationModelBuilder {
       // current haplotype
       for (HLAType currentType : strandTwoOptionsByLocus.get(locusIndex)) {
         setOrAdd(currentHaplotypeAlleles, currentType, locusIndex);
-        generateStrandTwoHaplotypes(
-            maxScorePairsByEthnicity,
-            firstHaplotype,
-            strandTwoOptionsByLocus,
-            currentHaplotypeAlleles,
-            locusIndex + 1);
+        generateStrandTwoHaplotypes(maxScorePairsByEthnicity, firstHaplotype,
+                                    strandTwoOptionsByLocus, currentHaplotypeAlleles,
+                                    locusIndex + 1);
       }
     }
   }
@@ -579,8 +559,8 @@ public class ValidationModelBuilder {
 
     // Sort out our types by CWD status
     for (Strand strand : typesForStrand.keySet()) {
-      Multimap<Status, HLAType> typesByStatus =
-          MultimapBuilder.enumKeys(Status.class).hashSetValues().build();
+      Multimap<Status, HLAType> typesByStatus = MultimapBuilder.enumKeys(Status.class)
+                                                               .hashSetValues().build();
       Collection<HLAType> values = typesForStrand.get(strand);
       values.forEach(t -> typesByStatus.put(CommonWellDocumented.getEquivStatus(t), t));
 
@@ -598,21 +578,19 @@ public class ValidationModelBuilder {
 
   /**
    * @throws IllegalStateException If the model has not been fully populated, or populated
-   *     incorrectly.
+   *           incorrectly.
    */
   private void ensureValidity() throws IllegalStateException {
     // Ensure all fields have been set
-    for (Object o :
-        Lists.newArrayList(
-            donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus, dpbLocus, bw4,
-            bw6)) {
+    for (Object o : Lists.newArrayList(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
+                                       dqaLocus, dpbLocus, bw4, bw6)) {
       if (Objects.isNull(o)) {
         throw new IllegalStateException("ValidationModel incomplete");
       }
     }
     // Ensure all sets have a reasonable number of entries
-    for (Set<?> set :
-        ImmutableList.of(aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus, dpbLocus)) {
+    for (Set<?> set : ImmutableList.of(aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
+                                       dpbLocus)) {
       if (set.isEmpty() || set.size() > 2) {
         throw new IllegalStateException("ValidationModel contains invalid allele count: " + set);
       }
@@ -706,7 +684,7 @@ public class ValidationModelBuilder {
 
     /**
      * @return A weighted score for this ethnicity, prioritizing haplotypes without missing
-     *     frequencies.
+     *         frequencies.
      */
     public double getScore(RaceGroup ethnicity) {
       return scoresByEthnicity.get(ethnicity);
@@ -772,15 +750,11 @@ public class ValidationModelBuilder {
      */
     private List<HLAType> makeList(Collection<Haplotype> haplotypes) {
       List<HLAType> sorted = new ArrayList<>();
-      haplotypes.forEach(
-          haplotype -> {
-            haplotype
-                .getTypes()
-                .forEach(
-                    allele -> {
-                      sorted.add(allele);
-                    });
-          });
+      haplotypes.forEach(haplotype -> {
+        haplotype.getTypes().forEach(allele -> {
+          sorted.add(allele);
+        });
+      });
       Collections.sort(sorted);
       return sorted;
     }

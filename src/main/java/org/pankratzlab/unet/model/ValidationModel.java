@@ -46,6 +46,7 @@ public class ValidationModel {
 
   private final String donorId;
   private final String source;
+  private final String sourceType;
   private final ImmutableSortedSet<SeroType> aLocus;
   private final ImmutableSortedSet<SeroType> bLocus;
   private final ImmutableSortedSet<SeroType> cLocus;
@@ -61,25 +62,16 @@ public class ValidationModel {
   private final ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
 
-  public ValidationModel(
-      String donorId,
-      String source,
-      Collection<SeroType> a,
-      Collection<SeroType> b,
-      Collection<SeroType> c,
-      Collection<SeroType> drb,
-      Collection<SeroType> dqb,
-      Collection<SeroType> dqa,
-      Collection<HLAType> dpb,
-      boolean bw4,
-      boolean bw6,
-      List<HLAType> dr51,
-      List<HLAType> dr52,
-      List<HLAType> dr53,
-      Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
-      Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes) {
+  public ValidationModel(String donorId, String source, String sourceType, Collection<SeroType> a,
+                         Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
+                         Collection<SeroType> dqb, Collection<SeroType> dqa,
+                         Collection<HLAType> dpb, boolean bw4, boolean bw6, List<HLAType> dr51,
+                         List<HLAType> dr52, List<HLAType> dr53,
+                         Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
+                         Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes) {
     this.donorId = donorId;
     this.source = source;
+    this.sourceType = sourceType;
     aLocus = ImmutableSortedSet.copyOf(a);
     bLocus = ImmutableSortedSet.copyOf(b);
     cLocus = ImmutableSortedSet.copyOf(c);
@@ -104,6 +96,10 @@ public class ValidationModel {
 
   public String getSource() {
     return source;
+  }
+
+  public String getSourceType() {
+    return sourceType;
   }
 
   public SeroType getA1() {
@@ -301,6 +297,7 @@ public class ValidationModel {
     StringJoiner sj = new StringJoiner("\n");
     sj.add(getDonorId());
     sj.add(getSource());
+    sj.add(getSourceType());
     addPair(sj, getA1(), getA2());
     addPair(sj, getB1(), getB2());
     addPair(sj, getC1(), getC2());
@@ -319,13 +316,13 @@ public class ValidationModel {
     return sj.toString();
   }
 
-  private void addHaplotypes(
-      StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes, String title) {
+  private void addHaplotypes(StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes,
+                             String title) {
     sj.add(title);
     for (RaceGroup e : RaceGroup.values()) {
       sj.add("\t" + e.toString());
-      List<String> hapStrings =
-          haplotypes.get(e).stream().map(Haplotype::toString).sorted().collect(Collectors.toList());
+      List<String> hapStrings = haplotypes.get(e).stream().map(Haplotype::toString).sorted()
+                                          .collect(Collectors.toList());
       hapStrings.forEach(s -> sj.add("\t" + s));
     }
   }
