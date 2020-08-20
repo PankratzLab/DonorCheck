@@ -28,7 +28,6 @@
                   <items>
                     <MenuItem fx:id="saveOption" mnemonicParsing="false" onAction="#savePNGResults" text="Save to Image" />
                     <MenuItem fx:id="saveCSVOption" mnemonicParsing="false" onAction="#saveCSVResults" text="Save to CSV" />
-                    <MenuItem fx:id="saveDonorNetOption" mnemonicParsing="false" onAction="#saveCSVDonorNet" text="Save to DonorNet to CSV" />
                     <MenuItem fx:id="printOption" mnemonicParsing="false" onAction="#printResults" text="Print..." />
                   </items>
                 </Menu>

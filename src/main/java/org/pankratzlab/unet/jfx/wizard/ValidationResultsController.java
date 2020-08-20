@@ -195,37 +195,6 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     }
   }
 
-  /** Write the given {@link ValidationTable()} for donornet to disk as a CSV */
-  @FXML
-  private void saveCSVDonorNet(ActionEvent event) {
-    ValidationTable vt = getTable();
-    String donorNetCSV = vt.generateDonorNet();
-    if (donorNetCSV != null) {
-      Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
-                                                         vt.getId() + "_donornet_csv", "CSV",
-                                                         ".csv", false);
-
-      if (destination.isPresent()) {
-        try {
-          PrintWriter pw = new PrintWriter(destination.get());
-          pw.write(donorNetCSV);
-          pw.close();
-          Alert alert = new Alert(AlertType.INFORMATION);
-          alert.setHeaderText("Saved validation csv to: " + destination.get().getName());
-          alert.showAndWait();
-        } catch (IOException e) {
-          Alert alert = new Alert(AlertType.ERROR);
-          alert.setHeaderText("Failed to save results to file: " + destination.get().getName());
-          alert.showAndWait();
-        }
-      }
-    } else {
-      Alert alert = new Alert(AlertType.ERROR);
-      alert.setHeaderText("Neither file was DonorNet");
-      alert.showAndWait();
-    }
-  }
-
   @FXML
   void printResults(ActionEvent event) {
     ChoiceDialog<Printer> dialog = new ChoiceDialog<>(Printer.getDefaultPrinter(),

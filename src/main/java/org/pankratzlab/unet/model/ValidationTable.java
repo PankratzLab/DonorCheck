@@ -21,7 +21,6 @@
  */
 package org.pankratzlab.unet.model;
 
-import java.io.File;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -276,6 +275,9 @@ public class ValidationTable {
     builder.append("Donor ID" + ","
                    + Objects.toString(getFirstField(ValidationModel::getDonorId), "") + ","
                    + Objects.toString(getSecondField(ValidationModel::getDonorId), "") + "\n");
+    builder.append("Source" + ","
+                   + Objects.toString(getFirstField(ValidationModel::getSourceType), "") + ","
+                   + Objects.toString(getSecondField(ValidationModel::getSourceType), "") + "\n");
     builder.append("A" + "," + Objects.toString(getFirstField(ValidationModel::getA1), "") + ","
                    + Objects.toString(getSecondField(ValidationModel::getA1), "") + "\n");
     builder.append("A" + "," + Objects.toString(getFirstField(ValidationModel::getA2), "") + ","
@@ -323,93 +325,6 @@ public class ValidationTable {
 
     return builder.toString();
 
-  }
-
-  public String generateDonorNet() {
-    ReadOnlyObjectWrapper<ValidationModel> wrap = null;
-    File file = new File(firstSourceWrapper.getValue());
-    if (firstModelWrapper.getValue().getSourceType().equals("DonorNet")) {
-      wrap = firstModelWrapper;
-    } else if (secondModelWrapper.getValue().getSourceType().equals("DonorNet")) {
-      wrap = secondModelWrapper;
-    }
-
-    if (wrap != null) {
-      StringBuilder builder = new StringBuilder();
-      getValueFromModel(ValidationModel::getDonorId, wrap);
-      builder.append("Donor ID" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDonorId, wrap), "")
-                     + "\n");
-      builder.append("A" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getA1, wrap), "")
-                     + "\n");
-      builder.append("A" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getA2, wrap), "")
-                     + "\n");
-      builder.append("B" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getB1, wrap), "")
-                     + "\n");
-      builder.append("B" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getB2, wrap), "")
-                     + "\n");
-      builder.append("BW4" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::isBw4, wrap), "")
-                     + "\n");
-      builder.append("BW6" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::isBw6, wrap), "")
-                     + "\n");
-      builder.append("C" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getC1, wrap), "")
-                     + "\n");
-      builder.append("C" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getC2, wrap), "")
-                     + "\n");
-      builder.append("DRB1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDRB1, wrap), "")
-                     + "\n");
-      builder.append("DRB1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDRB2, wrap), "")
-                     + "\n");
-      builder.append("DQB1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDQB1, wrap), "")
-                     + "\n");
-      builder.append("DQB1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDQB2, wrap), "")
-                     + "\n");
-      builder.append("DQA1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDQA1, wrap), "")
-                     + "\n");
-      builder.append("DQA1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDQA2, wrap), "")
-                     + "\n");
-      builder.append("DPB1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDPB1, wrap), "")
-                     + "\n");
-      builder.append("DPB1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDPB2, wrap), "")
-                     + "\n");
-      builder.append("DR51 1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDR51_1, wrap), "")
-                     + "\n");
-      builder.append("DR51 2" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDR51_2, wrap), "")
-                     + "\n");
-      builder.append("DR52 1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDR52_1, wrap), "")
-                     + "\n");
-      builder.append("DR52 2" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDR52_2, wrap), "")
-                     + "\n");
-      builder.append("DPB3_1" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDR53_1, wrap), "")
-                     + "\n");
-      builder.append("DPB3_2" + ","
-                     + Objects.toString(getValueFromModel(ValidationModel::getDR53_2, wrap), "")
-                     + "\n");
-
-      return builder.toString();
-    }
-    return null;
   }
 
   /**
