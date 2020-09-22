@@ -185,7 +185,7 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder dqa(String dqaType) {
     dqaLocus = makeIfNull(dqaLocus);
-    addToLocus(dqaLocus, SeroLocus.DQB, dqaType);
+    addToLocus(dqaLocus, SeroLocus.DQA, dqaType);
     return this;
   }
 

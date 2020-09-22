@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
+import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
@@ -268,60 +270,87 @@ public class ValidationTable {
   }
 
   /**
+   * @param getter Accessor for {@link ValidationModel} field of interest
+   * @return comma seperated first and second field for the gene given
+   */
+  private String getComaSeperatedFieldSpecStrings(Function<ValidationModel, SeroType> getter) {
+    String s1 = "";
+    String s2 = "";
+    if (getFirstField(getter) != null) {
+      s1 = getFirstField(getter).specString();
+    }
+    if (getSecondField(getter) != null) {
+      s2 = getSecondField(getter).specString();
+    }
+    return s1 + "," + s2;
+  }
+
+  /**
+   * @param getter Accessor for {@link ValidationModel} field of interest
+   * @return comma seperated first and second field for the gene given
+   */
+  private String getComaSeperatedFieldSpecStringsHLA(Function<ValidationModel, HLAType> getter) {
+    String s1 = "";
+    String s2 = "";
+    if (getFirstField(getter) != null) {
+      s1 = getFirstField(getter).specString();
+    }
+    if (getSecondField(getter) != null) {
+      s2 = getSecondField(getter).specString();
+    }
+    return s1 + "," + s2;
+  }
+
+  /**
    * @return a CSV table representation of the {@link ValidationModel}
    */
   public String generateCSV() {
     StringBuilder builder = new StringBuilder();
+
     builder.append("Donor ID" + ","
                    + Objects.toString(getFirstField(ValidationModel::getDonorId), "") + ","
                    + Objects.toString(getSecondField(ValidationModel::getDonorId), "") + "\n");
     builder.append("Source" + ","
                    + Objects.toString(getFirstField(ValidationModel::getSourceType), "") + ","
                    + Objects.toString(getSecondField(ValidationModel::getSourceType), "") + "\n");
-    builder.append("A" + "," + Objects.toString(getFirstField(ValidationModel::getA1), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::getA1), "") + "\n");
-    builder.append("A" + "," + Objects.toString(getFirstField(ValidationModel::getA2), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::getA2), "") + "\n");
-    builder.append("B" + "," + Objects.toString(getFirstField(ValidationModel::getB1), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::getB1), "") + "\n");
-    builder.append("B" + "," + Objects.toString(getFirstField(ValidationModel::getB2), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::getB2), "") + "\n");
+    builder.append("A" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getA1) + "\n");
+    builder.append("A" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getA2) + "\n");
+    builder.append("B" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getB1) + "\n");
+    builder.append("B" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getB2) + "\n");
     builder.append("BW4" + "," + Objects.toString(getFirstField(ValidationModel::isBw4), "") + ","
                    + Objects.toString(getSecondField(ValidationModel::isBw4), "") + "\n");
     builder.append("BW6" + "," + Objects.toString(getFirstField(ValidationModel::isBw6), "") + ","
                    + Objects.toString(getSecondField(ValidationModel::isBw6), "") + "\n");
-    builder.append("C" + "," + Objects.toString(getFirstField(ValidationModel::getC1), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::getC1), "") + "\n");
-    builder.append("C" + "," + Objects.toString(getFirstField(ValidationModel::getC2), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::getC2), "") + "\n");
-    builder.append("DRB1" + "," + Objects.toString(getFirstField(ValidationModel::getDRB1), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDRB1), "") + "\n");
-    builder.append("DRB1" + "," + Objects.toString(getFirstField(ValidationModel::getDRB2), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDRB2), "") + "\n");
-    builder.append("DQB1" + "," + Objects.toString(getFirstField(ValidationModel::getDQB1), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDQB1), "") + "\n");
-    builder.append("DQB1" + "," + Objects.toString(getFirstField(ValidationModel::getDQB2), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDQB2), "") + "\n");
-    builder.append("DQA1" + "," + Objects.toString(getFirstField(ValidationModel::getDQA1), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDQA1), "") + "\n");
-    builder.append("DQA1" + "," + Objects.toString(getFirstField(ValidationModel::getDQA2), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDQA2), "") + "\n");
-    builder.append("DPB1" + "," + Objects.toString(getFirstField(ValidationModel::getDPB1), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDPB1), "") + "\n");
-    builder.append("DPB1" + "," + Objects.toString(getFirstField(ValidationModel::getDPB2), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDPB2), "") + "\n");
-    builder.append("DR51 1" + "," + Objects.toString(getFirstField(ValidationModel::getDR51_1), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDR51_1), "") + "\n");
-    builder.append("DR51 2" + "," + Objects.toString(getFirstField(ValidationModel::getDR51_2), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDR51_2), "") + "\n");
-    builder.append("DR52 1" + "," + Objects.toString(getFirstField(ValidationModel::getDR52_1), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDR52_1), "") + "\n");
-    builder.append("DR52 2" + "," + Objects.toString(getFirstField(ValidationModel::getDR52_2), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDR52_2), "") + "\n");
-    builder.append("DPB3_1" + "," + Objects.toString(getFirstField(ValidationModel::getDR53_1), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDR53_1), "") + "\n");
-    builder.append("DPB3_2" + "," + Objects.toString(getFirstField(ValidationModel::getDR53_2), "")
-                   + "," + Objects.toString(getSecondField(ValidationModel::getDR53_2), "") + "\n");
+    builder.append("C" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getC1) + "\n");
+    builder.append("C" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getC2) + "\n");
+    builder.append("DRB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDRB1)
+                   + "\n");
+    builder.append("DRB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDRB2)
+                   + "\n");
+    builder.append("DQB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQB1)
+                   + "\n");
+    builder.append("DQB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQB2)
+                   + "\n");
+    builder.append("DQA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQA1)
+                   + "\n");
+    builder.append("DQA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQA2)
+                   + "\n");
+    builder.append("DPB1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDPB1)
+                   + "\n");
+    builder.append("DPB1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDPB2)
+                   + "\n");
+    builder.append("DR51 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR51_1)
+                   + "\n");
+    builder.append("DR51 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR51_2)
+                   + "\n");
+    builder.append("DR52 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR52_1)
+                   + "\n");
+    builder.append("DR52 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR52_2)
+                   + "\n");
+    builder.append("DPB3 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR53_1)
+                   + "\n");
+    builder.append("DPB3 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR53_2)
+                   + "\n");
 
     return builder.toString();
 
