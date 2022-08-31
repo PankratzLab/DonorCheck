@@ -173,6 +173,11 @@ public class ValidationTable {
     makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA2,
                       AntigenValidationRow::makeRow);
 
+    makeValidationRow(validationRows, "DPA1", ValidationModel::getDPA1,
+                      AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, "DPA1", ValidationModel::getDPA2,
+                      AntigenValidationRow::makeRow);
+
     makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB1,
                       AlleleValidationRow::makeRow);
     makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB2,
@@ -338,6 +343,10 @@ public class ValidationTable {
     builder.append("DPB1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDPB1)
                    + "\n");
     builder.append("DPB1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDPB2)
+                   + "\n");
+    builder.append("DPA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDPA1)
+                   + "\n");
+    builder.append("DPA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDPA2)
                    + "\n");
     builder.append("DR51 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR51_1)
                    + "\n");

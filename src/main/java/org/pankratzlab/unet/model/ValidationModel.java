@@ -53,6 +53,7 @@ public class ValidationModel {
   private final ImmutableSortedSet<SeroType> drbLocus;
   private final ImmutableSortedSet<SeroType> dqbLocus;
   private final ImmutableSortedSet<SeroType> dqaLocus;
+  private final ImmutableSortedSet<SeroType> dpaLocus;
   private final ImmutableSortedSet<HLAType> dpbLocus;
   private final boolean bw4;
   private final boolean bw6;
@@ -65,8 +66,8 @@ public class ValidationModel {
   public ValidationModel(String donorId, String source, String sourceType, Collection<SeroType> a,
                          Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
                          Collection<SeroType> dqb, Collection<SeroType> dqa,
-                         Collection<HLAType> dpb, boolean bw4, boolean bw6, List<HLAType> dr51,
-                         List<HLAType> dr52, List<HLAType> dr53,
+                         Collection<SeroType> dpa, Collection<HLAType> dpb, boolean bw4,
+                         boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
                          Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
                          Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes) {
     this.donorId = donorId;
@@ -78,6 +79,11 @@ public class ValidationModel {
     drbLocus = ImmutableSortedSet.copyOf(drb);
     dqbLocus = ImmutableSortedSet.copyOf(dqb);
     dqaLocus = ImmutableSortedSet.copyOf(dqa);
+    if (Objects.nonNull(dpa)) {
+      dpaLocus = ImmutableSortedSet.copyOf(dpa);
+    } else {
+      dpaLocus = null;
+    }
     dpbLocus = ImmutableSortedSet.copyOf(dpb);
     this.bw4 = bw4;
     this.bw6 = bw6;
@@ -150,6 +156,14 @@ public class ValidationModel {
     return getFromPair(dqaLocus, 1);
   }
 
+  public SeroType getDPA1() {
+    return getFromPair(dpaLocus, 0);
+  }
+
+  public SeroType getDPA2() {
+    return getFromPair(dpaLocus, 1);
+  }
+
   public HLAType getDPB1() {
     return getFromPair(dpbLocus, 0);
   }
@@ -203,7 +217,7 @@ public class ValidationModel {
   }
 
   private <T> T getFromPair(ImmutableSortedSet<T> set, int index) {
-    if (set.size() <= index) {
+    if (Objects.isNull(set) || set.size() <= index) {
       return null;
     }
     return index == 0 ? set.first() : set.last();
@@ -229,6 +243,7 @@ public class ValidationModel {
     result = prime * result + ((donorId == null) ? 0 : donorId.hashCode());
     result = prime * result + ((dpbLocus == null) ? 0 : dpbLocus.hashCode());
     result = prime * result + ((dqaLocus == null) ? 0 : dqaLocus.hashCode());
+    result = prime * result + ((dpaLocus == null) ? 0 : dpaLocus.hashCode());
     result = prime * result + ((dqbLocus == null) ? 0 : dqbLocus.hashCode());
     result = prime * result + ((dr51Locus == null) ? 0 : dr51Locus.hashCode());
     result = prime * result + ((dr52Locus == null) ? 0 : dr52Locus.hashCode());
@@ -265,6 +280,9 @@ public class ValidationModel {
     if (dpbLocus == null) {
       if (other.dpbLocus != null) return false;
     } else if (!dpbLocus.equals(other.dpbLocus)) return false;
+    if (dpaLocus == null) {
+      if (other.dpaLocus != null) return false;
+    } else if (!dpaLocus.equals(other.dpaLocus)) return false;
     if (dqaLocus == null) {
       if (other.dqaLocus != null) return false;
     } else if (!dqaLocus.equals(other.dqaLocus)) return false;
@@ -304,6 +322,7 @@ public class ValidationModel {
     addPair(sj, getDRB1(), getDRB2());
     addPair(sj, getDQB1(), getDQB2());
     addPair(sj, getDQA1(), getDQA2());
+    addPair(sj, getDPA1(), getDPA2());
     addPair(sj, getDPB1(), getDPB2());
     sj.add("Bw4: " + isBw4());
     sj.add("Bw6: " + isBw6());

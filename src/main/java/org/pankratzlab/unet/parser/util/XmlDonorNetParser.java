@@ -50,6 +50,8 @@ public class XmlDonorNetParser {
   public static final String ROOT_ELEMENT = "donorupload";
   // Path to resources used for mapping DonorNet DQA, DPB and DRB XML elements
   private static final String DQA_MAP_PATH = "/DqaMap.xml";
+  private static final String DQB_MAP_PATH = "/DqbMap.xml";
+  private static final String DPA_MAP_PATH = "/DpaMap.xml";
   private static final String DPB_MAP_PATH = "/DpbMap.xml";
   private static final String DR51_MAP_PATH = "/DR51Map.xml";
   private static final String DR52_MAP_PATH = "/DR52Map.xml";
@@ -57,6 +59,8 @@ public class XmlDonorNetParser {
   private static final String XML_ATTR = "value";
   private static final String XML_TAG = "option";
   private static ImmutableMap<String, String> dqaMap;
+  private static ImmutableMap<String, String> dqbMap;
+  private static ImmutableMap<String, String> dpaMap;
   private static ImmutableMap<String, String> dpbMap;
   private static ImmutableMap<String, String> dr51Map;
   private static ImmutableMap<String, String> dr52Map;
@@ -80,10 +84,12 @@ public class XmlDonorNetParser {
     getXMLTagVal(donorRoot, "c2").ifPresent(builder::c);
     getXMLTagVal(donorRoot, "dr1").ifPresent(builder::drb);
     getXMLTagVal(donorRoot, "dr2").ifPresent(builder::drb);
-    getXMLTagVal(donorRoot, "dq1").ifPresent(builder::dqb);
-    getXMLTagVal(donorRoot, "dq2").ifPresent(builder::dqb);
+    getXMLTagVal(donorRoot, "dq1").ifPresent(s -> builder.dqb(decodeValue(dqbMap, s)));
+    getXMLTagVal(donorRoot, "dq2").ifPresent(s -> builder.dqb(decodeValue(dqbMap, s)));
     getXMLTagVal(donorRoot, "dqa1").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
     getXMLTagVal(donorRoot, "dqa2").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
+    getXMLTagVal(donorRoot, "dpa1").ifPresent(s -> builder.dpa(decodeValue(dpaMap, s)));
+    getXMLTagVal(donorRoot, "dpa2").ifPresent(s -> builder.dpa(decodeValue(dpaMap, s)));
     getXMLTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
     getXMLTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
 
@@ -121,7 +127,7 @@ public class XmlDonorNetParser {
    * @param donorBlock Parent {@link Element}
    * @param tag XML Tag of interest
    * @return An {@link Optional} containing either the text value of the tag, or {@code} null if the
-   *     tag wasn't present or was empty.
+   *         tag wasn't present or was empty.
    */
   private static Optional<String> getXMLTagVal(Element donorBlock, String tag) {
     Elements elements = donorBlock.getElementsByTag(tag);
@@ -130,20 +136,23 @@ public class XmlDonorNetParser {
 
   private static void init() {
     // NB: the DonorNet XML export uses linear numbering for the DPB, DQA, and DR51/52/53 loci.
+    // This can be found in the .html version of the DonorNet output
     // All other loci export their actual specificities. Thus we have to map from the linear
     // numbers to specificities. These files contain mappings for the given locus and need to be
     // updated if the DonorNet pages ever change.
     dpbMap = populateFromFile(DPB_MAP_PATH);
+    dpaMap = populateFromFile(DPA_MAP_PATH);
     dqaMap = populateFromFile(DQA_MAP_PATH);
+    dqbMap = populateFromFile(DQB_MAP_PATH);
     dr51Map = populateFromFile(DR51_MAP_PATH);
     dr52Map = populateFromFile(DR52_MAP_PATH);
     dr53Map = populateFromFile(DR53_MAP_PATH);
   }
 
   /**
-   * @param donorNetMapPath File containing {@link #XML_TAG} elements, each having a {@link
-   *     #XML_ATTR} attribute which needs to be mapped to the corresponding string value of that
-   *     tag.
+   * @param donorNetMapPath File containing {@link #XML_TAG} elements, each having a
+   *          {@link #XML_ATTR} attribute which needs to be mapped to the corresponding string value
+   *          of that tag.
    * @return The mapping defined in the input file
    */
   private static ImmutableMap<String, String> populateFromFile(String donorNetMapPath) {

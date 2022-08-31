@@ -28,12 +28,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
+
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -49,11 +51,11 @@ public class PdfSureTyperParser {
   private static final String HLA_PREFIX = "HLA";
   private static final String WHITESPACE_REGEX = "\\s+";
 
-  private static final Set<String> TYPING_STOP_TOKENS =
-      ImmutableSet.of("ALLELES", "INTERNAL", "REVIEW", "NOTES");
+  private static final Set<String> TYPING_STOP_TOKENS = ImmutableSet.of("ALLELES", "INTERNAL",
+                                                                        "REVIEW", "NOTES");
   // Set of strings to ensure typeAssignment only gets filled with appropriate values
-  private static final Set<String> HLA_TOKENS =
-      ImmutableSet.of("DRB", "DPA", "DPB", "HLA", "DQA", "DQB");
+  private static final Set<String> HLA_TOKENS = ImmutableSet.of("DRB", "DPA", "DPB", "HLA", "DQA",
+                                                                "DQB");
 
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
   private static final String SESSION_HISTORY_TOKEN = "SESSION HISTORY";
@@ -172,9 +174,9 @@ public class PdfSureTyperParser {
    */
   private static int parseSummary(String[] lines, StringJoiner typeAssignment, int currentLine) {
     // go line-by-line, split on whitespace, look for DRB[3/4/5]* tokens and convert to line
-    final ImmutableSet<String> validLoci =
-        ImmutableSet.of(
-            HLALocus.DRB3.toString(), HLALocus.DRB4.toString(), HLALocus.DRB5.toString());
+    final ImmutableSet<String> validLoci = ImmutableSet.of(HLALocus.DRB3.toString(),
+                                                           HLALocus.DRB4.toString(),
+                                                           HLALocus.DRB5.toString());
     boolean homozygous = false;
     for (; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine];
@@ -189,10 +191,9 @@ public class PdfSureTyperParser {
           // For homozygous cases that are reported, the locus appears twice.. once by itself, the
           // other with the allele designation.
           homozygous = true;
-        } else if ((token.contains(HLALocus.DRB3 + "*")
-                || token.contains(HLALocus.DRB4 + "*")
-                || token.contains(HLALocus.DRB5 + "*"))
-            && !token.endsWith("N")) {
+        } else if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
+                    || token.contains(HLALocus.DRB5 + "*"))
+                   && !token.endsWith("N")) {
           type = token;
         }
         // Separate type from the rest of the allele
@@ -200,8 +201,8 @@ public class PdfSureTyperParser {
           if (type.contains(":")) {
             type = type.substring(0, type.indexOf(":"));
           }
-          String typeAssignmentEntry =
-              HLA_PREFIX + "-" + type.substring(0, type.indexOf("*")) + ": ";
+          String typeAssignmentEntry = HLA_PREFIX + "-" + type.substring(0, type.indexOf("*"))
+                                       + ": ";
           typeAssignmentEntry += type;
           if (homozygous) {
             typeAssignmentEntry += (" " + type);
@@ -232,8 +233,8 @@ public class PdfSureTyperParser {
    * Helper method to parse the possible haplotypes. These are long lists of possible alleles,
    * divided by HLA locus.
    */
-  private static int parseHaplotype(
-      String[] lines, int currentLine, String locus, Multimap<Strand, HLAType> strandMap) {
+  private static int parseHaplotype(String[] lines, int currentLine, String locus,
+                                    Multimap<Strand, HLAType> strandMap) {
     // Sections start with a line containing JUST HLA_A/b/c etc..
     // Strands are marked by first type is always low res (group)
 
@@ -287,9 +288,8 @@ public class PdfSureTyperParser {
 
       // Here we start parsing lines to alleles, but only if we've confirmed the allele section has
       // started strandIndex > 0)
-      for (;
-          tokenIndex < tokens.length && (strandIndex >= 0 && strandIndex < Strand.values().length);
-          tokenIndex++) {
+      for (; tokenIndex < tokens.length
+             && (strandIndex >= 0 && strandIndex < Strand.values().length); tokenIndex++) {
 
         String token = tokens[tokenIndex].replaceAll("\\s+", "");
 
@@ -363,7 +363,7 @@ public class PdfSureTyperParser {
 
     // DPA1 is present in the typing data but we do not currently track it in the validation model
     // (not entered in DonorNet)
-    setterBuilder.put(HLA_DPA1, new TypeSetter("DPA1*", PdfSureTyperParser::noOp));
+    setterBuilder.put(HLA_DPA1, new TypeSetter("DPA1*", ValidationModelBuilder::dpa));
 
     setterBuilder.put(HLA_DPB1, new TypeSetter("DPB1*", ValidationModelBuilder::dpb));
 

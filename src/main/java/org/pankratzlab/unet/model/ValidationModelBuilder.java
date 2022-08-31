@@ -38,6 +38,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
@@ -95,6 +98,7 @@ public class ValidationModelBuilder {
   private Set<SeroType> drbLocus;
   private Set<SeroType> dqbLocus;
   private Set<SeroType> dqaLocus;
+  private Set<SeroType> dpaLocus;
   private Set<HLAType> dpbLocus;
   private Boolean bw4;
   private Boolean bw6;
@@ -189,6 +193,12 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder dpa(String dpaType) {
+    dpaLocus = makeIfNull(dpaLocus);
+    addToLocus(dpaLocus, SeroLocus.DPA, dpaType);
+    return this;
+  }
+
   public ValidationModelBuilder dpb(String dpbType) {
     dpbLocus = makeIfNull(dpbLocus);
     // Shorten the allele designation to allele group and specific HLA protein. Further fields can
@@ -279,9 +289,9 @@ public class ValidationModelBuilder {
 
     ValidationModel validationModel = new ValidationModel(donorId, source, sourceType, aLocus,
                                                           bLocus, cLocus, drbLocus, dqbLocus,
-                                                          dqaLocus, dpbLocus, bw4, bw6, dr51Locus,
-                                                          dr52Locus, dr53Locus, bcCwdHaplotypes,
-                                                          drDqDR345Haplotypes);
+                                                          dqaLocus, dpaLocus, dpbLocus, bw4, bw6,
+                                                          dr51Locus, dr52Locus, dr53Locus,
+                                                          bcCwdHaplotypes, drDqDR345Haplotypes);
     return validationModel;
   }
 
@@ -596,6 +606,13 @@ public class ValidationModelBuilder {
       }
     }
     // Note: haplotype maps are OPTIONAL
+
+    // DPA was more recently added and in an effort not to error out every time DPA is missing from
+    // old files we need to throw a warning
+    if (Objects.isNull(dpaLocus)) {
+      JOptionPane.showMessageDialog(new JFrame(), "DPA is missing from this file", "Dialog",
+                                    JOptionPane.WARNING_MESSAGE);
+    }
 
     // Note: Some DRB345 loci may be empty, but should be sorted
     Collections.sort(dr51Locus);

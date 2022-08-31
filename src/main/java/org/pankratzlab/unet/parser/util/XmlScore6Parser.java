@@ -92,6 +92,7 @@ public class XmlScore6Parser {
   private static final String DRB_HEADER = "HLA-DRB";
   private static final String DQA_HEADER = "HLA-DQA1";
   private static final String DPB_HEADER = "HLA-DPB1";
+  private static final String DPA_HEADER = "HLA-DPA1";
   private static final String DQB_HEADER = "HLA-DQB1";
   private static final String C_HEADER = "HLA-C";
   private static final String B_HEADER = "HLA-B";
@@ -121,6 +122,7 @@ public class XmlScore6Parser {
     // Reported as allele types
     setterBuilder.put(DPB_HEADER, ValidationModelBuilder::dpb);
     setterBuilder.put(DQA_HEADER, ValidationModelBuilder::dqa);
+    setterBuilder.put(DPA_HEADER, ValidationModelBuilder::dpa);
 
     // DR52/53/54 appears as a serological combination
     setterBuilder.put(DRB_HEADER, ValidationModelBuilder::drb);
@@ -147,6 +149,7 @@ public class XmlScore6Parser {
     specGeneratorBuilder.put(DQB_HEADER, XmlScore6Parser::getAlleleLookup);
     specGeneratorBuilder.put(DPB_HEADER, XmlScore6Parser::getAlleleSpec);
     specGeneratorBuilder.put(DQA_HEADER, XmlScore6Parser::getAlleleSpec);
+    specGeneratorBuilder.put(DPA_HEADER, XmlScore6Parser::getAlleleSpec);
 
     // DR52/53/54 appears as a serological combination
     specStringGeneratorMap = specGeneratorBuilder.build();
