@@ -184,6 +184,13 @@
 			package to jar, install to local repository). -->
 		<defaultGoal>install</defaultGoal>
 		<finalName>${outname}</finalName>
+		
+		<resources>
+			<resource>
+  				<directory>src/main/resources</directory>
+    			<filtering>true</filtering>
+  			</resource>
+  		</resources>
 
 		<!-- The pluginManagement block controls plugin configuration in all modules -->
 		<pluginManagement>
@@ -469,6 +476,12 @@
 			<!-- This profile is used to create an installer for new releases -->
 			<id>jfx-installer</id>
 			<build>
+				<resources>
+					<resource>
+  						<directory>src/main/resources</directory>
+    					<filtering>true</filtering>
+  					</resource>
+  				</resources>
 				<plugins>
 					<plugin>
 						<groupId>com.zenjava</groupId>
@@ -595,6 +608,12 @@
 			<!-- This profile is used to build a self-contained .jar. The preferred method of distribution is a javafx installer: see profile 'jfx-installer'. -->
 			<id>assemble</id>
 			<build>
+				<resources>
+					<resource>
+  						<directory>src/main/resources</directory>
+    					<filtering>true</filtering>
+  					</resource>
+  				</resources>
 				<plugins>
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
