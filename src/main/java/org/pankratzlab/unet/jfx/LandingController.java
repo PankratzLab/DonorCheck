@@ -21,6 +21,8 @@
  */
 package org.pankratzlab.unet.jfx;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -31,6 +33,9 @@ import java.util.ResourceBundle;
 
 import javax.annotation.Nullable;
 
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
@@ -56,6 +61,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
@@ -70,11 +76,17 @@ public class LandingController {
   private static final String INPUT_STEP = "/FileInput.fxml";
   private static final String RESULTS_STEP = "/ValidationResults.fxml";
 
-  @FXML private ResourceBundle resources;
+  @FXML
+  private ResourceBundle resources;
 
-  @FXML private URL location;
+  @FXML
+  private URL location;
 
-  @FXML private BorderPane rootPane;
+  @FXML
+  private BorderPane rootPane;
+
+  @FXML
+  private Label versionLabel;
 
   @FXML
   void fileQuitAction(ActionEvent event) {
@@ -86,12 +98,9 @@ public class LandingController {
     DownloadNMDPController dc = new DownloadNMDPController();
     showTutorial(NMDP_DOWNLOAD, dc, "Set Frequency Directory");
     if (dc.isDirty()) {
-      new Thread(
-              JFXUtilHelper.createProgressTask(
-                  () -> {
-                    HaplotypeFrequencies.doInitialization();
-                  }))
-          .start();
+      new Thread(JFXUtilHelper.createProgressTask(() -> {
+        HaplotypeFrequencies.doInitialization();
+      })).start();
     }
   }
 
@@ -127,62 +136,51 @@ public class LandingController {
 
   @FXML
   void runValidation(ActionEvent event) throws IOException {
-    Task<Void> runValidationTask =
-        JFXUtilHelper.createProgressTask(
-            () -> {
-              HaplotypeFrequencies.successfullyInitialized();
-            });
+    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
+      HaplotypeFrequencies.successfullyInitialized();
+    });
 
-    EventHandler<WorkerStateEvent> doValidation =
-        (w) -> {
-          Platform.runLater(
-              () -> {
-                if (!HaplotypeFrequencies.successfullyInitialized()) {
-                  Alert alert =
-                      new Alert(
-                          AlertType.INFORMATION,
-                          "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
-                              + "Would you like to set these tables now?\n\n"
-                              + "Note: you can adjust these tables any time from the 'Haplotype' menu",
-                          ButtonType.YES,
-                          ButtonType.NO);
-                  alert.setTitle("No haplotype freqnecies");
-                  alert.setHeaderText("");
-                  alert
-                      .showAndWait()
-                      .filter(response -> response == ButtonType.YES)
-                      .ifPresent(response -> chooseFreqTables(event));
-                } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
-                  Alert alert =
-                      new Alert(
-                          AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
-                  alert.setTitle("Missing Haplotype Table(s)");
-                  alert.setHeaderText("");
-                  alert.showAndWait();
-                }
+    EventHandler<WorkerStateEvent> doValidation = (w) -> {
+      Platform.runLater(() -> {
+        if (!HaplotypeFrequencies.successfullyInitialized()) {
+          Alert alert = new Alert(AlertType.INFORMATION,
+                                  "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
+                                                         + "Would you like to set these tables now?\n\n"
+                                                         + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+                                  ButtonType.YES, ButtonType.NO);
+          alert.setTitle("No haplotype freqnecies");
+          alert.setHeaderText("");
+          alert.showAndWait().filter(response -> response == ButtonType.YES)
+               .ifPresent(response -> chooseFreqTables(event));
+        } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
+          Alert alert = new Alert(AlertType.INFORMATION,
+                                  HaplotypeFrequencies.getMissingTableMessage());
+          alert.setTitle("Missing Haplotype Table(s)");
+          alert.setHeaderText("");
+          alert.showAndWait();
+        }
 
-                ValidationTable table = new ValidationTable();
-                Wizard validationWizard =
-                    new Wizard(((Node) event.getSource()).getScene().getWindow());
-                validationWizard.setTitle("Donor Validation Wizard");
+        ValidationTable table = new ValidationTable();
+        Wizard validationWizard = new Wizard(((Node) event.getSource()).getScene().getWindow());
+        validationWizard.setTitle("Donor Validation Wizard");
 
-                List<WizardPane> pages = new ArrayList<>();
-                try {
-                  makePage(pages, table, INPUT_STEP, new FileInputController());
-                  makePage(pages, table, RESULTS_STEP, new ValidationResultsController());
-                } catch (IOException e) {
-                  e.printStackTrace();
-                  throw new IllegalStateException(e);
-                }
+        List<WizardPane> pages = new ArrayList<>();
+        try {
+          makePage(pages, table, INPUT_STEP, new FileInputController());
+          makePage(pages, table, RESULTS_STEP, new ValidationResultsController());
+        } catch (IOException e) {
+          e.printStackTrace();
+          throw new IllegalStateException(e);
+        }
 
-                pages.get(0).getButtonTypes();
+        pages.get(0).getButtonTypes();
 
-                validationWizard.setFlow(new LinearFlow(pages));
+        validationWizard.setFlow(new LinearFlow(pages));
 
-                // show wizard and wait for response
-                validationWizard.showAndWait();
-              });
-        };
+        // show wizard and wait for response
+        validationWizard.showAndWait();
+      });
+    };
 
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
@@ -216,9 +214,8 @@ public class LandingController {
    * @param controller Controller instance to attach to this page
    * @throws IOException If errors during FXML reading
    */
-  private void makePage(
-      List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML, Object controller)
-      throws IOException {
+  private void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML,
+                        Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems
@@ -238,8 +235,23 @@ public class LandingController {
 
   @FXML
   void initialize() {
-    assert rootPane != null
-        : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
+    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
+    MavenXpp3Reader reader = new MavenXpp3Reader();
+    Model model;
+    try {
+      model = reader.read(new FileReader("pom.xml"));
+      versionLabel.setText("Version: " + model.getVersion());
+    } catch (FileNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (XmlPullParserException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
     System.setProperty(CurrentDirectoryProvider.BASE_DIR_PROP_NAME, UNET_BASE_DIR_PROP);
   }
 }
