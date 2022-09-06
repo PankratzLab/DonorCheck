@@ -283,6 +283,11 @@ public class XmlScore6Parser {
                       identityLocusMap(HLALocus.B), ValidationModelBuilder::bHaplotype);
 
         for (int strandIdx = 0; strandIdx < resultPairs.size(); strandIdx++) {
+          // B*47:03 is considered BW6 despite B47 antigen being considered BW4
+          if (resultPairs.get(strandIdx).alleleCombination.toString().contains("B*47:03")) {
+            builder.bw6(true);
+            break;
+          }
           // Update the appropriate builder flags
           BwGroup bw = BwSerotypes.getBwGroup(resultPairs.get(strandIdx).getAntigenCombination());
           switch (bw) {
