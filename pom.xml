@@ -22,7 +22,13 @@
 			<name>Mark Hiner</name>
 			<email>hine0116@umn.edu</email>
 		</developer>
+		<developer>
+			<id>kaitlinrenee</id>
+			<name>Kaitlin Clarke</name>
+			<email>krclarke@umn.edu</email>
+		</developer>
 	</developers>
+	
 
 	<repositories>
 		<repository>

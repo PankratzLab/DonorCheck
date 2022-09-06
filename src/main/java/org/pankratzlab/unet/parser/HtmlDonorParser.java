@@ -127,8 +127,12 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
     typeParser.apply(parsed, "DQB2").ifPresent(builder::dqb);
     typeParser.apply(parsed, "DQA1").ifPresent(builder::dqa);
     typeParser.apply(parsed, "DQA2").ifPresent(builder::dqa);
-    typeParser.apply(parsed, "DPA1").ifPresent(builder::dpa);
-    typeParser.apply(parsed, "DPA2").ifPresent(builder::dpa);
+    if (parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + "DPA1").size() != 0) {
+      typeParser.apply(parsed, "DPA1").ifPresent(builder::dpa);
+    }
+    if (parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + "DPA2").size() != 0) {
+      typeParser.apply(parsed, "DPA2").ifPresent(builder::dpa);
+    }
     typeParser.apply(parsed, "DPB1").ifPresent(builder::dpb);
     typeParser.apply(parsed, "DPB2").ifPresent(builder::dpb);
 
@@ -173,6 +177,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
     Elements selectedOption = typeRow.getElementsByAttributeValue(SELECTED_ATTRIBUTE,
                                                                   SELECTED_VALUE);
     return DonorNetUtils.getText(selectedOption);
+
   }
 
   /**

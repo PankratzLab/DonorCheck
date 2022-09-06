@@ -107,9 +107,13 @@ public class PdfSureTyperParser {
       // words
       if (line.equals(SESSION_HISTORY_TOKEN)) {
         break;
-      } else if (line.startsWith(PATIENT_ID_TOKEN)) {
+      } else if (line.contains(PATIENT_ID_TOKEN)) {
         // The patient ID value is at a particular position in the line starting with this token
-        builder.donorId(line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX]);
+        if (line.startsWith(PATIENT_ID_TOKEN)) {
+          builder.donorId(line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX]);
+        } else {
+          builder.donorId(line.split(PATIENT_ID_TOKEN)[1].split(WHITESPACE_REGEX)[1]);
+        }
       } else if (line.trim().equals(SUMMARY_START)) {
         parseSummary(lines, typeAssignment, ++currentLine);
       } else if (line.contains(TYPING_START_TOKEN)) {
