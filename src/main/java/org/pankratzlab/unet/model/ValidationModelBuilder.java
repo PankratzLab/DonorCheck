@@ -131,18 +131,27 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder a(String aType) {
+    if (!aType.matches(".*\\d.*")) {
+      return null;
+    }
     aLocus = makeIfNull(aLocus);
     addToLocus(aLocus, SeroLocus.A, aType);
     return this;
   }
 
   public ValidationModelBuilder b(String bType) {
+    if (!bType.matches(".*\\d.*")) {
+      return null;
+    }
     bLocus = makeIfNull(bLocus);
     addToLocus(bLocus, SeroLocus.B, bType);
     return this;
   }
 
   public ValidationModelBuilder c(String cType) {
+    if (!cType.matches(".*\\d.*")) {
+      return null;
+    }
     cLocus = makeIfNull(cLocus);
     addToLocus(cLocus, SeroLocus.C, cType);
     return this;
@@ -150,6 +159,9 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder drb(String drbType) {
     drbLocus = makeIfNull(drbLocus);
+    if (!drbType.matches(".*\\d.*")) {
+      return null;
+    }
     if (!Strings.isNullOrEmpty(drbType)
         && Objects.equals(103, Integer.parseInt(drbType.replaceAll(":", "").trim()))) {
       // UNOS explicitly requires DRB1*01:03 to be reported as DRB0103
@@ -182,18 +194,27 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dqb(String dqbType) {
+    if (!dqbType.matches(".*\\d.*")) {
+      return null;
+    }
     dqbLocus = makeIfNull(dqbLocus);
     addToLocus(dqbLocus, SeroLocus.DQB, dqbType);
     return this;
   }
 
   public ValidationModelBuilder dqa(String dqaType) {
+    if (!dqaType.matches(".*\\d.*")) {
+      return null;
+    }
     dqaLocus = makeIfNull(dqaLocus);
     addToLocus(dqaLocus, SeroLocus.DQA, dqaType);
     return this;
   }
 
   public ValidationModelBuilder dpa(String dpaType) {
+    if (!dpaType.matches(".*\\d.*")) {
+      return null;
+    }
     dpaLocus = makeIfNull(dpaLocus);
     addToLocus(dpaLocus, SeroLocus.DPA, dpaType);
     return this;
