@@ -61,6 +61,7 @@ public class PdfSureTyperParser {
   private static final String SESSION_HISTORY_TOKEN = "SESSION HISTORY";
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
   private static final int DONOR_ID_INDEX = 2;
+  private static final String UNOS_PATIENT_ID_TOKEN = "Donor UNOS ID:";
   private static final String PATIENT_ID_TOKEN = "Patient ID:";
 
   private static final String BW = "Bw:";
@@ -101,18 +102,30 @@ public class PdfSureTyperParser {
     StringJoiner typeAssignment = new StringJoiner(" ");
     // All the type assignment strings are joined together and then split on whitespace,
     // creating a stream of tokens.
+    String pid = null;
+    String upid = null;
+
     for (int currentLine = 0; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine].trim();
       // If we have parsed to session history we need to break because it contains repeats of key
       // words
       if (line.equals(SESSION_HISTORY_TOKEN)) {
         break;
-      } else if (line.contains(PATIENT_ID_TOKEN)) {
-        // The patient ID value is at a particular position in the line starting with this token
-        if (line.startsWith(PATIENT_ID_TOKEN)) {
-          builder.donorId(line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX]);
-        } else {
-          builder.donorId(line.split(PATIENT_ID_TOKEN)[1].split(WHITESPACE_REGEX)[1]);
+      } else if (line.contains(PATIENT_ID_TOKEN) || line.contains(UNOS_PATIENT_ID_TOKEN)) {
+        if (line.contains(PATIENT_ID_TOKEN)) {
+          // The patient ID value is at a particular position in the line starting with this token
+          if (line.startsWith(PATIENT_ID_TOKEN)) {
+            pid = line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX];
+          } else {
+            pid = line.split(PATIENT_ID_TOKEN)[1].split(WHITESPACE_REGEX)[1];
+          }
+        }
+        if (line.contains(UNOS_PATIENT_ID_TOKEN)) {
+          if (line.startsWith(UNOS_PATIENT_ID_TOKEN)) {
+            upid = line.split(WHITESPACE_REGEX)[3];
+          } else {
+            upid = line.split(UNOS_PATIENT_ID_TOKEN)[1].split(WHITESPACE_REGEX)[1];
+          }
         }
       } else if (line.trim().equals(SUMMARY_START)) {
         parseSummary(lines, typeAssignment, ++currentLine);
@@ -133,6 +146,12 @@ public class PdfSureTyperParser {
           currentLine = parseHaplotype(lines, ++currentLine, locus, locusMap);
         }
       }
+    }
+
+    if (upid == null) {
+      builder.donorId(pid);
+    } else {
+      builder.donorId(upid);
     }
 
     // Adjust DRB345 for unreported types
