@@ -49,6 +49,7 @@ public class XmlDonorNetParser {
   // Used to identify that input is a DonorNet file
   public static final String ROOT_ELEMENT = "donorupload";
   // Path to resources used for mapping DonorNet DQA, DPB and DRB XML elements
+  private static final String DRB_MAP_PATH = "/DrbMap.xml";
   private static final String DQA_MAP_PATH = "/DqaMap.xml";
   private static final String DQB_MAP_PATH = "/DqbMap.xml";
   private static final String DPA_MAP_PATH = "/DpaMap.xml";
@@ -58,6 +59,7 @@ public class XmlDonorNetParser {
   private static final String DR53_MAP_PATH = "/DR53Map.xml";
   private static final String XML_ATTR = "value";
   private static final String XML_TAG = "option";
+  private static ImmutableMap<String, String> drbMap;
   private static ImmutableMap<String, String> dqaMap;
   private static ImmutableMap<String, String> dqbMap;
   private static ImmutableMap<String, String> dpaMap;
@@ -82,8 +84,8 @@ public class XmlDonorNetParser {
     getXMLTagVal(donorRoot, "b2").ifPresent(builder::b);
     getXMLTagVal(donorRoot, "c1").ifPresent(builder::c);
     getXMLTagVal(donorRoot, "c2").ifPresent(builder::c);
-    getXMLTagVal(donorRoot, "dr1").ifPresent(builder::drb);
-    getXMLTagVal(donorRoot, "dr2").ifPresent(builder::drb);
+    getXMLTagVal(donorRoot, "dr1").ifPresent(s -> builder.drb(decodeValue(drbMap, s)));
+    getXMLTagVal(donorRoot, "dr2").ifPresent(s -> builder.drb(decodeValue(drbMap, s)));
     getXMLTagVal(donorRoot, "dq1").ifPresent(s -> builder.dqb(decodeValue(dqbMap, s)));
     getXMLTagVal(donorRoot, "dq2").ifPresent(s -> builder.dqb(decodeValue(dqbMap, s)));
     getXMLTagVal(donorRoot, "dqa1").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
@@ -140,6 +142,7 @@ public class XmlDonorNetParser {
     // All other loci export their actual specificities. Thus we have to map from the linear
     // numbers to specificities. These files contain mappings for the given locus and need to be
     // updated if the DonorNet pages ever change.
+    drbMap = populateFromFile(DRB_MAP_PATH);
     dpbMap = populateFromFile(DPB_MAP_PATH);
     dpaMap = populateFromFile(DPA_MAP_PATH);
     dqaMap = populateFromFile(DQA_MAP_PATH);

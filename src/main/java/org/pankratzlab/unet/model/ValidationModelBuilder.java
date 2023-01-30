@@ -131,7 +131,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder a(String aType) {
-    if (!aType.matches(".*\\d.*")) {
+    if (!aType.matches(".*\\d.*") || aType.equals("98")) {
       return null;
     }
     aLocus = makeIfNull(aLocus);
@@ -140,7 +140,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder b(String bType) {
-    if (!bType.matches(".*\\d.*")) {
+    if (!bType.matches(".*\\d.*") || bType.equals("98")) {
       return null;
     }
     bLocus = makeIfNull(bLocus);
@@ -149,7 +149,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder c(String cType) {
-    if (!cType.matches(".*\\d.*")) {
+    if (!cType.matches(".*\\d.*") || cType.equals("98")) {
       return null;
     }
     cLocus = makeIfNull(cLocus);
@@ -159,7 +159,7 @@ public class ValidationModelBuilder {
 
   public ValidationModelBuilder drb(String drbType) {
     drbLocus = makeIfNull(drbLocus);
-    if (!drbType.matches(".*\\d.*")) {
+    if (drbType == null || !drbType.matches(".*\\d.*")) {
       return null;
     }
     if (!Strings.isNullOrEmpty(drbType)
@@ -194,7 +194,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dqb(String dqbType) {
-    if (!dqbType.matches(".*\\d.*")) {
+    if (dqbType == null || !dqbType.matches(".*\\d.*")) {
       return null;
     }
     dqbLocus = makeIfNull(dqbLocus);
@@ -203,7 +203,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dqa(String dqaType) {
-    if (!dqaType.matches(".*\\d.*")) {
+    if (dqaType == null || !dqaType.matches(".*\\d.*")) {
       return null;
     }
     dqaLocus = makeIfNull(dqaLocus);
@@ -212,7 +212,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dpa(String dpaType) {
-    if (!dpaType.matches(".*\\d.*")) {
+    if (dpaType == null || !dpaType.matches(".*\\d.*")) {
       return null;
     }
     dpaLocus = makeIfNull(dpaLocus);
@@ -224,7 +224,7 @@ public class ValidationModelBuilder {
     dpbLocus = makeIfNull(dpbLocus);
     // Shorten the allele designation to allele group and specific HLA protein. Further fields can
     // not be entered into UNOS
-    if (!Strings.isNullOrEmpty(dpbType)) {
+    if (!Strings.isNullOrEmpty(dpbType) && dpbType.matches(".*\\d.*")) {
       HLAType tmpDPB1 = new HLAType(HLALocus.DPB1, dpbType);
       if (tmpDPB1.spec().size() > 2) {
         tmpDPB1 = new HLAType(HLALocus.DPB1,
