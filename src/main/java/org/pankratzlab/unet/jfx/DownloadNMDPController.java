@@ -30,6 +30,7 @@ import java.util.ResourceBundle;
 
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 
 import com.google.common.base.Strings;
@@ -38,8 +39,12 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.TextField;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -66,7 +71,27 @@ public class DownloadNMDPController {
 
   @FXML
   void openDownload(ActionEvent event) {
-    TypeValidationApp.hostServices.showDocument(NMDP_URL.getText());
+    try {
+      TypeValidationApp.hostServices.showDocument(NMDP_URL.getText());
+    } catch (Exception exc) {
+      // Probably no hostservices in this JVM due to openjdk issue
+      Hyperlink copyLink = new Hyperlink(NMDP_URL.getText());
+      copyLink.setOnAction(
+          e -> {
+            final Clipboard clipboard = Clipboard.getSystemClipboard();
+            final ClipboardContent content = new ClipboardContent();
+            content.putString(NMDP_URL.getText());
+            clipboard.setContent(content);
+            copyLink.setText("copied!");
+            copyLink.setVisited(true);
+          });
+      JFXUtilHelper.makeContentOnlyAlert(
+              AlertType.INFORMATION,
+              "Please visit this URL to download NMDP codes",
+              copyLink,
+              ButtonType.OK)
+          .showAndWait();
+    }
   }
 
   @FXML
@@ -112,7 +137,7 @@ public class DownloadNMDPController {
     String nmdpProp = HLAProperties.get().getProperty(propertyName);
 
     if (!Strings.isNullOrEmpty(nmdpProp)) {
-      if (!Files.exists(Paths.get(nmdpProp))) {
+      if (!new File(nmdpProp).exists()) {
         nmdpProp = null;
       } else {
         localProp.set(nmdpProp);

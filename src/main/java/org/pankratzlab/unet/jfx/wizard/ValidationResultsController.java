@@ -23,6 +23,7 @@ package org.pankratzlab.unet.jfx.wizard;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,73 +73,93 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private static final String WD_ALLELE_CLASS = "well-documented-allele";
   private static final String UK_ALLELE_CLASS = "unknown-allele";
   private static final String UNKNOWN_HAPLOTYPE_CLASS = "unknown-haplotype";
-  private static final Set<String> HAPLOTYPE_CLASSES =
-      ImmutableSet.of(WD_ALLELE_CLASS, UK_ALLELE_CLASS, UNKNOWN_HAPLOTYPE_CLASS);
+  private static final Set<String> HAPLOTYPE_CLASSES = ImmutableSet.of(WD_ALLELE_CLASS,
+                                                                       UK_ALLELE_CLASS,
+                                                                       UNKNOWN_HAPLOTYPE_CLASS);
 
-  @FXML private ResourceBundle resources;
+  @FXML
+  private ResourceBundle resources;
 
-  @FXML private URL location;
+  @FXML
+  private URL location;
 
-  @FXML private ValidatingWizardPane rootPane;
+  @FXML
+  private ValidatingWizardPane rootPane;
 
-  @FXML private MenuItem saveOption;
+  @FXML
+  private MenuItem saveOption;
 
-  @FXML private MenuItem printOption;
+  @FXML
+  private MenuItem saveCSVOption;
 
-  @FXML private TableView<ValidationRow<?>> resultsTable;
+  @FXML
+  private MenuItem printOption;
 
-  @FXML private TableColumn<ValidationRow<?>, String> rowLabelCol;
+  @FXML
+  private TableView<ValidationRow<?>> resultsTable;
 
-  @FXML private TableColumn<ValidationRow<?>, String> firstSourceCol;
+  @FXML
+  private TableColumn<ValidationRow<?>, String> rowLabelCol;
 
-  @FXML private TableColumn<ValidationRow<?>, Boolean> isEqualCol;
+  @FXML
+  private TableColumn<ValidationRow<?>, String> firstSourceCol;
 
-  @FXML private TableColumn<ValidationRow<?>, String> secondSourceCol;
+  @FXML
+  private TableColumn<ValidationRow<?>, Boolean> isEqualCol;
 
-  @FXML private Label resultDisplayText;
+  @FXML
+  private TableColumn<ValidationRow<?>, String> secondSourceCol;
 
-  @FXML private TableView<BCHaplotypeRow> bcHaplotypeTable;
+  @FXML
+  private Label resultDisplayText;
 
-  @FXML private TableColumn<BCHaplotypeRow, String> bcEthnicityColumn;
+  @FXML
+  private TableView<BCHaplotypeRow> bcHaplotypeTable;
 
-  @FXML private TableColumn<BCHaplotypeRow, HLAType> haplotypeCAlleleColumn;
+  @FXML
+  private TableColumn<BCHaplotypeRow, String> bcEthnicityColumn;
 
-  @FXML private TableColumn<BCHaplotypeRow, HLAType> haplotypeBAlleleColumn;
+  @FXML
+  private TableColumn<BCHaplotypeRow, HLAType> haplotypeCAlleleColumn;
 
-  @FXML private TableColumn<BCHaplotypeRow, String> haplotypeBwColumn;
+  @FXML
+  private TableColumn<BCHaplotypeRow, HLAType> haplotypeBAlleleColumn;
 
-  @FXML private TableColumn<BCHaplotypeRow, Double> bcFrequencyColumn;
+  @FXML
+  private TableColumn<BCHaplotypeRow, String> haplotypeBwColumn;
 
-  @FXML private TableView<DRDQHaplotypeRow> drdqHaplotypeTable;
+  @FXML
+  private TableColumn<BCHaplotypeRow, Double> bcFrequencyColumn;
 
-  @FXML private TableColumn<DRDQHaplotypeRow, String> drdqEthnicityColumn;
+  @FXML
+  private TableView<DRDQHaplotypeRow> drdqHaplotypeTable;
 
-  @FXML private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDRB345AlleleColumn;
+  @FXML
+  private TableColumn<DRDQHaplotypeRow, String> drdqEthnicityColumn;
 
-  @FXML private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDRB1AlleleColumn;
+  @FXML
+  private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDRB345AlleleColumn;
 
-  @FXML private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDQB1AlleleColumn;
+  @FXML
+  private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDRB1AlleleColumn;
 
-  @FXML private TableColumn<DRDQHaplotypeRow, Double> drdqFrequencyColumn;
+  @FXML
+  private TableColumn<DRDQHaplotypeRow, HLAType> haplotypeDQB1AlleleColumn;
+
+  @FXML
+  private TableColumn<DRDQHaplotypeRow, Double> drdqFrequencyColumn;
 
   /** Write the given {@link ValidationTable#getValidationImage()} to disk */
   @FXML
-  void saveResults(ActionEvent event) {
-    Optional<File> destination =
-        DonorNetUtils.getFile(
-            rootPane,
-            "Save Validation Results",
-            getTable().getId() + "_donor_valid",
-            "PNG",
-            ".png",
-            false);
+  void savePNGResults(ActionEvent event) {
+    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
+                                                       getTable().getId() + "_donor_valid", "PNG",
+                                                       ".png", false);
 
     if (destination.isPresent()) {
       try {
-        ImageIO.write(
-            SwingFXUtils.fromFXImage(rootPane.snapshot(null, null), null),
-            "png",
-            destination.get());
+        ImageIO.write(SwingFXUtils.fromFXImage(rootPane.snapshot(null, null), null), "png",
+                      destination.get());
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setHeaderText("Saved validation image to: " + destination.get().getName());
         alert.showAndWait();
@@ -150,10 +171,34 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     }
   }
 
+  /** Write the given {@link ValidationTable()} to disk as a CSV */
+  @FXML
+  private void saveCSVResults(ActionEvent event) {
+    ValidationTable vt = getTable();
+    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
+                                                       vt.getId() + "_results_csv", "CSV", ".csv",
+                                                       false);
+
+    if (destination.isPresent()) {
+      try {
+        PrintWriter pw = new PrintWriter(destination.get());
+        pw.write(vt.generateCSV());
+        pw.close();
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setHeaderText("Saved validation csv to: " + destination.get().getName());
+        alert.showAndWait();
+      } catch (IOException e) {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setHeaderText("Failed to save results to file: " + destination.get().getName());
+        alert.showAndWait();
+      }
+    }
+  }
+
   @FXML
   void printResults(ActionEvent event) {
-    ChoiceDialog<Printer> dialog =
-        new ChoiceDialog<>(Printer.getDefaultPrinter(), Printer.getAllPrinters());
+    ChoiceDialog<Printer> dialog = new ChoiceDialog<>(Printer.getDefaultPrinter(),
+                                                      Printer.getAllPrinters());
     dialog.setHeaderText("Select a printer");
     dialog.setContentText("Choose a printer from available printers");
     dialog.setTitle("Printer Choice");
@@ -176,44 +221,25 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   @FXML
   void initialize() {
-    assert rootPane != null
-        : "fx:id=\"rootPane\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert saveOption != null
-        : "fx:id=\"saveOption\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert printOption != null
-        : "fx:id=\"printOption\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert resultsTable != null
-        : "fx:id=\"resultsTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert rowLabelCol != null
-        : "fx:id=\"rowLabelCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert firstSourceCol != null
-        : "fx:id=\"firstSourceCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert isEqualCol != null
-        : "fx:id=\"isEqualCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert secondSourceCol != null
-        : "fx:id=\"secondSourceCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert resultDisplayText != null
-        : "fx:id=\"resultDisplayText\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert bcHaplotypeTable != null
-        : "fx:id=\"haplotypeTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert bcEthnicityColumn != null
-        : "fx:id=\"ethnicityColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert haplotypeCAlleleColumn != null
-        : "fx:id=\"haplotypeCAlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert haplotypeBAlleleColumn != null
-        : "fx:id=\"haplotypeBAlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert haplotypeBwColumn != null
-        : "fx:id=\"haplotypeBwColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert drdqHaplotypeTable != null
-        : "fx:id=\"drdqHaplotypeTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert drdqEthnicityColumn != null
-        : "fx:id=\"drdqEthnicityColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert haplotypeDRB345AlleleColumn != null
-        : "fx:id=\"haplotypeDRB345AlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert haplotypeDRB1AlleleColumn != null
-        : "fx:id=\"haplotypeDRB1AlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
-    assert haplotypeDQB1AlleleColumn != null
-        : "fx:id=\"haplotypeDQB1Column\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert saveOption != null : "fx:id=\"saveOption\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert printOption != null : "fx:id=\"printOption\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert resultsTable != null : "fx:id=\"resultsTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert rowLabelCol != null : "fx:id=\"rowLabelCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert firstSourceCol != null : "fx:id=\"firstSourceCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert isEqualCol != null : "fx:id=\"isEqualCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert secondSourceCol != null : "fx:id=\"secondSourceCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert resultDisplayText != null : "fx:id=\"resultDisplayText\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert bcHaplotypeTable != null : "fx:id=\"haplotypeTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert bcEthnicityColumn != null : "fx:id=\"ethnicityColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeCAlleleColumn != null : "fx:id=\"haplotypeCAlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeBAlleleColumn != null : "fx:id=\"haplotypeBAlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeBwColumn != null : "fx:id=\"haplotypeBwColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert drdqHaplotypeTable != null : "fx:id=\"drdqHaplotypeTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert drdqEthnicityColumn != null : "fx:id=\"drdqEthnicityColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeDRB345AlleleColumn != null : "fx:id=\"haplotypeDRB345AlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeDRB1AlleleColumn != null : "fx:id=\"haplotypeDRB1AlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert haplotypeDQB1AlleleColumn != null : "fx:id=\"haplotypeDQB1Column\" was not injected: check your FXML file 'ValidationResults.fxml'.";
 
     // Configure validation results table columns
     rowLabelCol.setCellValueFactory(new PropertyValueFactory<>(ValidationRow.ID_PROP));
@@ -227,26 +253,19 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
     // Configure haplotype table columns
     bcEthnicityColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
-    haplotypeCAlleleColumn.setCellValueFactory(
-        new PropertyValueFactory<>(BCHaplotypeRow.C_ALLELE_PROP));
-    haplotypeBAlleleColumn.setCellValueFactory(
-        new PropertyValueFactory<>(BCHaplotypeRow.B_ALLELE_PROP));
+    haplotypeCAlleleColumn.setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.C_ALLELE_PROP));
+    haplotypeBAlleleColumn.setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.B_ALLELE_PROP));
     haplotypeBwColumn.setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.BW_GROUP_PROP));
     bcFrequencyColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
 
     haplotypeCAlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
     haplotypeBAlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
 
-    drdqEthnicityColumn.setCellValueFactory(
-        new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
-    haplotypeDRB345AlleleColumn.setCellValueFactory(
-        new PropertyValueFactory<>(DRDQHaplotypeRow.DRB345_PROP));
-    haplotypeDRB1AlleleColumn.setCellValueFactory(
-        new PropertyValueFactory<>(DRDQHaplotypeRow.DRB1_ALLELE_PROP));
-    haplotypeDQB1AlleleColumn.setCellValueFactory(
-        new PropertyValueFactory<>(DRDQHaplotypeRow.DQB1_ALLELE_PROP));
-    drdqFrequencyColumn.setCellValueFactory(
-        new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
+    drdqEthnicityColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
+    haplotypeDRB345AlleleColumn.setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB345_PROP));
+    haplotypeDRB1AlleleColumn.setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB1_ALLELE_PROP));
+    haplotypeDQB1AlleleColumn.setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DQB1_ALLELE_PROP));
+    drdqFrequencyColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
 
     haplotypeDRB345AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
     haplotypeDRB1AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
@@ -303,9 +322,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
    *
    * @see https://stackoverflow.com/a/44807681/1027800
    */
-  private static class PassFailCellFactory
-      implements Callback<
-          TableColumn<ValidationRow<?>, Boolean>, TableCell<ValidationRow<?>, Boolean>> {
+  private static class PassFailCellFactory implements
+                                           Callback<TableColumn<ValidationRow<?>, Boolean>, TableCell<ValidationRow<?>, Boolean>> {
 
     private final Image imageTrue = new Image(getClass().getResourceAsStream("/pass.png"));
     private final Image imageFalse = new Image(getClass().getResourceAsStream("/fail.png"));
@@ -339,9 +357,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   }
 
   /** Helper class to color cells when the row is invalid */
-  private static class InvalidColorCellFactory
-      implements Callback<
-          TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>> {
+  private static class InvalidColorCellFactory implements
+                                               Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>> {
     @Override
     public TableCell<ValidationRow<?>, String> call(TableColumn<ValidationRow<?>, String> param) {
       return new TableCell<ValidationRow<?>, String>() {
@@ -349,8 +366,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
         protected void updateItem(String item, boolean empty) {
           setText(item);
           ValidationRow<?> row = (ValidationRow<?>) getTableRow().getItem();
-          if (Objects.nonNull(row)
-              && Objects.nonNull(row.isValidProperty())
+          if (Objects.nonNull(row) && Objects.nonNull(row.isValidProperty())
               && !(row.isValidProperty().get())) {
             getStyleClass().add(0, INVALID_STYLE_CLASS);
           } else {
@@ -371,8 +387,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
    * Helper class to color cells when the row's haplotype is unknown or individual alleles are not
    * common
    */
-  private static class HaplotypeCellFactory<T extends HaplotypeRow>
-      implements Callback<TableColumn<T, HLAType>, TableCell<T, HLAType>> {
+  private static class HaplotypeCellFactory<T extends HaplotypeRow> implements
+                                           Callback<TableColumn<T, HLAType>, TableCell<T, HLAType>> {
 
     @Override
     public TableCell<T, HLAType> call(TableColumn<T, HLAType> param) {
@@ -418,8 +434,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
           if (Objects.nonNull(tableRow)) {
             HaplotypeRow row = (HaplotypeRow) tableRow.getItem();
             if (Objects.nonNull(row)
-                && HaplotypeFrequencies.UNKNOWN_HAP_CUTOFF.compareTo(row.frequencyProperty().get())
-                    > 0) {
+                && HaplotypeFrequencies.UNKNOWN_HAP_CUTOFF.compareTo(row.frequencyProperty()
+                                                                        .get()) > 0) {
               getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
             }
           }

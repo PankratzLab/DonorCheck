@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
@@ -11,12 +12,13 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
     <center>
       <AnchorPane>
          <children>
@@ -75,7 +77,7 @@
                         </TextFlow>
                         <TextFlow textAlignment="CENTER" GridPane.rowIndex="1">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="SureTyper">
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="LinkSeq">
                                  <font>
                                     <Font size="20.0" />
                                  </font></Text>
@@ -99,7 +101,7 @@
                         </TextFlow>
                         <TextFlow textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="PDF">
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="XML, PDF">
                                  <font>
                                     <Font size="20.0" />
                                  </font></Text>
@@ -146,28 +148,6 @@
          </BorderPane.margin>
       </AnchorPane>
    </center>
-   <top>
-      <MenuBar BorderPane.alignment="TOP_LEFT">
-        <menus>
-          <Menu mnemonicParsing="false" text="File">
-            <items>
-              <MenuItem mnemonicParsing="false" onAction="#fileQuitAction" text="Quit" />
-            </items>
-          </Menu>
-            <Menu mnemonicParsing="false" text="Haplotypes">
-              <items>
-                <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set Frequency Tables..." />
-              </items>
-            </Menu>
-            <Menu mnemonicParsing="false" text="Tutorials">
-              <items>
-                <MenuItem mnemonicParsing="false" onAction="#tutorialXMLDownload" text="XML DonorNet Download" />
-                  <MenuItem mnemonicParsing="false" onAction="#tutorialHTMLDownload" text="HTML DonorNet Download" />
-              </items>
-            </Menu>
-        </menus>
-      </MenuBar>
-   </top>
    <bottom>
       <ButtonBar buttonOrder="L_HEU+FBIX_NCYOA_R" BorderPane.alignment="CENTER_RIGHT">
         <buttons>
@@ -182,4 +162,36 @@
          </BorderPane.margin>
       </ButtonBar>
    </bottom>
+   <top>
+      <StackPane prefHeight="25.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <children>
+            <MenuBar>
+              <menus>
+                <Menu mnemonicParsing="false" text="File">
+                  <items>
+                    <MenuItem mnemonicParsing="false" onAction="#fileQuitAction" text="Quit" />
+                  </items>
+                </Menu>
+                  <Menu mnemonicParsing="false" text="Haplotypes">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set Frequency Tables..." />
+                    </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" text="Tutorials">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#tutorialXMLDownload" text="XML DonorNet Download" />
+                        <MenuItem mnemonicParsing="false" onAction="#tutorialHTMLDownload" text="HTML DonorNet Download" />
+                    </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" text="MAC Conversion">
+                     <items>
+                        <MenuItem mnemonicParsing="false" onAction="#macConversionScore6" text="Score6" />
+                     </items>
+                  </Menu>
+              </menus>
+            </MenuBar>
+            <Label fx:id="versionLabel" opacity="0.6" text="Version: " StackPane.alignment="CENTER_RIGHT" />
+         </children>
+      </StackPane>
+   </top>
 </BorderPane>

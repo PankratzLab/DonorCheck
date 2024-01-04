@@ -35,7 +35,7 @@ public class PdfDonorParser extends AbstractDonorFileParser {
   private static final String DISPLAY_STRING = "PDF";
   private static final String FILE_CHOOSER_HEADER = "Select Donor Typing PDF";
   private static final String INITIAL_NAME = "";
-  private static final String EXTENSION_DESC = "SureTyper";
+  private static final String EXTENSION_DESC = "LinkSeq";
   private static final String EXTENSION_NAME = "pdf";
   private static final String EXTENSION = "*." + EXTENSION_NAME;
   // private static final String QTYPER = "QTYPE";
@@ -81,6 +81,7 @@ public class PdfDonorParser extends AbstractDonorFileParser {
         String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
 
         // Pass the text to the appropriate parser
+        builder.sourceType("SureTyper");
         PdfSureTyperParser.parseTypes(builder, pdfLines);
         // FIXME currently not well supported
         // else if (pdfText.contains(QTYPER)) {

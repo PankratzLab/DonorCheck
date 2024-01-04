@@ -46,12 +46,14 @@ public class ValidationModel {
 
   private final String donorId;
   private final String source;
+  private final String sourceType;
   private final ImmutableSortedSet<SeroType> aLocus;
   private final ImmutableSortedSet<SeroType> bLocus;
   private final ImmutableSortedSet<SeroType> cLocus;
   private final ImmutableSortedSet<SeroType> drbLocus;
   private final ImmutableSortedSet<SeroType> dqbLocus;
   private final ImmutableSortedSet<SeroType> dqaLocus;
+  private final ImmutableSortedSet<SeroType> dpaLocus;
   private final ImmutableSortedSet<HLAType> dpbLocus;
   private final boolean bw4;
   private final boolean bw6;
@@ -61,31 +63,27 @@ public class ValidationModel {
   private final ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
 
-  public ValidationModel(
-      String donorId,
-      String source,
-      Collection<SeroType> a,
-      Collection<SeroType> b,
-      Collection<SeroType> c,
-      Collection<SeroType> drb,
-      Collection<SeroType> dqb,
-      Collection<SeroType> dqa,
-      Collection<HLAType> dpb,
-      boolean bw4,
-      boolean bw6,
-      List<HLAType> dr51,
-      List<HLAType> dr52,
-      List<HLAType> dr53,
-      Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
-      Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes) {
+  public ValidationModel(String donorId, String source, String sourceType, Collection<SeroType> a,
+                         Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
+                         Collection<SeroType> dqb, Collection<SeroType> dqa,
+                         Collection<SeroType> dpa, Collection<HLAType> dpb, boolean bw4,
+                         boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
+                         Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
+                         Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes) {
     this.donorId = donorId;
     this.source = source;
+    this.sourceType = sourceType;
     aLocus = ImmutableSortedSet.copyOf(a);
     bLocus = ImmutableSortedSet.copyOf(b);
     cLocus = ImmutableSortedSet.copyOf(c);
     drbLocus = ImmutableSortedSet.copyOf(drb);
     dqbLocus = ImmutableSortedSet.copyOf(dqb);
     dqaLocus = ImmutableSortedSet.copyOf(dqa);
+    if (Objects.nonNull(dpa)) {
+      dpaLocus = ImmutableSortedSet.copyOf(dpa);
+    } else {
+      dpaLocus = null;
+    }
     dpbLocus = ImmutableSortedSet.copyOf(dpb);
     this.bw4 = bw4;
     this.bw6 = bw6;
@@ -104,6 +102,10 @@ public class ValidationModel {
 
   public String getSource() {
     return source;
+  }
+
+  public String getSourceType() {
+    return sourceType;
   }
 
   public SeroType getA1() {
@@ -152,6 +154,14 @@ public class ValidationModel {
 
   public SeroType getDQA2() {
     return getFromPair(dqaLocus, 1);
+  }
+
+  public SeroType getDPA1() {
+    return getFromPair(dpaLocus, 0);
+  }
+
+  public SeroType getDPA2() {
+    return getFromPair(dpaLocus, 1);
   }
 
   public HLAType getDPB1() {
@@ -207,7 +217,7 @@ public class ValidationModel {
   }
 
   private <T> T getFromPair(ImmutableSortedSet<T> set, int index) {
-    if (set.size() <= index) {
+    if (Objects.isNull(set) || set.size() <= index) {
       return null;
     }
     return index == 0 ? set.first() : set.last();
@@ -233,6 +243,7 @@ public class ValidationModel {
     result = prime * result + ((donorId == null) ? 0 : donorId.hashCode());
     result = prime * result + ((dpbLocus == null) ? 0 : dpbLocus.hashCode());
     result = prime * result + ((dqaLocus == null) ? 0 : dqaLocus.hashCode());
+    result = prime * result + ((dpaLocus == null) ? 0 : dpaLocus.hashCode());
     result = prime * result + ((dqbLocus == null) ? 0 : dqbLocus.hashCode());
     result = prime * result + ((dr51Locus == null) ? 0 : dr51Locus.hashCode());
     result = prime * result + ((dr52Locus == null) ? 0 : dr52Locus.hashCode());
@@ -269,6 +280,9 @@ public class ValidationModel {
     if (dpbLocus == null) {
       if (other.dpbLocus != null) return false;
     } else if (!dpbLocus.equals(other.dpbLocus)) return false;
+    if (dpaLocus == null) {
+      if (other.dpaLocus != null) return false;
+    } else if (!dpaLocus.equals(other.dpaLocus)) return false;
     if (dqaLocus == null) {
       if (other.dqaLocus != null) return false;
     } else if (!dqaLocus.equals(other.dqaLocus)) return false;
@@ -301,12 +315,14 @@ public class ValidationModel {
     StringJoiner sj = new StringJoiner("\n");
     sj.add(getDonorId());
     sj.add(getSource());
+    sj.add(getSourceType());
     addPair(sj, getA1(), getA2());
     addPair(sj, getB1(), getB2());
     addPair(sj, getC1(), getC2());
     addPair(sj, getDRB1(), getDRB2());
     addPair(sj, getDQB1(), getDQB2());
     addPair(sj, getDQA1(), getDQA2());
+    addPair(sj, getDPA1(), getDPA2());
     addPair(sj, getDPB1(), getDPB2());
     sj.add("Bw4: " + isBw4());
     sj.add("Bw6: " + isBw6());
@@ -319,13 +335,13 @@ public class ValidationModel {
     return sj.toString();
   }
 
-  private void addHaplotypes(
-      StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes, String title) {
+  private void addHaplotypes(StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes,
+                             String title) {
     sj.add(title);
     for (RaceGroup e : RaceGroup.values()) {
       sj.add("\t" + e.toString());
-      List<String> hapStrings =
-          haplotypes.get(e).stream().map(Haplotype::toString).sorted().collect(Collectors.toList());
+      List<String> hapStrings = haplotypes.get(e).stream().map(Haplotype::toString).sorted()
+                                          .collect(Collectors.toList());
       hapStrings.forEach(s -> sj.add("\t" + s));
     }
   }

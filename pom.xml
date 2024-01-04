@@ -7,7 +7,7 @@
 
 	<groupId>org.pankratzlab</groupId>
 	<artifactId>donor-check</artifactId>
-	<version>0.0.8-SNAPSHOT</version>
+	<version>0.0.12</version>
 	<packaging>jar</packaging>
 
 	<description>A stand-alone tool for validating DonorNet typing entries.</description>
@@ -22,7 +22,31 @@
 			<name>Mark Hiner</name>
 			<email>hine0116@umn.edu</email>
 		</developer>
+		<developer>
+			<id>kaitlinrenee</id>
+			<name>Kaitlin Clarke</name>
+			<email>krclarke@umn.edu</email>
+		</developer>
 	</developers>
+	
+
+	<repositories>
+		<repository>
+			<id>central</id>
+			<url>https://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
+			<id>github-donor-check</id>
+			<url>https://maven.pkg.github.com/PankratzLab/DonorCheck</url>
+		</repository>
+	</repositories>
+
+	<distributionManagement>
+		<repository>
+			<id>github-donor-check</id>
+			<url>https://maven.pkg.github.com/PankratzLab/DonorCheck</url>
+		</repository>
+	</distributionManagement>
 
 	<scm>
 		<connection>scm:git:git://github.com/PankratzLab/DonorCheck</connection>
@@ -43,6 +67,11 @@
 	</properties>
 
 	<dependencies>
+		<dependency>
+ 			 <groupId>org.apache.maven</groupId>
+ 			 <artifactId>maven-model</artifactId>
+ 			 <version>3.3.9</version>
+		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
@@ -93,15 +122,27 @@
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>2.11.1</version>
+			<version>2.18.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
-			<version>2.11.1</version>
+			<version>2.18.0</version>
 		</dependency>
 		<!-- Test scope dependencies - not included in .jars built with Maven -->
 		<!-- JUnit - http://junit.org/ -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>5.4.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>5.4.2</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-params</artifactId>
@@ -143,6 +184,13 @@
 			package to jar, install to local repository). -->
 		<defaultGoal>install</defaultGoal>
 		<finalName>${outname}</finalName>
+		
+		<resources>
+			<resource>
+  				<directory>src/main/resources</directory>
+    			<filtering>true</filtering>
+  			</resource>
+  		</resources>
 
 		<!-- The pluginManagement block controls plugin configuration in all modules -->
 		<pluginManagement>
@@ -425,78 +473,15 @@
 	</build>
 	<profiles>
 		<profile>
-			<id>32bitstuff</id>
-			<activation>
-				<property>
-					<name>sun.arch.data.model</name>
-					<value>32</value>
-				</property>
-			</activation>
-			<properties>
-				<winVer>win86</winVer>
-			</properties>
-		</profile>
-
-		<profile>
-			<id>64bitstuff</id>
-			<activation>
-				<property>
-					<name>sun.arch.data.model</name>
-					<value>64</value>
-				</property>
-			</activation>
-			<properties>
-				<winVer>win64</winVer>
-			</properties>
-		</profile>
-		<profile>
-			<id>assemble</id>
+			<!-- This profile is used to create an installer for new releases -->
+			<id>jfx-installer</id>
 			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version>
-						<configuration>
-							<finalName>${outname}</finalName>
-							<appendAssemblyId>false</appendAssemblyId>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
-						</configuration>
-						<executions>
-							<execution>
-								<id>make-assembly</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>chmod-jar</id>
-								<phase>package</phase>
-								<configuration>
-									<target>
-										<chmod file="${project.build.directory}/${outname}.jar"
-											perm="ugo+rx" />
-									</target>
-								</configuration>
-								<goals>
-									<goal>run</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<profile>
-			<id>donorcheck</id>
-			<build>
+				<resources>
+					<resource>
+  						<directory>src/main/resources</directory>
+    					<filtering>true</filtering>
+  					</resource>
+  				</resources>
 				<plugins>
 					<plugin>
 						<groupId>com.zenjava</groupId>
@@ -581,6 +566,85 @@
 													tofile="${project.build.directory}/jfx/native/${appName}-installer-osx.app" />
 											</ac:then>
 										</ac:if>
+									</target>
+								</configuration>
+								<goals>
+									<goal>run</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<!-- This profile is enabled automatically when building with a 32-bit JVM -->
+			<id>32bitstuff</id>
+			<activation>
+				<property>
+					<name>sun.arch.data.model</name>
+					<value>32</value>
+				</property>
+			</activation>
+			<properties>
+				<winVer>win86</winVer>
+			</properties>
+		</profile>
+
+		<profile>
+			<!-- This profile is enabled automatically when building with a 64-bit JVM -->
+			<id>64bitstuff</id>
+			<activation>
+				<property>
+					<name>sun.arch.data.model</name>
+					<value>64</value>
+				</property>
+			</activation>
+			<properties>
+				<winVer>win64</winVer>
+			</properties>
+		</profile>
+		<profile>
+			<!-- This profile is used to build a self-contained .jar. The preferred method of distribution is a javafx installer: see profile 'jfx-installer'. -->
+			<id>assemble</id>
+			<build>
+				<resources>
+					<resource>
+  						<directory>src/main/resources</directory>
+    					<filtering>true</filtering>
+  					</resource>
+  				</resources>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.4</version>
+						<configuration>
+							<finalName>${outname}</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+						</configuration>
+						<executions>
+							<execution>
+								<id>make-assembly</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>chmod-jar</id>
+								<phase>package</phase>
+								<configuration>
+									<target>
+										<chmod file="${project.build.directory}/${outname}.jar"
+											perm="ugo+rx" />
 									</target>
 								</configuration>
 								<goals>

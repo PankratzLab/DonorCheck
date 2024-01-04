@@ -26,8 +26,9 @@
               <menus>
                 <Menu mnemonicParsing="false" text="File">
                   <items>
-                    <MenuItem fx:id="saveOption" mnemonicParsing="false" onAction="#saveResults" text="Save..." />
-                        <MenuItem fx:id="printOption" mnemonicParsing="false" onAction="#printResults" text="Print..." />
+                    <MenuItem fx:id="saveOption" mnemonicParsing="false" onAction="#savePNGResults" text="Save to Image" />
+                    <MenuItem fx:id="saveCSVOption" mnemonicParsing="false" onAction="#saveCSVResults" text="Save to CSV" />
+                    <MenuItem fx:id="printOption" mnemonicParsing="false" onAction="#printResults" text="Print..." />
                   </items>
                 </Menu>
               </menus>
@@ -43,7 +44,7 @@
          <children>
             <VBox alignment="TOP_RIGHT">
                <children>
-                  <TableView fx:id="resultsTable" fixedCellSize="30.0" prefHeight="720.0">
+                  <TableView fx:id="resultsTable" fixedCellSize="30.0" prefHeight="780.0">
                     <columns>
                         <TableColumn fx:id="rowLabelCol" editable="false" prefWidth="125.0" sortable="false" styleClass="row-labels" />
                       <TableColumn fx:id="firstSourceCol" editable="false" prefWidth="175.0" sortable="false" />

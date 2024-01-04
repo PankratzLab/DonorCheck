@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.LabelledType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.model.Strand;
 
@@ -62,10 +63,14 @@ public final class HaplotypeUtils {
       }
     } else {
       HLALocus parsedLocus = HLALocus.valueOf(locus);
-      HLAType rawType = new HLAType(parsedLocus, specString.replaceAll("N", ""));
+      HLAType rawType = new HLAType(parsedLocus, specString.replaceAll("[LSCAQN]", ""));
       HLAType finalType;
       if (specString.endsWith("N")) {
         finalType = new NullType(parsedLocus, rawType.spec());
+      } else if (LabelledType.matches(specString)) {
+        finalType =
+            new LabelledType(
+                parsedLocus, rawType.spec(), specString.charAt(specString.length() - 1));
       } else {
         finalType = new HLAType(parsedLocus, rawType.spec());
       }

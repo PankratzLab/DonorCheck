@@ -44,18 +44,24 @@ import com.google.common.collect.Multimap;
 
 /** Specific parsing logic for SureTyper PDFs */
 public class PdfSureTyperParser {
+  private static final String DRB345_REGEX = "DRB[345]";
   private static final String PAGE_END = "page";
   private static final String SUMMARY_START = "SUMMARY";
-  private static final String SUMMARY_END = PAGE_END;
+  private static final String SUMMARY_END = "ALLELES";
   private static final String HLA_PREFIX = "HLA";
   private static final String WHITESPACE_REGEX = "\\s+";
 
-  private static final Set<String> TYPING_STOP_TOKENS =
-      ImmutableSet.of(PAGE_END, "INTERNAL", "REVIEW", "NOTES");
+  private static final Set<String> TYPING_STOP_TOKENS = ImmutableSet.of("ALLELES", "INTERNAL",
+                                                                        "REVIEW", "NOTES");
+  // Set of strings to ensure typeAssignment only gets filled with appropriate values
+  private static final Set<String> HLA_TOKENS = ImmutableSet.of("DRB", "DPA", "DPB", "HLA", "DQA",
+                                                                "DQB");
 
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
+  private static final String SESSION_HISTORY_TOKEN = "SESSION HISTORY";
   private static final String GENOTYPE_HEADER = "ALLELES ANTIGEN";
   private static final int DONOR_ID_INDEX = 2;
+  private static final String UNOS_PATIENT_ID_TOKEN = "Donor UNOS ID:";
   private static final String PATIENT_ID_TOKEN = "Patient ID:";
 
   private static final String BW = "Bw:";
@@ -96,11 +102,31 @@ public class PdfSureTyperParser {
     StringJoiner typeAssignment = new StringJoiner(" ");
     // All the type assignment strings are joined together and then split on whitespace,
     // creating a stream of tokens.
+    String pid = null;
+    String upid = null;
+
     for (int currentLine = 0; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine].trim();
-      if (line.startsWith(PATIENT_ID_TOKEN)) {
-        // The patient ID value is at a particular position in the line starting with this token
-        builder.donorId(line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX]);
+      // If we have parsed to session history we need to break because it contains repeats of key
+      // words
+      if (line.equals(SESSION_HISTORY_TOKEN)) {
+        break;
+      } else if (line.contains(PATIENT_ID_TOKEN) || line.contains(UNOS_PATIENT_ID_TOKEN)) {
+        if (line.contains(PATIENT_ID_TOKEN)) {
+          // The patient ID value is at a particular position in the line starting with this token
+          if (line.startsWith(PATIENT_ID_TOKEN)) {
+            pid = line.split(WHITESPACE_REGEX)[DONOR_ID_INDEX];
+          } else {
+            pid = line.split(PATIENT_ID_TOKEN)[1].split(WHITESPACE_REGEX)[1];
+          }
+        }
+        if (line.contains(UNOS_PATIENT_ID_TOKEN)) {
+          if (line.startsWith(UNOS_PATIENT_ID_TOKEN)) {
+            upid = line.split(WHITESPACE_REGEX)[3];
+          } else {
+            upid = line.split(UNOS_PATIENT_ID_TOKEN)[1].split(WHITESPACE_REGEX)[1];
+          }
+        }
       } else if (line.trim().equals(SUMMARY_START)) {
         parseSummary(lines, typeAssignment, ++currentLine);
       } else if (line.contains(TYPING_START_TOKEN)) {
@@ -122,9 +148,15 @@ public class PdfSureTyperParser {
       }
     }
 
+    if (upid == null) {
+      builder.donorId(pid);
+    } else {
+      builder.donorId(upid);
+    }
+
     // Adjust DRB345 for unreported types
     for (Entry<Strand, HLAType> entry : haplotypeMap.get(HAPLOTYPE_DRB1).entries()) {
-      if (Objects.isNull(DRAssociations.getDRBLocus(entry.getValue().lowResEquiv()))) {
+      if (!DRAssociations.getDRBLocus(entry.getValue().lowResEquiv()).isPresent()) {
         // This DRB1 has an unreported DRB345 that needs to be manually registered
         Multimap<Strand, HLAType> drb345Map = haplotypeMap.get(HAPLOTYPE_DRB345);
         Strand unreportedStrand = entry.getKey();
@@ -150,7 +182,7 @@ public class PdfSureTyperParser {
         TypeSetter metadata = metadataMap.get(token);
         setter = metadata.getSetter();
         prefix = metadata.getTokenPrefix();
-      } else if (setter != null) {
+      } else if (setter != null && token.matches(".*\\d.*")) {
         // Erase the prefix from the current token and set the value on the model builder
         token = token.replace(prefix, "");
         token = token.replaceAll("[+]", "");
@@ -165,9 +197,9 @@ public class PdfSureTyperParser {
    */
   private static int parseSummary(String[] lines, StringJoiner typeAssignment, int currentLine) {
     // go line-by-line, split on whitespace, look for DRB[3/4/5]* tokens and convert to line
-    final ImmutableSet<String> validLoci =
-        ImmutableSet.of(
-            HLALocus.DRB3.toString(), HLALocus.DRB4.toString(), HLALocus.DRB5.toString());
+    final ImmutableSet<String> validLoci = ImmutableSet.of(HLALocus.DRB3.toString(),
+                                                           HLALocus.DRB4.toString(),
+                                                           HLALocus.DRB5.toString());
     boolean homozygous = false;
     for (; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine];
@@ -182,10 +214,9 @@ public class PdfSureTyperParser {
           // For homozygous cases that are reported, the locus appears twice.. once by itself, the
           // other with the allele designation.
           homozygous = true;
-        } else if ((token.contains(HLALocus.DRB3 + "*")
-                || token.contains(HLALocus.DRB4 + "*")
-                || token.contains(HLALocus.DRB5 + "*"))
-            && !token.endsWith("N")) {
+        } else if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
+                    || token.contains(HLALocus.DRB5 + "*"))
+                   && !token.endsWith("N")) {
           type = token;
         }
         // Separate type from the rest of the allele
@@ -193,8 +224,8 @@ public class PdfSureTyperParser {
           if (type.contains(":")) {
             type = type.substring(0, type.indexOf(":"));
           }
-          String typeAssignmentEntry =
-              HLA_PREFIX + "-" + type.substring(0, type.indexOf("*")) + ": ";
+          String typeAssignmentEntry = HLA_PREFIX + "-" + type.substring(0, type.indexOf("*"))
+                                       + ": ";
           typeAssignmentEntry += type;
           if (homozygous) {
             typeAssignmentEntry += (" " + type);
@@ -225,8 +256,8 @@ public class PdfSureTyperParser {
    * Helper method to parse the possible haplotypes. These are long lists of possible alleles,
    * divided by HLA locus.
    */
-  private static int parseHaplotype(
-      String[] lines, int currentLine, String locus, Multimap<Strand, HLAType> strandMap) {
+  private static int parseHaplotype(String[] lines, int currentLine, String locus,
+                                    Multimap<Strand, HLAType> strandMap) {
     // Sections start with a line containing JUST HLA_A/b/c etc..
     // Strands are marked by first type is always low res (group)
 
@@ -236,7 +267,7 @@ public class PdfSureTyperParser {
     for (; currentLine < lines.length && strandIndex < Strand.values().length; currentLine++) {
       line = lines[currentLine].trim();
 
-      String[] tokens = line.split("\\;|,|\\*|[a-mo-z]\\s");
+      String[] tokens = line.split("\\s+|;");
       int tokenIndex = 0;
 
       // Check if we are at a strand break
@@ -248,32 +279,40 @@ public class PdfSureTyperParser {
         // This indicates a new locus is starting
         break;
       }
-      if (locus.startsWith("DRB") && !line.contains(locus) && strandIndex >= 0) {
-        if (line.matches("DRB[345].*") || line.matches("^DRB[0-9]\\*[0-9]+")) {
-          // DRB345 are all in one section - we do not want to accidentally mix DRB loci. We also
-          // check the strand index because we do not want to prematurely end iteration.
-          break;
-        }
-      }
 
-      if (line.matches(locus + "[*w][0-9]+.*") || line.startsWith(locus + " " + locus)) {
-        // This is the first line of allele data. It is possible for it to appear without a
-        // GENOTYPE_HEADER if both alleles are on the same page.
+      // DRB345 are unfortunately handled differently than other haplotype sections, and are not
+      // consistent between SureTyper versions
+      boolean isDRB345Locus = locus.matches(DRB345_REGEX);
+
+      // Check if this is the first line of the allele data we're interested in, which will be
+      // marked by a token in the form of:
+      // A*01
+      // Cw10
+      // DRB3
+      if (line.matches(locus + "[*w][0-9]+.*") || (isDRB345Locus && tokens[0].equals(locus))) {
+
+        // Now we have to ensure we're parsing the target DRB345 locus
+        if (isDRB345Locus) {
+          if (!line.contains(locus)) {
+            // This is the wrong allele section - could be a DRB1 or other DRB345
+            continue;
+          } else if (!strandMap.isEmpty()) {
+            // We are starting our target locus here, but we have already parsed something (a
+            // different DRB345) to the strand map. So we want to start at the next strand index
+            strandIndex++;
+          }
+        }
+
         strandIndex++;
-
-        if (!strandMap.isEmpty() && locus.matches("DRB[345]") && line.contains(locus)) {
-          strandIndex++;
-          // Each DRB345 locus has to be parsed separately. It is possible the map could've been
-          // previously parsed, in which case we don't want to start from the first strand.
-        }
 
         // Skip the first token. The first token is the allele group pattern (e.g. B*02)
         tokenIndex++;
       }
 
-      for (;
-          tokenIndex < tokens.length && (strandIndex >= 0 && strandIndex < Strand.values().length);
-          tokenIndex++) {
+      // Here we start parsing lines to alleles, but only if we've confirmed the allele section has
+      // started strandIndex > 0)
+      for (; tokenIndex < tokens.length
+             && (strandIndex >= 0 && strandIndex < Strand.values().length); tokenIndex++) {
 
         String token = tokens[tokenIndex].replaceAll("\\s+", "");
 
@@ -290,7 +329,7 @@ public class PdfSureTyperParser {
         // Sanitize the token string
         token = token.replaceAll("[^0-9:nN-]", "");
 
-        if (token.isEmpty()) {
+        if (!token.matches(".*[0-9].*")) {
           // Wasn't actually an allele
           continue;
         }
@@ -313,9 +352,10 @@ public class PdfSureTyperParser {
       line = lines[currentLine].trim();
       if (containsFlag(TYPING_STOP_TOKENS, line)) {
         break;
+      } else if (containsFlag(HLA_TOKENS, line)) {
+        // Building the type assignment lines
+        typeAssignment.add(line);
       }
-      // Building the type assignment lines
-      typeAssignment.add(line);
     }
     return --currentLine;
   }
@@ -346,7 +386,7 @@ public class PdfSureTyperParser {
 
     // DPA1 is present in the typing data but we do not currently track it in the validation model
     // (not entered in DonorNet)
-    setterBuilder.put(HLA_DPA1, new TypeSetter("DPA1*", PdfSureTyperParser::noOp));
+    setterBuilder.put(HLA_DPA1, new TypeSetter("DPA1*", ValidationModelBuilder::dpa));
 
     setterBuilder.put(HLA_DPB1, new TypeSetter("DPB1*", ValidationModelBuilder::dpb));
 

@@ -52,7 +52,7 @@ public final class SerotypeEquivalence {
     put(builder, "63", HLALocus.B, "15:16", "15:17");
     put(builder, "35", HLALocus.B, "15:22");
     put(builder, "60", HLALocus.B, "40:01", "40:10");
-    put(builder, "61", HLALocus.B, "40:02", "40:06", "40:09");
+    put(builder, "61", HLALocus.B, "40:02", "40:06", "40:09", "40:20");
     put(builder, "50", HLALocus.B, "40:05");
     put(builder, "45", HLALocus.B, "44:09");
     put(builder, "50", HLALocus.B, "50:01");
@@ -76,10 +76,9 @@ public final class SerotypeEquivalence {
     equivalencies = builder.build();
   }
 
-
   // put method for creating the reference table used in the get method.
   private static void put(Builder<HLAType, SeroType> builder, String serotypeSpec, HLALocus locus,
-      String... hlaSpecs) {
+                          String... hlaSpecs) {
     SeroType s = new SeroType(locus.sero(), serotypeSpec);
     // create a one to one table for mapping alleles to serotype
     for (String allele : hlaSpecs) {
