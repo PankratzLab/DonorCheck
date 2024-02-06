@@ -7,7 +7,8 @@
 
 	<groupId>org.pankratzlab</groupId>
 	<artifactId>donor-check</artifactId>
-	<version>0.0.12</version>
+	<!-- if version number changes, be sure to update in project.properties file also -->
+	<version>0.0.13</version>
 	<packaging>jar</packaging>
 
 	<description>A stand-alone tool for validating DonorNet typing entries.</description>
@@ -173,6 +174,31 @@
 			<artifactId>mockito-core</artifactId>
 			<version>2.27.0</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+			<version>11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-fxml</artifactId>
+			<version>11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-graphics</artifactId>
+			<version>11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-base</artifactId>
+			<version>11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-swing</artifactId>
+			<version>11</version>
 		</dependency>
 	</dependencies>
 	
