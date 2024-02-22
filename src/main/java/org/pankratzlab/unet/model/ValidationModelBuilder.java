@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
@@ -92,14 +93,25 @@ public class ValidationModelBuilder {
   private String donorId;
   private String source;
   private String sourceType;
-  private Set<SeroType> aLocus;
-  private Set<SeroType> bLocus;
-  private Set<SeroType> cLocus;
+
+  /* These are LinkedHashSets, thus ensuring insertion order */
+  private Set<SeroType> aLocusCWD;
+  private Set<SeroType> bLocusCWD;
+  private Set<SeroType> cLocusCWD;
+  private Set<SeroType> aLocusFirst = new LinkedHashSet<>();
+  private Set<SeroType> bLocusFirst = new LinkedHashSet<>();
+  private Set<SeroType> cLocusFirst = new LinkedHashSet<>();
+
+  private List<Pair<SeroType, SeroType>> aAlleles = new ArrayList<>();;
+  private List<Pair<SeroType, SeroType>> bAlleles = new ArrayList<>();;
+  private List<Pair<SeroType, SeroType>> cAlleles = new ArrayList<>();;
+
   private Set<SeroType> drbLocus;
   private Set<SeroType> dqbLocus;
   private Set<SeroType> dqaLocus;
   private Set<SeroType> dpaLocus;
   private Set<HLAType> dpbLocus;
+
   private Boolean bw4;
   private Boolean bw6;
   private List<HLAType> dr51Locus = new ArrayList<>();
@@ -134,8 +146,17 @@ public class ValidationModelBuilder {
     if (!aType.matches(".*\\d.*") || aType.equals("98")) {
       return null;
     }
-    aLocus = makeIfNull(aLocus);
-    addToLocus(aLocus, SeroLocus.A, aType);
+    aLocusCWD = makeIfNull(aLocusCWD);
+    addToLocus(aLocusCWD, SeroLocus.A, aType);
+    return this;
+  }
+
+  public ValidationModelBuilder aNonCWD(String aType) {
+    if (!aType.matches(".*\\d.*") || aType.equals("98")) {
+      return null;
+    }
+    aLocusFirst = makeIfNull(aLocusFirst);
+    addToLocus(aLocusFirst, SeroLocus.A, aType);
     return this;
   }
 
@@ -143,8 +164,17 @@ public class ValidationModelBuilder {
     if (!bType.matches(".*\\d.*") || bType.equals("98")) {
       return null;
     }
-    bLocus = makeIfNull(bLocus);
-    addToLocus(bLocus, SeroLocus.B, bType);
+    bLocusCWD = makeIfNull(bLocusCWD);
+    addToLocus(bLocusCWD, SeroLocus.B, bType);
+    return this;
+  }
+
+  public ValidationModelBuilder bNonCWD(String bType) {
+    if (!bType.matches(".*\\d.*") || bType.equals("98")) {
+      return null;
+    }
+    bLocusFirst = makeIfNull(bLocusFirst);
+    addToLocus(bLocusFirst, SeroLocus.B, bType);
     return this;
   }
 
@@ -152,8 +182,35 @@ public class ValidationModelBuilder {
     if (!cType.matches(".*\\d.*") || cType.equals("98")) {
       return null;
     }
-    cLocus = makeIfNull(cLocus);
-    addToLocus(cLocus, SeroLocus.C, cType);
+    cLocusCWD = makeIfNull(cLocusCWD);
+    addToLocus(cLocusCWD, SeroLocus.C, cType);
+    return this;
+  }
+
+  public ValidationModelBuilder cNonCWD(String cType) {
+    if (!cType.matches(".*\\d.*") || cType.equals("98")) {
+      return null;
+    }
+    cLocusFirst = makeIfNull(cLocusFirst);
+    addToLocus(cLocusFirst, SeroLocus.C, cType);
+    return this;
+  }
+
+  public ValidationModelBuilder aAllele(Pair<String, String> alleles) {
+    aAlleles.add(Pair.of(new SeroType(SeroLocus.A, alleles.getLeft()),
+                         new SeroType(SeroLocus.A, alleles.getRight())));
+    return this;
+  }
+
+  public ValidationModelBuilder bAllele(Pair<String, String> alleles) {
+    bAlleles.add(Pair.of(new SeroType(SeroLocus.B, alleles.getLeft()),
+                         new SeroType(SeroLocus.B, alleles.getRight())));
+    return this;
+  }
+
+  public ValidationModelBuilder cAllele(Pair<String, String> alleles) {
+    cAlleles.add(Pair.of(new SeroType(SeroLocus.C, alleles.getLeft()),
+                         new SeroType(SeroLocus.C, alleles.getRight())));
     return this;
   }
 
@@ -308,8 +365,10 @@ public class ValidationModelBuilder {
 
     frequencyTable.clear();
 
-    ValidationModel validationModel = new ValidationModel(donorId, source, sourceType, aLocus,
-                                                          bLocus, cLocus, drbLocus, dqbLocus,
+    ValidationModel validationModel = new ValidationModel(donorId, source, sourceType, aLocusCWD,
+                                                          bLocusCWD, cLocusCWD, aLocusFirst,
+                                                          bLocusFirst, cLocusFirst, aAlleles,
+                                                          bAlleles, cAlleles, drbLocus, dqbLocus,
                                                           dqaLocus, dpaLocus, dpbLocus, bw4, bw6,
                                                           dr51Locus, dr52Locus, dr53Locus,
                                                           bcCwdHaplotypes, drDqDR345Haplotypes);
@@ -614,15 +673,15 @@ public class ValidationModelBuilder {
    */
   private void ensureValidity() throws IllegalStateException {
     // Ensure all fields have been set
-    for (Object o : Lists.newArrayList(donorId, source, aLocus, bLocus, cLocus, drbLocus, dqbLocus,
-                                       dqaLocus, dpbLocus, bw4, bw6)) {
+    for (Object o : Lists.newArrayList(donorId, source, aLocusCWD, bLocusCWD, cLocusCWD, drbLocus,
+                                       dqbLocus, dqaLocus, dpbLocus, bw4, bw6)) {
       if (Objects.isNull(o)) {
         throw new IllegalStateException("ValidationModel incomplete");
       }
     }
     // Ensure all sets have a reasonable number of entries
-    for (Set<?> set : ImmutableList.of(aLocus, bLocus, cLocus, drbLocus, dqbLocus, dqaLocus,
-                                       dpbLocus)) {
+    for (Set<?> set : ImmutableList.of(aLocusCWD, bLocusCWD, cLocusCWD, drbLocus, dqbLocus,
+                                       dqaLocus, dpbLocus)) {
       if (set.isEmpty() || set.size() > 2) {
         throw new IllegalStateException("ValidationModel contains invalid allele count: " + set);
       }

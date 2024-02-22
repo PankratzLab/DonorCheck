@@ -69,43 +69,38 @@ public class FileInputController extends AbstractValidatingWizardController {
 
   private static final String FILE_DISPLAY_CLASS = "file-display";
 
-  private ObservableList<ReadOnlyObjectWrapper<File>> selectedFileProperties =
-      FXCollections.observableArrayList();
+  private ObservableList<ReadOnlyObjectWrapper<File>> selectedFileProperties = FXCollections.observableArrayList();
 
-  private ObservableList<DonorFileParser> availableFileTypes =
-      FXCollections.observableArrayList(
-          ImmutableList.of(new PdfDonorParser(), new XmlDonorParser(), new HtmlDonorParser()));
+  private ObservableList<DonorFileParser> availableFileTypes = FXCollections.observableArrayList(ImmutableList.of(new PdfDonorParser(),
+                                                                                                                  new XmlDonorParser(),
+                                                                                                                  new HtmlDonorParser()));
 
   private ObservableBooleanValue invalidBinding;
 
-  @FXML private VBox inputFiles_VBox;
+  @FXML
+  private VBox inputFiles_VBox;
 
   @FXML
   void initialize() {
-    invalidBinding =
-        Bindings.createBooleanBinding(
-            () -> selectedFileProperties.isEmpty(), selectedFileProperties);
+    invalidBinding = Bindings.createBooleanBinding(() -> selectedFileProperties.isEmpty(),
+                                                   selectedFileProperties);
 
-    inputFiles_VBox
-        .getChildren()
-        .add(createFileBox(PdfDonorParser.class, ValidationTable::setFirstModel));
-    inputFiles_VBox
-        .getChildren()
-        .add(createFileBox(XmlDonorParser.class, ValidationTable::setSecondModel));
+    inputFiles_VBox.getChildren()
+                   .add(createFileBox(PdfDonorParser.class, ValidationTable::setFirstModel));
+    inputFiles_VBox.getChildren()
+                   .add(createFileBox(XmlDonorParser.class, ValidationTable::setSecondModel));
 
     rootPane().setInvalidBinding(invalidBinding);
   }
 
-  private HBox createFileBox(
-      Class<? extends DonorFileParser> defaultSelected,
-      BiConsumer<ValidationTable, ValidationModel> setter) {
+  private HBox createFileBox(Class<? extends DonorFileParser> defaultSelected,
+                             BiConsumer<ValidationTable, ValidationModel> setter) {
     ReadOnlyObjectWrapper<File> linkedFile = new ReadOnlyObjectWrapper<>();
 
     // Update the invalidation binding
-    invalidBinding =
-        JFXPropertyHelper.orHelper(
-            invalidBinding,
-            Bindings.createBooleanBinding(() -> Objects.isNull(linkedFile.get()), linkedFile));
+    invalidBinding = JFXPropertyHelper.orHelper(invalidBinding,
+                                                Bindings.createBooleanBinding(() -> Objects.isNull(linkedFile.get()),
+                                                                              linkedFile));
 
     rootPane().setInvalidBinding(invalidBinding);
 
@@ -121,10 +116,8 @@ public class FileInputController extends AbstractValidatingWizardController {
         break;
       }
     }
-    comboBox
-        .getSelectionModel()
-        .selectedItemProperty()
-        .addListener((v, o, n) -> linkedFile.set(null));
+    comboBox.getSelectionModel().selectedItemProperty()
+            .addListener((v, o, n) -> linkedFile.set(null));
     comboBox.setPrefWidth(100);
 
     hbox.getChildren().add(comboBox);
@@ -136,70 +129,74 @@ public class FileInputController extends AbstractValidatingWizardController {
     fileDisplay.setPromptText("no file selected");
 
     // Link text field and file
-    linkedFile
-        .getReadOnlyProperty()
-        .addListener((b, o, n) -> updateFileDisplay(fileDisplay, linkedFile.get()));
+    linkedFile.getReadOnlyProperty()
+              .addListener((b, o, n) -> updateFileDisplay(fileDisplay, linkedFile.get()));
 
     hbox.getChildren().add(fileDisplay);
 
     Button chooseFileButton = new Button("Choose File");
     chooseFileButton.setFont(Font.font(16.0));
-    chooseFileButton.setOnAction(
-        e ->
-            selectDonorFile(e, comboBox.getSelectionModel().getSelectedItem(), setter, linkedFile));
+    chooseFileButton.setOnAction(e -> selectDonorFile(e,
+                                                      comboBox.getSelectionModel()
+                                                              .getSelectedItem(),
+                                                      setter, linkedFile));
     hbox.getChildren().add(chooseFileButton);
 
     return hbox;
   }
 
-  private void selectDonorFile(
-      ActionEvent event,
-      DonorFileParser donorParser,
-      BiConsumer<ValidationTable, ValidationModel> setter,
-      ReadOnlyObjectWrapper<File> linkedFile) {
+  private void selectDonorFile(ActionEvent event, DonorFileParser donorParser,
+                               BiConsumer<ValidationTable, ValidationModel> setter,
+                               ReadOnlyObjectWrapper<File> linkedFile) {
 
-    Optional<File> optionalFile =
-        DonorNetUtils.getFile(
-            ((Node) event.getSource()),
-            donorParser.fileChooserHeader(),
-            donorParser.initialName(),
-            donorParser.extensionDescription(),
-            donorParser.extensionFilter(),
-            true);
+    Optional<File> optionalFile = DonorNetUtils.getFile(((Node) event.getSource()),
+                                                        donorParser.fileChooserHeader(),
+                                                        donorParser.initialName(),
+                                                        donorParser.extensionDescription(),
+                                                        donorParser.extensionFilter(), true);
 
     if (optionalFile.isPresent()) {
-      Task<Void> loadFileTask =
-          JFXUtilHelper.createProgressTask(
-              () -> {
-                File selectedFile = optionalFile.get();
+      Task<Void> loadFileTask = JFXUtilHelper.createProgressTask(() -> {
+        File selectedFile = optionalFile.get();
 
-                ValidationModelBuilder builder = new ValidationModelBuilder();
+        ValidationModelBuilder builder = new ValidationModelBuilder();
 
-                try {
-                  donorParser.parseModel(builder, selectedFile);
-                  setter.accept(getTable(), builder.build());
-                  linkedFile.set(selectedFile);
-                } catch (Exception e) {
-                  Platform.runLater(
-                      () -> {
-                        Alert alert = new Alert(AlertType.ERROR);
-                        alert.setHeaderText(
-                            donorParser.getErrorText()
+        try {
+          donorParser.parseModel(builder, selectedFile);
+
+          ValidationModel model = builder.build();
+
+          if (model.isType1AllelesNonCWD()) {
+            Platform.runLater(() -> {});
+          }
+
+          setter.accept(getTable(), model);
+          linkedFile.set(selectedFile);
+        } catch (Exception e) {
+          Platform.runLater(() -> {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setHeaderText(donorParser.getErrorText()
                                 + "\nPlease notify the developers as this may indicate the data has changed."
-                                + "\nOffending file: "
-                                + selectedFile.getName());
-                        alert.showAndWait();
-                        e.printStackTrace();
-                      });
-                }
+                                + "\nOffending file: " + selectedFile.getName());
+            alert.showAndWait();
+            e.printStackTrace();
+          });
+        }
 
-                CurrentDirectoryProvider.setBaseDir(selectedFile.getParentFile());
-              });
+        CurrentDirectoryProvider.setBaseDir(selectedFile.getParentFile());
+      });
 
       new Thread(loadFileTask).start();
     }
   }
 
+  /**
+   * The {@link FileInputController#FILE_DISPLAY_CLASS} value links to the
+   * {@link resources/fileInput.css} style-sheet.
+   * 
+   * We only want to apply this style when a file has been selected, so we remove this style class
+   * from the TextField and only add it back if the {@code file} argument is not null.
+   */
   private void updateFileDisplay(TextField fileDisplay, File file) {
     String text = "";
     for (int i = 0; i < fileDisplay.getStyleClass().size(); i++) {

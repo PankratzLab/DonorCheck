@@ -35,8 +35,9 @@ import javafx.beans.value.ObservableBooleanValue;
  * {@link ObservableBooleanValue}. This allows control over whether or not the wizard can be
  * advanced/completed.
  *
- * <p>Also updates the {@link Wizard#titleProperty()} based on the current {@link
- * WizardPane#getUserData()}
+ * <p>
+ * Also updates the {@link Wizard#titleProperty()} based on the current
+ * {@link WizardPane#getUserData()}
  */
 public class ValidatingWizardPane extends WizardPane {
 
@@ -63,4 +64,5 @@ public class ValidatingWizardPane extends WizardPane {
     // Notify any listeners that we are active
     fireEvent(new PageActivatedEvent());
   }
+
 }

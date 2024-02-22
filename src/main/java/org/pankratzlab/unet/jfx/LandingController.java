@@ -144,7 +144,7 @@ public class LandingController {
                                                          + "Would you like to set these tables now?\n\n"
                                                          + "Note: you can adjust these tables any time from the 'Haplotype' menu",
                                   ButtonType.YES, ButtonType.NO);
-          alert.setTitle("No haplotype freqnecies");
+          alert.setTitle("No haplotype frequencies");
           alert.setHeaderText("");
           alert.showAndWait().filter(response -> response == ButtonType.YES)
                .ifPresent(response -> chooseFreqTables(event));
@@ -171,7 +171,9 @@ public class LandingController {
 
         pages.get(0).getButtonTypes();
 
-        validationWizard.setFlow(new LinearFlow(pages));
+        Wizard.Flow pageFlow = new LinearFlow(pages);
+
+        validationWizard.setFlow(pageFlow);
 
         // show wizard and wait for response
         validationWizard.showAndWait();

@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.hapstats.Haplotype;
@@ -47,9 +48,15 @@ public class ValidationModel {
   private final String donorId;
   private final String source;
   private final String sourceType;
-  private final ImmutableSortedSet<SeroType> aLocus;
-  private final ImmutableSortedSet<SeroType> bLocus;
-  private final ImmutableSortedSet<SeroType> cLocus;
+  private final ImmutableSortedSet<SeroType> aLocusCWD;
+  private final ImmutableSortedSet<SeroType> bLocusCWD;
+  private final ImmutableSortedSet<SeroType> cLocusCWD;
+  private final ImmutableSortedSet<SeroType> aLocusFirst;
+  private final ImmutableSortedSet<SeroType> bLocusFirst;
+  private final ImmutableSortedSet<SeroType> cLocusFirst;
+  private final ImmutableList<Pair<SeroType, SeroType>> aAlleles;
+  private final ImmutableList<Pair<SeroType, SeroType>> bAlleles;
+  private final ImmutableList<Pair<SeroType, SeroType>> cAlleles;
   private final ImmutableSortedSet<SeroType> drbLocus;
   private final ImmutableSortedSet<SeroType> dqbLocus;
   private final ImmutableSortedSet<SeroType> dqaLocus;
@@ -63,8 +70,13 @@ public class ValidationModel {
   private final ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
 
-  public ValidationModel(String donorId, String source, String sourceType, Collection<SeroType> a,
-                         Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
+  public ValidationModel(String donorId, String source, String sourceType,
+                         Collection<SeroType> aCWD, Collection<SeroType> bCWD,
+                         Collection<SeroType> cCWD, Collection<SeroType> aFirst,
+                         Collection<SeroType> bFirst, Collection<SeroType> cFirst,
+                         List<Pair<SeroType, SeroType>> aAlleles,
+                         List<Pair<SeroType, SeroType>> bAlleles,
+                         List<Pair<SeroType, SeroType>> cAlleles, Collection<SeroType> drb,
                          Collection<SeroType> dqb, Collection<SeroType> dqa,
                          Collection<SeroType> dpa, Collection<HLAType> dpb, boolean bw4,
                          boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
@@ -73,9 +85,15 @@ public class ValidationModel {
     this.donorId = donorId;
     this.source = source;
     this.sourceType = sourceType;
-    aLocus = ImmutableSortedSet.copyOf(a);
-    bLocus = ImmutableSortedSet.copyOf(b);
-    cLocus = ImmutableSortedSet.copyOf(c);
+    aLocusCWD = ImmutableSortedSet.copyOf(aCWD);
+    bLocusCWD = ImmutableSortedSet.copyOf(bCWD);
+    cLocusCWD = ImmutableSortedSet.copyOf(cCWD);
+    aLocusFirst = ImmutableSortedSet.copyOf(aFirst);
+    bLocusFirst = ImmutableSortedSet.copyOf(bFirst);
+    cLocusFirst = ImmutableSortedSet.copyOf(cFirst);
+    this.aAlleles = ImmutableList.copyOf(aAlleles);
+    this.bAlleles = ImmutableList.copyOf(bAlleles);
+    this.cAlleles = ImmutableList.copyOf(cAlleles);
     drbLocus = ImmutableSortedSet.copyOf(drb);
     dqbLocus = ImmutableSortedSet.copyOf(dqb);
     dqaLocus = ImmutableSortedSet.copyOf(dqa);
@@ -109,27 +127,27 @@ public class ValidationModel {
   }
 
   public SeroType getA1() {
-    return getFromPair(aLocus, 0);
+    return getFromPair(aLocusCWD, 0);
   }
 
   public SeroType getA2() {
-    return getFromPair(aLocus, 1);
+    return getFromPair(aLocusCWD, 1);
   }
 
   public SeroType getB1() {
-    return getFromPair(bLocus, 0);
+    return getFromPair(bLocusCWD, 0);
   }
 
   public SeroType getB2() {
-    return getFromPair(bLocus, 1);
+    return getFromPair(bLocusCWD, 1);
   }
 
   public SeroType getC1() {
-    return getFromPair(cLocus, 0);
+    return getFromPair(cLocusCWD, 0);
   }
 
   public SeroType getC2() {
-    return getFromPair(cLocus, 1);
+    return getFromPair(cLocusCWD, 1);
   }
 
   public SeroType getDRB1() {
@@ -212,6 +230,10 @@ public class ValidationModel {
     return drdqHaplotypes;
   }
 
+  public boolean isType1AllelesNonCWD() {
+    return false;
+  }
+
   private String inGroupString(boolean group) {
     return group ? "Positive" : "Negative";
   }
@@ -234,12 +256,12 @@ public class ValidationModel {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((aLocus == null) ? 0 : aLocus.hashCode());
-    result = prime * result + ((bLocus == null) ? 0 : bLocus.hashCode());
+    result = prime * result + ((aLocusCWD == null) ? 0 : aLocusCWD.hashCode());
+    result = prime * result + ((bLocusCWD == null) ? 0 : bLocusCWD.hashCode());
     result = prime * result + ((bcHaplotypes == null) ? 0 : bcHaplotypes.hashCode());
     result = prime * result + (bw4 ? 1231 : 1237);
     result = prime * result + (bw6 ? 1231 : 1237);
-    result = prime * result + ((cLocus == null) ? 0 : cLocus.hashCode());
+    result = prime * result + ((cLocusCWD == null) ? 0 : cLocusCWD.hashCode());
     result = prime * result + ((donorId == null) ? 0 : donorId.hashCode());
     result = prime * result + ((dpbLocus == null) ? 0 : dpbLocus.hashCode());
     result = prime * result + ((dqaLocus == null) ? 0 : dqaLocus.hashCode());
@@ -260,20 +282,20 @@ public class ValidationModel {
     if (obj == null) return false;
     if (getClass() != obj.getClass()) return false;
     ValidationModel other = (ValidationModel) obj;
-    if (aLocus == null) {
-      if (other.aLocus != null) return false;
-    } else if (!aLocus.equals(other.aLocus)) return false;
-    if (bLocus == null) {
-      if (other.bLocus != null) return false;
-    } else if (!bLocus.equals(other.bLocus)) return false;
+    if (aLocusCWD == null) {
+      if (other.aLocusCWD != null) return false;
+    } else if (!aLocusCWD.equals(other.aLocusCWD)) return false;
+    if (bLocusCWD == null) {
+      if (other.bLocusCWD != null) return false;
+    } else if (!bLocusCWD.equals(other.bLocusCWD)) return false;
     if (bcHaplotypes == null) {
       if (other.bcHaplotypes != null) return false;
     } else if (!bcHaplotypes.equals(other.bcHaplotypes)) return false;
     if (bw4 != other.bw4) return false;
     if (bw6 != other.bw6) return false;
-    if (cLocus == null) {
-      if (other.cLocus != null) return false;
-    } else if (!cLocus.equals(other.cLocus)) return false;
+    if (cLocusCWD == null) {
+      if (other.cLocusCWD != null) return false;
+    } else if (!cLocusCWD.equals(other.cLocusCWD)) return false;
     if (donorId == null) {
       if (other.donorId != null) return false;
     } else if (!donorId.equals(other.donorId)) return false;
