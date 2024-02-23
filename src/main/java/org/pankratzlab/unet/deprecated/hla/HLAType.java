@@ -45,9 +45,10 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
   /**
    * Matches string representations of {@link HLAType}s
    *
-   * <p>Group 1 is the {@link HLALocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
-   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the {@link
-   * Matcher#group(int)} api)
+   * <p>
+   * Group 1 is the {@link HLALocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
+   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the
+   * {@link Matcher#group(int)} api)
    */
   public static final Pattern TYPE_PATTERN;
 
@@ -84,9 +85,9 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
    * Note: this method is similar to {@link AntigenDictionary#lookup(HLAType)}, with two exceptions:
    *
    * <ul>
-   *   <li>In the case of multiple {@link SeroType} mappings, only the first will be returned
-   *   <li>If there is no explicit mapping for this type, a {@code SeroType} will be created using
-   *       the equivalent {@link SeroLocus} and the first value in this type's {@link #spec()}
+   * <li>In the case of multiple {@link SeroType} mappings, only the first will be returned
+   * <li>If there is no explicit mapping for this type, a {@code SeroType} will be created using the
+   * equivalent {@link SeroLocus} and the first value in this type's {@link #spec()}
    * </ul>
    *
    * @return {@link SeroType} equivalent of this antigen
@@ -98,8 +99,8 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
       if (lookup.size() == 1) {
         return lookup.iterator().next();
       } else if (lookup.size() > 1) {
-        throw new IllegalStateException(
-            "HLA type: " + this + " has multiple serotype equivalencies");
+        throw new IllegalStateException("HLA type: " + this
+                                        + " has multiple serotype equivalencies");
       }
     } catch (IllegalArgumentException e) {
       // No-op
@@ -124,7 +125,7 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
 
   /**
    * @return The {@link SeroType} equivalent of this allele without a lookup in antigen equivalences
-   *     table.
+   *         table.
    */
   public SeroType lowResEquiv() {
     return new SeroType(locus().sero(), spec().get(0));
@@ -188,8 +189,8 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
   }
 
   /** @see Antigen#parseTypes(String, java.util.regex.Pattern, Function) */
-  public static <T extends Antigen<?, T>> List<T> parseTypes(
-      String text, Function<String, T> typeFunction) {
+  public static <T extends Antigen<?, T>> List<T> parseTypes(String text,
+                                                             Function<String, T> typeFunction) {
     return Antigen.parseTypes(text, LOCI_PATTERN, typeFunction);
   }
 
@@ -197,13 +198,12 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
     // Static initializer to create patterns
     // See also SeroType
 
-    LOCI_PATTERN =
-        makePattern(
-            Arrays.stream(HLALocus.values()).map(HLALocus::name).collect(Collectors.toList()));
+    LOCI_PATTERN = makePattern(Arrays.stream(HLALocus.values()).map(HLALocus::name)
+                                     .collect(Collectors.toList()));
 
     TYPE_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + SPEC_PATTERN.pattern());
-    PARTIAL_PATTERN =
-        Pattern.compile(LOCI_PATTERN.pattern() + "(?:" + SPEC_PATTERN.pattern() + ")?");
+    PARTIAL_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + "(?:" + SPEC_PATTERN.pattern()
+                                      + ")?");
 
     /*
      * --- WARNING --- Changing the patterns in a way that affects the number of groups can have

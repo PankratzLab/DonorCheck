@@ -164,14 +164,32 @@ public class FileInputController extends AbstractValidatingWizardController {
         try {
           donorParser.parseModel(builder, selectedFile);
 
-          ValidationModel model = builder.build();
+          // building the model may involve user input, so we need to run this on the JavaFX
+          // Application thread
+          Platform.runLater(() -> {
 
-          if (model.isType1AllelesNonCWD()) {
-            Platform.runLater(() -> {});
-          }
+            // check that the model is valid
+            org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult validationResult = builder.validate();
 
-          setter.accept(getTable(), model);
-          linkedFile.set(selectedFile);
+            if (!validationResult.valid) {
+
+              // if a value is present, show error message
+              if (validationResult.validationMessage.isPresent()) {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setHeaderText(donorParser.getErrorText()
+                                    + "\nPlease notify the developers as this may indicate the data has changed."
+                                    + "\nOffending file: " + selectedFile.getName());
+                alert.showAndWait();
+              }
+
+              // either way, invalid model so fail
+              return;
+            }
+
+            // valid model, build and set
+            setter.accept(getTable(), builder.build());
+            linkedFile.set(selectedFile);
+          });
         } catch (Exception e) {
           Platform.runLater(() -> {
             Alert alert = new Alert(AlertType.ERROR);

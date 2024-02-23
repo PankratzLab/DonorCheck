@@ -41,8 +41,8 @@ import com.google.common.collect.SetMultimap;
 public final class AntigenDictionary implements Serializable {
   private static final long serialVersionUID = 10L;
 
-  public static final int LATEST_REVISION =
-      1 + HLAType.LATEST_REVISION + SeroType.LATEST_REVISION + Antigen.LATEST_REVISION;
+  public static final int LATEST_REVISION = 1 + HLAType.LATEST_REVISION + SeroType.LATEST_REVISION
+                                            + Antigen.LATEST_REVISION;
   private int revision = LATEST_REVISION;
 
   public static final String SERIALIZED_MAP = Info.HLA_HOME + ".hla/map.ser";
@@ -65,8 +65,8 @@ public final class AntigenDictionary implements Serializable {
   private final SetMultimap<SeroType, HLAType> seroDict;
   private final Set<HLAType> validTypes;
 
-  private AntigenDictionary(
-      SetMultimap<HLAType, SeroType> hla, SetMultimap<SeroType, HLAType> sero, Set<HLAType> valid) {
+  private AntigenDictionary(SetMultimap<HLAType, SeroType> hla, SetMultimap<SeroType, HLAType> sero,
+                            Set<HLAType> valid) {
     hlaDict = hla;
     seroDict = sero;
     validTypes = valid;
@@ -164,12 +164,8 @@ public final class AntigenDictionary implements Serializable {
     // NB: what's considered a valid HLA type diverges from the HLA map keyset and thus must be
     // tracked separately
     Builder<HLAType> validHLATypes = ImmutableSet.builder();
-    try (BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(
-                AntigenDictionary.class
-                    .getClassLoader()
-                    .getResourceAsStream(MASTER_MAP_RECORDS))); ) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(AntigenDictionary.class.getClassLoader()
+                                                                                                 .getResourceAsStream(MASTER_MAP_RECORDS)));) {
       while (reader.ready()) {
         // Read one mapping at a time
         String line = reader.readLine();
@@ -249,8 +245,8 @@ public final class AntigenDictionary implements Serializable {
       }
 
       // Build the singleton map and write it to disk
-      AntigenDictionary typeMap =
-          new AntigenDictionary(hlaBuilder.build(), seroBuilder.build(), validHLATypes.build());
+      AntigenDictionary typeMap = new AntigenDictionary(hlaBuilder.build(), seroBuilder.build(),
+                                                        validHLATypes.build());
       SerializeUtils.write(typeMap, SERIALIZED_MAP);
       map = typeMap;
     } catch (IOException e) {
