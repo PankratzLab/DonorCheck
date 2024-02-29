@@ -302,6 +302,19 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
    * @param isValid Whether the validation is successful or not
    */
   private void updateDisplay(Boolean isValid) {
+
+    resultsTable.setRowFactory(tv -> new TableRow<ValidationRow<?>>() {
+      @Override
+      protected void updateItem(ValidationRow<?> item, boolean empty) {
+        super.updateItem(item, empty);
+        if (item == null || item.wasRemappedProperty() == null)
+          setStyle("");
+        else {
+          setStyle("-fx-font-style:" + (item.wasRemappedProperty().get() ? "italic" : "normal"));
+        }
+      }
+    });
+
     String displayText = "Validation ";
     String displayStyle = "-fx-text-fill: ";
 

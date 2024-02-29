@@ -57,9 +57,7 @@ public final class CommonWellDocumented {
   private static ImmutableMap<HLAType, Status> ALLELE_FREQS;
 
   public static enum Status {
-    COMMON(1.0),
-    WELL_DOCUMENTED(0.5),
-    UNKNOWN(0.0);
+    COMMON(1.0), WELL_DOCUMENTED(0.5), UNKNOWN(0.0);
 
     private final double weight;
 
@@ -97,12 +95,9 @@ public final class CommonWellDocumented {
           cwdMap.put(HLAType.valueOf(freqKey), freqVal);
         }
       }
-      cwdMap
-          .entries()
-          .forEach(
-              e -> {
-                freqMapBuilder.put(e);
-              });
+      cwdMap.entries().forEach(e -> {
+        freqMapBuilder.put(e);
+      });
       ALLELE_FREQS = freqMapBuilder.build();
     } catch (Exception e) {
       System.err.println("Invalid Frequency file: " + ALLELE_FREQ_PATH);
@@ -133,7 +128,7 @@ public final class CommonWellDocumented {
   /**
    * @param type HLA allele
    * @return Common/Well-documented status of the allele. If the base allele is unknown, we will
-   *     check G-group equivalents.
+   *         check G-group equivalents.
    */
   public static Status getEquivStatus(HLAType type) {
     Status status = doGetStatus(type);
@@ -145,6 +140,30 @@ public final class CommonWellDocumented {
     }
 
     return status;
+  }
+
+  public static HLAType getCWDType(HLAType type) {
+    if (ALLELE_FREQS.containsKey(type)) {
+      return type;
+    }
+    // adding or removing trailing :01's does not change the allele specificity
+    // Try adding :01's to the specificity
+    HLAType specModified = type;
+    while (Objects.nonNull((specModified = growSpec(specModified)))) {
+      if (ALLELE_FREQS.containsKey(specModified)) {
+        return specModified;
+      }
+    }
+
+    // Try removing fourth field, or tailing :01's, to the specificity
+    specModified = type;
+    while (Objects.nonNull((specModified = reduceSpec(specModified)))) {
+      if (ALLELE_FREQS.containsKey(specModified)) {
+        return specModified;
+      }
+    }
+    return null;
+
   }
 
   private static Status doGetStatus(HLAType type) {
@@ -160,7 +179,7 @@ public final class CommonWellDocumented {
       }
     }
 
-    // Try removing tailing :01's to the specificity
+    // Try removing fourth field, or tailing :01's, to the specificity
     specModified = type;
     while (Objects.nonNull((specModified = reduceSpec(specModified)))) {
       if (ALLELE_FREQS.containsKey(specModified)) {
@@ -173,12 +192,12 @@ public final class CommonWellDocumented {
   /**
    * @param equivType Input type to reduce
    * @return The input {@link HLAType} with its tailing "01" field removed, or null if the allele
-   *     can not be reduced
+   *         can not be reduced
    */
   private static HLAType reduceSpec(HLAType equivType) {
     List<Integer> spec = equivType.spec();
 
-    if (spec.size() < 2 || spec.get(spec.size() - 1) != 1) {
+    if (spec.size() < 2 || (spec.size() < 4 && spec.get(spec.size() - 1) != 1)) {
       // We can only remove a trailing "01 "specificity, and only if we have 3- or more fields
       return null;
     }
@@ -190,7 +209,7 @@ public final class CommonWellDocumented {
   /**
    * @param equivType Input type to expand
    * @return The input {@link HLAType} with an additional "01" field, or null if the allele can not
-   *     be further expanded
+   *         be further expanded
    */
   private static HLAType growSpec(HLAType equivType) {
     List<Integer> spec = new ArrayList<>(equivType.spec());

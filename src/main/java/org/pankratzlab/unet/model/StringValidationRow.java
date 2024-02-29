@@ -25,8 +25,9 @@ import java.util.Objects;
 
 public class StringValidationRow extends ValidationRow<String> {
 
-  public StringValidationRow(String rowLabel, String firstCol, String secondCol) {
-    super(rowLabel, firstCol, secondCol);
+  public StringValidationRow(String rowLabel, String firstCol, String secondCol,
+                             boolean wasRemapped) {
+    super(rowLabel, firstCol, secondCol, wasRemapped);
   }
 
   @Override
@@ -37,7 +38,9 @@ public class StringValidationRow extends ValidationRow<String> {
     return toDisplay;
   }
 
-  public static StringValidationRow makeRow(String rowLabel, String firstCol, String secondCol) {
-    return new StringValidationRow(rowLabel, firstCol, secondCol);
+  public static StringValidationRow makeRow(String rowLabel, String firstCol, String secondCol,
+                                            boolean wasRemapped) {
+    return new StringValidationRow(rowLabel, firstCol, secondCol, wasRemapped);
   }
+
 }

@@ -42,7 +42,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
-import org.pankratzlab.unet.deprecated.hla.Locus;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
@@ -144,6 +143,15 @@ public class XmlScore6Parser {
     setterBuilderNonCWD.put(A_HEADER, ValidationModelBuilder::aNonCWD);
     setterBuilderNonCWD.put(B_HEADER, ValidationModelBuilder::bNonCWD);
     setterBuilderNonCWD.put(C_HEADER, ValidationModelBuilder::cNonCWD);
+    setterBuilderNonCWD.put(DQB_HEADER, ValidationModelBuilder::dqbNonCWD);
+
+    // Reported as allele types
+    setterBuilderNonCWD.put(DPB_HEADER, ValidationModelBuilder::dpbNonCWD);
+    setterBuilderNonCWD.put(DQA_HEADER, ValidationModelBuilder::dqaNonCWD);
+    setterBuilderNonCWD.put(DPA_HEADER, ValidationModelBuilder::dpaNonCWD);
+
+    // DR52/53/54 appears as a serological combination
+    setterBuilderNonCWD.put(DRB_HEADER, ValidationModelBuilder::drbNonCWD);
 
     metadataNonCWDMap = setterBuilderNonCWD.build();
 
@@ -151,6 +159,10 @@ public class XmlScore6Parser {
     setterBuilderAlleles.put(A_HEADER, ValidationModelBuilder::aAllele);
     setterBuilderAlleles.put(B_HEADER, ValidationModelBuilder::bAllele);
     setterBuilderAlleles.put(C_HEADER, ValidationModelBuilder::cAllele);
+    setterBuilderAlleles.put(DQA_HEADER, ValidationModelBuilder::dqaAllele);
+    setterBuilderAlleles.put(DQB_HEADER, ValidationModelBuilder::dqbAllele);
+    setterBuilderAlleles.put(DPA_HEADER, ValidationModelBuilder::dpaAllele);
+    setterBuilderAlleles.put(DPB_HEADER, ValidationModelBuilder::dpbAllele);
 
     alleleRecordingMap = setterBuilderAlleles.build();
 
@@ -367,13 +379,11 @@ public class XmlScore6Parser {
 
       // Finally, add the types to the model builder
       for (int i = 0; i < actualResultPairs.size(); i++) {
-        if (actualResultPairs.get(i).getAlleleCombination().locus().tier() == Locus.TIER_1) {
-          if (actualResultPairs.get(i).alleleCombination.compareTo(firstResultPairs.get(0).alleleCombination) != 0) {
-            Status sA = CommonWellDocumented.getStatus(actualResultPairs.get(i).alleleCombination);
-            Status sF = CommonWellDocumented.getStatus(firstResultPairs.get(i).alleleCombination);
-            if (sA.compareTo(sF) != 0) {
-              builder.locusIsNonCWD(actualResultPairs.get(i).alleleCombination.locus());
-            }
+        if (actualResultPairs.get(i).alleleCombination.compareTo(firstResultPairs.get(0).alleleCombination) != 0) {
+          Status sA = CommonWellDocumented.getStatus(actualResultPairs.get(i).alleleCombination);
+          Status sF = CommonWellDocumented.getStatus(firstResultPairs.get(i).alleleCombination);
+          if (sA.compareTo(sF) != 0) {
+            builder.locusIsNonCWD(actualResultPairs.get(i).alleleCombination.locus());
           }
         }
 
@@ -390,6 +400,7 @@ public class XmlScore6Parser {
       // record alleles for reassignment if necessary
       if (alleleRecordingMap.containsKey(locus)) {
         for (Pair<ResultCombination, ResultCombination> pair : alleleComboPairs) {
+          if (pair.getLeft() == null || pair.getRight() == null) continue;
           final HLAType hla1 = pair.getLeft().getAlleleCombination();
           final SeroType sero1 = pair.getLeft().getAntigenCombination();
           final HLAType hla2 = pair.getRight().getAlleleCombination();
@@ -486,10 +497,13 @@ public class XmlScore6Parser {
 
   private static Pair<ResultCombination, ResultCombination> parseAlleleCombinations(Element resultCombination,
                                                                                     HLALocus locus) {
-    return Pair.of(parseCombination(resultCombination, 1, locus, "alleleList",
-                                    XmlScore6Parser::getFirstValidType),
-                   parseCombination(resultCombination, 2, locus, "alleleList",
-                                    XmlScore6Parser::getFirstValidType));
+    final ResultCombination combination = parseCombination(resultCombination, 1, locus,
+                                                           "alleleList",
+                                                           XmlScore6Parser::getFirstValidType);
+    final ResultCombination combination2 = parseCombination(resultCombination, 2, locus,
+                                                            "alleleList",
+                                                            XmlScore6Parser::getFirstValidType);
+    return Pair.of(combination, combination2);
   }
 
   /** Parse the allele + antigen pairs from a result combination */

@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.swing.JFrame;
@@ -54,6 +55,7 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
+import org.pankratzlab.unet.jfx.StyleableChoiceDialog;
 import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.unet.parser.util.DRAssociations;
@@ -65,13 +67,16 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Table;
 
-import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.ListCell;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 /**
  * Mutable builder class for creating a {@link ValidationModel}.
@@ -108,14 +113,25 @@ public class ValidationModelBuilder {
   private List<Pair<TypePair, TypePair>> aAlleles = new ArrayList<>();
   private List<Pair<TypePair, TypePair>> bAlleles = new ArrayList<>();
   private List<Pair<TypePair, TypePair>> cAlleles = new ArrayList<>();
+  private List<Pair<TypePair, TypePair>> dqaAlleles = new ArrayList<>();
+  private List<Pair<TypePair, TypePair>> dqbAlleles = new ArrayList<>();
+  private List<Pair<TypePair, TypePair>> dpaAlleles = new ArrayList<>();
+  private List<Pair<TypePair, TypePair>> dpbAlleles = new ArrayList<>();
 
   private Set<HLALocus> nonCWDLoci = new HashSet<>();
+  private Map<HLALocus, Pair<Set<SeroType>, Set<SeroType>>> remapping = new HashMap<>();
 
   private Set<SeroType> drbLocus;
-  private Set<SeroType> dqbLocus;
   private Set<SeroType> dqaLocus;
+  private Set<SeroType> dqbLocus;
   private Set<SeroType> dpaLocus;
   private Set<HLAType> dpbLocus;
+
+  private Set<SeroType> drbLocusNonCWD;
+  private Set<SeroType> dqaLocusNonCWD;
+  private Set<SeroType> dqbLocusNonCWD;
+  private Set<SeroType> dpaLocusNonCWD;
+  private Set<HLAType> dpbLocusNonCWD;
 
   private Boolean bw4;
   private Boolean bw6;
@@ -148,7 +164,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder a(String aType) {
-    if (!aType.matches(".*\\d.*") || aType.equals("98")) {
+    if (test1(aType)) {
       return null;
     }
     aLocusCWD = makeIfNull(aLocusCWD);
@@ -157,7 +173,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder aNonCWD(String aType) {
-    if (!aType.matches(".*\\d.*") || aType.equals("98")) {
+    if (test1(aType)) {
       return null;
     }
     aLocusFirst = makeIfNull(aLocusFirst);
@@ -166,7 +182,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder b(String bType) {
-    if (!bType.matches(".*\\d.*") || bType.equals("98")) {
+    if (test1(bType)) {
       return null;
     }
     bLocusCWD = makeIfNull(bLocusCWD);
@@ -175,7 +191,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder bNonCWD(String bType) {
-    if (!bType.matches(".*\\d.*") || bType.equals("98")) {
+    if (test1(bType)) {
       return null;
     }
     bLocusFirst = makeIfNull(bLocusFirst);
@@ -184,7 +200,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder c(String cType) {
-    if (!cType.matches(".*\\d.*") || cType.equals("98")) {
+    if (test1(cType)) {
       return null;
     }
     cLocusCWD = makeIfNull(cLocusCWD);
@@ -193,12 +209,16 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder cNonCWD(String cType) {
-    if (!cType.matches(".*\\d.*") || cType.equals("98")) {
+    if (test1(cType)) {
       return null;
     }
     cLocusFirst = makeIfNull(cLocusFirst);
     addToLocus(cLocusFirst, SeroLocus.C, cType);
     return this;
+  }
+
+  private boolean test1(String type) {
+    return !type.matches(".*\\d.*") || type.equals("98");
   }
 
   public ValidationModelBuilder aAllele(Pair<TypePair, TypePair> alleles) {
@@ -216,9 +236,29 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder dqaAllele(Pair<TypePair, TypePair> alleles) {
+    dqaAlleles.add(alleles);
+    return this;
+  }
+
+  public ValidationModelBuilder dqbAllele(Pair<TypePair, TypePair> alleles) {
+    dqbAlleles.add(alleles);
+    return this;
+  }
+
+  public ValidationModelBuilder dpaAllele(Pair<TypePair, TypePair> alleles) {
+    dpaAlleles.add(alleles);
+    return this;
+  }
+
+  public ValidationModelBuilder dpbAllele(Pair<TypePair, TypePair> alleles) {
+    dpbAlleles.add(alleles);
+    return this;
+  }
+
   public ValidationModelBuilder drb(String drbType) {
     drbLocus = makeIfNull(drbLocus);
-    if (drbType == null || !drbType.matches(".*\\d.*")) {
+    if (test2(drbType)) {
       return null;
     }
     if (!Strings.isNullOrEmpty(drbType)
@@ -227,6 +267,21 @@ public class ValidationModelBuilder {
       drbLocus.add(new SeroType(SeroLocus.DRB, "0103"));
     } else {
       addToLocus(drbLocus, SeroLocus.DRB, drbType);
+    }
+    return this;
+  }
+
+  public ValidationModelBuilder drbNonCWD(String drbType) {
+    drbLocusNonCWD = makeIfNull(drbLocusNonCWD);
+    if (test2(drbType)) {
+      return null;
+    }
+    if (!Strings.isNullOrEmpty(drbType)
+        && Objects.equals(103, Integer.parseInt(drbType.replaceAll(":", "").trim()))) {
+      // UNOS explicitly requires DRB1*01:03 to be reported as DRB0103
+      drbLocusNonCWD.add(new SeroType(SeroLocus.DRB, "0103"));
+    } else {
+      addToLocus(drbLocusNonCWD, SeroLocus.DRB, drbType);
     }
     return this;
   }
@@ -252,8 +307,50 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder dqbNonCWD(String dqbType) {
+    if (test2(dqbType)) {
+      return null;
+    }
+    dqbLocusNonCWD = makeIfNull(dqbLocusNonCWD);
+    addToLocus(dqbLocusNonCWD, SeroLocus.DQB, dqbType);
+    return this;
+  }
+
+  public ValidationModelBuilder dqaNonCWD(String dqaType) {
+    if (test2(dqaType)) {
+      return null;
+    }
+    dqaLocusNonCWD = makeIfNull(dqaLocusNonCWD);
+    addToLocus(dqaLocusNonCWD, SeroLocus.DQA, dqaType);
+    return this;
+  }
+
+  public ValidationModelBuilder dpaNonCWD(String dpaType) {
+    if (test2(dpaType)) {
+      return null;
+    }
+    dpaLocusNonCWD = makeIfNull(dpaLocusNonCWD);
+    addToLocus(dpaLocusNonCWD, SeroLocus.DPA, dpaType);
+    return this;
+  }
+
+  public ValidationModelBuilder dpbNonCWD(String dpbType) {
+    dpbLocusNonCWD = makeIfNull(dpbLocusNonCWD);
+    // Shorten the allele designation to allele group and specific HLA protein. Further fields can
+    // not be entered into UNOS
+    if (!Strings.isNullOrEmpty(dpbType) && dpbType.matches(".*\\d.*")) {
+      HLAType tmpDPB1 = new HLAType(HLALocus.DPB1, dpbType);
+      if (tmpDPB1.spec().size() > 2) {
+        tmpDPB1 = new HLAType(HLALocus.DPB1,
+                              new int[] {tmpDPB1.spec().get(0), tmpDPB1.spec().get(1)});
+      }
+      dpbLocusNonCWD.add(tmpDPB1);
+    }
+    return this;
+  }
+
   public ValidationModelBuilder dqb(String dqbType) {
-    if (dqbType == null || !dqbType.matches(".*\\d.*")) {
+    if (test2(dqbType)) {
       return null;
     }
     dqbLocus = makeIfNull(dqbLocus);
@@ -262,7 +359,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dqa(String dqaType) {
-    if (dqaType == null || !dqaType.matches(".*\\d.*")) {
+    if (test2(dqaType)) {
       return null;
     }
     dqaLocus = makeIfNull(dqaLocus);
@@ -271,7 +368,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dpa(String dpaType) {
-    if (dpaType == null || !dpaType.matches(".*\\d.*")) {
+    if (test2(dpaType)) {
       return null;
     }
     dpaLocus = makeIfNull(dpaLocus);
@@ -292,6 +389,10 @@ public class ValidationModelBuilder {
       dpbLocus.add(tmpDPB1);
     }
     return this;
+  }
+
+  private boolean test2(String dqbType) {
+    return dqbType == null || !dqbType.matches(".*\\d.*");
   }
 
   public ValidationModelBuilder bw4(boolean bw4) {
@@ -388,7 +489,8 @@ public class ValidationModelBuilder {
                                                           bLocusCWD, cLocusCWD, drbLocus, dqbLocus,
                                                           dqaLocus, dpaLocus, dpbLocus, bw4, bw6,
                                                           dr51Locus, dr52Locus, dr53Locus,
-                                                          bcCwdHaplotypes, drDqDR345Haplotypes);
+                                                          bcCwdHaplotypes, drDqDR345Haplotypes,
+                                                          remapping);
     return validationModel;
   }
 
@@ -741,26 +843,103 @@ public class ValidationModelBuilder {
 
         String text = "Please select desired allele pair for this locus:";
 
-        ChoiceDialog<Pair<TypePair, TypePair>> cd = new ChoiceDialog<>(alleleList.get(0),
-                                                                       alleleList);
+        List<Supplier<TextFlow>> choices = new ArrayList<>();
+        Map<Supplier<TextFlow>, Pair<TypePair, TypePair>> map = new HashMap<>();
+        for (Pair<TypePair, TypePair> p : alleleList) {
+          Supplier<TextFlow> tf = () -> getText(p);
+          choices.add(tf);
+          map.put(tf, p);
+        }
+
+        StyleableChoiceDialog<Supplier<TextFlow>> cd = new StyleableChoiceDialog<>(choices.get(0),
+                                                                                   choices);
         cd.setTitle("Select HLA-" + locus.name() + " Alleles");
         cd.setHeaderText(header);
         cd.setContentText(text);
-        Optional<Pair<TypePair, TypePair>> result = cd.showAndWait();
+        cd.setComboCellFactory(listView -> new SimpleTableObjectListCell());
+        cd.setComboButtonCell(new SimpleTableObjectListCell());
+        Optional<Supplier<TextFlow>> result = cd.showAndWait();
 
         if (!result.isPresent()) {
           return new ValidationResult(false, Optional.empty());
         }
 
-        locusSet.clear();
-        locusSet.add(result.get().getLeft().getSeroType());
-        locusSet.add(result.get().getRight().getSeroType());
+        final SeroType seroType1 = map.get(result.get()).getLeft().getSeroType();
+        final SeroType seroType2 = map.get(result.get()).getRight().getSeroType();
+
+        // if the user selected a different allele choice, track the remapping
+        if (!choices.get(0).equals(result.get())) {
+          remapping.put(locus, Pair.of(ImmutableSortedSet.copyOf(locusSet),
+                                       ImmutableSortedSet.of(seroType1, seroType2)));
+
+          locusSet.clear();
+          locusSet.add(seroType1);
+          locusSet.add(seroType2);
+        }
 
       }
 
     }
 
     return new ValidationResult(true, Optional.empty());
+  }
+
+  private static TextFlow getText(Pair<TypePair, TypePair> data) {
+    List<Text> textNodes = new ArrayList<>();
+
+    final TypePair left = data.getLeft();
+    addTextNodes(textNodes, left);
+
+    textNodes.add(new Text(", "));
+
+    final TypePair right = data.getRight();
+    addTextNodes(textNodes, right);
+
+    Text[] nodes = textNodes.toArray(new Text[textNodes.size()]);
+    TextFlow tf = new TextFlow(nodes);
+    return tf;
+  }
+
+  private static void addTextNodes(List<Text> textNodes, final TypePair typePair) {
+    HLAType cwdType1 = CommonWellDocumented.getCWDType(typePair.getHlaType());
+    Status status1 = CommonWellDocumented.getStatus(typePair.getHlaType());
+
+    String a1Start = typePair.seroType.specString() + " [";
+    String a1End = " - " + status1 + "]";
+
+    if (status1 != Status.UNKNOWN) {
+      textNodes.add(new Text(a1Start));
+
+      if (cwdType1.specString().length() < typePair.hlaType.specString().length()) {
+        Text t1 = new Text(cwdType1.specString());
+        t1.setStyle("-fx-font-weight:bold;");
+        textNodes.add(t1);
+        textNodes.add(new Text(typePair.hlaType.specString()
+                                               .substring(cwdType1.specString().length())));
+      } else {
+        Text t1 = new Text(typePair.hlaType.specString());
+        t1.setStyle("-fx-font-weight:bold;");
+        textNodes.add(t1);
+      }
+      textNodes.add(new Text(a1End));
+
+    } else {
+      textNodes.add(new Text(a1Start + typePair.hlaType.specString() + a1End));
+    }
+  }
+
+  private static class SimpleTableObjectListCell extends ListCell<Supplier<TextFlow>> {
+
+    @Override
+    public void updateItem(Supplier<TextFlow> item, boolean empty) {
+      super.updateItem(item, empty);
+      if (item != null) {
+        setGraphic(item.get());
+      } else {
+        setGraphic(null);
+      }
+    }
+
   }
 
   /** Helper method to build a set if it's null */
@@ -806,7 +985,8 @@ public class ValidationModelBuilder {
 
     @Override
     public String toString() {
-      return seroType.specString() + " (" + hlaType.specString() + ")";
+      return seroType.specString() + " [" + hlaType.specString() + " - "
+             + CommonWellDocumented.getStatus(getHlaType()) + "]";
     }
 
   }
