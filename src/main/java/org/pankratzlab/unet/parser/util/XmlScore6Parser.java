@@ -382,8 +382,8 @@ public class XmlScore6Parser {
         if (actualResultPairs.get(i).alleleCombination.compareTo(firstResultPairs.get(0).alleleCombination) != 0) {
           Status sA = CommonWellDocumented.getStatus(actualResultPairs.get(i).alleleCombination);
           Status sF = CommonWellDocumented.getStatus(firstResultPairs.get(i).alleleCombination);
-          if (sA.compareTo(sF) != 0) {
-            builder.locusIsNonCWD(actualResultPairs.get(i).alleleCombination.locus());
+          if (sA == Status.UNKNOWN || sF == Status.UNKNOWN) {
+            builder.locusIsNonCIWD(actualResultPairs.get(i).alleleCombination.locus());
           }
         }
 

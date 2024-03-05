@@ -310,7 +310,9 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
         if (item == null || item.wasRemappedProperty() == null)
           setStyle("");
         else {
-          setStyle("-fx-font-style:" + (item.wasRemappedProperty().get() ? "italic" : "normal"));
+          setStyle("-fx-font-style:"
+                   + (item.wasRemappedProperty().get() ? "italic" + "; -fx-font-weight:bold"
+                                                       : "normal"));
         }
       }
     });
@@ -438,6 +440,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
             case WELL_DOCUMENTED:
               getStyleClass().add(0, WD_ALLELE_CLASS);
               break;
+            case INTERMEDIATE:
             case COMMON:
             default:
               break;

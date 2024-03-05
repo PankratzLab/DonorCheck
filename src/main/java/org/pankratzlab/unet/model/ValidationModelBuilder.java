@@ -23,6 +23,7 @@ package org.pankratzlab.unet.model;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -455,7 +456,7 @@ public class ValidationModelBuilder {
     return ImmutableMultimap.copyOf(dpb1Haplotypes);
   }
 
-  public void locusIsNonCWD(HLALocus locus) {
+  public void locusIsNonCIWD(HLALocus locus) {
     nonCWDLoci.add(locus);
   }
 
@@ -694,8 +695,8 @@ public class ValidationModelBuilder {
                                            List<HLAType> currentHaplotypeAlleles, int locusIndex) {
     if (locusIndex == strandTwoOptionsByLocus.size()) {
       // Terminal step - we now have two haplotypes so we score them and compare
-      ScoredHaplotypes scored = new ScoredHaplotypes(ImmutableList.of(firstHaplotype,
-                                                                      new Haplotype(currentHaplotypeAlleles)));
+      final Haplotype e2 = new Haplotype(currentHaplotypeAlleles);
+      ScoredHaplotypes scored = new ScoredHaplotypes(ImmutableList.of(firstHaplotype, e2));
 
       for (RaceGroup ethnicity : RaceGroup.values()) {
         if (!maxScorePairsByEthnicity.containsKey(ethnicity)
@@ -763,8 +764,11 @@ public class ValidationModelBuilder {
       values.forEach(t -> typesByStatus.put(CommonWellDocumented.getEquivStatus(t), t));
 
       Set<HLAType> cwdTypes = new HashSet<>();
-      cwdTypes.addAll(typesByStatus.get(Status.COMMON));
-      cwdTypes.addAll(typesByStatus.get(Status.WELL_DOCUMENTED));
+      for (Status s : Status.values()) {
+        if (s != Status.UNKNOWN) {
+          cwdTypes.addAll(typesByStatus.get(s));
+        }
+      }
 
       // If we have any common or well-documented types, drop all unknown
       if (!cwdTypes.isEmpty()) {
@@ -838,8 +842,10 @@ public class ValidationModelBuilder {
           continue;
         }
 
-        String header = "Assigned allele pair for HLA-" + locus.name()
-                        + " locus is not Common / Well-Documented.";
+        String header = "Assigned allele pair ("
+                        + locusSet.stream().map(SeroType::specString)
+                                  .collect(Collectors.joining(", "))
+                        + ") for HLA-" + locus.name() + " locus is not Common / Well-Documented.";
 
         String text = "Please select desired allele pair for this locus:";
 
@@ -999,52 +1005,94 @@ public class ValidationModelBuilder {
 
     private ScoredHaplotypes(Collection<Haplotype> initialHaplotypes) {
       super();
-      BigDecimal cwdScore = BigDecimal.ZERO;
+      BigDecimal cwdScore1 = BigDecimal.ZERO;
 
       for (Haplotype haplotype : initialHaplotypes) {
         add(haplotype);
 
-        for (HLAType allele : haplotype.getTypes()) {
-          switch (CommonWellDocumented.getEquivStatus(allele)) {
-            case COMMON:
-              // Add 1 points for common alleles
-              cwdScore = cwdScore.add(BigDecimal.ONE);
-              break;
-            case WELL_DOCUMENTED:
-              // Add 1/2 point for well-documented alleles
-              cwdScore = cwdScore.add(new BigDecimal(0.5));
-              break;
-            case UNKNOWN:
-            default:
-              break;
-          }
-        }
-      }
-
-      for (RaceGroup e : RaceGroup.values()) {
-        int noMissingCount = 0;
-        BigDecimal frequency = new BigDecimal(1.0);
-        for (Haplotype haplotype : this) {
-          // Add this haplotype to the table
-          BigDecimal f = frequencyTable.get(haplotype, e);
-          if (Objects.isNull(f)) {
-            // Cache the frequency if unseen haplotype
+        for (RaceGroup e : RaceGroup.values()) {
+          BigDecimal f;
+          if (!frequencyTable.contains(haplotype, e)) {
             f = HaplotypeFrequencies.getFrequency(e, haplotype);
             frequencyTable.put(haplotype, e, f);
           }
-          if (f.compareTo(BigDecimal.ZERO) > 0) {
-            frequency = frequency.multiply(f);
-            noMissingCount++;
-          }
         }
 
-        BigDecimal weights = cwdScore.add(BigDecimal.valueOf(NO_MISSING_WEIGHT * noMissingCount));
-
-        double s = weights.add(frequency).doubleValue();
-
-        // for homozygous haplotypes we count the score twice
-        scoresByEthnicity.put(e, s);
+        for (HLAType allele : haplotype.getTypes()) {
+          cwdScore1 = cwdScore1.add(new BigDecimal(CommonWellDocumented.getEquivStatus(allele)
+                                                                       .getWeight()));
+        }
       }
+      BigDecimal cwdScore = cwdScore1;
+
+      scoresByEthnicity.putAll(Arrays.stream(RaceGroup.values())
+                                     .collect(Collectors.toMap(e -> e, e -> {
+                                       int noMissingCount = 0;
+                                       BigDecimal frequency = new BigDecimal(1.0);
+                                       for (Haplotype haplotype : this) {
+                                         // Add this haplotype to the table
+                                         BigDecimal f;
+
+                                         // f = frequencyTable.get(haplotype, e);
+                                         // if (Objects.isNull(f)) {
+                                         // // Cache the frequency if unseen haplotype
+                                         // f = HaplotypeFrequencies.getFrequency(e, haplotype);
+                                         // frequencyTable.put(haplotype, e, f);
+                                         // }
+
+                                         // if (!frequencyTable.contains(haplotype, e)) {
+                                         // f = HaplotypeFrequencies.getFrequency(e, haplotype);
+                                         // frequencyTable.put(haplotype, e, f);
+                                         // }
+                                         f = frequencyTable.get(haplotype, e);
+
+                                         if (f.compareTo(BigDecimal.ZERO) > 0) {
+                                           frequency = frequency.multiply(f);
+                                           noMissingCount++;
+                                         }
+                                       }
+
+                                       BigDecimal weights = cwdScore.add(BigDecimal.valueOf(NO_MISSING_WEIGHT
+                                                                                            * noMissingCount));
+
+                                       double s = weights.add(frequency).doubleValue();
+
+                                       return s;
+                                     })));
+      // for (RaceGroup e : RaceGroup.values()) {
+      // int noMissingCount = 0;
+      // BigDecimal frequency = new BigDecimal(1.0);
+      // for (Haplotype haplotype : this) {
+      // // Add this haplotype to the table
+      // BigDecimal f;
+      //
+      // // f = frequencyTable.get(haplotype, e);
+      // // if (Objects.isNull(f)) {
+      // // // Cache the frequency if unseen haplotype
+      // // f = HaplotypeFrequencies.getFrequency(e, haplotype);
+      // // frequencyTable.put(haplotype, e, f);
+      // // }
+      //
+      // // if (!frequencyTable.contains(haplotype, e)) {
+      // // f = HaplotypeFrequencies.getFrequency(e, haplotype);
+      // // frequencyTable.put(haplotype, e, f);
+      // // }
+      // f = frequencyTable.get(haplotype, e);
+      //
+      // if (f.compareTo(BigDecimal.ZERO) > 0) {
+      // frequency = frequency.multiply(f);
+      // noMissingCount++;
+      // }
+      // }
+      //
+      // BigDecimal weights = cwdScore.add(BigDecimal.valueOf(NO_MISSING_WEIGHT * noMissingCount));
+      //
+      // double s = weights.add(frequency).doubleValue();
+      //
+      // // for homozygous haplotypes we count the score twice
+      // scoresByEthnicity.put(e, s);
+      // }
+      System.out.println("scoresByEthnicity: " + scoresByEthnicity.size());
     }
 
     @Override

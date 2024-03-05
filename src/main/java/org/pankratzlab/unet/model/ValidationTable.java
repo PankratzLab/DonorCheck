@@ -147,50 +147,66 @@ public class ValidationTable {
     validationRows.clear();
     makeValidationRow(validationRows, "Donor ID", ValidationModel::getDonorId,
                       StringValidationRow::makeRow, false);
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.A), ValidationModel::getA1,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.A));
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.A), ValidationModel::getA2,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.A));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.A, firstModelWrapper),
+                      ValidationModel::getA1, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.A, firstModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.A, secondModelWrapper),
+                      ValidationModel::getA2, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.A, secondModelWrapper));
 
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.B), ValidationModel::getB1,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.B));
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.B), ValidationModel::getB2,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.B));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.B, firstModelWrapper),
+                      ValidationModel::getB1, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.B, firstModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.B, secondModelWrapper),
+                      ValidationModel::getB2, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.B, secondModelWrapper));
 
     makeValidationRow(validationRows, "BW4", ValidationModel::isBw4, StringValidationRow::makeRow,
                       false);
     makeValidationRow(validationRows, "BW6", ValidationModel::isBw6, StringValidationRow::makeRow,
                       false);
 
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.C), ValidationModel::getC1,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.C));
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.C), ValidationModel::getC2,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.C));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.C, firstModelWrapper),
+                      ValidationModel::getC1, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.C, firstModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.C, secondModelWrapper),
+                      ValidationModel::getC2, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.C, secondModelWrapper));
 
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DRB1), ValidationModel::getDRB1,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.DRB1));
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DRB1), ValidationModel::getDRB2,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.DRB1));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DRB1, firstModelWrapper),
+                      ValidationModel::getDRB1, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.DRB1, firstModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DRB1, secondModelWrapper),
+                      ValidationModel::getDRB2, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.DRB1, secondModelWrapper));
 
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQB1), ValidationModel::getDQB1,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.DQB1));
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQB1), ValidationModel::getDQB2,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.DQB1));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQB1, firstModelWrapper),
+                      ValidationModel::getDQB1, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.DQB1, firstModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQB1, secondModelWrapper),
+                      ValidationModel::getDQB2, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.DQB1, secondModelWrapper));
 
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQA1), ValidationModel::getDQA1,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.DQA1));
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQA1), ValidationModel::getDQA2,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.DQA1));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQA1, firstModelWrapper),
+                      ValidationModel::getDQA1, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.DQA1, firstModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQA1, secondModelWrapper),
+                      ValidationModel::getDQA2, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.DQA1, secondModelWrapper));
 
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPA1), ValidationModel::getDPA1,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.DPA1));
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPA1), ValidationModel::getDPA2,
-                      AntigenValidationRow::makeRow, wasRemapped(HLALocus.DPA1));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPA1, firstModelWrapper),
+                      ValidationModel::getDPA1, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.DPA1, firstModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPA1, secondModelWrapper),
+                      ValidationModel::getDPA2, AntigenValidationRow::makeRow,
+                      wasRemapped(HLALocus.DPA1, secondModelWrapper));
 
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPB1), ValidationModel::getDPB1,
-                      AlleleValidationRow::makeRow, wasRemapped(HLALocus.DPB1));
-    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPB1), ValidationModel::getDPB2,
-                      AlleleValidationRow::makeRow, wasRemapped(HLALocus.DPB1));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPB1, firstModelWrapper),
+                      ValidationModel::getDPB1, AlleleValidationRow::makeRow,
+                      wasRemapped(HLALocus.DPB1, firstModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPB1, secondModelWrapper),
+                      ValidationModel::getDPB2, AlleleValidationRow::makeRow,
+                      wasRemapped(HLALocus.DPB1, secondModelWrapper));
 
     makeValidationRow(validationRows, "DR51 1", ValidationModel::getDR51_1,
                       DR345ValidationRow::makeRow, false);
@@ -222,13 +238,14 @@ public class ValidationTable {
     }
   }
 
-  private String generateRowLabel(HLALocus locus) {
-    return locus.name() + (wasRemapped(locus) ? " *" : "");
+  private String generateRowLabel(HLALocus locus,
+                                  ReadOnlyObjectWrapper<ValidationModel> firstModelWrapper) {
+    return locus.name() + (wasRemapped(locus, firstModelWrapper) ? " *" : "");
   }
 
-  private boolean wasRemapped(HLALocus locus) {
-    return (firstModelWrapper.isNotNull().get() && firstModelWrapper.get().wasRemapped(locus))
-           || (secondModelWrapper.isNotNull().get() && secondModelWrapper.get().wasRemapped(locus));
+  private boolean wasRemapped(HLALocus locus,
+                              ReadOnlyObjectWrapper<ValidationModel> firstModelWrapper) {
+    return (firstModelWrapper.isNotNull().get() && firstModelWrapper.get().wasRemapped(locus));
   }
 
   private void makeDRDQHaplotypeRows(ReadOnlyListWrapper<DRDQHaplotypeRow> rows,

@@ -29,6 +29,7 @@ import java.util.function.BiConsumer;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
@@ -156,6 +157,10 @@ public class FileInputController extends AbstractValidatingWizardController {
                                                         donorParser.extensionFilter(), true);
 
     if (optionalFile.isPresent()) {
+      // initialize CWD data for this file
+      CommonWellDocumented.init();
+
+      // load data
       Task<Void> loadFileTask = JFXUtilHelper.createProgressTask(() -> {
         File selectedFile = optionalFile.get();
 
@@ -185,10 +190,12 @@ public class FileInputController extends AbstractValidatingWizardController {
               // either way, invalid model so fail
               return;
             }
-
-            // valid model, build and set
-            setter.accept(getTable(), builder.build());
-            linkedFile.set(selectedFile);
+            Task<Void> buildModelText = JFXUtilHelper.createProgressTask(() -> {
+              // valid model, build and set
+              setter.accept(getTable(), builder.build());
+              linkedFile.set(selectedFile);
+            });
+            new Thread(buildModelText).start();
           });
         } catch (Exception e) {
           Platform.runLater(() -> {
