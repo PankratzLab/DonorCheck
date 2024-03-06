@@ -29,15 +29,8 @@ import com.google.common.collect.ImmutableList;
 
 /** {@link Locus} implementation for serological types */
 public enum SeroLocus implements Locus<SeroLocus> {
-  A(2, TIER_1),
-  B(2, TIER_1),
-  C(3, TIER_1),
-  DRB(1, TIER_2, "DR"),
-  DQB(1, TIER_2, "DQ"),
-  DQA(1, TIER_2),
-  DPB(1, TIER_2, "DP"),
-  DPA(1, TIER_2),
-  MICA(1, -1);
+  A(2, TIER_1), B(2, TIER_1), C(3, TIER_1), DRB(1, TIER_2, "DR"), DQB(1, TIER_2, "DQ"), DQA(1,
+      TIER_2), DPB(1, TIER_2, "DP"), DPA(1, TIER_2), MICA(1, -1);
 
   private final int severity;
   private final int tier;
@@ -51,7 +44,7 @@ public enum SeroLocus implements Locus<SeroLocus> {
 
   /**
    * @return Numeric priority indicating whether antigens on this locus should be preferred as
-   *     unacceptable
+   *         unacceptable
    */
   public int priority() {
     return severity;

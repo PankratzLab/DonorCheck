@@ -26,8 +26,8 @@ import java.util.Objects;
 public class StringValidationRow extends ValidationRow<String> {
 
   public StringValidationRow(String rowLabel, String firstCol, String secondCol,
-                             boolean wasRemapped) {
-    super(rowLabel, firstCol, secondCol, wasRemapped);
+      boolean wasRemappedFirst, boolean wasRemappedSecond) {
+    super(rowLabel, firstCol, secondCol, wasRemappedFirst, wasRemappedSecond);
   }
 
   @Override
@@ -39,8 +39,9 @@ public class StringValidationRow extends ValidationRow<String> {
   }
 
   public static StringValidationRow makeRow(String rowLabel, String firstCol, String secondCol,
-                                            boolean wasRemapped) {
-    return new StringValidationRow(rowLabel, firstCol, secondCol, wasRemapped);
+      boolean wasRemappedFirst, boolean wasRemappedSecond) {
+    return new StringValidationRow(rowLabel, firstCol, secondCol, wasRemappedFirst,
+        wasRemappedSecond);
   }
 
 }

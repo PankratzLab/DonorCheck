@@ -42,22 +42,21 @@ public final class HaplotypeUtils {
    * Helper method to take allele/allele range strings and populate a strand multimap
    *
    * @param specString Sanitized specificity string, which may or may not represent a range of
-   *     alleles (indicated by {@link #RANGE_TOKEN})
+   *        alleles (indicated by {@link #RANGE_TOKEN})
    * @param locus {@link HLALocus} string representation
    * @param strandIndex {@link Strand} index, a 0 for the first string and a 1 for the second.
    * @param haplotypeMap Map to populate
    */
-  public static void parseAllelesToStrandMap(
-      String specString, String locus, int strandIndex, Multimap<Strand, HLAType> haplotypeMap) {
+  public static void parseAllelesToStrandMap(String specString, String locus, int strandIndex,
+      Multimap<Strand, HLAType> haplotypeMap) {
 
     if (specString.contains(RANGE_TOKEN)) {
       // Convert ranges to individual alleles
       HLAType firstType = new HLAType(HLALocus.valueOf(locus), specString.split(RANGE_TOKEN)[0]);
       HLAType lastType = new HLAType(HLALocus.valueOf(locus), specString.split(RANGE_TOKEN)[1]);
       List<Integer> newSpec = new ArrayList<>(lastType.spec());
-      for (int rangeIndex = firstType.spec().get(1);
-          rangeIndex <= lastType.spec().get(1);
-          rangeIndex++) {
+      for (int rangeIndex = firstType.spec().get(1); rangeIndex <= lastType.spec()
+          .get(1); rangeIndex++) {
         newSpec.set(1, rangeIndex);
         haplotypeMap.put(Strand.values()[strandIndex], new HLAType(firstType.locus(), newSpec));
       }
@@ -68,15 +67,15 @@ public final class HaplotypeUtils {
       if (specString.endsWith("N")) {
         finalType = new NullType(parsedLocus, rawType.spec());
       } else if (LabelledType.matches(specString)) {
-        finalType =
-            new LabelledType(
-                parsedLocus, rawType.spec(), specString.charAt(specString.length() - 1));
+        finalType = new LabelledType(parsedLocus, rawType.spec(),
+            specString.charAt(specString.length() - 1));
       } else {
         finalType = new HLAType(parsedLocus, rawType.spec());
       }
       haplotypeMap.put(Strand.values()[strandIndex], finalType);
     }
   }
+
   /**
    * Helper method to return locus{@link HLALocus} string representations from input lines
    *

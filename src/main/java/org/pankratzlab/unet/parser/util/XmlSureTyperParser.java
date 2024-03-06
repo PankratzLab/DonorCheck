@@ -41,7 +41,7 @@ public class XmlSureTyperParser {
    * Method to parse XML to ValidationModelBuilder builder to allow for uniformity
    *
    * @param builder ValidationModelBuilder used to mapping attributes from XML to a standard format.
-   *          {@link ValidationModel}
+   *        {@link ValidationModel}
    * @param doc Suretyper XML document to be parsed.
    */
   public static void buildModelFromXML(ValidationModelBuilder builder, Document doc) {
@@ -49,33 +49,25 @@ public class XmlSureTyperParser {
     builder.donorId(doc.getElementsByAttributeValue(NAME_TAG, PATIENT_ID_TAG).text().toUpperCase());
     Element labAssignmentSection = doc.getElementsByTag("labAssignmentSection").get(0);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_A).text()
-                                      .replaceAll("A", "").split("\\s"))
-          .forEach(builder::a);
+        .replaceAll("A", "").split("\\s")).forEach(builder::a);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_B).text()
-                                      .replaceAll("B", "").split("\\s"))
-          .forEach(builder::b);
+        .replaceAll("B", "").split("\\s")).forEach(builder::b);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_C).text()
-                                      .replaceAll("Cw", "").split("\\s"))
-          .forEach(builder::c);
+        .replaceAll("Cw", "").split("\\s")).forEach(builder::c);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DRB1).text()
-                                      .replaceAll("DR", "").split("\\s"))
-          .forEach(builder::drb);
+        .replaceAll("DR", "").split("\\s")).forEach(builder::drb);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQB1).text()
-                                      .replaceAll("DQ", "").split("\\s"))
-          .forEach(builder::dqb);
+        .replaceAll("DQ", "").split("\\s")).forEach(builder::dqb);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQA1).text()
-                                      .replaceAll("DQA1\\*", "").split("\\s"))
-          .forEach(builder::dqa);
+        .replaceAll("DQA1\\*", "").split("\\s")).forEach(builder::dqa);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPA1).text()
-                                      .replaceAll("DPA1\\*", "").split("\\s"))
-          .forEach(builder::dpa);
+        .replaceAll("DPA1\\*", "").split("\\s")).forEach(builder::dpa);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPB1).text()
-                                      .replaceAll("DPB1\\*", "").split("\\s"))
-          .forEach(builder::dpb);
-    builder.bw4(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text()
-                                    .contains("Bw4"));
-    builder.bw6(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text()
-                                    .contains("Bw6"));
+        .replaceAll("DPB1\\*", "").split("\\s")).forEach(builder::dpb);
+    builder
+        .bw4(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw4"));
+    builder
+        .bw6(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw6"));
 
     // Parse haplotypes
     Map<String, Multimap<Strand, HLAType>> haplotypeMap = new HashMap<>();
@@ -86,20 +78,20 @@ public class XmlSureTyperParser {
     haplotypeMap.put(HLA_DRB345, ArrayListMultimap.create());
     Element haplotypeSection = doc.getElementsByTag("testResultsSection").get(0);
     parseHaplotype(builder,
-                   haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_B).get(0),
-                   haplotypeMap.get(HLA_B));
+        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_B).get(0),
+        haplotypeMap.get(HLA_B));
     parseHaplotype(builder,
-                   haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_C).get(0),
-                   haplotypeMap.get(HLA_C));
+        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_C).get(0),
+        haplotypeMap.get(HLA_C));
     parseHaplotype(builder,
-                   haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DRB1).get(0),
-                   haplotypeMap.get(HLA_DRB1));
+        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DRB1).get(0),
+        haplotypeMap.get(HLA_DRB1));
     parseHaplotype(builder,
-                   haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DQB1).get(0),
-                   haplotypeMap.get(HLA_DQB1));
+        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DQB1).get(0),
+        haplotypeMap.get(HLA_DQB1));
     parseHaplotype(builder,
-                   haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DRB345).get(0),
-                   haplotypeMap.get(HLA_DRB345));
+        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DRB345).get(0),
+        haplotypeMap.get(HLA_DRB345));
 
     // Map haplotypes collected to ValidationModelBuilder
     builder.bHaplotype(haplotypeMap.get(HLA_B));
@@ -113,19 +105,19 @@ public class XmlSureTyperParser {
    * Helper method to extract correct alleles section from haplotype sections to be parsed
    *
    * @param builder ValidationModelBuilder used to mapping attributes from XML to a standard format.
-   *          {@link ValidationModel}
+   *        {@link ValidationModel}
    * @param haplotypeXmlSection Current haplotype section in doc being parsed
    * @param strandMap Multimap created for specific haplotype for parsing alleles onto.
    */
   private static void parseHaplotype(ValidationModelBuilder builder, Element haplotypeXmlSection,
-                                     Multimap<Strand, HLAType> strandMap) {
+      Multimap<Strand, HLAType> strandMap) {
     boolean flag = false;
     // Check for if there are more than one hlaTestCall section
     // If there is more than one only parse the one that has been manually selected.
     if (haplotypeXmlSection.getElementsByTag("hlaTestCall").size() == 1) {
       String alleles = haplotypeXmlSection.getElementsByTag("alleles").text();
-      String[] loci = haplotypeXmlSection.getElementsByTag("hlaTestCall").attr("callName")
-                                         .split("\\s+");
+      String[] loci =
+          haplotypeXmlSection.getElementsByTag("hlaTestCall").attr("callName").split("\\s+");
       parseAlleles(alleles, builder, strandMap, loci);
     } else if (haplotypeXmlSection.getElementsByTag("hlaTestCall").size() > 1) {
       for (Element e : haplotypeXmlSection.getElementsByTag("hlaTestCall")) {
@@ -137,8 +129,8 @@ public class XmlSureTyperParser {
         }
       }
       if (flag == false) {
-        System.err.println("Error: Could not find manually selected haplotype for: "
-                           + haplotypeXmlSection);
+        System.err.println(
+            "Error: Could not find manually selected haplotype for: " + haplotypeXmlSection);
       }
     } else {
       System.err.println("Error: can not find haplotype section for: " + haplotypeXmlSection);
@@ -149,14 +141,14 @@ public class XmlSureTyperParser {
    * Helper method to extract the alleles from XML and map them to Multimap strandMap
    *
    * @param allelesXmlSection Text value from the alleles section of the XML from with in a specific
-   *          haplotype
+   *        haplotype
    * @param builder ValidationModelBuilder used to mapping attributes from XML to a standard format.
-   *          {@link ValidationModel}
+   *        {@link ValidationModel}
    * @param strandMap Multimap created for specific haplotype for parsing alleles onto.
    * @param loci String array with locus value(s)
    */
   private static void parseAlleles(String allelesXmlSection, ValidationModelBuilder builder,
-                                   Multimap<Strand, HLAType> strandMap, String[] loci) {
+      Multimap<Strand, HLAType> strandMap, String[] loci) {
     String[] tokens = allelesXmlSection.split("\\s+");
     // flag for being on a new strand.
     boolean newStrand = true;
@@ -176,8 +168,7 @@ public class XmlSureTyperParser {
         newStrand = true;
       }
       if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
-           || token.contains(HLALocus.DRB5 + "*"))
-          && !token.contains("N") && newStrand) {
+          || token.contains(HLALocus.DRB5 + "*")) && !token.contains("N") && newStrand) {
         String type = token.substring(token.indexOf("*"), token.indexOf(":"));
         if (token.contains(HLALocus.DRB3 + "*")) {
           builder.dr52(type);

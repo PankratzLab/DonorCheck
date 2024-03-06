@@ -45,7 +45,7 @@ import com.google.common.primitives.Ints;
 
 /** Abstract superclass for general antigen information. Allows comparison and sorting. */
 public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
-                             implements Serializable, Comparable<A> {
+    implements Serializable, Comparable<A> {
 
   private static final long serialVersionUID = 5L;
 
@@ -56,8 +56,8 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
   public static final String LOCUS_DELIM = "*";
 
   /** {@link Pattern} for matching antigen specificities. */
-  public static final Pattern SPEC_PATTERN = Pattern.compile("\\" + LOCUS_DELIM
-                                                             + "?([0-9]+[:[0-9]+]*)(?:\\(([0-9]+[:[0-9]+]*)\\))*");
+  public static final Pattern SPEC_PATTERN =
+      Pattern.compile("\\" + LOCUS_DELIM + "?([0-9]+[:[0-9]+]*)(?:\\(([0-9]+[:[0-9]+]*)\\))*");
 
   public static final int LATEST_REVISION = 1;
 
@@ -130,7 +130,7 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
       return String.format("%d", spec().get(0));
     }
     return spec().stream().map(i -> String.format("%02d", i))
-                 .collect(Collectors.joining(getSpecDelim()));
+        .collect(Collectors.joining(getSpecDelim()));
   }
 
   /**
@@ -196,12 +196,17 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (obj == null) return false;
-    if (getClass() != obj.getClass()) return false;
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
     Antigen<?, ?> other = (Antigen<?, ?>) obj;
-    if (locus != other.locus()) return false;
-    if (!Arrays.equals(specificity, other.specificity)) return false;
+    if (locus != other.locus())
+      return false;
+    if (!Arrays.equals(specificity, other.specificity))
+      return false;
     return true;
   }
 
@@ -277,9 +282,10 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
    * @param antigens Collection of antigens
    * @return Sorted string of antigen strings
    */
-  public static <L extends Locus<L>, T extends Antigen<L, T>> String toString(Collection<T> antigens) {
+  public static <L extends Locus<L>, T extends Antigen<L, T>> String toString(
+      Collection<T> antigens) {
     return antigens.stream().sorted().map(Antigen::toString).collect(Collectors.joining(", "))
-                   .toString();
+        .toString();
   }
 
   /**
@@ -313,12 +319,12 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
    *     B*2} would translate to {@code A*21:03, A*15, B*02}
    * @param lociPattern A {@link Pattern} for parsing out the {@link Locus}
    * @param typeParser Method for converting individual locus + spec string combinations to a
-   *          particular type
+   *        particular type
    * @return A list of the <b>unique</b> and <b>non-null</b> antigens parsed from the text, in the
    *         order of their first appearance
    */
   public static <T extends Antigen<?, T>> List<T> parseTypes(String text, Pattern lociPattern,
-                                                             Function<String, T> typeParser) {
+      Function<String, T> typeParser) {
     if (text == null || text.isEmpty()) {
       return Collections.emptyList();
     }
@@ -349,8 +355,8 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
       String locus = locusMap.get(locusStartPos);
       // The current locus has a range to the start pos of the next locus, or the end of the string
       // if this is the last locus.
-      int rangeEnd = locusIndex + 1 == locusStarts.size() ? text.length()
-                                                          : locusStarts.get(locusIndex + 1);
+      int rangeEnd =
+          locusIndex + 1 == locusStarts.size() ? text.length() : locusStarts.get(locusIndex + 1);
       // The search space substring is where we look for specs
       String searchSpace = text.substring(locusStartPos + locus.length(), rangeEnd);
       Matcher specMatcher = SPEC_PATTERN.matcher(searchSpace);

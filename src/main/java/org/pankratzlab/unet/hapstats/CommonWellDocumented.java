@@ -68,8 +68,8 @@ public final class CommonWellDocumented {
   private static final String ALLELE_FREQ_PATH_200 = "/cwd200.html";
   private static ImmutableMap<HLAType, Status> ALLELE_FREQS;
 
-  private static LoadingCache<HLAType, Status> doGetStatusCache = CacheBuilder.newBuilder()
-                                                                              .build(CacheLoader.from(CommonWellDocumented::doGetStatus));
+  private static LoadingCache<HLAType, Status> doGetStatusCache =
+      CacheBuilder.newBuilder().build(CacheLoader.from(CommonWellDocumented::doGetStatus));
 
   public static enum Status {
     COMMON(1.0), INTERMEDIATE(0.5), WELL_DOCUMENTED(0.5), UNKNOWN(0.0);
@@ -86,8 +86,8 @@ public final class CommonWellDocumented {
   }
 
   private static enum SOURCE {
-    CWD_200("CWD 2.0.0 (fast, fewer haplotypes)"),
-    CIWD_300("CIWD 3.0.0 (much slower, more haplotypes)");
+    CWD_200("CWD 2.0.0 (fast, fewer haplotypes)"), CIWD_300(
+        "CIWD 3.0.0 (much slower, more haplotypes)");
 
     SOURCE(String d) {
       displayName = d;
@@ -168,7 +168,8 @@ public final class CommonWellDocumented {
   }
 
   public static void loadCIWD300() {
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(XmlDonorParser.class.getResourceAsStream(ALLELE_FREQ_PATH)))) {
+    try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(XmlDonorParser.class.getResourceAsStream(ALLELE_FREQ_PATH)))) {
       ImmutableMap.Builder<HLAType, Status> freqMapBuilder = ImmutableMap.builder();
       Map<HLAType, Status> cwdMap = new HashMap<>();
       reader.lines().map(s -> s.split("\t", -1)).forEach(s -> {

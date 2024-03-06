@@ -47,10 +47,8 @@ public abstract class AbstractHaplotypeRow implements HaplotypeRow {
     this.haplotype = new ReadOnlyObjectWrapper<>(haplotype);
     BigDecimal frequency = HaplotypeFrequencies.getFrequency(ethnicity, haplotype);
     frequencyProperty =
-        new ReadOnlyObjectWrapper<>(
-            frequency.setScale(
-                HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
-                HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE));
+        new ReadOnlyObjectWrapper<>(frequency.setScale(HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
+            HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE));
   }
 
   /** @return Property for this row's {@link RaceGroup} */

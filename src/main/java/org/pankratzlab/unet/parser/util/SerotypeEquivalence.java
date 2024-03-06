@@ -78,7 +78,7 @@ public final class SerotypeEquivalence {
 
   // put method for creating the reference table used in the get method.
   private static void put(Builder<HLAType, SeroType> builder, String serotypeSpec, HLALocus locus,
-                          String... hlaSpecs) {
+      String... hlaSpecs) {
     SeroType s = new SeroType(locus.sero(), serotypeSpec);
     // create a one to one table for mapping alleles to serotype
     for (String allele : hlaSpecs) {

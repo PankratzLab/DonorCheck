@@ -99,8 +99,8 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
       if (lookup.size() == 1) {
         return lookup.iterator().next();
       } else if (lookup.size() > 1) {
-        throw new IllegalStateException("HLA type: " + this
-                                        + " has multiple serotype equivalencies");
+        throw new IllegalStateException(
+            "HLA type: " + this + " has multiple serotype equivalencies");
       }
     } catch (IllegalArgumentException e) {
       // No-op
@@ -190,7 +190,7 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
 
   /** @see Antigen#parseTypes(String, java.util.regex.Pattern, Function) */
   public static <T extends Antigen<?, T>> List<T> parseTypes(String text,
-                                                             Function<String, T> typeFunction) {
+      Function<String, T> typeFunction) {
     return Antigen.parseTypes(text, LOCI_PATTERN, typeFunction);
   }
 
@@ -198,12 +198,12 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
     // Static initializer to create patterns
     // See also SeroType
 
-    LOCI_PATTERN = makePattern(Arrays.stream(HLALocus.values()).map(HLALocus::name)
-                                     .collect(Collectors.toList()));
+    LOCI_PATTERN = makePattern(
+        Arrays.stream(HLALocus.values()).map(HLALocus::name).collect(Collectors.toList()));
 
     TYPE_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + SPEC_PATTERN.pattern());
-    PARTIAL_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + "(?:" + SPEC_PATTERN.pattern()
-                                      + ")?");
+    PARTIAL_PATTERN =
+        Pattern.compile(LOCI_PATTERN.pattern() + "(?:" + SPEC_PATTERN.pattern() + ")?");
 
     /*
      * --- WARNING --- Changing the patterns in a way that affects the number of groups can have

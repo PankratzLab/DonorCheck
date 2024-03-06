@@ -45,6 +45,7 @@ import org.pankratzlab.unet.model.ValidationTable;
 
 import com.google.common.collect.ImmutableSet;
 
+import javafx.beans.binding.Bindings;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -73,9 +74,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private static final String WD_ALLELE_CLASS = "well-documented-allele";
   private static final String UK_ALLELE_CLASS = "unknown-allele";
   private static final String UNKNOWN_HAPLOTYPE_CLASS = "unknown-haplotype";
-  private static final Set<String> HAPLOTYPE_CLASSES = ImmutableSet.of(WD_ALLELE_CLASS,
-                                                                       UK_ALLELE_CLASS,
-                                                                       UNKNOWN_HAPLOTYPE_CLASS);
+  private static final Set<String> HAPLOTYPE_CLASSES =
+      ImmutableSet.of(WD_ALLELE_CLASS, UK_ALLELE_CLASS, UNKNOWN_HAPLOTYPE_CLASS);
 
   @FXML
   private ResourceBundle resources;
@@ -112,6 +112,9 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   @FXML
   private Label resultDisplayText;
+
+  @FXML
+  private Label auditLog;
 
   @FXML
   private TableView<BCHaplotypeRow> bcHaplotypeTable;
@@ -153,13 +156,12 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   @FXML
   void savePNGResults(ActionEvent event) {
     Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
-                                                       getTable().getId() + "_donor_valid", "PNG",
-                                                       ".png", false);
+        getTable().getId() + "_donor_valid", "PNG", ".png", false);
 
     if (destination.isPresent()) {
       try {
         ImageIO.write(SwingFXUtils.fromFXImage(rootPane.snapshot(null, null), null), "png",
-                      destination.get());
+            destination.get());
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setHeaderText("Saved validation image to: " + destination.get().getName());
         alert.showAndWait();
@@ -176,8 +178,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private void saveCSVResults(ActionEvent event) {
     ValidationTable vt = getTable();
     Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
-                                                       vt.getId() + "_results_csv", "CSV", ".csv",
-                                                       false);
+        vt.getId() + "_results_csv", "CSV", ".csv", false);
 
     if (destination.isPresent()) {
       try {
@@ -197,8 +198,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   @FXML
   void printResults(ActionEvent event) {
-    ChoiceDialog<Printer> dialog = new ChoiceDialog<>(Printer.getDefaultPrinter(),
-                                                      Printer.getAllPrinters());
+    ChoiceDialog<Printer> dialog =
+        new ChoiceDialog<>(Printer.getDefaultPrinter(), Printer.getAllPrinters());
     dialog.setHeaderText("Select a printer");
     dialog.setContentText("Choose a printer from available printers");
     dialog.setTitle("Printer Choice");
@@ -230,6 +231,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     assert isEqualCol != null : "fx:id=\"isEqualCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert secondSourceCol != null : "fx:id=\"secondSourceCol\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert resultDisplayText != null : "fx:id=\"resultDisplayText\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+    assert auditLog != null : "fx:id=\"auditLog\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert bcHaplotypeTable != null : "fx:id=\"haplotypeTable\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert bcEthnicityColumn != null : "fx:id=\"ethnicityColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert haplotypeCAlleleColumn != null : "fx:id=\"haplotypeCAlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
@@ -240,6 +242,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     assert haplotypeDRB345AlleleColumn != null : "fx:id=\"haplotypeDRB345AlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert haplotypeDRB1AlleleColumn != null : "fx:id=\"haplotypeDRB1AlleleColumn\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert haplotypeDQB1AlleleColumn != null : "fx:id=\"haplotypeDQB1Column\" was not injected: check your FXML file 'ValidationResults.fxml'.";
+
+    rootPane.setAutosize(Bindings.createBooleanBinding(() -> true));
 
     // Configure validation results table columns
     rowLabelCol.setCellValueFactory(new PropertyValueFactory<>(ValidationRow.ID_PROP));
@@ -253,19 +257,26 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
     // Configure haplotype table columns
     bcEthnicityColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
-    haplotypeCAlleleColumn.setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.C_ALLELE_PROP));
-    haplotypeBAlleleColumn.setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.B_ALLELE_PROP));
+    haplotypeCAlleleColumn
+        .setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.C_ALLELE_PROP));
+    haplotypeBAlleleColumn
+        .setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.B_ALLELE_PROP));
     haplotypeBwColumn.setCellValueFactory(new PropertyValueFactory<>(BCHaplotypeRow.BW_GROUP_PROP));
     bcFrequencyColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
 
     haplotypeCAlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
     haplotypeBAlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
 
-    drdqEthnicityColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
-    haplotypeDRB345AlleleColumn.setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB345_PROP));
-    haplotypeDRB1AlleleColumn.setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB1_ALLELE_PROP));
-    haplotypeDQB1AlleleColumn.setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DQB1_ALLELE_PROP));
-    drdqFrequencyColumn.setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
+    drdqEthnicityColumn
+        .setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.ETHNICITY_PROP));
+    haplotypeDRB345AlleleColumn
+        .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB345_PROP));
+    haplotypeDRB1AlleleColumn
+        .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DRB1_ALLELE_PROP));
+    haplotypeDQB1AlleleColumn
+        .setCellValueFactory(new PropertyValueFactory<>(DRDQHaplotypeRow.DQB1_ALLELE_PROP));
+    drdqFrequencyColumn
+        .setCellValueFactory(new PropertyValueFactory<>(HaplotypeRow.FREQUENCY_PROP));
 
     haplotypeDRB345AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
     haplotypeDRB1AlleleColumn.setCellFactory(new HaplotypeCellFactory<>());
@@ -278,14 +289,22 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   @Override
   protected void refreshTable(ValidationTable table) {
     // Can only finish the wizard if the validation is successful
+
     rootPane.setInvalidBinding(table.isValidProperty().not());
     resultsTable.setItems(table.getValidationRows());
     table.isValidProperty().addListener(e -> updateDisplay(table.isValidProperty().get()));
+    auditLog.visibleProperty().bind(table.hasAuditLines());
+    auditLog.textProperty().bind(table.getAuditLogLines());
     firstSourceCol.textProperty().bind(table.firstColSource());
     secondSourceCol.textProperty().bind(table.secondColSource());
 
     bcHaplotypeTable.setItems(table.getBCHaplotypeRows());
     drdqHaplotypeTable.setItems(table.getDRDQHaplotypeRows());
+
+    auditLog.prefHeightProperty().bind(Bindings.createDoubleBinding(() -> {
+      return Math.min(200d, 15d * table.getAuditLogLineCount().getValue().intValue());
+    }, table.getAuditLogLineCount()));
+
   }
 
   /** Perform required actions when the page is being displayed */
@@ -301,21 +320,89 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
    *
    * @param isValid Whether the validation is successful or not
    */
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private void updateDisplay(Boolean isValid) {
 
-    resultsTable.setRowFactory(tv -> new TableRow<ValidationRow<?>>() {
-      @Override
-      protected void updateItem(ValidationRow<?> item, boolean empty) {
-        super.updateItem(item, empty);
-        if (item == null || item.wasRemappedProperty() == null)
-          setStyle("");
-        else {
-          setStyle("-fx-font-style:"
-                   + (item.wasRemappedProperty().get() ? "italic" + "; -fx-font-weight:bold"
-                                                       : "normal"));
-        }
-      }
-    });
+    Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>> value =
+        new Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>>() {
+
+          @Override
+          public TableCell<ValidationRow<?>, String> call(
+              TableColumn<ValidationRow<?>, String> param) {
+            return new TableCell() {
+
+              private String style;
+
+              @Override
+              protected void updateItem(Object item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null) {
+                  if (style != null) {
+                    setStyle(style);
+                    style = null;
+                  }
+                  setText("");
+                } else {
+                  boolean val = resultsTable.getItems().get(getTableRow().getIndex())
+                      .wasRemappedFirstProperty().get();
+                  setText(item.toString());
+                  if (val) {
+                    style = getStyle();
+                    setStyle(
+                        "-fx-font-style:" + (val ? "italic" + "; -fx-font-weight:bold" : "normal"));
+                  } else {
+                    if (style != null) {
+                      setStyle(style);
+                      style = null;
+                    }
+                  }
+                }
+              }
+            };
+          }
+        };
+    firstSourceCol.setCellFactory(value);
+
+    Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>> value1 =
+        new Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>>() {
+
+          @Override
+          public TableCell<ValidationRow<?>, String> call(
+              TableColumn<ValidationRow<?>, String> param) {
+            return new TableCell() {
+
+              private String style;
+
+              @Override
+              protected void updateItem(Object item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null) {
+                  if (style != null) {
+                    setStyle(style);
+                    style = null;
+                  }
+                  setText("");
+                } else {
+                  boolean val = resultsTable.getItems().get(getTableRow().getIndex())
+                      .wasRemappedSecondProperty().get();
+                  if (val) {
+                    setText("⦿ " + item.toString());
+                    style = getStyle();
+                    setStyle(
+                        "-fx-font-style:" + (val ? "italic" + "; -fx-font-weight:bold" : "normal"));
+                  } else {
+                    setText(item.toString());
+                    if (style != null) {
+                      setStyle(style);
+                      style = null;
+                    }
+                  }
+                }
+              }
+            };
+          }
+        };
+    secondSourceCol.setCellFactory(value1);
 
     String displayText = "Validation ";
     String displayStyle = "-fx-text-fill: ";
@@ -329,6 +416,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     }
     resultDisplayText.setText(displayText);
     resultDisplayText.setStyle(displayStyle);
+
   }
 
   /**
@@ -338,7 +426,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
    * @see https://stackoverflow.com/a/44807681/1027800
    */
   private static class PassFailCellFactory implements
-                                           Callback<TableColumn<ValidationRow<?>, Boolean>, TableCell<ValidationRow<?>, Boolean>> {
+      Callback<TableColumn<ValidationRow<?>, Boolean>, TableCell<ValidationRow<?>, Boolean>> {
 
     private final Image imageTrue = new Image(getClass().getResourceAsStream("/pass.png"));
     private final Image imageFalse = new Image(getClass().getResourceAsStream("/fail.png"));
@@ -373,7 +461,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   /** Helper class to color cells when the row is invalid */
   private static class InvalidColorCellFactory implements
-                                               Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>> {
+      Callback<TableColumn<ValidationRow<?>, String>, TableCell<ValidationRow<?>, String>> {
     @Override
     public TableCell<ValidationRow<?>, String> call(TableColumn<ValidationRow<?>, String> param) {
       return new TableCell<ValidationRow<?>, String>() {
@@ -402,8 +490,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
    * Helper class to color cells when the row's haplotype is unknown or individual alleles are not
    * common
    */
-  private static class HaplotypeCellFactory<T extends HaplotypeRow> implements
-                                           Callback<TableColumn<T, HLAType>, TableCell<T, HLAType>> {
+  private static class HaplotypeCellFactory<T extends HaplotypeRow>
+      implements Callback<TableColumn<T, HLAType>, TableCell<T, HLAType>> {
 
     @Override
     public TableCell<T, HLAType> call(TableColumn<T, HLAType> param) {
@@ -449,9 +537,8 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
           TableRow<?> tableRow = getTableRow();
           if (Objects.nonNull(tableRow)) {
             HaplotypeRow row = (HaplotypeRow) tableRow.getItem();
-            if (Objects.nonNull(row)
-                && HaplotypeFrequencies.UNKNOWN_HAP_CUTOFF.compareTo(row.frequencyProperty()
-                                                                        .get()) > 0) {
+            if (Objects.nonNull(row) && HaplotypeFrequencies.UNKNOWN_HAP_CUTOFF
+                .compareTo(row.frequencyProperty().get()) > 0) {
               getStyleClass().add(0, UNKNOWN_HAPLOTYPE_CLASS);
             }
           }

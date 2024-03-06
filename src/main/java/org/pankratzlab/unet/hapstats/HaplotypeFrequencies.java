@@ -91,7 +91,8 @@ public final class HaplotypeFrequencies {
   /**
    * Update the haplotype frequency tables.
    *
-   * <p>NOTE: This should always be run off the JFX application thread
+   * <p>
+   * NOTE: This should always be run off the JFX application thread
    *
    * @return true if at least one haplotype is read successfully.
    */
@@ -100,6 +101,7 @@ public final class HaplotypeFrequencies {
     String drdqTablePath = HLAProperties.get().getProperty(NMDP_DRDQ_PROP);
     return completeDoInitialization(bcTablePath, drdqTablePath);
   }
+
   /**
    * initialize and build haplotype frequency tables
    *
@@ -139,8 +141,7 @@ public final class HaplotypeFrequencies {
     if (!noTable.toString().isEmpty()) {
       missingTableMsg =
           "The following frequency table(s) are missing. Corresponding haplotype frequencies will not be used.\n"
-              + noTable.toString()
-              + "\n\nYou can edit the table paths via the 'Haplotypes' menu.";
+              + noTable.toString() + "\n\nYou can edit the table paths via the 'Haplotypes' menu.";
     }
 
     initialized = !TABLES.isEmpty();
@@ -149,17 +150,15 @@ public final class HaplotypeFrequencies {
 
   /**
    * @return A description of any tables that failed to load in the last {@link #doInitialization()}
-   *     call. Empty if no missing tables.
+   *         call. Empty if no missing tables.
    */
   public static String getMissingTableMessage() {
     return missingTableMsg;
   }
 
   /** Helper method to build a haplotype table from a CSV file from NMDP */
-  private static void buildTable(
-      Builder<Haplotype, HaplotypeFrequency> frequencyTableBuilder,
-      File frequencyFile,
-      String... loci) {
+  private static void buildTable(Builder<Haplotype, HaplotypeFrequency> frequencyTableBuilder,
+      File frequencyFile, String... loci) {
 
     try (InputStream is = new FileInputStream(frequencyFile);
         HSSFWorkbook workbook = new HSSFWorkbook(is)) {
@@ -247,7 +246,7 @@ public final class HaplotypeFrequencies {
    * @param typeOne First type of target haplotype (order is arbitrary)
    * @param typeTwo Second type of target haplotype (order is arbitrary)
    * @return The population frequency in the specified ethnicity of the haplotype containing these
-   *     two types
+   *         two types
    */
   public static BigDecimal getFrequency(RaceGroup ethnicity, HLAType typeOne, HLAType typeTwo) {
     return getFrequency(ethnicity, new Haplotype(typeOne, typeTwo));
@@ -257,19 +256,13 @@ public final class HaplotypeFrequencies {
    * @param ethnicity Target ethnicity
    * @param haplotype Target haplotype
    * @return The population frequency in the specified ethnicity of the haplotype containing these
-   *     two types
+   *         two types
    */
   public static BigDecimal getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
     BigDecimal freq = BigDecimal.ZERO;
-    Haplotype equivHaplotype =
-        new Haplotype(
-            haplotype
-                .getTypes()
-                .stream()
-                .map(AlleleGroups::getGGroup)
-                .map(HaplotypeFrequencies::adjustNulls)
-                .map(HaplotypeFrequencies::truncateFields)
-                .collect(Collectors.toSet()));
+    Haplotype equivHaplotype = new Haplotype(haplotype.getTypes().stream()
+        .map(AlleleGroups::getGGroup).map(HaplotypeFrequencies::adjustNulls)
+        .map(HaplotypeFrequencies::truncateFields).collect(Collectors.toSet()));
     if (Objects.nonNull(TABLES) && TABLES.containsKey(equivHaplotype)) {
       freq = TABLES.get(equivHaplotype).getFrequencyForEthnicity(ethnicity);
     }

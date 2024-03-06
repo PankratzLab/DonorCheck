@@ -28,7 +28,7 @@ import javafx.util.Callback;
  *
  * @see Dialog
  * @param <T> The type of the items to show to the user, and the type that is returned via
- *          {@link #getResult()} when the dialog is dismissed.
+ *        {@link #getResult()} when the dialog is dismissed.
  * @since JavaFX 8u40
  */
 public class StyleableChoiceDialog<T> extends Dialog<T> {
@@ -67,7 +67,7 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
    * dialog will show with the initial choice set to the first item in the list of choices.
    *
    * @param defaultChoice The item to display as the pre-selected choice in the dialog. This item
-   *          must be contained within the choices varargs array.
+   *        must be contained within the choices varargs array.
    * @param choices All possible choices to present to the user.
    */
   public StyleableChoiceDialog(T defaultChoice, @SuppressWarnings("unchecked") T... choices) {
@@ -82,7 +82,7 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
    * will show with the initial choice set to the first item in the list of choices.
    *
    * @param defaultChoice The item to display as the pre-selected choice in the dialog. This item
-   *          must be contained within the choices varargs array.
+   *        must be contained within the choices varargs array.
    * @param choices All possible choices to present to the user.
    */
   public StyleableChoiceDialog(T defaultChoice, Collection<T> choices) {
@@ -164,6 +164,7 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
 
   /**
    * Sets the currently selected item in the dialog.
+   * 
    * @param item The item to select in the dialog.
    */
   public final void setSelectedItem(T item) {

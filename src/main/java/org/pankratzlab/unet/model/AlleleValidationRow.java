@@ -31,8 +31,8 @@ import org.pankratzlab.unet.deprecated.hla.HLAType;
 public class AlleleValidationRow extends ValidationRow<HLAType> {
 
   public AlleleValidationRow(String rowLabel, HLAType firstCol, HLAType secondCol,
-                             boolean wasRemapped) {
-    super(rowLabel, firstCol, secondCol, wasRemapped);
+      boolean wasRemapped, boolean wasRemappedSecond) {
+    super(rowLabel, firstCol, secondCol, wasRemapped, wasRemappedSecond);
   }
 
   @Override
@@ -45,8 +45,8 @@ public class AlleleValidationRow extends ValidationRow<HLAType> {
   }
 
   public static AlleleValidationRow makeRow(String rowLabel, HLAType firstCol, HLAType secondCol,
-                                            boolean wasRemapped) {
-    return new AlleleValidationRow(rowLabel, firstCol, secondCol, wasRemapped);
+      boolean wasRemapped, boolean wasRemappedSecond) {
+    return new AlleleValidationRow(rowLabel, firstCol, secondCol, wasRemapped, wasRemappedSecond);
   }
 
 }

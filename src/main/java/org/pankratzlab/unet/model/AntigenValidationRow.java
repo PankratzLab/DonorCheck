@@ -31,8 +31,8 @@ import org.pankratzlab.unet.deprecated.hla.SeroType;
 public class AntigenValidationRow extends ValidationRow<SeroType> {
 
   public AntigenValidationRow(String rowLabel, SeroType firstCol, SeroType secondCol,
-                              boolean wasRemapped) {
-    super(rowLabel, firstCol, secondCol, wasRemapped);
+      boolean wasRemappedFirst, boolean wasRemappedSecond) {
+    super(rowLabel, firstCol, secondCol, wasRemappedFirst, wasRemappedSecond);
   }
 
   @Override
@@ -45,8 +45,8 @@ public class AntigenValidationRow extends ValidationRow<SeroType> {
   }
 
   public static AntigenValidationRow makeRow(String rowLabel, SeroType firstCol, SeroType secondCol,
-                                             boolean wasRemapped) {
-    return new AntigenValidationRow(rowLabel, firstCol, secondCol, wasRemapped);
+      boolean wasRemapped, boolean wasRemappedSecond) {
+    return new AntigenValidationRow(rowLabel, firstCol, secondCol, wasRemapped, wasRemappedSecond);
   }
 
 }

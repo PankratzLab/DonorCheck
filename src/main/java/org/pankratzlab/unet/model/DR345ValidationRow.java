@@ -36,13 +36,12 @@ import com.google.common.collect.ImmutableSet;
  */
 public class DR345ValidationRow extends AlleleValidationRow {
   private static final String NULL_STRING = "Negative";
-  private static final ImmutableSet<HLALocus> VALID_LOCI = ImmutableSet.of(HLALocus.DRB3,
-                                                                           HLALocus.DRB4,
-                                                                           HLALocus.DRB5);
+  private static final ImmutableSet<HLALocus> VALID_LOCI =
+      ImmutableSet.of(HLALocus.DRB3, HLALocus.DRB4, HLALocus.DRB5);
 
   public DR345ValidationRow(String rowLabel, HLAType firstCol, HLAType secondCol,
-                            boolean wasRemapped) {
-    super(rowLabel, firstCol, secondCol, wasRemapped);
+      boolean wasRemappedFirst, boolean wasRemappedSecond) {
+    super(rowLabel, firstCol, secondCol, wasRemappedFirst, wasRemappedSecond);
 
     if (isInvalidCol(firstCol) || isInvalidCol(secondCol)) {
       throw new IllegalArgumentException("Invalid DRB345 types: " + firstCol + ", " + secondCol);
@@ -65,7 +64,8 @@ public class DR345ValidationRow extends AlleleValidationRow {
   }
 
   public static DR345ValidationRow makeRow(String rowLabel, HLAType firstCol, HLAType secondCol,
-                                           boolean wasRemapped) {
-    return new DR345ValidationRow(rowLabel, firstCol, secondCol, wasRemapped);
+      boolean wasRemappedFirst, boolean wasRemappedSecond) {
+    return new DR345ValidationRow(rowLabel, firstCol, secondCol, wasRemappedFirst,
+        wasRemappedSecond);
   }
 }

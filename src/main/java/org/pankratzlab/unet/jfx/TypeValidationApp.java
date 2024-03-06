@@ -59,7 +59,7 @@ public class TypeValidationApp extends Application {
     // Set the Title to the Stage
     primaryStage.setTitle(APP_TITLE);
     primaryStage.getIcons().add(new Image(TypeValidationApp.class.getResourceAsStream(ICON_PATH)));
-    primaryStage.setResizable(true);
+    primaryStage.setResizable(false);
 
     // Load the FXML for the application landing pane
     Pane typeValidationRoot;

@@ -29,23 +29,25 @@ import org.pankratzlab.unet.model.ValidationTable;
 import javafx.fxml.FXML;
 
 /**
- * Abstract superclass for {@link ValidatingWizardController}s. Takes care of tracking the {@link
- * ValidationTable}.
+ * Abstract superclass for {@link ValidatingWizardController}s. Takes care of tracking the
+ * {@link ValidationTable}.
  */
 public abstract class AbstractValidatingWizardController implements ValidatingWizardController {
 
-  @FXML private ResourceBundle resources;
+  @FXML
+  private ResourceBundle resources;
 
-  @FXML private URL location;
+  @FXML
+  private URL location;
 
-  @FXML private ValidatingWizardPane rootPane;
+  @FXML
+  private ValidatingWizardPane rootPane;
 
   private ValidationTable validationTable;
 
   @FXML
   void initialize() {
-    assert rootPane != null
-        : "fx:id=\"rootPane\" was not injected: check your FXML file 'StepThreeInputPDF.fxml'.";
+    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'StepThreeInputPDF.fxml'.";
   }
 
   @Override

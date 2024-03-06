@@ -53,13 +53,8 @@ public final class DonorNetUtils {
    *
    * @see #getFile(Node, String, String, String, String, boolean)
    */
-  public static Optional<File> getFile(
-      @Nullable ActionEvent event,
-      String title,
-      String initialName,
-      String extensionDescription,
-      String extension,
-      boolean open) {
+  public static Optional<File> getFile(@Nullable ActionEvent event, String title,
+      String initialName, String extensionDescription, String extension, boolean open) {
     Node source = null;
     if (Objects.nonNull(event)) {
       source = (Node) event.getSource();
@@ -72,15 +67,10 @@ public final class DonorNetUtils {
    *
    * @see #getFile(Node, String, String, Map, boolean)
    */
-  public static Optional<File> getFile(
-      Node node,
-      String title,
-      String initialName,
-      String extensionDescription,
-      String extension,
-      boolean open) {
-    return getFile(
-        node, title, initialName, ImmutableMap.of(extensionDescription, extension), open);
+  public static Optional<File> getFile(Node node, String title, String initialName,
+      String extensionDescription, String extension, boolean open) {
+    return getFile(node, title, initialName, ImmutableMap.of(extensionDescription, extension),
+        open);
   }
 
   /**
@@ -93,14 +83,13 @@ public final class DonorNetUtils {
    * @param open Whether to show the open or save dialog
    * @return An {@link Optional} wrapper around the file selected by the user
    */
-  public static Optional<File> getFile(
-      Node node, String title, String initialName, Map<String, String> extensionMap, boolean open) {
+  public static Optional<File> getFile(Node node, String title, String initialName,
+      Map<String, String> extensionMap, boolean open) {
     CurrentDirectoryProvider.setInitialFileName(initialName);
     FileChooser fileChooser = CurrentDirectoryProvider.getFileChooser();
     fileChooser.setTitle(title);
     for (Entry<String, String> descriptionToFilter : extensionMap.entrySet()) {
-      fileChooser
-          .getExtensionFilters()
+      fileChooser.getExtensionFilters()
           .add(new ExtensionFilter(descriptionToFilter.getKey(), descriptionToFilter.getValue()));
     }
     Window owner = null;

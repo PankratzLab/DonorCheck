@@ -54,11 +54,13 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Window;
 
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
 public class LandingController {
@@ -83,6 +85,8 @@ public class LandingController {
 
   @FXML
   private Label versionLabel;
+
+  private String version;
 
   @FXML
   void fileQuitAction(ActionEvent event) {
@@ -140,25 +144,28 @@ public class LandingController {
       Platform.runLater(() -> {
         if (!HaplotypeFrequencies.successfullyInitialized()) {
           Alert alert = new Alert(AlertType.INFORMATION,
-                                  "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
-                                                         + "Would you like to set these tables now?\n\n"
-                                                         + "Note: you can adjust these tables any time from the 'Haplotype' menu",
-                                  ButtonType.YES, ButtonType.NO);
+              "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
+                  + "Would you like to set these tables now?\n\n"
+                  + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+              ButtonType.YES, ButtonType.NO);
           alert.setTitle("No haplotype frequencies");
           alert.setHeaderText("");
           alert.showAndWait().filter(response -> response == ButtonType.YES)
-               .ifPresent(response -> chooseFreqTables(event));
+              .ifPresent(response -> chooseFreqTables(event));
         } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
-          Alert alert = new Alert(AlertType.INFORMATION,
-                                  HaplotypeFrequencies.getMissingTableMessage());
+          Alert alert =
+              new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
           alert.setTitle("Missing Haplotype Table(s)");
           alert.setHeaderText("");
           alert.showAndWait();
         }
 
         ValidationTable table = new ValidationTable();
-        Wizard validationWizard = new Wizard(((Node) event.getSource()).getScene().getWindow());
-        validationWizard.setTitle("Donor Validation Wizard");
+        final Scene scene = ((Node) event.getSource()).getScene();
+
+        final Window window = scene.getWindow();
+        Wizard validationWizard = new Wizard(window);
+        validationWizard.setTitle("DonorCheck " + (version.isEmpty() ? "" : version));
 
         List<WizardPane> pages = new ArrayList<>();
         try {
@@ -213,7 +220,7 @@ public class LandingController {
    * @throws IOException If errors during FXML reading
    */
   private void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML,
-                        Object controller) throws IOException {
+      Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems
@@ -234,11 +241,12 @@ public class LandingController {
   @FXML
   void initialize() {
     assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
+
     final Properties properties = new Properties();
     try {
-      properties.load(LandingController.class.getClassLoader()
-                                             .getResourceAsStream("project.properties"));
-      versionLabel.setText("Version: " + properties.getProperty("version") + " ");
+      properties
+          .load(LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
+      versionLabel.setText("Version: " + (version = properties.getProperty("version")) + " ");
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();

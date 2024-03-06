@@ -41,8 +41,8 @@ public class PageActivatedEvent extends Event {
     this(null, null, eventType);
   }
 
-  public PageActivatedEvent(
-      Object source, EventTarget target, EventType<PageActivatedEvent> eventType) {
+  public PageActivatedEvent(Object source, EventTarget target,
+      EventType<PageActivatedEvent> eventType) {
     super(source, target, eventType);
   }
 }
