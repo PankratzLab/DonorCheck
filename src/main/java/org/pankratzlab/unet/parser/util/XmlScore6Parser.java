@@ -33,9 +33,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -51,7 +49,6 @@ import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.EnumMultiset;
@@ -411,14 +408,16 @@ public class XmlScore6Parser {
         HLAType hla2;
         SeroType sero2;
         for (Pair<ResultCombination, ResultCombination> pair : alleleComboPairs) {
-          if (pair.getLeft() == null)
+          ResultCombination left = pair.getLeft();
+          if (left == null)
             continue;
-          hla1 = pair.getLeft().getAlleleCombination();
-          sero1 = pair.getLeft().getAntigenCombination();
-          hla2 =
-              (pair.getRight() == null ? pair.getLeft() : pair.getRight()).getAlleleCombination();
-          sero2 =
-              (pair.getRight() == null ? pair.getLeft() : pair.getRight()).getAntigenCombination();
+          ResultCombination right = pair.getRight();
+          if (right == null)
+            right = left;
+          hla1 = left.getAlleleCombination();
+          sero1 = left.getAntigenCombination();
+          hla2 = right.getAlleleCombination();
+          sero2 = left.getAntigenCombination();
 
           alleleRecordingMap.get(locus).accept(builder,
               Pair.of(new TypePair(hla1, sero1), new TypePair(hla2, sero2)));
