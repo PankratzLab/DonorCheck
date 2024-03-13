@@ -29,9 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
-
 import javax.imageio.ImageIO;
-
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
@@ -42,9 +40,7 @@ import org.pankratzlab.unet.model.DRDQHaplotypeRow;
 import org.pankratzlab.unet.model.HaplotypeRow;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
-
 import com.google.common.collect.ImmutableSet;
-
 import javafx.beans.binding.Bindings;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
@@ -301,10 +297,6 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     bcHaplotypeTable.setItems(table.getBCHaplotypeRows());
     drdqHaplotypeTable.setItems(table.getDRDQHaplotypeRows());
 
-    auditLog.prefHeightProperty().bind(Bindings.createDoubleBinding(() -> {
-      return Math.min(200d, 15d * table.getAuditLogLineCount().getValue().intValue());
-    }, table.getAuditLogLineCount()));
-
   }
 
   /** Perform required actions when the page is being displayed */
@@ -371,31 +363,20 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
               TableColumn<ValidationRow<?>, String> param) {
             return new TableCell() {
 
-              private String style;
+              // private String style;
 
               @Override
               protected void updateItem(Object item, boolean empty) {
                 super.updateItem(item, empty);
                 if (item == null) {
-                  if (style != null) {
-                    setStyle(style);
-                    style = null;
-                  }
                   setText("");
                 } else {
                   boolean val = resultsTable.getItems().get(getTableRow().getIndex())
                       .wasRemappedSecondProperty().get();
                   if (val) {
                     setText("⦿ " + item.toString());
-                    style = getStyle();
-                    setStyle(
-                        "-fx-font-style:" + (val ? "italic" + "; -fx-font-weight:bold" : "normal"));
                   } else {
                     setText(item.toString());
-                    if (style != null) {
-                      setStyle(style);
-                      style = null;
-                    }
                   }
                 }
               }

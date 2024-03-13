@@ -25,14 +25,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
@@ -256,7 +254,7 @@ public class ValidationTable {
 
   private String generateRowLabel(HLALocus locus) {
     return locus.name()
-        + (wasRemapped(locus, firstModelWrapper) || wasRemapped(locus, secondModelWrapper) ? " *"
+        + (wasRemapped(locus, firstModelWrapper) || wasRemapped(locus, secondModelWrapper) ? " ⦿"
             : "");
   }
 
@@ -430,7 +428,7 @@ public class ValidationTable {
 
   public ObservableValue<String> getAuditLogLines() {
     return Bindings.createStringBinding(
-        () -> auditLogLines.stream().map(s -> "• " + s).collect(Collectors.joining("\n")),
+        () -> auditLogLines.stream().map(s -> "⦿ " + s).collect(Collectors.joining("\n")),
         auditLogLines);
   }
 

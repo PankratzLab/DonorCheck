@@ -40,10 +40,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
@@ -60,7 +58,6 @@ import org.pankratzlab.unet.jfx.StyleableChoiceDialog;
 import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.unet.parser.util.DRAssociations;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
@@ -73,8 +70,8 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
-
 import javafx.scene.control.ListCell;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -651,10 +648,41 @@ public class ValidationModelBuilder {
 
       // Build the combinations of strand1 + strand2 alleles at this locus
       for (Strand strandOne : firstStrandsSet) {
-        Collection<HLAType> firstStrandTypes = currentLocus.get(strandOne);
-        List<HLAType> secondStrandTypes = ImmutableList.copyOf(currentLocus.get(strandOne.flip()));
+        List<HLAType> firstStrandTypes = Lists.newArrayList(currentLocus.get(strandOne));
+        List<HLAType> secondStrandTypes = Lists.newArrayList(currentLocus.get(strandOne.flip()));
         if (secondStrandTypes.isEmpty()) {
-          secondStrandTypes = ImmutableList.copyOf(firstStrandTypes);
+          secondStrandTypes = Lists.newArrayList(firstStrandTypes);
+        }
+
+        // sorts in descending order, notice h2's weight is found first
+        Comparator<HLAType> c = ((h1, h2) -> {
+          return Double.compare(CommonWellDocumented.getEquivStatus(h2).getWeight(),
+              CommonWellDocumented.getEquivStatus(h1).getWeight());
+        });
+        firstStrandTypes.sort(c);
+        secondStrandTypes.sort(c);
+
+        double bestCWD;
+        int i;
+
+        bestCWD = CommonWellDocumented.getEquivStatus(firstStrandTypes.get(0)).getWeight();
+        i = 1;
+        while (i < firstStrandTypes.size() && CommonWellDocumented
+            .getEquivStatus(firstStrandTypes.get(i)).getWeight() == bestCWD) {
+          i++;
+        }
+        for (int j = firstStrandTypes.size() - 1; j >= i; j--) {
+          firstStrandTypes.remove(j);
+        }
+
+        bestCWD = CommonWellDocumented.getEquivStatus(secondStrandTypes.get(0)).getWeight();
+        i = 1;
+        while (i < secondStrandTypes.size() && CommonWellDocumented
+            .getEquivStatus(secondStrandTypes.get(i)).getWeight() == bestCWD) {
+          i++;
+        }
+        for (int j = secondStrandTypes.size() - 1; j >= i; j--) {
+          secondStrandTypes.remove(j);
         }
 
         // set up the second strand options to iterate over after the first haplotype is built
@@ -691,12 +719,28 @@ public class ValidationModelBuilder {
       final Haplotype e2 = new Haplotype(currentHaplotypeAlleles);
       ScoredHaplotypes scored = new ScoredHaplotypes(ImmutableList.of(firstHaplotype, e2));
 
-      for (RaceGroup ethnicity : RaceGroup.values()) {
-        if (!maxScorePairsByEthnicity.containsKey(ethnicity) || comparators.get(ethnicity)
-            .compare(maxScorePairsByEthnicity.get(ethnicity), scored) < 0) {
-          maxScorePairsByEthnicity.put(ethnicity, scored);
+      Set<ScoredHaplotypes> maxSet = Sets.newHashSet(maxScorePairsByEthnicity.values());
+      // performance hack - shortcut if all the currently tracked max scores are the same
+      int sz = maxSet.size();
+      if (sz == 1) {
+        // doesn't matter which we use, all RaceGroups point to the same ScoredHaplotypes
+        if (comparators.get(RaceGroup.AFA).compare(maxSet.iterator().next(), scored) < 0) {
+          for (RaceGroup ethnicity : RaceGroup.values()) {
+            maxScorePairsByEthnicity.put(ethnicity, scored);
+          }
+        }
+      } else {
+        for (RaceGroup ethnicity : RaceGroup.values()) {
+          // if the map doesn't have a value yet
+          // or if the current value is less than the new value
+          // put the value into the map
+          if (!maxScorePairsByEthnicity.containsKey(ethnicity) || comparators.get(ethnicity)
+              .compare(maxScorePairsByEthnicity.get(ethnicity), scored) < 0) {
+            maxScorePairsByEthnicity.put(ethnicity, scored);
+          }
         }
       }
+
     } else {
       // Recursive step - iterate through the possible alleles for this locus, building up the
       // current haplotype
@@ -1042,15 +1086,18 @@ public class ValidationModelBuilder {
       }
       BigDecimal cwdScore = cwdScore1;
 
+      // TODO - document walk-through
       scoresByEthnicity
+          // calculate the score for each ethnicity
           .putAll(Arrays.stream(RaceGroup.values()).collect(Collectors.toMap(e -> e, e -> {
-            int noMissingCount = 0;
-            BigDecimal frequency = new BigDecimal(1.0);
-            for (Haplotype haplotype : this) {
-              // Add this haplotype to the table
-              BigDecimal f;
 
-              f = frequencyTable.get(haplotype, e);
+            int noMissingCount = 0;
+
+            // starting from 1
+            BigDecimal frequency = new BigDecimal(1.0);
+
+            for (Haplotype haplotype : this) {
+              BigDecimal f = frequencyTable.get(haplotype, e);
 
               if (f.compareTo(BigDecimal.ZERO) > 0) {
                 frequency = frequency.multiply(f);

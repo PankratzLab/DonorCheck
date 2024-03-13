@@ -97,7 +97,8 @@
 						<Label fx:id="auditLog" minWidth="200"
 							wrapText="false" focusTraversable="false"
 							GridPane.columnIndex="0" GridPane.rowIndex="2"
-							GridPane.columnSpan="1" GridPane.halignment="CENTER"
+							GridPane.columnSpan="1" GridPane.halignment="CENTER" 
+							GridPane.valignment="TOP" GridPane.fillHeight="true"
 							GridPane.vgrow="ALWAYS" VBox.vgrow="ALWAYS" />
 					</children>
 				</GridPane>

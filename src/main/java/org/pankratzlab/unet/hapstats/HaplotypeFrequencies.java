@@ -112,26 +112,30 @@ public final class HaplotypeFrequencies {
   private static boolean completeDoInitialization(String bcTablePath, String drdqTablePath) {
     Builder<Haplotype, HaplotypeFrequency> frequencyMapBuilder = ImmutableMap.builder();
     StringJoiner noTable = new StringJoiner("\n");
-
-    File bcTableFile;
-    if (!Strings.isNullOrEmpty(bcTablePath) && (bcTableFile = new File(bcTablePath)).exists()) {
-      buildTable(frequencyMapBuilder, bcTableFile, "C", "B");
-    } else {
-      noTable.add("CB");
-    }
-
-    File drdqTableFile;
-    if (!Strings.isNullOrEmpty(drdqTablePath)
-        && (drdqTableFile = new File(drdqTablePath)).exists()) {
-      buildTable(frequencyMapBuilder, drdqTableFile, "DRB3-4-5", "DRB1", "DQB1");
-    } else {
-      noTable.add("DRB345-DRB1-DQB1");
-    }
-
     ImmutableMap<Haplotype, HaplotypeFrequency> table = ImmutableMap.of();
     try {
+
+      File bcTableFile;
+      if (!Strings.isNullOrEmpty(bcTablePath) && (bcTableFile = new File(bcTablePath)).exists()) {
+        Builder<Haplotype, HaplotypeFrequency> bcBuilder = ImmutableMap.builder();
+        buildTable(bcBuilder, bcTableFile, "C", "B");
+        frequencyMapBuilder.putAll(bcBuilder.build());
+      } else {
+        noTable.add("CB");
+      }
+
+      File drdqTableFile;
+      if (!Strings.isNullOrEmpty(drdqTablePath)
+          && (drdqTableFile = new File(drdqTablePath)).exists()) {
+        Builder<Haplotype, HaplotypeFrequency> drdqBuilder = ImmutableMap.builder();
+        buildTable(drdqBuilder, drdqTableFile, "DRB3-4-5", "DRB1", "DQB1");
+        frequencyMapBuilder.putAll(drdqBuilder.build());
+      } else {
+        noTable.add("DRB345-DRB1-DQB1");
+      }
+
       table = frequencyMapBuilder.build();
-    } catch (Exception e) {
+    } catch (Throwable e) {
       System.err.println("Error building haplotype frequency table");
       e.printStackTrace();
     }
