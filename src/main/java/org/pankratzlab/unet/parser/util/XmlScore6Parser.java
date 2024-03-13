@@ -42,8 +42,8 @@ import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
-import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
@@ -54,10 +54,10 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.EnumMultiset;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
+import com.google.common.collect.ImmutableMap.Builder;
 
 /** Parses SCORE6 QType format to donor model */
 public class XmlScore6Parser {
@@ -417,7 +417,7 @@ public class XmlScore6Parser {
           hla1 = left.getAlleleCombination();
           sero1 = left.getAntigenCombination();
           hla2 = right.getAlleleCombination();
-          sero2 = left.getAntigenCombination();
+          sero2 = right.getAntigenCombination();
 
           alleleRecordingMap.get(locus).accept(builder,
               Pair.of(new TypePair(hla1, sero1), new TypePair(hla2, sero2)));
