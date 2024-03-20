@@ -42,8 +42,8 @@ import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
-import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
+import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
@@ -54,10 +54,10 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.EnumMultiset;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
-import com.google.common.collect.ImmutableMap.Builder;
 
 /** Parses SCORE6 QType format to donor model */
 public class XmlScore6Parser {
@@ -107,6 +107,7 @@ public class XmlScore6Parser {
 
   // -- Map to which value to use for each locus
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, String>> metadataMap;
+  private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, HLAType>> metadataTypeMap;
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, String>> metadataNonCWDMap;
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, Pair<TypePair, TypePair>>> alleleRecordingMap;
   private static ImmutableMap<HLALocus, BiConsumer<ValidationModelBuilder, String>> drbMap;
@@ -135,6 +136,29 @@ public class XmlScore6Parser {
     // setterBuilder.put("HLA-DPA1", null);
 
     metadataMap = setterBuilder.build();
+
+    // -- Build mapping bemetadataTypeMaptween loci sections, serotype prefixes and validation model
+    // setters --
+    Builder<String, BiConsumer<ValidationModelBuilder, HLAType>> setterBuilderTypes =
+        ImmutableMap.builder();
+    setterBuilderTypes.put(A_HEADER, ValidationModelBuilder::aType);
+    setterBuilderTypes.put(B_HEADER, ValidationModelBuilder::bType);
+    setterBuilderTypes.put(C_HEADER, ValidationModelBuilder::cType);
+    setterBuilderTypes.put(DQB_HEADER, ValidationModelBuilder::dqbType);
+
+    // Reported as allele types
+    // DPB is already being tracked as HLATypes
+    // setterBuilderTypes.put(DPB_HEADER, ValidationModelBuilder::dpbType);
+    setterBuilderTypes.put(DQA_HEADER, ValidationModelBuilder::dqaType);
+    setterBuilderTypes.put(DPA_HEADER, ValidationModelBuilder::dpaType);
+
+    // DR52/53/54 appears as a serological combination
+    // setterBuilderTypes.put(DRB_HEADER, ValidationModelBuilder::drbType);
+
+    // NB: not in DonorNet
+    // setterBuilder.put("HLA-DPA1", null);
+
+    metadataTypeMap = setterBuilderTypes.build();
 
     // -- Build mapping between loci sections, serotype prefixes and validation model setters --
     Builder<String, BiConsumer<ValidationModelBuilder, String>> setterBuilderNonCWD =
@@ -397,6 +421,9 @@ public class XmlScore6Parser {
 
         if (metadataNonCWDMap.containsKey(locus)) {
           metadataNonCWDMap.get(locus).accept(builder, specStringFirst);
+        }
+        if (metadataTypeMap.containsKey(locus)) {
+          metadataTypeMap.get(locus).accept(builder, actualResultPairs.get(i).alleleCombination);
         }
       }
 

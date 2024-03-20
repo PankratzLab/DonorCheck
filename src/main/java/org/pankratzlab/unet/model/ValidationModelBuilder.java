@@ -38,6 +38,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.swing.JFrame;
@@ -102,30 +103,44 @@ public class ValidationModelBuilder {
   private String source;
   private String sourceType;
 
+
+  // TODO replace per-locus data structures with maps from [Sero|HLA]Locus to data structure
+  // (or tables as appropriate)
   /* These are LinkedHashSets, thus ensuring insertion order */
   private Set<SeroType> aLocusCWD;
   private Set<SeroType> bLocusCWD;
   private Set<SeroType> cLocusCWD;
+  private Set<HLAType> aLocusCWDTypes;
+  private Set<HLAType> bLocusCWDTypes;
+  private Set<HLAType> cLocusCWDTypes;
   private Set<SeroType> aLocusFirst = new LinkedHashSet<>();
   private Set<SeroType> bLocusFirst = new LinkedHashSet<>();
   private Set<SeroType> cLocusFirst = new LinkedHashSet<>();
 
+  // TODO replace per-locus data structures with maps from [Sero|HLA]Locus to data structure
+  // (or tables as appropriate)
   private List<Pair<TypePair, TypePair>> aAlleles = new ArrayList<>();
   private List<Pair<TypePair, TypePair>> bAlleles = new ArrayList<>();
   private List<Pair<TypePair, TypePair>> cAlleles = new ArrayList<>();
+  // private List<Pair<TypePair, TypePair>> drbAlleles = new ArrayList<>();
   private List<Pair<TypePair, TypePair>> dqaAlleles = new ArrayList<>();
   private List<Pair<TypePair, TypePair>> dqbAlleles = new ArrayList<>();
   private List<Pair<TypePair, TypePair>> dpaAlleles = new ArrayList<>();
   private List<Pair<TypePair, TypePair>> dpbAlleles = new ArrayList<>();
 
-  private Set<HLALocus> nonCWDLoci = new HashSet<>();
+  private Set<HLALocus> nonCWDLoci = new TreeSet<>();
   private Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping = new HashMap<>();
 
   private Set<SeroType> drbLocus;
   private Set<SeroType> dqaLocus;
   private Set<SeroType> dqbLocus;
   private Set<SeroType> dpaLocus;
-  private Set<HLAType> dpbLocus;
+
+  // private Set<HLAType> drbLocusTypes;
+  private Set<HLAType> dqaLocusTypes;
+  private Set<HLAType> dqbLocusTypes;
+  private Set<HLAType> dpaLocusTypes;
+  private Set<HLAType> dpbLocusTypes;
 
   private Set<SeroType> drbLocusNonCWD;
   private Set<SeroType> dqaLocusNonCWD;
@@ -163,12 +178,18 @@ public class ValidationModelBuilder {
     return this;
   }
 
-  public ValidationModelBuilder a(String aType) {
-    if (test1(aType)) {
+  public ValidationModelBuilder a(String aSeroType) {
+    if (test1(aSeroType)) {
       return null;
     }
     aLocusCWD = makeIfNull(aLocusCWD);
-    addToLocus(aLocusCWD, SeroLocus.A, aType);
+    addToLocus(aLocusCWD, SeroLocus.A, aSeroType);
+    return this;
+  }
+
+  public ValidationModelBuilder aType(HLAType aType) {
+    aLocusCWDTypes = makeIfNull(aLocusCWDTypes);
+    addToLocus(aLocusCWDTypes, HLALocus.A, aType);
     return this;
   }
 
@@ -190,6 +211,13 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder bType(HLAType bType) {
+    bLocusCWDTypes = makeIfNull(bLocusCWDTypes);
+    addToLocus(bLocusCWDTypes, HLALocus.B, bType);
+    return this;
+  }
+
+
   public ValidationModelBuilder bNonCWD(String bType) {
     if (test1(bType)) {
       return null;
@@ -207,6 +235,13 @@ public class ValidationModelBuilder {
     addToLocus(cLocusCWD, SeroLocus.C, cType);
     return this;
   }
+
+  public ValidationModelBuilder cType(HLAType cType) {
+    cLocusCWDTypes = makeIfNull(cLocusCWDTypes);
+    addToLocus(cLocusCWDTypes, HLALocus.C, cType);
+    return this;
+  }
+
 
   public ValidationModelBuilder cNonCWD(String cType) {
     if (test1(cType)) {
@@ -377,7 +412,7 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dpb(String dpbType) {
-    dpbLocus = makeIfNull(dpbLocus);
+    dpbLocusTypes = makeIfNull(dpbLocusTypes);
     // Shorten the allele designation to allele group and specific HLA protein. Further fields can
     // not be entered into UNOS
     if (!Strings.isNullOrEmpty(dpbType) && dpbType.matches(".*\\d.*")) {
@@ -386,9 +421,40 @@ public class ValidationModelBuilder {
         tmpDPB1 =
             new HLAType(HLALocus.DPB1, new int[] {tmpDPB1.spec().get(0), tmpDPB1.spec().get(1)});
       }
-      dpbLocus.add(tmpDPB1);
+      dpbLocusTypes.add(tmpDPB1);
     }
     return this;
+  }
+
+  public ValidationModelBuilder dqbType(HLAType dqbType) {
+    if (test2(dqbType)) {
+      return null;
+    }
+    dqbLocusTypes = makeIfNull(dqbLocusTypes);
+    addToLocus(dqbLocusTypes, HLALocus.DQB1, dqbType);
+    return this;
+  }
+
+  public ValidationModelBuilder dqaType(HLAType dqaType) {
+    if (test2(dqaType)) {
+      return null;
+    }
+    dqaLocusTypes = makeIfNull(dqaLocusTypes);
+    addToLocus(dqaLocusTypes, HLALocus.DQA1, dqaType);
+    return this;
+  }
+
+  public ValidationModelBuilder dpaType(HLAType dpaType) {
+    if (test2(dpaType)) {
+      return null;
+    }
+    dpaLocusTypes = makeIfNull(dpaLocusTypes);
+    addToLocus(dpaLocusTypes, HLALocus.DPA1, dpaType);
+    return this;
+  }
+
+  private boolean test2(HLAType dqbType) {
+    return dqbType == null;
   }
 
   private boolean test2(String dqbType) {
@@ -485,8 +551,8 @@ public class ValidationModelBuilder {
     frequencyTable.clear();
 
     ValidationModel validationModel = new ValidationModel(donorId, source, sourceType, aLocusCWD,
-        bLocusCWD, cLocusCWD, drbLocus, dqbLocus, dqaLocus, dpaLocus, dpbLocus, bw4, bw6, dr51Locus,
-        dr52Locus, dr53Locus, bcCwdHaplotypes, drDqDR345Haplotypes, remapping);
+        bLocusCWD, cLocusCWD, drbLocus, dqbLocus, dqaLocus, dpaLocus, dpbLocusTypes, bw4, bw6,
+        dr51Locus, dr52Locus, dr53Locus, bcCwdHaplotypes, drDqDR345Haplotypes, remapping);
     return validationModel;
   }
 
@@ -820,14 +886,14 @@ public class ValidationModelBuilder {
   private ValidationResult ensureValidity() {
     // Ensure all fields have been set
     for (Object o : Lists.newArrayList(donorId, source, aLocusCWD, bLocusCWD, cLocusCWD, drbLocus,
-        dqbLocus, dqaLocus, dpbLocus, bw4, bw6)) {
+        dqbLocus, dqaLocus, dpbLocusTypes, bw4, bw6)) {
       if (Objects.isNull(o)) {
         return new ValidationResult(false, Optional.of("ValidationModel incomplete"));
       }
     }
     // Ensure all sets have a reasonable number of entries
     for (Set<?> set : ImmutableList.of(aLocusCWD, bLocusCWD, cLocusCWD, drbLocus, dqbLocus,
-        dqaLocus, dpbLocus)) {
+        dqaLocus, dpbLocusTypes)) {
       if (set.isEmpty() || set.size() > 2) {
         return new ValidationResult(false,
             Optional.of("ValidationModel contains invalid allele count: " + set));
@@ -851,24 +917,47 @@ public class ValidationModelBuilder {
       for (HLALocus locus : nonCWDLoci) {
 
         Set<SeroType> locusSet;
+        Set<HLAType> typesSet;
         List<Pair<TypePair, TypePair>> alleleList;
 
         switch (locus) {
           case A:
             locusSet = aLocusCWD;
+            typesSet = aLocusCWDTypes;
             alleleList = aAlleles;
             break;
           case B:
             locusSet = bLocusCWD;
+            typesSet = bLocusCWDTypes;
             alleleList = bAlleles;
             break;
           case C:
             locusSet = cLocusCWD;
+            typesSet = cLocusCWDTypes;
             alleleList = cAlleles;
             break;
+          case DPA1:
+            locusSet = dpaLocus;
+            typesSet = dpaLocusTypes;
+            alleleList = dpaAlleles;
+            break;
+          case DQA1:
+            locusSet = dqaLocus;
+            typesSet = dqaLocusTypes;
+            alleleList = dqaAlleles;
+            break;
+          case DPB1:
+            locusSet = null;
+            typesSet = dpbLocusTypes;
+            alleleList = dpbAlleles;
+          case DQB1:
+            locusSet = dqbLocus;
+            typesSet = dqbLocusTypes;
+            alleleList = dqbAlleles;
           default:
             alleleList = null;
             locusSet = null;
+            typesSet = null;
             break;
         }
         if (alleleList == null) {
@@ -876,9 +965,12 @@ public class ValidationModelBuilder {
           continue;
         }
 
-        String header = "Assigned allele pair ("
-            + locusSet.stream().map(SeroType::specString).collect(Collectors.joining(", "))
-            + ") for HLA-" + locus.name() + " locus is not Common / Well-Documented.";
+        Iterator<SeroType> iter = locusSet == null ? null : locusSet.iterator();
+        String header = "Assigned allele pair (" + typesSet.stream().map(ht -> {
+          return (iter == null ? "" : (iter.next()) + " / ") + ht.specString() + " - "
+              + CommonWellDocumented.getEquivStatus(ht);
+        }).collect(Collectors.joining(", ")) + ") for HLA-" + locus.name()
+            + " locus is not Common / Well-Documented.";
 
         String text = "Please select desired allele pair for this locus:";
 
@@ -886,11 +978,20 @@ public class ValidationModelBuilder {
         Map<Supplier<TextFlow>, Pair<TypePair, TypePair>> map = new HashMap<>();
         for (int i = 0; i < alleleList.size(); i++) {
           Pair<TypePair, TypePair> p = alleleList.get(i);
-          int i1 = i;
-          Supplier<TextFlow> tf = () -> getText(p, i1 == 0);
+          Supplier<TextFlow> tf = () -> getText(p, false);
           choices.add(tf);
           map.put(tf, p);
         }
+
+        Iterator<SeroType> sI = locusSet.iterator();
+        Iterator<HLAType> hI = typesSet.iterator();
+
+        TypePair first;
+        Pair<TypePair, TypePair> p = Pair.of(first = new TypePair(hI.next(), sI.next()),
+            locusSet.size() == 1 ? first : new TypePair(hI.next(), sI.next()));
+        Supplier<TextFlow> tf = () -> getText(p, true);
+        choices.add(tf);
+        map.put(tf, p);
 
         StyleableChoiceDialog<Supplier<TextFlow>> cd =
             new StyleableChoiceDialog<>(choices.get(0), choices);
@@ -906,13 +1007,14 @@ public class ValidationModelBuilder {
         }
 
         final TypePair left = map.get(result.get()).getLeft();
-        final SeroType seroType1 = left.getSeroType();
         final TypePair right = map.get(result.get()).getRight();
+        final SeroType seroType1 = left.getSeroType();
         final SeroType seroType2 = right.getSeroType();
         final HLAType hlaType1 = left.getHlaType();
+        final HLAType hlaType2 = right.getHlaType();
 
         // if the user selected a different allele choice, track the remapping
-        if (!choices.get(0).equals(result.get())) {
+        if (!tf.equals(result.get())) {
           remapping.put(locus,
               Pair.of(
                   ImmutableSortedSet.of(alleleList.get(0).getLeft(),
@@ -925,6 +1027,10 @@ public class ValidationModelBuilder {
           locusSet.clear();
           locusSet.add(seroType1);
           locusSet.add(seroType2);
+          typesSet.clear();
+          typesSet.add(hlaType1);
+          typesSet.add(hlaType2);
+
         }
 
       }
@@ -964,7 +1070,7 @@ public class ValidationModelBuilder {
     Status status1 = CommonWellDocumented.getStatus(typePair.getHlaType());
 
     String a1Start = typePair.seroType.specString() + " [";
-    String a1End = " - " + status1 + "]";
+    String a1End = " - " + status1 + "]" + (cwd ? " -- ASSIGNED" : "");
 
     if (status1 != Status.UNKNOWN) {
       textNodes.add(new Text(a1Start));
@@ -1007,6 +1113,21 @@ public class ValidationModelBuilder {
       locusSet = new LinkedHashSet<>();
     }
     return locusSet;
+  }
+
+  /**
+   * Helper method to create {@link HLAType}s and add them to a locus's set in a consistent manner
+   */
+  private void addToLocus(Set<HLAType> locusSet, HLALocus locus, String typeString) {
+    locusSet.add(new HLAType(locus, typeString));
+  }
+
+  /**
+   * Helper method to create {@link HLAType}s and add them to a locus's set in a consistent manner
+   */
+  private void addToLocus(Set<HLAType> locusSet, HLALocus locus, HLAType typeString) {
+    // TODO ensure locus and typeString.locus are the same
+    locusSet.add(typeString);
   }
 
   /**

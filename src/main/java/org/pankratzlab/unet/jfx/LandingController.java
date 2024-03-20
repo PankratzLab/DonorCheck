@@ -29,23 +29,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.ResourceBundle;
-
 import javax.annotation.Nullable;
-
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.macui.MACUIController;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
-
 import com.google.common.base.Strings;
-
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
@@ -105,6 +102,12 @@ public class LandingController {
   }
 
   @FXML
+  void chooseCIWDSource(ActionEvent event) {
+    // initialize CWD data for this file
+    CommonWellDocumented.init();
+  }
+
+  @FXML
   void tutorialHTMLDownload(ActionEvent event) {
     showTutorial(HTML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
   }
@@ -136,11 +139,18 @@ public class LandingController {
 
   @FXML
   void runValidation(ActionEvent event) throws IOException {
+    // The way DonorCheck is set up, "validation" is run in two parts
+
+    // The first is the actual task we're running, which is to check/initialize the haplotype freqs
     Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
       HaplotypeFrequencies.successfullyInitialized();
     });
 
+    // Then we set up the actual file validation as an event that triggers
+    // in response to the success of the haplotypes initialization task above
     EventHandler<WorkerStateEvent> doValidation = (w) -> {
+
+      // Don't actually run this as an event, though - make it a runnable on the JFX App thread
       Platform.runLater(() -> {
         if (!HaplotypeFrequencies.successfullyInitialized()) {
           Alert alert = new Alert(AlertType.INFORMATION,
@@ -159,6 +169,8 @@ public class LandingController {
           alert.setHeaderText("");
           alert.showAndWait();
         }
+
+        CommonWellDocumented.initFromProperty();
 
         ValidationTable table = new ValidationTable();
         final Scene scene = ((Node) event.getSource()).getScene();

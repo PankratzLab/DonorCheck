@@ -246,6 +246,7 @@ public class ValidationTable {
       makeDRDQHaplotypeRows(drdqHaplotypeRows, model);
     }
 
+    auditLogLines.clear();
     if (firstModelWrapper.isNotNull().get())
       auditLogLines.addAll(firstModelWrapper.get().getRemappings(0));
     if (secondModelWrapper.isNotNull().get())

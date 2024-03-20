@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
@@ -37,7 +36,6 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -433,6 +431,6 @@ public class ValidationModel {
           }).collect(Collectors.joining(" / "));
       return "HLA-" + e.getKey().name() + " was remapped from { " + collectFrom + " } to { "
           + collectTo + " } in " + (i == 0 ? "left" : "right") + " model";
-    }).toArray(String[]::new);
+    }).sorted().distinct().toArray(String[]::new);
   }
 }

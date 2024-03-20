@@ -25,11 +25,9 @@ import java.io.File;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
-import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
@@ -38,9 +36,7 @@ import org.pankratzlab.unet.parser.DonorFileParser;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
-
 import com.google.common.collect.ImmutableList;
-
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -151,8 +147,6 @@ public class FileInputController extends AbstractValidatingWizardController {
         donorParser.extensionDescription(), donorParser.extensionFilter(), true);
 
     if (optionalFile.isPresent()) {
-      // initialize CWD data for this file
-      CommonWellDocumented.init();
 
       // load data
       Task<Void> loadFileTask = JFXUtilHelper.createProgressTask(() -> {
@@ -187,12 +181,24 @@ public class FileInputController extends AbstractValidatingWizardController {
             }
             Task<Void> buildModelText = JFXUtilHelper.createProgressTask(() -> {
               // valid model, build and set
-              setter.accept(getTable(), builder.build());
-              linkedFile.set(selectedFile);
+              try {
+                setter.accept(getTable(), builder.build());
+                linkedFile.set(selectedFile);
+              } catch (Throwable e) {
+                Platform.runLater(() -> {
+                  Alert alert = new Alert(AlertType.ERROR);
+                  alert.setHeaderText(donorParser.getErrorText()
+                      + "\nPlease notify the developers as this may indicate the data has changed."
+                      + "\nOffending file: " + selectedFile.getName());
+                  alert.showAndWait();
+                  e.printStackTrace();
+                });
+              }
+
             });
             new Thread(buildModelText).start();
           });
-        } catch (Exception e) {
+        } catch (Throwable e) {
           Platform.runLater(() -> {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setHeaderText(donorParser.getErrorText()
@@ -231,6 +237,8 @@ public class FileInputController extends AbstractValidatingWizardController {
       fileDisplay.getStyleClass().add(FILE_DISPLAY_CLASS);
     }
 
-    fileDisplay.setText(text);
+    if (Objects.nonNull(fileDisplay)) {
+      fileDisplay.setText(text);
+    }
   }
 }

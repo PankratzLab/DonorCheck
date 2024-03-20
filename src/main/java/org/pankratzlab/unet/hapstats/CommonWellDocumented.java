@@ -30,22 +30,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.parser.XmlDonorParser;
-
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
-
 import javafx.scene.control.ChoiceDialog;
 
 /**
@@ -56,6 +54,7 @@ public final class CommonWellDocumented {
 
   private CommonWellDocumented() {};
 
+  private static final String CWD_PROP = "CWD";
   private static final String P_TYPE_SUFFIX = "P";
   private static final String G_TYPE_SUFFIX = "G";
   private static final String FREQ_TABLE = "table";
@@ -86,8 +85,7 @@ public final class CommonWellDocumented {
   }
 
   private static enum SOURCE {
-    CWD_200("CWD 2.0.0 (fast, fewer haplotypes)"), CIWD_300(
-        "CIWD 3.0.0 (much slower, more haplotypes)");
+    CWD_200("CWD 2.0.0"), CIWD_300("CIWD 3.0.0");
 
     SOURCE(String d) {
       displayName = d;
@@ -101,34 +99,74 @@ public final class CommonWellDocumented {
     }
   }
 
-  public static void init() {
+  public static void initFromProperty() {
+    boolean valid = false;
+    if (HLAProperties.get().containsKey(CWD_PROP)) {
+      String propVal = HLAProperties.get().getProperty(CWD_PROP);
+      try {
+        SOURCE src = SOURCE.valueOf(propVal);
+        switch (src) {
+          case CWD_200:
+            loadCWD200();
+            break;
+          case CIWD_300:
+            loadCIWD300();
+            break;
+        }
+        valid = true;
+      } catch (IllegalArgumentException e) {
+        // can't interpret value, default to asking user
+      }
+    }
 
+    if (!valid) {
+      init();
+    }
+  }
+
+  public static void init() {
     doGetStatusCache.invalidateAll();
-    // Platform.runLater(() -> {
-    ChoiceDialog<SOURCE> cd = new ChoiceDialog<>(SOURCE.CWD_200, SOURCE.values());
+
+    SOURCE def = SOURCE.CIWD_300;
+
+    if (HLAProperties.get().containsKey(CWD_PROP)) {
+      String propVal = HLAProperties.get().getProperty(CWD_PROP);
+      try {
+        def = SOURCE.valueOf(propVal);
+      } catch (IllegalArgumentException e) {
+        // can't interpret saved value, use hardcoded default
+      }
+    }
+
+    ChoiceDialog<SOURCE> cd = new ChoiceDialog<>(def, SOURCE.values());
     cd.setTitle("Select CWD/CIWD Database");
     cd.setHeaderText("Select a Database from which to load CWD/CIWD data.");
+    cd.setContentText("You may change this selection from the DonorCheck menu bar.");
     Optional<SOURCE> result = cd.showAndWait();
     result.ifPresent(r -> {
       try {
         switch (r) {
           case CWD_200:
             loadCWD200();
-
             break;
           case CIWD_300:
-
             loadCIWD300();
             break;
           default:
             break;
         }
 
+        // save the selected value
+        HLAProperties.get().setProperty(CWD_PROP, r.name());
+
       } catch (Exception e) {
         e.printStackTrace();
       }
     });
-    // });
+
+    if (!result.isPresent()) {
+      throw new IllegalStateException("CWD DB must be selected");
+    }
 
   }
 
