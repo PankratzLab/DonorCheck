@@ -28,9 +28,9 @@ import com.google.common.collect.ImmutableList;
  * Runs an integration test. To use:
  *
  * <ol>
- *   <li>Specify a path with the {@link #TEST_DIR_PROPERTY}
- *   <li>In the test directory, add one or more folders - one per patient
- *   <li>In each individual patient's directory, add two or more model source files
+ * <li>Specify a path with the {@link #TEST_DIR_PROPERTY}
+ * <li>In the test directory, add one or more folders - one per patient
+ * <li>In each individual patient's directory, add two or more model source files
  * </ol>
  *
  * This test will then ensure all model files pass validation against each other.
@@ -75,12 +75,10 @@ public class IntegrationTest {
     try {
       List<ValidationModel> individualModels = parseIndividualFiles(individualDir);
 
-      assertFalse(
-          individualName + ": Can't validate individual. No model files found.",
+      assertFalse(individualName + ": Can't validate individual. No model files found.",
           individualModels.isEmpty());
 
-      assertFalse(
-          individualName + ": Can't validate individual - only found one model file.",
+      assertFalse(individualName + ": Can't validate individual - only found one model file.",
           individualModels.size() == 1);
 
       testIfModelsAgree(individualModels);
