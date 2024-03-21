@@ -51,11 +51,11 @@ public class PdfSureTyperParser {
   private static final String HLA_PREFIX = "HLA";
   private static final String WHITESPACE_REGEX = "\\s+";
 
-  private static final Set<String> TYPING_STOP_TOKENS = ImmutableSet.of("ALLELES", "INTERNAL",
-                                                                        "REVIEW", "NOTES");
+  private static final Set<String> TYPING_STOP_TOKENS =
+      ImmutableSet.of("ALLELES", "INTERNAL", "REVIEW", "NOTES");
   // Set of strings to ensure typeAssignment only gets filled with appropriate values
-  private static final Set<String> HLA_TOKENS = ImmutableSet.of("DRB", "DPA", "DPB", "HLA", "DQA",
-                                                                "DQB");
+  private static final Set<String> HLA_TOKENS =
+      ImmutableSet.of("DRB", "DPA", "DPB", "HLA", "DQA", "DQB");
 
   private static final String TYPING_START_TOKEN = "LABORATORY ASSIGNMENT";
   private static final String SESSION_HISTORY_TOKEN = "SESSION HISTORY";
@@ -198,8 +198,7 @@ public class PdfSureTyperParser {
   private static int parseSummary(String[] lines, StringJoiner typeAssignment, int currentLine) {
     // go line-by-line, split on whitespace, look for DRB[3/4/5]* tokens and convert to line
     final ImmutableSet<String> validLoci = ImmutableSet.of(HLALocus.DRB3.toString(),
-                                                           HLALocus.DRB4.toString(),
-                                                           HLALocus.DRB5.toString());
+        HLALocus.DRB4.toString(), HLALocus.DRB5.toString());
     boolean homozygous = false;
     for (; currentLine < lines.length; currentLine++) {
       String line = lines[currentLine];
@@ -215,8 +214,7 @@ public class PdfSureTyperParser {
           // other with the allele designation.
           homozygous = true;
         } else if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
-                    || token.contains(HLALocus.DRB5 + "*"))
-                   && !token.endsWith("N")) {
+            || token.contains(HLALocus.DRB5 + "*")) && !token.endsWith("N")) {
           type = token;
         }
         // Separate type from the rest of the allele
@@ -224,8 +222,8 @@ public class PdfSureTyperParser {
           if (type.contains(":")) {
             type = type.substring(0, type.indexOf(":"));
           }
-          String typeAssignmentEntry = HLA_PREFIX + "-" + type.substring(0, type.indexOf("*"))
-                                       + ": ";
+          String typeAssignmentEntry =
+              HLA_PREFIX + "-" + type.substring(0, type.indexOf("*")) + ": ";
           typeAssignmentEntry += type;
           if (homozygous) {
             typeAssignmentEntry += (" " + type);
@@ -257,7 +255,7 @@ public class PdfSureTyperParser {
    * divided by HLA locus.
    */
   private static int parseHaplotype(String[] lines, int currentLine, String locus,
-                                    Multimap<Strand, HLAType> strandMap) {
+      Multimap<Strand, HLAType> strandMap) {
     // Sections start with a line containing JUST HLA_A/b/c etc..
     // Strands are marked by first type is always low res (group)
 
@@ -312,7 +310,7 @@ public class PdfSureTyperParser {
       // Here we start parsing lines to alleles, but only if we've confirmed the allele section has
       // started strandIndex > 0)
       for (; tokenIndex < tokens.length
-             && (strandIndex >= 0 && strandIndex < Strand.values().length); tokenIndex++) {
+          && (strandIndex >= 0 && strandIndex < Strand.values().length); tokenIndex++) {
 
         String token = tokens[tokenIndex].replaceAll("\\s+", "");
 

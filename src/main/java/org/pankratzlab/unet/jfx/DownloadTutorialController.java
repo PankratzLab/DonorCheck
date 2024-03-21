@@ -32,9 +32,11 @@ import javafx.fxml.FXML;
  */
 public class DownloadTutorialController {
 
-  @FXML private ResourceBundle resources;
+  @FXML
+  private ResourceBundle resources;
 
-  @FXML private URL location;
+  @FXML
+  private URL location;
 
   @FXML
   void initialize() {}

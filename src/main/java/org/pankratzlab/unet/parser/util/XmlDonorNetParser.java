@@ -154,8 +154,8 @@ public class XmlDonorNetParser {
 
   /**
    * @param donorNetMapPath File containing {@link #XML_TAG} elements, each having a
-   *          {@link #XML_ATTR} attribute which needs to be mapped to the corresponding string value
-   *          of that tag.
+   *        {@link #XML_ATTR} attribute which needs to be mapped to the corresponding string value
+   *        of that tag.
    * @return The mapping defined in the input file
    */
   private static ImmutableMap<String, String> populateFromFile(String donorNetMapPath) {

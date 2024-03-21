@@ -52,8 +52,8 @@ public class LabelledType extends HLAType {
   /** @return A {@link HLAType} representation of the given string */
   public static LabelledType valueOf(String typeString) {
     RawType rt = new RawType(typeString, TYPE_PATTERN);
-    return new LabelledType(
-        new HLAType(rt.locus(), rt.spec()), typeString.charAt(typeString.length() - 1));
+    return new LabelledType(new HLAType(rt.locus(), rt.spec()),
+        typeString.charAt(typeString.length() - 1));
   }
 
   @Override

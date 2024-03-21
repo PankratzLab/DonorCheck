@@ -29,18 +29,40 @@ import org.controlsfx.dialog.WizardPane;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.value.ObservableBooleanValue;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 
 /**
  * {@link WizardPane} subclass which binds the {@link Wizard}'s invalid property to a specified
  * {@link ObservableBooleanValue}. This allows control over whether or not the wizard can be
  * advanced/completed.
  *
- * <p>Also updates the {@link Wizard#titleProperty()} based on the current {@link
- * WizardPane#getUserData()}
+ * <p>
+ * Also updates the {@link Wizard#titleProperty()} based on the current
+ * {@link WizardPane#getUserData()}
  */
 public class ValidatingWizardPane extends WizardPane {
 
   private BooleanProperty invalidBinding = null;
+  private BooleanProperty autosizeBinding = null;
+
+  public void setAutosize(ObservableBooleanValue binding) {
+    if (Objects.isNull(autosizeBinding)) {
+      autosizeBinding = new ReadOnlyBooleanWrapper();
+      this.sceneProperty().addListener((s, o, n) -> {
+        if (this.getScene() == null)
+          return;
+        if (this.getScene().getWindow() == null)
+          return;
+        Window w = this.getScene().getWindow();
+        if (w instanceof Stage) {
+          ((Stage) w).resizableProperty().bindBidirectional(autosizeBinding);
+        }
+      });
+    }
+
+    autosizeBinding.bind(binding);
+  }
 
   public void setInvalidBinding(ObservableBooleanValue binding) {
     if (Objects.isNull(invalidBinding)) {
@@ -48,6 +70,7 @@ public class ValidatingWizardPane extends WizardPane {
     }
 
     invalidBinding.bind(binding);
+
   }
 
   @Override
@@ -63,4 +86,5 @@ public class ValidatingWizardPane extends WizardPane {
     // Notify any listeners that we are active
     fireEvent(new PageActivatedEvent());
   }
+
 }

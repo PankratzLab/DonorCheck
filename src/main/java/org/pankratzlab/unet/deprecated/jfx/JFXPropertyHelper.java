@@ -38,18 +38,18 @@ public final class JFXPropertyHelper {
    * Helper method to handle null checking when ORing two {@link ObservableBooleanValue}s.
    *
    * @return If {@code optional} is null, {@code reference} is returned. Otherwise a boolean OR
-   *     binding combining the two individual booleans is created and returned.
+   *         binding combining the two individual booleans is created and returned.
    */
-  public static ObservableBooleanValue orHelper(
-      @Nullable ObservableBooleanValue optional, ObservableBooleanValue reference) {
+  public static ObservableBooleanValue orHelper(@Nullable ObservableBooleanValue optional,
+      ObservableBooleanValue reference) {
     if (optional == null) {
       return reference;
     }
     return Bindings.or(optional, reference);
   }
 
-  public static ObservableBooleanValue andHelper(
-      @Nullable ObservableBooleanValue optional, ObservableBooleanValue reference) {
+  public static ObservableBooleanValue andHelper(@Nullable ObservableBooleanValue optional,
+      ObservableBooleanValue reference) {
     if (optional == null) {
       return reference;
     }

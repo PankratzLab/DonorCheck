@@ -23,16 +23,21 @@ package org.pankratzlab.unet.model;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
-
+import org.apache.commons.lang3.tuple.Pair;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-
+import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Multimap;
@@ -62,14 +67,15 @@ public class ValidationModel {
   private final ImmutableList<HLAType> dr53Locus;
   private final ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
+  private final ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping;
 
   public ValidationModel(String donorId, String source, String sourceType, Collection<SeroType> a,
-                         Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
-                         Collection<SeroType> dqb, Collection<SeroType> dqa,
-                         Collection<SeroType> dpa, Collection<HLAType> dpb, boolean bw4,
-                         boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
-                         Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
-                         Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes) {
+      Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
+      Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<SeroType> dpa,
+      Collection<HLAType> dpb, boolean bw4, boolean bw6, List<HLAType> dr51, List<HLAType> dr52,
+      List<HLAType> dr53, Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
+      Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes,
+      Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping) {
     this.donorId = donorId;
     this.source = source;
     this.sourceType = sourceType;
@@ -94,6 +100,8 @@ public class ValidationModel {
 
     bcHaplotypes = ImmutableMultimap.copyOf(bcCwdHaplotypes);
     drdqHaplotypes = ImmutableMultimap.copyOf(drdqCwdHaplotypes);
+
+    this.remapping = ImmutableMap.copyOf(remapping);
   }
 
   public String getDonorId() {
@@ -256,57 +264,92 @@ public class ValidationModel {
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (obj == null) return false;
-    if (getClass() != obj.getClass()) return false;
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
     ValidationModel other = (ValidationModel) obj;
     if (aLocus == null) {
-      if (other.aLocus != null) return false;
-    } else if (!aLocus.equals(other.aLocus)) return false;
+      if (other.aLocus != null)
+        return false;
+    } else if (!aLocus.equals(other.aLocus))
+      return false;
     if (bLocus == null) {
-      if (other.bLocus != null) return false;
-    } else if (!bLocus.equals(other.bLocus)) return false;
+      if (other.bLocus != null)
+        return false;
+    } else if (!bLocus.equals(other.bLocus))
+      return false;
     if (bcHaplotypes == null) {
-      if (other.bcHaplotypes != null) return false;
-    } else if (!bcHaplotypes.equals(other.bcHaplotypes)) return false;
-    if (bw4 != other.bw4) return false;
-    if (bw6 != other.bw6) return false;
+      if (other.bcHaplotypes != null)
+        return false;
+    } else if (!bcHaplotypes.equals(other.bcHaplotypes))
+      return false;
+    if (bw4 != other.bw4)
+      return false;
+    if (bw6 != other.bw6)
+      return false;
     if (cLocus == null) {
-      if (other.cLocus != null) return false;
-    } else if (!cLocus.equals(other.cLocus)) return false;
+      if (other.cLocus != null)
+        return false;
+    } else if (!cLocus.equals(other.cLocus))
+      return false;
     if (donorId == null) {
-      if (other.donorId != null) return false;
-    } else if (!donorId.equals(other.donorId)) return false;
+      if (other.donorId != null)
+        return false;
+    } else if (!donorId.equals(other.donorId))
+      return false;
     if (dpbLocus == null) {
-      if (other.dpbLocus != null) return false;
-    } else if (!dpbLocus.equals(other.dpbLocus)) return false;
+      if (other.dpbLocus != null)
+        return false;
+    } else if (!dpbLocus.equals(other.dpbLocus))
+      return false;
     if (dpaLocus == null) {
-      if (other.dpaLocus != null) return false;
-    } else if (!dpaLocus.equals(other.dpaLocus)) return false;
+      if (other.dpaLocus != null)
+        return false;
+    } else if (!dpaLocus.equals(other.dpaLocus))
+      return false;
     if (dqaLocus == null) {
-      if (other.dqaLocus != null) return false;
-    } else if (!dqaLocus.equals(other.dqaLocus)) return false;
+      if (other.dqaLocus != null)
+        return false;
+    } else if (!dqaLocus.equals(other.dqaLocus))
+      return false;
     if (dqbLocus == null) {
-      if (other.dqbLocus != null) return false;
-    } else if (!dqbLocus.equals(other.dqbLocus)) return false;
+      if (other.dqbLocus != null)
+        return false;
+    } else if (!dqbLocus.equals(other.dqbLocus))
+      return false;
     if (dr51Locus == null) {
-      if (other.dr51Locus != null) return false;
-    } else if (!dr51Locus.equals(other.dr51Locus)) return false;
+      if (other.dr51Locus != null)
+        return false;
+    } else if (!dr51Locus.equals(other.dr51Locus))
+      return false;
     if (dr52Locus == null) {
-      if (other.dr52Locus != null) return false;
-    } else if (!dr52Locus.equals(other.dr52Locus)) return false;
+      if (other.dr52Locus != null)
+        return false;
+    } else if (!dr52Locus.equals(other.dr52Locus))
+      return false;
     if (dr53Locus == null) {
-      if (other.dr53Locus != null) return false;
-    } else if (!dr53Locus.equals(other.dr53Locus)) return false;
+      if (other.dr53Locus != null)
+        return false;
+    } else if (!dr53Locus.equals(other.dr53Locus))
+      return false;
     if (drbLocus == null) {
-      if (other.drbLocus != null) return false;
-    } else if (!drbLocus.equals(other.drbLocus)) return false;
+      if (other.drbLocus != null)
+        return false;
+    } else if (!drbLocus.equals(other.drbLocus))
+      return false;
     if (drdqHaplotypes == null) {
-      if (other.drdqHaplotypes != null) return false;
-    } else if (!drdqHaplotypes.equals(other.drdqHaplotypes)) return false;
+      if (other.drdqHaplotypes != null)
+        return false;
+    } else if (!drdqHaplotypes.equals(other.drdqHaplotypes))
+      return false;
     if (source == null) {
-      if (other.source != null) return false;
-    } else if (!source.equals(other.source)) return false;
+      if (other.source != null)
+        return false;
+    } else if (!source.equals(other.source))
+      return false;
     return true;
   }
 
@@ -336,12 +379,12 @@ public class ValidationModel {
   }
 
   private void addHaplotypes(StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes,
-                             String title) {
+      String title) {
     sj.add(title);
     for (RaceGroup e : RaceGroup.values()) {
       sj.add("\t" + e.toString());
-      List<String> hapStrings = haplotypes.get(e).stream().map(Haplotype::toString).sorted()
-                                          .collect(Collectors.toList());
+      List<String> hapStrings =
+          haplotypes.get(e).stream().map(Haplotype::toString).sorted().collect(Collectors.toList());
       hapStrings.forEach(s -> sj.add("\t" + s));
     }
   }
@@ -369,5 +412,25 @@ public class ValidationModel {
       pair = pair + s1.toString() + " - " + s2.toString();
     }
     sj.add(pair);
+  }
+
+  public boolean wasRemapped(HLALocus locus) {
+    return remapping.containsKey(locus);
+  }
+
+  public String[] getRemappings(int i) {
+
+    return remapping.entrySet().stream().map(e -> {
+      final String collectFrom =
+          e.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> {
+            return h.specString() + " - " + CommonWellDocumented.getStatus(h);
+          }).collect(Collectors.joining(" / "));
+      final String collectTo =
+          e.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> {
+            return h.specString() + " - " + CommonWellDocumented.getStatus(h);
+          }).collect(Collectors.joining(" / "));
+      return "HLA-" + e.getKey().name() + " was remapped from { " + collectFrom + " } to { "
+          + collectTo + " } in " + (i == 0 ? "left" : "right") + " model";
+    }).sorted().distinct().toArray(String[]::new);
   }
 }

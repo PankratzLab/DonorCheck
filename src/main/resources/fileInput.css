@@ -1,5 +1,5 @@
 .file-display {
-	-fx-text-weight: bold;
+	-fx-font-weight: bold;
 	-fx-text-fill: #1F7D1F;
 	-fx-opacity: 1.0;
 }

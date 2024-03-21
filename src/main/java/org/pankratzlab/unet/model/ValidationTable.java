@@ -24,13 +24,15 @@ package org.pankratzlab.unet.model;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-
+import java.util.stream.Collectors;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
-
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -39,6 +41,7 @@ import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableBooleanValue;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.scene.image.WritableImage;
 
@@ -54,6 +57,7 @@ public class ValidationTable {
   private final ReadOnlyObjectWrapper<String> secondSourceWrapper;
   private final ReadOnlyObjectWrapper<ValidationModel> secondModelWrapper;
   private final ReadOnlyListWrapper<ValidationRow<?>> validationRows;
+  private final ReadOnlyListWrapper<String> auditLogLines;
   private final ReadOnlyListWrapper<BCHaplotypeRow> bcHaplotypeRows;
   private final ReadOnlyListWrapper<DRDQHaplotypeRow> drdqHaplotypeRows;
   private final ReadOnlyObjectWrapper<String> csvValues;
@@ -66,6 +70,7 @@ public class ValidationTable {
     firstModelWrapper = new ReadOnlyObjectWrapper<>();
     secondModelWrapper = new ReadOnlyObjectWrapper<>();
     validationRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
+    auditLogLines = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     bcHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     drdqHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     csvValues = new ReadOnlyObjectWrapper<>();
@@ -125,6 +130,11 @@ public class ValidationTable {
     return isValidWrapper.getReadOnlyProperty();
   }
 
+  /** @return A {@link BooleanProperty} tracking the validity of the complete table */
+  public BooleanBinding hasAuditLines() {
+    return auditLogLines.emptyProperty().not();
+  }
+
   /** @return The {@link ValidationRow}s for this model, e.g. for display */
   public ReadOnlyListProperty<ValidationRow<?>> getValidationRows() {
     return validationRows.getReadOnlyProperty();
@@ -145,56 +155,80 @@ public class ValidationTable {
     // FIXME the row labels and row type should probably be linked in the ValidationModel
     validationRows.clear();
     makeValidationRow(validationRows, "Donor ID", ValidationModel::getDonorId,
-                      StringValidationRow::makeRow);
-    makeValidationRow(validationRows, "A", ValidationModel::getA1, AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "A", ValidationModel::getA2, AntigenValidationRow::makeRow);
+        StringValidationRow::makeRow, false, false);
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.A), ValidationModel::getA1,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.A, firstModelWrapper),
+        wasRemapped(HLALocus.A, secondModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.A), ValidationModel::getA2,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.A, firstModelWrapper),
+        wasRemapped(HLALocus.A, secondModelWrapper));
 
-    makeValidationRow(validationRows, "B", ValidationModel::getB1, AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "B", ValidationModel::getB2, AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.B), ValidationModel::getB1,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.B, firstModelWrapper),
+        wasRemapped(HLALocus.B, secondModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.B), ValidationModel::getB2,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.B, firstModelWrapper),
+        wasRemapped(HLALocus.B, secondModelWrapper));
 
-    makeValidationRow(validationRows, "BW4", ValidationModel::isBw4, StringValidationRow::makeRow);
-    makeValidationRow(validationRows, "BW6", ValidationModel::isBw6, StringValidationRow::makeRow);
+    makeValidationRow(validationRows, "BW4", ValidationModel::isBw4, StringValidationRow::makeRow,
+        false, false);
+    makeValidationRow(validationRows, "BW6", ValidationModel::isBw6, StringValidationRow::makeRow,
+        false, false);
 
-    makeValidationRow(validationRows, "C", ValidationModel::getC1, AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "C", ValidationModel::getC2, AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.C), ValidationModel::getC1,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.C, firstModelWrapper),
+        wasRemapped(HLALocus.C, secondModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.C), ValidationModel::getC2,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.C, firstModelWrapper),
+        wasRemapped(HLALocus.C, secondModelWrapper));
 
-    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB1,
-                      AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "DRB1", ValidationModel::getDRB2,
-                      AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DRB1), ValidationModel::getDRB1,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.DRB1, firstModelWrapper),
+        wasRemapped(HLALocus.DRB1, secondModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DRB1), ValidationModel::getDRB2,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.DRB1, firstModelWrapper),
+        wasRemapped(HLALocus.DRB1, secondModelWrapper));
 
-    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB1,
-                      AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "DQB1", ValidationModel::getDQB2,
-                      AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQB1), ValidationModel::getDQB1,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.DQB1, firstModelWrapper),
+        wasRemapped(HLALocus.DQB1, secondModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQB1), ValidationModel::getDQB2,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.DQB1, firstModelWrapper),
+        wasRemapped(HLALocus.DQB1, secondModelWrapper));
 
-    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA1,
-                      AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "DQA1", ValidationModel::getDQA2,
-                      AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQA1), ValidationModel::getDQA1,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.DQA1, firstModelWrapper),
+        wasRemapped(HLALocus.DQA1, secondModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DQA1), ValidationModel::getDQA2,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.DQA1, firstModelWrapper),
+        wasRemapped(HLALocus.DQA1, secondModelWrapper));
 
-    makeValidationRow(validationRows, "DPA1", ValidationModel::getDPA1,
-                      AntigenValidationRow::makeRow);
-    makeValidationRow(validationRows, "DPA1", ValidationModel::getDPA2,
-                      AntigenValidationRow::makeRow);
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPA1), ValidationModel::getDPA1,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.DPA1, firstModelWrapper),
+        wasRemapped(HLALocus.DPA1, secondModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPA1), ValidationModel::getDPA2,
+        AntigenValidationRow::makeRow, wasRemapped(HLALocus.DPA1, firstModelWrapper),
+        wasRemapped(HLALocus.DPA1, secondModelWrapper));
 
-    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB1,
-                      AlleleValidationRow::makeRow);
-    makeValidationRow(validationRows, "DPB1", ValidationModel::getDPB2,
-                      AlleleValidationRow::makeRow);
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPB1), ValidationModel::getDPB1,
+        AlleleValidationRow::makeRow, wasRemapped(HLALocus.DPB1, firstModelWrapper),
+        wasRemapped(HLALocus.DPB1, secondModelWrapper));
+    makeValidationRow(validationRows, generateRowLabel(HLALocus.DPB1), ValidationModel::getDPB2,
+        AlleleValidationRow::makeRow, wasRemapped(HLALocus.DPB1, firstModelWrapper),
+        wasRemapped(HLALocus.DPB1, secondModelWrapper));
 
     makeValidationRow(validationRows, "DR51 1", ValidationModel::getDR51_1,
-                      DR345ValidationRow::makeRow);
+        DR345ValidationRow::makeRow, false, false);
     makeValidationRow(validationRows, "DR51 2", ValidationModel::getDR51_2,
-                      DR345ValidationRow::makeRow);
+        DR345ValidationRow::makeRow, false, false);
     makeValidationRow(validationRows, "DR52 1", ValidationModel::getDR52_1,
-                      DR345ValidationRow::makeRow);
+        DR345ValidationRow::makeRow, false, false);
     makeValidationRow(validationRows, "DR52 2", ValidationModel::getDR52_2,
-                      DR345ValidationRow::makeRow);
+        DR345ValidationRow::makeRow, false, false);
     makeValidationRow(validationRows, "DR53 1", ValidationModel::getDR53_1,
-                      DR345ValidationRow::makeRow);
+        DR345ValidationRow::makeRow, false, false);
     makeValidationRow(validationRows, "DR53 2", ValidationModel::getDR53_2,
-                      DR345ValidationRow::makeRow);
+        DR345ValidationRow::makeRow, false, false);
 
     // A Table is valid if all its Rows are valid
     ObservableBooleanValue validBinding = null;
@@ -211,27 +245,41 @@ public class ValidationTable {
       makeBCHaplotypeRows(bcHaplotypeRows, model);
       makeDRDQHaplotypeRows(drdqHaplotypeRows, model);
     }
+
+    auditLogLines.clear();
+    if (firstModelWrapper.isNotNull().get())
+      auditLogLines.addAll(firstModelWrapper.get().getRemappings(0));
+    if (secondModelWrapper.isNotNull().get())
+      auditLogLines.addAll(secondModelWrapper.get().getRemappings(1));
+  }
+
+  private String generateRowLabel(HLALocus locus) {
+    return locus.name()
+        + (wasRemapped(locus, firstModelWrapper) || wasRemapped(locus, secondModelWrapper) ? " ⦿"
+            : "");
+  }
+
+  private boolean wasRemapped(HLALocus locus, ReadOnlyObjectWrapper<ValidationModel> modelWrapper) {
+    return (modelWrapper.isNotNull().get() && modelWrapper.get().wasRemapped(locus));
   }
 
   private void makeDRDQHaplotypeRows(ReadOnlyListWrapper<DRDQHaplotypeRow> rows,
-                                     ValidationModel model) {
+      ValidationModel model) {
     for (RaceGroup ethnicity : RaceGroup.values()) {
       model.getDRDQHaplotypes().get(ethnicity).forEach(haplotype -> {
         rows.add(new DRDQHaplotypeRow(ethnicity, haplotype));
       });
-    }
-    ;
+    } ;
   }
 
   /** Use the given model to populate a list of {@link BCHaplotypeRow}s */
   private void makeBCHaplotypeRows(ReadOnlyListWrapper<BCHaplotypeRow> rows,
-                                   ValidationModel model) {
+      ValidationModel model) {
     for (RaceGroup ethnicity : RaceGroup.values()) {
       model.getBCHaplotypes().get(ethnicity).forEach(haplotype -> {
         rows.add(new BCHaplotypeRow(ethnicity, haplotype));
       });
-    }
-    ;
+    } ;
   }
 
   /**
@@ -254,8 +302,10 @@ public class ValidationTable {
    * @param getter Method to use to retrieve this row's value
    */
   private <T> void makeValidationRow(List<ValidationRow<?>> rows, String rowLabel,
-                                     Function<ValidationModel, T> getter, RowBuilder<T> builder) {
-    rows.add(builder.makeRow(rowLabel, getFirstField(getter), getSecondField(getter)));
+      Function<ValidationModel, T> getter, RowBuilder<T> builder, boolean wasRemappedFirst,
+      boolean wasRemappedSecond) {
+    rows.add(builder.makeRow(rowLabel, getFirstField(getter), getSecondField(getter),
+        wasRemappedFirst, wasRemappedSecond));
   }
 
   /**
@@ -312,54 +362,54 @@ public class ValidationTable {
   public String generateCSV() {
     StringBuilder builder = new StringBuilder();
 
-    builder.append("Donor ID" + ","
-                   + Objects.toString(getFirstField(ValidationModel::getDonorId), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::getDonorId), "") + "\n");
-    builder.append("Source" + ","
-                   + Objects.toString(getFirstField(ValidationModel::getSourceType), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::getSourceType), "") + "\n");
+    builder
+        .append("Donor ID" + "," + Objects.toString(getFirstField(ValidationModel::getDonorId), "")
+            + "," + Objects.toString(getSecondField(ValidationModel::getDonorId), "") + "\n");
+    builder
+        .append("Source" + "," + Objects.toString(getFirstField(ValidationModel::getSourceType), "")
+            + "," + Objects.toString(getSecondField(ValidationModel::getSourceType), "") + "\n");
     builder.append("A" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getA1) + "\n");
     builder.append("A" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getA2) + "\n");
     builder.append("B" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getB1) + "\n");
     builder.append("B" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getB2) + "\n");
     builder.append("BW4" + "," + Objects.toString(getFirstField(ValidationModel::isBw4), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::isBw4), "") + "\n");
+        + Objects.toString(getSecondField(ValidationModel::isBw4), "") + "\n");
     builder.append("BW6" + "," + Objects.toString(getFirstField(ValidationModel::isBw6), "") + ","
-                   + Objects.toString(getSecondField(ValidationModel::isBw6), "") + "\n");
+        + Objects.toString(getSecondField(ValidationModel::isBw6), "") + "\n");
     builder.append("C" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getC1) + "\n");
     builder.append("C" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getC2) + "\n");
-    builder.append("DRB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDRB1)
-                   + "\n");
-    builder.append("DRB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDRB2)
-                   + "\n");
-    builder.append("DQB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQB1)
-                   + "\n");
-    builder.append("DQB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQB2)
-                   + "\n");
-    builder.append("DQA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQA1)
-                   + "\n");
-    builder.append("DQA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQA2)
-                   + "\n");
-    builder.append("DPB1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDPB1)
-                   + "\n");
-    builder.append("DPB1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDPB2)
-                   + "\n");
-    builder.append("DPA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDPA1)
-                   + "\n");
-    builder.append("DPA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDPA2)
-                   + "\n");
-    builder.append("DR51 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR51_1)
-                   + "\n");
-    builder.append("DR51 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR51_2)
-                   + "\n");
-    builder.append("DR52 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR52_1)
-                   + "\n");
-    builder.append("DR52 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR52_2)
-                   + "\n");
-    builder.append("DPB3 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR53_1)
-                   + "\n");
-    builder.append("DPB3 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR53_2)
-                   + "\n");
+    builder
+        .append("DRB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDRB1) + "\n");
+    builder
+        .append("DRB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDRB2) + "\n");
+    builder
+        .append("DQB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQB1) + "\n");
+    builder
+        .append("DQB1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQB2) + "\n");
+    builder
+        .append("DQA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQA1) + "\n");
+    builder
+        .append("DQA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDQA2) + "\n");
+    builder.append(
+        "DPB1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDPB1) + "\n");
+    builder.append(
+        "DPB1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDPB2) + "\n");
+    builder
+        .append("DPA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDPA1) + "\n");
+    builder
+        .append("DPA1" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getDPA2) + "\n");
+    builder.append(
+        "DR51 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR51_1) + "\n");
+    builder.append(
+        "DR51 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR51_2) + "\n");
+    builder.append(
+        "DR52 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR52_1) + "\n");
+    builder.append(
+        "DR52 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR52_2) + "\n");
+    builder.append(
+        "DPB3 1" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR53_1) + "\n");
+    builder.append(
+        "DPB3 2" + "," + getComaSeperatedFieldSpecStringsHLA(ValidationModel::getDR53_2) + "\n");
 
     return builder.toString();
 
@@ -370,10 +420,20 @@ public class ValidationTable {
    *         is null.
    */
   private <T> T getValueFromModel(Function<ValidationModel, T> getter,
-                                  ReadOnlyObjectWrapper<ValidationModel> wrapper) {
+      ReadOnlyObjectWrapper<ValidationModel> wrapper) {
     if (Objects.isNull(wrapper.get())) {
       return null;
     }
     return getter.apply(wrapper.get());
+  }
+
+  public ObservableValue<String> getAuditLogLines() {
+    return Bindings.createStringBinding(
+        () -> auditLogLines.stream().map(s -> "⦿ " + s).collect(Collectors.joining("\n")),
+        auditLogLines);
+  }
+
+  public ObservableValue<Number> getAuditLogLineCount() {
+    return Bindings.createIntegerBinding(() -> auditLogLines.size(), auditLogLines);
   }
 }

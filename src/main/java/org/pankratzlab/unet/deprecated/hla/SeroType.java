@@ -41,9 +41,10 @@ public class SeroType extends Antigen<SeroLocus, SeroType> {
   /**
    * Matches string representations of {@link SeroType}s
    *
-   * <p>Group 1 is the {@link SeroLocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
-   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the {@link
-   * Matcher#group(int)} api)
+   * <p>
+   * Group 1 is the {@link SeroLocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
+   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the
+   * {@link Matcher#group(int)} api)
    */
   public static final Pattern TYPE_PATTERN;
 

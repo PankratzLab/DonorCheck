@@ -58,8 +58,11 @@ public abstract class ValidationRow<T> {
   private final ReadOnlyStringWrapper firstColStringWrapper;
   private final ReadOnlyStringWrapper secondColStringWrapper;
   private final ReadOnlyBooleanWrapper isValidWrapper;
+  private final ReadOnlyBooleanWrapper wasRemappedFirstWrapper;
+  private final ReadOnlyBooleanWrapper wasRemappedSecondWrapper;
 
-  public ValidationRow(String rowLabel, T firstCol, T secondCol) {
+  public ValidationRow(String rowLabel, T firstCol, T secondCol, boolean wasRemappedFirst,
+      boolean wasRemappedSecond) {
     this.rowLabelWRapper = new ReadOnlyStringWrapper(rowLabel);
     firstColWrapper = new ReadOnlyObjectWrapper<>(firstCol);
     secondColWrapper = new ReadOnlyObjectWrapper<>(secondCol);
@@ -67,17 +70,21 @@ public abstract class ValidationRow<T> {
 
     // Ultimately we want to display a String representation of each column value. This string
     // unfortunately depends on the underlying data type.
-    firstColStringWrapper.bind(
-        Bindings.createStringBinding(
-            () -> getDisplayString(firstColWrapper.get()), firstColWrapper));
+    firstColStringWrapper.bind(Bindings
+        .createStringBinding(() -> getDisplayString(firstColWrapper.get()), firstColWrapper));
     secondColStringWrapper = new ReadOnlyStringWrapper();
-    secondColStringWrapper.bind(
-        Bindings.createStringBinding(
-            () -> getDisplayString(secondColWrapper.get()), secondColWrapper));
+    secondColStringWrapper.bind(Bindings
+        .createStringBinding(() -> getDisplayString(secondColWrapper.get()), secondColWrapper));
 
     isValidWrapper = new ReadOnlyBooleanWrapper();
-    isValidWrapper.bind(
-        Bindings.createBooleanBinding(this::isValid, firstColWrapper, secondColWrapper));
+    isValidWrapper
+        .bind(Bindings.createBooleanBinding(this::isValid, firstColWrapper, secondColWrapper));
+
+    wasRemappedFirstWrapper = new ReadOnlyBooleanWrapper();
+    wasRemappedFirstWrapper.bind(Bindings.createBooleanBinding(() -> wasRemappedFirst));
+
+    wasRemappedSecondWrapper = new ReadOnlyBooleanWrapper();
+    wasRemappedSecondWrapper.bind(Bindings.createBooleanBinding(() -> wasRemappedSecond));
   }
 
   /** @return {@link StringProperty} for the identifying name of this row */
@@ -100,6 +107,16 @@ public abstract class ValidationRow<T> {
     return isValidWrapper.getReadOnlyProperty();
   }
 
+  /** @return {@link BooleanProperty} indicating if this row was remapped */
+  public ReadOnlyBooleanProperty wasRemappedFirstProperty() {
+    return wasRemappedFirstWrapper.getReadOnlyProperty();
+  }
+
+  /** @return {@link BooleanProperty} indicating if this row was remapped */
+  public ReadOnlyBooleanProperty wasRemappedSecondProperty() {
+    return wasRemappedSecondWrapper.getReadOnlyProperty();
+  }
+
   /**
    * @param toDisplay Type to convert to string
    * @return The String representation of the given type
@@ -113,6 +130,7 @@ public abstract class ValidationRow<T> {
   }
 
   public static interface RowBuilder<T> {
-    ValidationRow<T> makeRow(String s, T col1, T col2);
+    ValidationRow<T> makeRow(String s, T col1, T col2, boolean wasRemappedFirst,
+        boolean wasRemappedSecond);
   }
 }

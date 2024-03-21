@@ -65,8 +65,8 @@ public final class AntigenDictionary implements Serializable {
   private final SetMultimap<SeroType, HLAType> seroDict;
   private final Set<HLAType> validTypes;
 
-  private AntigenDictionary(
-      SetMultimap<HLAType, SeroType> hla, SetMultimap<SeroType, HLAType> sero, Set<HLAType> valid) {
+  private AntigenDictionary(SetMultimap<HLAType, SeroType> hla, SetMultimap<SeroType, HLAType> sero,
+      Set<HLAType> valid) {
     hlaDict = hla;
     seroDict = sero;
     validTypes = valid;
@@ -164,12 +164,8 @@ public final class AntigenDictionary implements Serializable {
     // NB: what's considered a valid HLA type diverges from the HLA map keyset and thus must be
     // tracked separately
     Builder<HLAType> validHLATypes = ImmutableSet.builder();
-    try (BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(
-                AntigenDictionary.class
-                    .getClassLoader()
-                    .getResourceAsStream(MASTER_MAP_RECORDS))); ) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+        AntigenDictionary.class.getClassLoader().getResourceAsStream(MASTER_MAP_RECORDS)));) {
       while (reader.ready()) {
         // Read one mapping at a time
         String line = reader.readLine();

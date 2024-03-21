@@ -23,9 +23,5 @@ package org.pankratzlab.unet.hapstats;
 
 /** Enum of ethnicities known in Haplotype CSVs */
 public enum RaceGroup {
-  CAU,
-  AFA,
-  API,
-  HIS,
-  NAM;
+  CAU, AFA, API, HIS, NAM;
 }

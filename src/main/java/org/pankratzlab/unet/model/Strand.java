@@ -23,8 +23,7 @@ package org.pankratzlab.unet.model;
 
 /** Simple enum for tracking DNA strand alignment */
 public enum Strand {
-  FIRST,
-  SECOND;
+  FIRST, SECOND;
 
   /** @return The opposite strand as this one */
   public Strand flip() {

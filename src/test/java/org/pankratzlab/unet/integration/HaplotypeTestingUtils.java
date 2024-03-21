@@ -19,11 +19,8 @@ public class HaplotypeTestingUtils {
     // get test/resource file path for frequency files
     String bcFilePath =
         XMLSureTyperParserTest.class.getClassLoader().getResource("C_B.xls").getFile();
-    String drdqFilePath =
-        XMLSureTyperParserTest.class
-            .getClassLoader()
-            .getResource("DRB3-4-5_DRB1_DQB1.xls")
-            .getFile();
+    String drdqFilePath = XMLSureTyperParserTest.class.getClassLoader()
+        .getResource("DRB3-4-5_DRB1_DQB1.xls").getFile();
     // initialize frequency tables
     HaplotypeFrequencies.doInitialization(bcFilePath, drdqFilePath);
   }
@@ -31,22 +28,12 @@ public class HaplotypeTestingUtils {
   /**
    * @param freqArray array of doubles for expected frequencies in CAU, AFA, API, HIS and NAM order
    * @return SetMultimap<RaceGroup,BigDecimal> joining the expected frequencies with their
-   *     respective ethnicity
+   *         respective ethnicity
    */
   public static SetMultimap<RaceGroup, BigDecimal> createTestMultimap(double[] freqArray) {
     SetMultimap<RaceGroup, BigDecimal> outputMultimap = HashMultimap.create();
-    RaceGroup ethnicitiesArr[] = {
-      RaceGroup.CAU,
-      RaceGroup.CAU,
-      RaceGroup.AFA,
-      RaceGroup.AFA,
-      RaceGroup.API,
-      RaceGroup.API,
-      RaceGroup.HIS,
-      RaceGroup.HIS,
-      RaceGroup.NAM,
-      RaceGroup.NAM
-    };
+    RaceGroup ethnicitiesArr[] = {RaceGroup.CAU, RaceGroup.CAU, RaceGroup.AFA, RaceGroup.AFA,
+        RaceGroup.API, RaceGroup.API, RaceGroup.HIS, RaceGroup.HIS, RaceGroup.NAM, RaceGroup.NAM};
     for (int i = 0; i < freqArray.length; i++) {
       outputMultimap.put(ethnicitiesArr[i], roundBigDecimal(freqArray[i]));
     }
@@ -58,11 +45,8 @@ public class HaplotypeTestingUtils {
    * @return BigDecimal rounded in the same fashion as the frequency table output
    */
   public static BigDecimal roundBigDecimal(double freq) {
-    return new BigDecimal(freq)
-        .setScale(
-            HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
-            HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE)
-        .stripTrailingZeros();
+    return new BigDecimal(freq).setScale(HaplotypeFrequencies.UNKNOWN_HAP_SIG_FIGS,
+        HaplotypeFrequencies.UNKNOWN_HAP_ROUNDING_MODE).stripTrailingZeros();
   }
 
   /**
@@ -71,8 +55,8 @@ public class HaplotypeTestingUtils {
    * @return String of the difference between the expected and generated frequencies
    */
   @SuppressWarnings("restriction")
-  public static String testBCHaplotypes(
-      ValidationModel model, SetMultimap<RaceGroup, BigDecimal> expectedBCMultimap) {
+  public static String testBCHaplotypes(ValidationModel model,
+      SetMultimap<RaceGroup, BigDecimal> expectedBCMultimap) {
     ValidationTable table = new ValidationTable();
     table.setFirstModel(model);
     SetMultimap<RaceGroup, BigDecimal> receivedBCMultimap = HashMultimap.create();
@@ -82,17 +66,13 @@ public class HaplotypeTestingUtils {
       RaceGroup ethnicity = b.ethnicityProperty().getValue();
       receivedBCMultimap.put(ethnicity, freq);
     }
-    SetMultimap<RaceGroup, BigDecimal> generatedExpectedDifference =
-        Multimaps.filterEntries(
-            receivedBCMultimap, e -> !expectedBCMultimap.containsEntry(e.getKey(), e.getValue()));
+    SetMultimap<RaceGroup, BigDecimal> generatedExpectedDifference = Multimaps.filterEntries(
+        receivedBCMultimap, e -> !expectedBCMultimap.containsEntry(e.getKey(), e.getValue()));
 
-    SetMultimap<RaceGroup, BigDecimal> expectedGeneratedDifference =
-        Multimaps.filterEntries(
-            expectedBCMultimap, e -> !receivedBCMultimap.containsEntry(e.getKey(), e.getValue()));
-    return "Difference between generated and expected: "
-        + generatedExpectedDifference.toString()
-        + "Difference between expected and generated: "
-        + expectedGeneratedDifference.toString();
+    SetMultimap<RaceGroup, BigDecimal> expectedGeneratedDifference = Multimaps.filterEntries(
+        expectedBCMultimap, e -> !receivedBCMultimap.containsEntry(e.getKey(), e.getValue()));
+    return "Difference between generated and expected: " + generatedExpectedDifference.toString()
+        + "Difference between expected and generated: " + expectedGeneratedDifference.toString();
   }
 
   /**
@@ -101,8 +81,8 @@ public class HaplotypeTestingUtils {
    * @return String of the difference between the expected and generated frequencies
    */
   @SuppressWarnings("restriction")
-  public static String testDRDQHaplotypes(
-      ValidationModel model, SetMultimap<RaceGroup, BigDecimal> expectedDRDQMultimap) {
+  public static String testDRDQHaplotypes(ValidationModel model,
+      SetMultimap<RaceGroup, BigDecimal> expectedDRDQMultimap) {
     ValidationTable table = new ValidationTable();
     table.setFirstModel(model);
     SetMultimap<RaceGroup, BigDecimal> receivedDRDQMultimap = HashMultimap.create();
@@ -112,18 +92,12 @@ public class HaplotypeTestingUtils {
       RaceGroup ethnicity = d.ethnicityProperty().getValue();
       receivedDRDQMultimap.put(ethnicity, freq);
     }
-    SetMultimap<RaceGroup, BigDecimal> generatedExpectedDifference =
-        Multimaps.filterEntries(
-            receivedDRDQMultimap,
-            e -> !expectedDRDQMultimap.containsEntry(e.getKey(), e.getValue()));
+    SetMultimap<RaceGroup, BigDecimal> generatedExpectedDifference = Multimaps.filterEntries(
+        receivedDRDQMultimap, e -> !expectedDRDQMultimap.containsEntry(e.getKey(), e.getValue()));
 
-    SetMultimap<RaceGroup, BigDecimal> expectedGeneratedDifference =
-        Multimaps.filterEntries(
-            expectedDRDQMultimap,
-            e -> !receivedDRDQMultimap.containsEntry(e.getKey(), e.getValue()));
-    return "Difference between generated and expected: "
-        + generatedExpectedDifference.toString()
-        + "Difference between expected and generated: "
-        + expectedGeneratedDifference.toString();
+    SetMultimap<RaceGroup, BigDecimal> expectedGeneratedDifference = Multimaps.filterEntries(
+        expectedDRDQMultimap, e -> !receivedDRDQMultimap.containsEntry(e.getKey(), e.getValue()));
+    return "Difference between generated and expected: " + generatedExpectedDifference.toString()
+        + "Difference between expected and generated: " + expectedGeneratedDifference.toString();
   }
 }

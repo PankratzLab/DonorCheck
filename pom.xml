@@ -8,7 +8,7 @@
 	<groupId>org.pankratzlab</groupId>
 	<artifactId>donor-check</artifactId>
 	<!-- if version number changes, be sure to update in project.properties file also -->
-	<version>0.0.13</version>
+	<version>0.0.14</version>
 	<packaging>jar</packaging>
 
 	<description>A stand-alone tool for validating DonorNet typing entries.</description>
@@ -27,6 +27,11 @@
 			<id>kaitlinrenee</id>
 			<name>Kaitlin Clarke</name>
 			<email>krclarke@umn.edu</email>
+		</developer>
+		<developer>
+			<id>rcoleb</id>
+			<name>Ben Cole</name>
+			<email>cole0482@umn.edu</email>
 		</developer>
 	</developers>
 	

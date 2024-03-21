@@ -177,6 +177,11 @@
                       <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set Frequency Tables..." />
                     </items>
                   </Menu>
+                  <Menu mnemonicParsing="false" text="CIWD">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#chooseCIWDSource" text="Set Common / Well-Documented Allele Source..." />
+                    </items>
+                  </Menu>
                   <Menu mnemonicParsing="false" text="Tutorials">
                     <items>
                       <MenuItem mnemonicParsing="false" onAction="#tutorialXMLDownload" text="XML DonorNet Download" />

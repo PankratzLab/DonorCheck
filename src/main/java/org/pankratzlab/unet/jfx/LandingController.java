@@ -29,23 +29,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.ResourceBundle;
-
 import javax.annotation.Nullable;
-
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.macui.MACUIController;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
-
 import com.google.common.base.Strings;
-
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
@@ -54,11 +51,13 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Window;
 
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
 public class LandingController {
@@ -84,6 +83,8 @@ public class LandingController {
   @FXML
   private Label versionLabel;
 
+  private String version;
+
   @FXML
   void fileQuitAction(ActionEvent event) {
     Platform.exit();
@@ -98,6 +99,12 @@ public class LandingController {
         HaplotypeFrequencies.doInitialization();
       })).start();
     }
+  }
+
+  @FXML
+  void chooseCIWDSource(ActionEvent event) {
+    // initialize CWD data for this file
+    CommonWellDocumented.init();
   }
 
   @FXML
@@ -132,33 +139,45 @@ public class LandingController {
 
   @FXML
   void runValidation(ActionEvent event) throws IOException {
+    // The way DonorCheck is set up, "validation" is run in two parts
+
+    // The first is the actual task we're running, which is to check/initialize the haplotype freqs
     Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
       HaplotypeFrequencies.successfullyInitialized();
     });
 
+    // Then we set up the actual file validation as an event that triggers
+    // in response to the success of the haplotypes initialization task above
     EventHandler<WorkerStateEvent> doValidation = (w) -> {
+
+      // Don't actually run this as an event, though - make it a runnable on the JFX App thread
       Platform.runLater(() -> {
         if (!HaplotypeFrequencies.successfullyInitialized()) {
           Alert alert = new Alert(AlertType.INFORMATION,
-                                  "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
-                                                         + "Would you like to set these tables now?\n\n"
-                                                         + "Note: you can adjust these tables any time from the 'Haplotype' menu",
-                                  ButtonType.YES, ButtonType.NO);
-          alert.setTitle("No haplotype freqnecies");
+              "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
+                  + "Would you like to set these tables now?\n\n"
+                  + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+              ButtonType.YES, ButtonType.NO);
+          alert.setTitle("No haplotype frequencies");
           alert.setHeaderText("");
           alert.showAndWait().filter(response -> response == ButtonType.YES)
-               .ifPresent(response -> chooseFreqTables(event));
+              .ifPresent(response -> chooseFreqTables(event));
         } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
-          Alert alert = new Alert(AlertType.INFORMATION,
-                                  HaplotypeFrequencies.getMissingTableMessage());
+          Alert alert =
+              new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
           alert.setTitle("Missing Haplotype Table(s)");
           alert.setHeaderText("");
           alert.showAndWait();
         }
 
+        CommonWellDocumented.initFromProperty();
+
         ValidationTable table = new ValidationTable();
-        Wizard validationWizard = new Wizard(((Node) event.getSource()).getScene().getWindow());
-        validationWizard.setTitle("Donor Validation Wizard");
+        final Scene scene = ((Node) event.getSource()).getScene();
+
+        final Window window = scene.getWindow();
+        Wizard validationWizard = new Wizard(window);
+        validationWizard.setTitle("DonorCheck " + (version.isEmpty() ? "" : version));
 
         List<WizardPane> pages = new ArrayList<>();
         try {
@@ -171,7 +190,9 @@ public class LandingController {
 
         pages.get(0).getButtonTypes();
 
-        validationWizard.setFlow(new LinearFlow(pages));
+        Wizard.Flow pageFlow = new LinearFlow(pages);
+
+        validationWizard.setFlow(pageFlow);
 
         // show wizard and wait for response
         validationWizard.showAndWait();
@@ -211,7 +232,7 @@ public class LandingController {
    * @throws IOException If errors during FXML reading
    */
   private void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML,
-                        Object controller) throws IOException {
+      Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems
@@ -232,11 +253,12 @@ public class LandingController {
   @FXML
   void initialize() {
     assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
+
     final Properties properties = new Properties();
     try {
-      properties.load(LandingController.class.getClassLoader()
-                                             .getResourceAsStream("project.properties"));
-      versionLabel.setText("Version: " + properties.getProperty("version") + " ");
+      properties
+          .load(LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
+      versionLabel.setText("Version: " + (version = properties.getProperty("version")) + " ");
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();

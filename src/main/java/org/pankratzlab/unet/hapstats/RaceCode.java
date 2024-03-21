@@ -23,31 +23,16 @@ package org.pankratzlab.unet.hapstats;
 
 /**
  * Enum of 2013 haplotype ethnicities, mapping to {@link RaceGroup} for older sets (which are used
- * in DonorNet still). Taken from <a
- * href="https://frequency.nmdp.org/Frequencies/NMDP%20Population%20Tables%201-2.pdf">NMDP</a>
+ * in DonorNet still). Taken from
+ * <a href="https://frequency.nmdp.org/Frequencies/NMDP%20Population%20Tables%201-2.pdf">NMDP</a>
  */
 public enum RaceCode {
-  AAFA(RaceGroup.AFA),
-  AFB(RaceGroup.AFA),
-  AINDI(RaceGroup.API),
-  AISC(RaceGroup.NAM),
-  ALANAM(RaceGroup.NAM),
-  AMIND(RaceGroup.NAM),
-  CARB(RaceGroup.AFA),
-  CARHIS(RaceGroup.HIS),
-  CARIBI(RaceGroup.NAM),
-  EURCAU(RaceGroup.CAU),
-  FILII(RaceGroup.API),
-  HAWI(RaceGroup.API),
-  JAPI(RaceGroup.API),
-  KORI(RaceGroup.API),
-  MENAFC(RaceGroup.CAU),
-  MSWHIS(RaceGroup.HIS),
-  NCHI(RaceGroup.API),
-  SCAHIS(RaceGroup.HIS),
-  SCAMB(RaceGroup.AFA),
-  SCSEAI(RaceGroup.API),
-  VIET(RaceGroup.API);
+  AAFA(RaceGroup.AFA), AFB(RaceGroup.AFA), AINDI(RaceGroup.API), AISC(RaceGroup.NAM), ALANAM(
+      RaceGroup.NAM), AMIND(RaceGroup.NAM), CARB(RaceGroup.AFA), CARHIS(RaceGroup.HIS), CARIBI(
+          RaceGroup.NAM), EURCAU(RaceGroup.CAU), FILII(RaceGroup.API), HAWI(RaceGroup.API), JAPI(
+              RaceGroup.API), KORI(RaceGroup.API), MENAFC(RaceGroup.CAU), MSWHIS(
+                  RaceGroup.HIS), NCHI(RaceGroup.API), SCAHIS(RaceGroup.HIS), SCAMB(
+                      RaceGroup.AFA), SCSEAI(RaceGroup.API), VIET(RaceGroup.API);
 
   private final RaceGroup generalRaceGroup;
 

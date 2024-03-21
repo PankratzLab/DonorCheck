@@ -23,9 +23,7 @@ package org.pankratzlab.unet.parser;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.security.InvalidParameterException;
-
 import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -103,7 +101,7 @@ public class XmlDonorParser extends AbstractDonorFileParser {
       } else {
         throw new InvalidParameterException("Unknown File Type: " + file.getName());
       }
-    } catch (IOException e) {
+    } catch (Throwable e) {
       throw new IllegalStateException("Invalid XML file: " + file);
     }
   }

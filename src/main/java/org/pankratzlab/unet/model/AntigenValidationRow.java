@@ -30,8 +30,9 @@ import org.pankratzlab.unet.deprecated.hla.SeroType;
 /** {@link ValidationRow} for displaying {@link SeroType}s */
 public class AntigenValidationRow extends ValidationRow<SeroType> {
 
-  public AntigenValidationRow(String rowLabel, SeroType firstCol, SeroType secondCol) {
-    super(rowLabel, firstCol, secondCol);
+  public AntigenValidationRow(String rowLabel, SeroType firstCol, SeroType secondCol,
+      boolean wasRemappedFirst, boolean wasRemappedSecond) {
+    super(rowLabel, firstCol, secondCol, wasRemappedFirst, wasRemappedSecond);
   }
 
   @Override
@@ -43,8 +44,9 @@ public class AntigenValidationRow extends ValidationRow<SeroType> {
     return toDisplay.specString();
   }
 
-  public static AntigenValidationRow makeRow(
-      String rowLabel, SeroType firstCol, SeroType secondCol) {
-    return new AntigenValidationRow(rowLabel, firstCol, secondCol);
+  public static AntigenValidationRow makeRow(String rowLabel, SeroType firstCol, SeroType secondCol,
+      boolean wasRemapped, boolean wasRemappedSecond) {
+    return new AntigenValidationRow(rowLabel, firstCol, secondCol, wasRemapped, wasRemappedSecond);
   }
+
 }

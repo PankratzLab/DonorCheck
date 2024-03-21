@@ -59,15 +59,20 @@ public class DownloadNMDPController {
   private StringProperty drdqString;
   private boolean dirty;
 
-  @FXML private ResourceBundle resources;
+  @FXML
+  private ResourceBundle resources;
 
-  @FXML private URL location;
+  @FXML
+  private URL location;
 
-  @FXML private AnchorPane rootPane;
+  @FXML
+  private AnchorPane rootPane;
 
-  @FXML private TextField cbTable;
+  @FXML
+  private TextField cbTable;
 
-  @FXML private TextField drdqTable;
+  @FXML
+  private TextField drdqTable;
 
   @FXML
   void openDownload(ActionEvent event) {
@@ -76,20 +81,17 @@ public class DownloadNMDPController {
     } catch (Exception exc) {
       // Probably no hostservices in this JVM due to openjdk issue
       Hyperlink copyLink = new Hyperlink(NMDP_URL.getText());
-      copyLink.setOnAction(
-          e -> {
-            final Clipboard clipboard = Clipboard.getSystemClipboard();
-            final ClipboardContent content = new ClipboardContent();
-            content.putString(NMDP_URL.getText());
-            clipboard.setContent(content);
-            copyLink.setText("copied!");
-            copyLink.setVisited(true);
-          });
-      JFXUtilHelper.makeContentOnlyAlert(
-              AlertType.INFORMATION,
-              "Please visit this URL to download NMDP codes",
-              copyLink,
-              ButtonType.OK)
+      copyLink.setOnAction(e -> {
+        final Clipboard clipboard = Clipboard.getSystemClipboard();
+        final ClipboardContent content = new ClipboardContent();
+        content.putString(NMDP_URL.getText());
+        clipboard.setContent(content);
+        copyLink.setText("copied!");
+        copyLink.setVisited(true);
+      });
+      JFXUtilHelper
+          .makeContentOnlyAlert(AlertType.INFORMATION,
+              "Please visit this URL to download NMDP codes", copyLink, ButtonType.OK)
           .showAndWait();
     }
   }
@@ -116,12 +118,9 @@ public class DownloadNMDPController {
 
   @FXML
   void initialize() {
-    assert rootPane != null
-        : "fx:id=\"rootPane\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
-    assert cbTable != null
-        : "fx:id=\"cbTable\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
-    assert drdqTable != null
-        : "fx:id=\"drdqTable\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
+    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
+    assert cbTable != null : "fx:id=\"cbTable\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
+    assert drdqTable != null : "fx:id=\"drdqTable\" was not injected: check your FXML file 'NMDPDownloadPrompt.fxml'.";
     dirty = false;
 
     cbString = new SimpleStringProperty();
@@ -144,13 +143,12 @@ public class DownloadNMDPController {
       }
     }
 
-    localProp.addListener(
-        (obs, o, n) -> {
-          if (!Strings.isNullOrEmpty(n) && Files.exists(Paths.get(n))) {
-            HLAProperties.get().setProperty(propertyName, n);
-            dirty = true;
-          }
-        });
+    localProp.addListener((obs, o, n) -> {
+      if (!Strings.isNullOrEmpty(n) && Files.exists(Paths.get(n))) {
+        HLAProperties.get().setProperty(propertyName, n);
+        dirty = true;
+      }
+    });
   }
 
   /** @return True if this controller was used to modify any properties */
