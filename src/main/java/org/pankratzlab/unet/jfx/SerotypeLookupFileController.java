@@ -26,7 +26,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 
-public class SetRelSerLookupFileController {
+public class SerotypeLookupFileController {
 
   private static final Hyperlink FILE_URL =
       new Hyperlink("https://github.com/ANHIG/IMGTHLA/blob/Latest/wmda/rel_dna_ser.txt");

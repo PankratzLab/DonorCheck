@@ -105,7 +105,7 @@ public class LandingController {
 
   @FXML
   void chooseRelSerLookupFile(ActionEvent event) {
-    SetRelSerLookupFileController controller = new SetRelSerLookupFileController();
+    SerotypeLookupFileController controller = new SerotypeLookupFileController();
     showTutorial(REL_SER_DOWNLOAD, controller, "Set HLA Serotype Lookup File");
     if (controller.isDirty()) {
       new Thread(JFXUtilHelper.createProgressTask(() -> {
