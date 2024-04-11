@@ -429,7 +429,6 @@ public class XmlScore6Parser {
 
       // record alleles for reassignment if necessary
       if (alleleRecordingMap.containsKey(locus)) {
-
         HLAType hla1;
         SeroType sero1;
         HLAType hla2;

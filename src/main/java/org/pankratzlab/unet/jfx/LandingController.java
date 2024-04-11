@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
+import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
@@ -67,6 +68,7 @@ public class LandingController {
   private static final String XML_TUTORIAL = "/XMLDownloadTutorial.fxml";
   private static final String HTML_TUTORIAL = "/HTMLDownloadTutorial.fxml";
   private static final String NMDP_DOWNLOAD = "/NMDPDownloadPrompt.fxml";
+  private static final String REL_SER_DOWNLOAD = "/RelDnaSerDownloadPrompt.fxml";
 
   private static final String INPUT_STEP = "/FileInput.fxml";
   private static final String RESULTS_STEP = "/ValidationResults.fxml";
@@ -97,6 +99,17 @@ public class LandingController {
     if (dc.isDirty()) {
       new Thread(JFXUtilHelper.createProgressTask(() -> {
         HaplotypeFrequencies.doInitialization();
+      })).start();
+    }
+  }
+
+  @FXML
+  void chooseRelSerLookupFile(ActionEvent event) {
+    SetRelSerLookupFileController controller = new SetRelSerLookupFileController();
+    showTutorial(REL_SER_DOWNLOAD, controller, "Set HLA Serotype Lookup File");
+    if (controller.isDirty()) {
+      new Thread(JFXUtilHelper.createProgressTask(() -> {
+        AntigenDictionary.clearCache();
       })).start();
     }
   }

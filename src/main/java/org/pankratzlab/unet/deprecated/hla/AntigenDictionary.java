@@ -22,16 +22,21 @@
 package org.pankratzlab.unet.deprecated.hla;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+import java.util.concurrent.Callable;
 import org.pankratzlab.unet.deprecated.util.SerializeUtils;
-
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -44,6 +49,8 @@ public final class AntigenDictionary implements Serializable {
   public static final int LATEST_REVISION =
       1 + HLAType.LATEST_REVISION + SeroType.LATEST_REVISION + Antigen.LATEST_REVISION;
   private int revision = LATEST_REVISION;
+
+  public static final String REL_DNA_SER_PROP = "rel.dna.ser.file";
 
   public static final String SERIALIZED_MAP = Info.HLA_HOME + ".hla/map.ser";
   private static final String MASTER_MAP_RECORDS = "rel_dna_ser.txt";
@@ -147,15 +154,24 @@ public final class AntigenDictionary implements Serializable {
     }
   }
 
-  /** Build the dictionaries. Syncrhonized to ensured they are initialized only once */
+  /** Build the dictionaries. Synchronized to ensured they are initialized only once */
   private static synchronized void loadDictionaries() {
+    String filePath = HLAProperties.get().getProperty(REL_DNA_SER_PROP);
     if (map == null) {
-      parseDictionaries();
+      if (!Strings.isNullOrEmpty(filePath) && (new File(filePath)).exists()) {
+        parseDictionaries(() -> new FileReader(filePath));
+      } else {
+        parseDictionaries(() -> new InputStreamReader(
+            AntigenDictionary.class.getClassLoader().getResourceAsStream(MASTER_MAP_RECORDS)));
+      }
     }
   }
 
-  /** If a cached map can be loaded, do so. If not, we parse the */
-  private static void parseDictionaries() {
+  /**
+   * If a cached map can be loaded, do so. If not, we parse the source file
+   * 
+   */
+  private static void parseDictionaries(Callable<Reader> readerSupplier) {
     if (readCachedMap()) {
       return;
     }
@@ -164,8 +180,7 @@ public final class AntigenDictionary implements Serializable {
     // NB: what's considered a valid HLA type diverges from the HLA map keyset and thus must be
     // tracked separately
     Builder<HLAType> validHLATypes = ImmutableSet.builder();
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-        AntigenDictionary.class.getClassLoader().getResourceAsStream(MASTER_MAP_RECORDS)));) {
+    try (BufferedReader reader = new BufferedReader(readerSupplier.call())) {
       while (reader.ready()) {
         // Read one mapping at a time
         String line = reader.readLine();
@@ -249,7 +264,7 @@ public final class AntigenDictionary implements Serializable {
           new AntigenDictionary(hlaBuilder.build(), seroBuilder.build(), validHLATypes.build());
       SerializeUtils.write(typeMap, SERIALIZED_MAP);
       map = typeMap;
-    } catch (IOException e) {
+    } catch (Exception e) {
       e.printStackTrace();
     }
   }
@@ -263,4 +278,52 @@ public final class AntigenDictionary implements Serializable {
     map = SerializeUtils.read(SERIALIZED_MAP, AntigenDictionary.class);
     return map != null;
   }
+
+  public static String getVersion() {
+    String filePath = HLAProperties.get().getProperty(REL_DNA_SER_PROP);
+    if (filePath == null || Strings.isNullOrEmpty(filePath) || !(new File(filePath)).exists()) {
+      return getBundledVersion() + " (bundled)";
+    }
+    return getVersion(filePath);
+  }
+
+  private static String getVersion(String file) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+      return findVersion(reader);
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  private static String getBundledVersion() {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+        AntigenDictionary.class.getClassLoader().getResourceAsStream(MASTER_MAP_RECORDS)))) {
+      return findVersion(reader);
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  private static String findVersion(BufferedReader reader) throws IOException {
+    String line = null;
+    while ((line = reader.readLine()) != null) {
+      if (line.startsWith("# date: ")) {
+        return line.split(": ")[1];
+      }
+    }
+    return null;
+  }
+
+  public static void clearCache() {
+    try {
+      Files.delete(Paths.get(SERIALIZED_MAP));
+      map = null;
+    } catch (IOException e) {
+      throw new RuntimeException(
+          "Unable to delete serotype lookup cache file (" + SERIALIZED_MAP + ")", e);
+    }
+  }
+
 }
