@@ -177,7 +177,7 @@
                       <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set Frequency Tables..." />
                     </items>
                   </Menu>
-                  <Menu mnemonicParsing="false" text="Serotype Lookup">
+                  <Menu mnemonicParsing="false" text="Serotypes">
                     <items>
                       <MenuItem mnemonicParsing="false" onAction="#chooseRelSerLookupFile" text="Set Serotype Lookup File..." />
                     </items>
