@@ -102,7 +102,7 @@ public class XmlDonorParser extends AbstractDonorFileParser {
         throw new InvalidParameterException("Unknown File Type: " + file.getName());
       }
     } catch (Throwable e) {
-      throw new IllegalStateException("Invalid XML file: " + file);
+      throw new IllegalStateException("Invalid XML file: " + file, e);
     }
   }
 }
