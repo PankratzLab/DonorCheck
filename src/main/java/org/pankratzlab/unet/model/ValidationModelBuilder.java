@@ -21,6 +21,8 @@
  */
 package org.pankratzlab.unet.model;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +41,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.swing.JFrame;
@@ -59,9 +62,13 @@ import org.pankratzlab.unet.jfx.StyleableChoiceDialog;
 import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.unet.parser.util.DRAssociations;
+import org.pankratzlab.unet.parser.util.RabinKarp;
+import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -74,8 +81,11 @@ import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.Tooltip;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.util.Duration;
+import javafx.util.StringConverter;
 
 /**
  * Mutable builder class for creating a {@link ValidationModel}.
@@ -119,14 +129,15 @@ public class ValidationModelBuilder {
 
   // TODO replace per-locus data structures with maps from [Sero|HLA]Locus to data structure
   // (or tables as appropriate)
-  private List<Pair<TypePair, TypePair>> aAlleles = new ArrayList<>();
-  private List<Pair<TypePair, TypePair>> bAlleles = new ArrayList<>();
-  private List<Pair<TypePair, TypePair>> cAlleles = new ArrayList<>();
-  // private List<Pair<TypePair, TypePair>> drbAlleles = new ArrayList<>();
-  private List<Pair<TypePair, TypePair>> dqaAlleles = new ArrayList<>();
-  private List<Pair<TypePair, TypePair>> dqbAlleles = new ArrayList<>();
-  private List<Pair<TypePair, TypePair>> dpaAlleles = new ArrayList<>();
-  private List<Pair<TypePair, TypePair>> dpbAlleles = new ArrayList<>();
+  private Map<HLALocus, AlleleGroupPairings> alleleGroups = new HashMap<>();
+  // private List<Pair<TypePair, TypePair>> aAlleles = new ArrayList<>();
+  // private List<Pair<TypePair, TypePair>> bAlleles = new ArrayList<>();
+  // private List<Pair<TypePair, TypePair>> cAlleles = new ArrayList<>();
+  // // private List<Pair<TypePair, TypePair>> drbAlleles = new ArrayList<>();
+  // private List<Pair<TypePair, TypePair>> dqaAlleles = new ArrayList<>();
+  // private List<Pair<TypePair, TypePair>> dqbAlleles = new ArrayList<>();
+  // private List<Pair<TypePair, TypePair>> dpaAlleles = new ArrayList<>();
+  // private List<Pair<TypePair, TypePair>> dpbAlleles = new ArrayList<>();
 
   private Set<HLALocus> nonCWDLoci = new TreeSet<>();
   private Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping = new HashMap<>();
@@ -256,38 +267,8 @@ public class ValidationModelBuilder {
     return !type.matches(".*\\d.*") || type.equals("98");
   }
 
-  public ValidationModelBuilder aAllele(Pair<TypePair, TypePair> alleles) {
-    aAlleles.add(alleles);
-    return this;
-  }
-
-  public ValidationModelBuilder bAllele(Pair<TypePair, TypePair> alleles) {
-    bAlleles.add(alleles);
-    return this;
-  }
-
-  public ValidationModelBuilder cAllele(Pair<TypePair, TypePair> alleles) {
-    cAlleles.add(alleles);
-    return this;
-  }
-
-  public ValidationModelBuilder dqaAllele(Pair<TypePair, TypePair> alleles) {
-    dqaAlleles.add(alleles);
-    return this;
-  }
-
-  public ValidationModelBuilder dqbAllele(Pair<TypePair, TypePair> alleles) {
-    dqbAlleles.add(alleles);
-    return this;
-  }
-
-  public ValidationModelBuilder dpaAllele(Pair<TypePair, TypePair> alleles) {
-    dpaAlleles.add(alleles);
-    return this;
-  }
-
-  public ValidationModelBuilder dpbAllele(Pair<TypePair, TypePair> alleles) {
-    dpbAlleles.add(alleles);
+  public ValidationModelBuilder alleleGroupPairings(HLALocus locus, AlleleGroupPairings alleles) {
+    alleleGroups.put(locus, alleles);
     return this;
   }
 
@@ -523,6 +504,25 @@ public class ValidationModelBuilder {
 
   public void locusIsNonCIWD(HLAType locus) {
     nonCWDLoci.add(locus.locus());
+  }
+
+  private final class AlleleStringConverter extends StringConverter<Supplier<TextFlow>> {
+    private final PresentableAlleleChoices choices;
+
+    private AlleleStringConverter(PresentableAlleleChoices choices) {
+      this.choices = choices;
+    }
+
+    @Override
+    public String toString(Supplier<TextFlow> object) {
+      final Set<String> selectedData = choices.getSelectedData(object);
+      return selectedData == null ? "" : selectedData.toString();
+    }
+
+    @Override
+    public Supplier<TextFlow> fromString(String string) {
+      return null;
+    }
   }
 
   public class ValidationResult {
@@ -918,42 +918,35 @@ public class ValidationModelBuilder {
 
         Set<SeroType> locusSet;
         Set<HLAType> typesSet;
-        List<Pair<TypePair, TypePair>> alleleList;
+        AlleleGroupPairings alleleList = alleleGroups.get(locus);
 
         switch (locus) {
           case A:
             locusSet = aLocusCWD;
             typesSet = aLocusCWDTypes;
-            alleleList = aAlleles;
             break;
           case B:
             locusSet = bLocusCWD;
             typesSet = bLocusCWDTypes;
-            alleleList = bAlleles;
             break;
           case C:
             locusSet = cLocusCWD;
             typesSet = cLocusCWDTypes;
-            alleleList = cAlleles;
             break;
           case DPA1:
             locusSet = dpaLocus;
             typesSet = dpaLocusTypes;
-            alleleList = dpaAlleles;
             break;
           case DQA1:
             locusSet = dqaLocus;
             typesSet = dqaLocusTypes;
-            alleleList = dqaAlleles;
             break;
           case DPB1:
             locusSet = null;
             typesSet = dpbLocusTypes;
-            alleleList = dpbAlleles;
           case DQB1:
             locusSet = dqbLocus;
             typesSet = dqbLocusTypes;
-            alleleList = dqbAlleles;
           default:
             alleleList = null;
             locusSet = null;
@@ -972,67 +965,82 @@ public class ValidationModelBuilder {
         }).collect(Collectors.joining(", ")) + ") for HLA-" + locus.name()
             + " locus is not Common / Well-Documented.";
 
-        String text = "Please select desired allele pair for this locus:";
+        String text =
+            "Please select desired allele pair for this locus. Selecting the first allele will populate valid pairings for the second allele.";
 
-        List<Supplier<TextFlow>> choices = new ArrayList<>();
-        Map<Supplier<TextFlow>, Pair<TypePair, TypePair>> map = new HashMap<>();
-        for (int i = 0; i < alleleList.size(); i++) {
-          Pair<TypePair, TypePair> p = alleleList.get(i);
-          Supplier<TextFlow> tf = () -> getText(p, false);
-          choices.add(tf);
-          map.put(tf, p);
-        }
+        PresentableAlleleChoices choices = PresentableAlleleChoices.create(alleleList);
 
-        Iterator<SeroType> sI = locusSet.iterator();
-        Iterator<HLAType> hI = typesSet.iterator();
+        final List<Supplier<TextFlow>> allChoices = choices.getAllChoices();
 
-        TypePair first;
-        Pair<TypePair, TypePair> p = Pair.of(first = new TypePair(hI.next(), sI.next()),
-            locusSet.size() == 1 ? first : new TypePair(hI.next(), sI.next()));
-        Supplier<TextFlow> tf = () -> getText(p, true);
-        choices.add(tf);
-        map.put(tf, p);
+        Function<Supplier<TextFlow>, String> tooltipProvider = (tf) -> {
+          return Objects.toString(choices.dataMap.get(tf), null);
+        };
+        // Function<Supplier<TextFlow>, Supplier<TextFlow>> tooltipProvider = (tf) -> {
+        // return choices.truncatedToFullMap.get(tf);
+        // };
 
-        StyleableChoiceDialog<Supplier<TextFlow>> cd =
-            new StyleableChoiceDialog<>(choices.get(0), choices);
+        StyleableChoiceDialog<Supplier<TextFlow>> cd = new StyleableChoiceDialog<>(
+            allChoices.get(0), allChoices, choices.getAllSecondChoices(), choices.dataMap);
         cd.setTitle("Select HLA-" + locus.name() + " Alleles");
         cd.setHeaderText(header);
         cd.setContentText(text);
-        cd.setComboCellFactory(listView -> new SimpleTableObjectListCell());
-        cd.setComboButtonCell(new SimpleTableObjectListCell());
+        cd.setCombo1CellFactory(listView -> new SimpleTableObjectListCell(tooltipProvider));
+        cd.setCombo1ButtonCell(new SimpleTableObjectListCell(tooltipProvider));
+        cd.setCombo2CellFactory(listView -> new SimpleTableObjectListCell(tooltipProvider));
+        cd.setCombo2ButtonCell(new SimpleTableObjectListCell(tooltipProvider));
+        cd.setConverter1(new AlleleStringConverter(choices));
+        cd.setConverter2(new AlleleStringConverter(choices));
+
         Optional<Supplier<TextFlow>> result = cd.showAndWait();
 
         if (!result.isPresent()) {
           return new ValidationResult(false, Optional.empty());
         }
 
-        final TypePair left = map.get(result.get()).getLeft();
-        final TypePair right = map.get(result.get()).getRight();
-        final SeroType seroType1 = left.getSeroType();
-        final SeroType seroType2 = right.getSeroType();
-        final HLAType hlaType1 = left.getHlaType();
-        final HLAType hlaType2 = right.getHlaType();
+        Supplier<TextFlow> selAllele1 = result.get();
+        Supplier<TextFlow> selAllele2 = cd.getSelectedSecondItem();
 
-        // if the user selected a different allele choice, track the remapping
-        if (!tf.equals(result.get())) {
-          remapping.put(locus,
-              Pair.of(
-                  ImmutableSortedSet.of(alleleList.get(0).getLeft(),
-                      (alleleList.get(0).getRight() == null ? alleleList.get(0).getLeft()
-                          : alleleList.get(0).getRight())),
-                  ImmutableSortedSet.of(
-                      hlaType1.equals(alleleList.get(0).getLeft().getHlaType()) ? left : right,
-                      hlaType1.equals(alleleList.get(0).getLeft().getHlaType()) ? right : left)));
+        Set<String> allele1Set = choices.getSelectedData(selAllele1);
+        Set<String> allele2Set = choices.getSelectedData(selAllele2);
 
-          locusSet.clear();
-          locusSet.add(seroType1);
-          locusSet.add(seroType2);
-          typesSet.clear();
-          typesSet.add(hlaType1);
-          typesSet.add(hlaType2);
+        String allele1 = allele1Set.iterator().next();
+        String allele2 = allele2Set.iterator().next();
 
+        HLAType hlaType1 = HLAType.valueOf(allele1);
+        HLAType hlaType2 = HLAType.valueOf(allele2);
+        SeroType seroType1 = hlaType1.equivSafe();
+        SeroType seroType2 = hlaType2.equivSafe();
+
+        final Iterator<HLAType> typeIter = typesSet.iterator();
+        HLAType hlaType1Old = typeIter.next();
+        HLAType hlaType2Old = typeIter.hasNext() ? typeIter.next() : hlaType1Old;
+
+        final Iterator<SeroType> seroIter = locusSet.iterator();
+        SeroType seroType1Old = seroIter.next();
+        SeroType seroType2Old = seroIter.hasNext() ? seroIter.next() : seroType1Old;
+
+        locusSet.clear();
+        locusSet.add(seroType1);
+        locusSet.add(seroType2);
+        typesSet.clear();
+        typesSet.add(hlaType1);
+        typesSet.add(hlaType2);
+
+        boolean a1Match =
+            hlaType1.compareTo(hlaType1Old) == 0 || hlaType1.compareTo(hlaType2Old) == 0;
+        boolean a2Match =
+            hlaType2.compareTo(hlaType1Old) == 0 || hlaType2.compareTo(hlaType2Old) == 0;
+
+        if (!a1Match || !a2Match) {
+          ImmutableSortedSet<TypePair> prevSet = ImmutableSortedSet
+              .of(new TypePair(hlaType1Old, seroType1Old), new TypePair(hlaType2Old, seroType2Old));
+
+          ImmutableSortedSet<TypePair> newSet = ImmutableSortedSet
+              .of(new TypePair(hlaType1, seroType1), new TypePair(hlaType2, seroType2));
+
+
+          remapping.put(locus, Pair.of(prevSet, newSet));
         }
-
       }
 
     }
@@ -1040,68 +1048,231 @@ public class ValidationModelBuilder {
     return new ValidationResult(true, Optional.empty());
   }
 
-  private static TextFlow getText(Pair<TypePair, TypePair> data, boolean cwd) {
-    List<Text> textNodes = new ArrayList<>();
+  public abstract static class PresentableDataChoices<T, R> {
+    List<T> choices;
+    Multimap<T, T> secondChoices;
+    Map<T, T> truncatedToFullMap;
+    BiMap<T, R> dataMap;
 
-    TypePair left;
-    TypePair right;
-
-    int c = data.getLeft().seroType.compareTo(data.getRight().seroType);
-    if (c == 0) {
-      c = data.getRight().hlaType.compareTo(data.getLeft().hlaType);
+    public PresentableDataChoices(List<T> choices, Multimap<T, T> secondChoices,
+        Map<T, T> truncToFullMap, BiMap<T, R> presentationToDataMap) {
+      this.choices = choices;
+      this.secondChoices = secondChoices;
+      this.truncatedToFullMap = truncToFullMap;
+      this.dataMap = presentationToDataMap;
     }
 
-    left = c == 0 ? data.getLeft() : (c > 0 ? data.getRight() : data.getLeft());
-    right = c == 0 ? data.getRight() : (c > 0 ? data.getLeft() : data.getRight());
+    public List<T> getAllChoices() {
+      return choices;
+    }
 
-    addTextNodes(textNodes, left, cwd);
+    public Multimap<T, T> getAllSecondChoices() {
+      return secondChoices;
+    }
 
-    textNodes.add(new Text(", "));
+    public Collection<T> getSecondChoices(T firstChoice) {
+      return secondChoices.get(firstChoice);
+    }
 
-    addTextNodes(textNodes, right, cwd);
+    public abstract List<T> getMatchingChoices(String userInput);
+
+    public R getSelectedData(T selected) {
+      return dataMap.get(selected);
+    }
+
+    public T getNonTruncatedChoice(T selected) {
+      return truncatedToFullMap.get(selected);
+    }
+
+  }
+
+  public static class PresentableAlleleChoices
+      extends PresentableDataChoices<Supplier<TextFlow>, Set<String>> {
+
+    AlleleGroupPairings groupPairs;
+
+    public static PresentableAlleleChoices create(AlleleGroupPairings groupPairings) {
+      List<Supplier<TextFlow>> choices = new ArrayList<>();
+      Multimap<Supplier<TextFlow>, Supplier<TextFlow>> secondChoices = HashMultimap.create();
+      Map<Supplier<TextFlow>, Supplier<TextFlow>> truncToFullMap = new HashMap<>();
+      BiMap<Supplier<TextFlow>, Set<String>> truncToDataMap = HashBiMap.create();
+
+      choices.add(() -> new TextFlow());
+
+      for (Set<String> group : groupPairings.getAllGroups()) {
+        boolean truncated1 = false;
+        Set<String> trunc = new TreeSet<>();
+        int len = 0;
+        for (String a : group) {
+          if (len > 150) {
+            truncated1 = true;
+            break;
+          }
+          trunc.add(a);
+          len += a.length();
+        }
+
+        boolean truncated = truncated1;
+        Supplier<TextFlow> supp = () -> getText(group, false);
+        Supplier<TextFlow> suppTrunc = () -> getText(trunc, truncated);
+
+        choices.add(suppTrunc);
+        truncToFullMap.put(suppTrunc, supp);
+        truncToDataMap.put(suppTrunc, group);
+      }
+
+      for (Supplier<TextFlow> choice : choices) {
+        Set<String> data = truncToDataMap.get(choice);
+        for (Set<String> pairing : groupPairings.getValidPairGroups(data)) {
+          Supplier<TextFlow> truncV = truncToDataMap.inverse().get(pairing);
+          secondChoices.put(choice, truncV);
+        }
+      }
+
+
+      return new PresentableAlleleChoices(choices, secondChoices, truncToFullMap, truncToDataMap);
+    }
+
+    private PresentableAlleleChoices(List<Supplier<TextFlow>> choices,
+        Multimap<Supplier<TextFlow>, Supplier<TextFlow>> secondChoices,
+        Map<Supplier<TextFlow>, Supplier<TextFlow>> truncToFullMap,
+        BiMap<Supplier<TextFlow>, Set<String>> presentationToDataMap) {
+      super(choices, secondChoices, truncToFullMap, presentationToDataMap);
+    }
+
+    @Override
+    public List<Supplier<TextFlow>> getMatchingChoices(String userInput) {
+      String[] inputAlleles = userInput.split(", ");
+      Set<String> matching = new HashSet<>();
+      for (String in : inputAlleles) {
+        matching.addAll(groupPairs.getMatchingAlleles(in));
+      }
+      boolean valid = groupPairs.isValidGroup(matching);
+      if (!valid)
+        return new ArrayList<>();
+
+      List<Set<String>> found = groupPairs.getGroups(matching);
+
+      return found.stream().map(s -> dataMap.inverse().get(s)).filter(Predicates.notNull())
+          .collect(Collectors.toList());
+    }
+
+  }
+
+  private static TextFlow getText(Set<String> alleles, boolean truncated) {
+    List<Text> textNodes = new ArrayList<>();
+
+    List<String> all = new ArrayList<>(alleles);
+    for (int i = 0; i < all.size(); i++) {
+      addTextNodes(textNodes, all.get(i));
+      if (i < all.size() - 1)
+        textNodes.add(new Text(", "));
+    }
+
+    if (truncated) {
+      textNodes.add(new Text(",  . . . "));
+    }
 
     Text[] nodes = textNodes.toArray(new Text[textNodes.size()]);
     TextFlow tf = new TextFlow(nodes);
     return tf;
+
   }
 
-  private static void addTextNodes(List<Text> textNodes, final TypePair typePair, boolean cwd) {
-    HLAType cwdType1 = CommonWellDocumented.getCWDType(typePair.getHlaType());
-    Status status1 = CommonWellDocumented.getStatus(typePair.getHlaType());
+  private static void addTextNodes(List<Text> textNodes, final String allele) {
+    HLAType alleleType = HLAType.valueOf(allele);
+    HLAType cwdType1 = CommonWellDocumented.getCWDType(alleleType);
+    Status status1 = CommonWellDocumented.getStatus(alleleType);
 
-    String a1Start = typePair.seroType.specString() + " [";
-    String a1End = " - " + status1 + "]" + (cwd ? " -- ASSIGNED" : "");
+    textNodes.add(new Text(alleleType.locus().name() + "*"));
 
     if (status1 != Status.UNKNOWN) {
-      textNodes.add(new Text(a1Start));
 
-      if (cwdType1.specString().length() < typePair.hlaType.specString().length()) {
+      if (cwdType1.specString().length() < alleleType.specString().length()) {
         Text t1 = new Text(cwdType1.specString());
         t1.setStyle("-fx-font-weight:bold;");
         textNodes.add(t1);
-        textNodes
-            .add(new Text(typePair.hlaType.specString().substring(cwdType1.specString().length())));
+        textNodes.add(new Text(alleleType.specString().substring(cwdType1.specString().length())));
       } else {
-        Text t1 = new Text(typePair.hlaType.specString());
+        Text t1 = new Text(alleleType.specString());
         t1.setStyle("-fx-font-weight:bold;");
         textNodes.add(t1);
       }
-      textNodes.add(new Text(a1End));
 
     } else {
-      textNodes.add(new Text(a1Start + typePair.hlaType.specString() + a1End));
+      textNodes.add(new Text(alleleType.specString()));
     }
+
+    textNodes.add(
+        new Text(" (" + alleleType.locus().name() + alleleType.equivSafe().specString() + ")"));
   }
 
   private static class SimpleTableObjectListCell extends ListCell<Supplier<TextFlow>> {
 
+    // private Function<Supplier<TextFlow>, Supplier<TextFlow>> tooltipProvider;
+    private Function<Supplier<TextFlow>, String> tooltipProvider;
+    private Tooltip tooltip = new Tooltip();
+
+    public SimpleTableObjectListCell(Function<Supplier<TextFlow>, String> tooltipProvider) {
+      // Function<Supplier<TextFlow>, Supplier<TextFlow>> tooltipProvider) {
+      this.tooltipProvider = tooltipProvider;
+
+      // hack for adjusting tooltip delay / etc
+      // from https://stackoverflow.com/a/43291239/875496
+      // TODO FIXME change when JavaFX9+ is available
+      try {
+        Class<?> clazz = tooltip.getClass().getDeclaredClasses()[0];
+        Constructor<?> constructor = clazz.getDeclaredConstructor(Duration.class, Duration.class,
+            Duration.class, boolean.class);
+        constructor.setAccessible(true);
+        Object tooltipBehavior = constructor.newInstance(new Duration(50), // open
+            new Duration(500000), // visible
+            new Duration(100), // close
+            false);
+        Field fieldBehavior = tooltip.getClass().getDeclaredField("BEHAVIOR");
+        fieldBehavior.setAccessible(true);
+        fieldBehavior.set(tooltip, tooltipBehavior);
+      } catch (Throwable t) {
+        t.printStackTrace();
+      }
+
+      tooltip.setWrapText(true);
+      tooltip.setMaxWidth(600);
+
+      /*
+       * NB: TODO FIXME setting style here because I couldn't figure out how to locate it in an
+       * actual CSS style sheet -- 04-18-2024, b.cole
+       */
+      tooltip.setStyle(
+          "-fx-background: rgba(230,230,230); -fx-text-fill: black; -fx-background-color: rgba(230,230,230,0.95); -fx-background-radius: 5px; -fx-background-insets: 0; -fx-padding: 0.667em 0.75em 0.667em 0.75em; -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.5) , 10, 0.0 , 0 , 3 ); -fx-font-size: 0.95em;");
+    }
+
     @Override
     public void updateItem(Supplier<TextFlow> item, boolean empty) {
-      super.updateItem(item, empty);
-      if (item != null) {
-        setGraphic(item.get());
-      } else {
-        setGraphic(null);
+      try {
+        super.updateItem(item, empty);
+        if (item != null && !empty) {
+          setGraphic(item.get());
+
+          String tf = tooltipProvider.apply(item);
+          // Supplier<TextFlow> tf = tooltipProvider.apply(item);
+          if (tf == null || tf.length() < 150) {
+            // TODO don't show tooltips if item isn't too long!
+            setTooltip(null);
+          } else {
+            // System.out.println("tool:: " + tf);
+            tooltip.setText(tf);
+            // final TextFlow value = tf.get();
+            // value.setMaxWidth(tooltip.getMaxWidth());
+            // tooltip.setGraphic(value);
+            setTooltip(tooltip);
+          }
+        } else {
+          setGraphic(null);
+          setTooltip(null);
+        }
+      } catch (Throwable t) {
+        t.printStackTrace();
       }
     }
 
@@ -1138,6 +1309,151 @@ public class ValidationModelBuilder {
       typeString = typeString.substring(0, typeString.length() - 2);
     }
     locusSet.add(new SeroType(locus, typeString));
+  }
+
+  public static class AlleleGroupPairings {
+
+    private List<Set<String>> groupings1 = new ArrayList<>();
+    private List<Set<String>> groupings2 = new ArrayList<>();
+    private Map<String, Set<Set<String>>> alleleToGroupsMap = new HashMap<>();
+    private Map<String, Set<Integer>> alleleToGroupIndexMap = new HashMap<>();
+    private Multimap<String, String> map = HashMultimap.create();
+
+    public List<Set<String>> getAllGroups() {
+      List<Set<String>> list = new ArrayList<>(groupings1);
+      list.addAll(groupings2);
+      return list;
+    }
+
+    /**
+     * AlleleList groupings/entries
+     * 
+     * Alleles in alleleList1 entries will only have one set, but alleles in alleleList2 entries
+     * will have multiple sets
+     */
+    public void addAllele1Grouping(Collection<String> alleles) {
+      processAlleles(alleles, groupings1);
+    }
+
+    /**
+     * AlleleList groupings/entries
+     * 
+     * Alleles in alleleList1 entries will only have one set, but alleles in alleleList2 entries
+     * will have multiple sets
+     */
+    public void addAllele2Grouping(Collection<String> alleles) {
+      processAlleles(alleles, groupings2);
+    }
+
+    private void processAlleles(Collection<String> alleles, List<Set<String>> groupings) {
+      // create group
+      Set<String> group = Sets.newTreeSet(alleles);
+
+      // if already present, return
+      if (groupings.contains(group))
+        return;
+
+      // add to list of groups
+      groupings.add(group);
+
+      // compute index of group in list
+      int ind = groupings.size() - 1;
+
+      for (String allele : alleles) {
+        // connect each allele to the group it's in
+        Set<Set<String>> s = alleleToGroupsMap.get(allele);
+        if (s == null) {
+          alleleToGroupsMap.put(allele, s = new HashSet<>());
+        }
+        s.add(group);
+
+        // retain the index of the group also for quick access (may not end up needing this)
+        Set<Integer> i = alleleToGroupIndexMap.get(allele);
+        if (i == null) {
+          alleleToGroupIndexMap.put(allele, i = new HashSet<>());
+        }
+        i.add(ind);
+      }
+    }
+
+    /**
+     * For each allele(a1) in AlleleList1: For each allele(a2) in AlleleList2: addPairing(a1, a2)
+     * 
+     * @param a1
+     * @param a2
+     */
+    public void addPairing(String a1, String a2) {
+      map.put(a1, a2);
+      map.put(a2, a1);
+    }
+
+    public boolean isValidGroup(Collection<String> alleles) {
+      if (alleles == null || alleles.isEmpty())
+        return false;
+
+      for (Set<String> group : groupings1) {
+        if (group.containsAll(alleles))
+          return true;
+      }
+      for (Set<String> group : groupings2) {
+        if (group.containsAll(alleles))
+          return true;
+      }
+      return false;
+    }
+
+    public List<Set<String>> getGroups(Collection<String> alleles) {
+      List<Set<String>> found = new ArrayList<>();
+      for (Set<String> group : groupings1) {
+        if (group.containsAll(alleles))
+          found.add(group);
+      }
+      for (Set<String> group : groupings2) {
+        if (group.containsAll(alleles))
+          found.add(group);
+      }
+      return found;
+    }
+
+    public Collection<String> getValidPairings(String allele) {
+      return map.get(allele);
+    }
+
+    public List<Set<String>> getValidPairGroups(Set<String> alleles) {
+      if (!isValidGroup(alleles))
+        return new ArrayList<>();
+
+      Iterator<String> iter = alleles.iterator();
+      Set<String> allPairings = new HashSet<>(getValidPairings(iter.next()));
+      while (iter.hasNext() && !allPairings.isEmpty()) {
+        Set<String> currPairs = new HashSet<>(allPairings);
+        Set<String> nextPairs = new HashSet<>(getValidPairings(iter.next()));
+        allPairings.clear();
+        Sets.intersection(currPairs, nextPairs).copyInto(allPairings);
+      }
+
+      if (allPairings.isEmpty())
+        return new ArrayList<>();
+
+      List<Set<String>> validGroupPairings = new ArrayList<>();
+      for (Set<String> g : groupings1) {
+        if (allPairings.containsAll(g))
+          validGroupPairings.add(g);
+      }
+      for (Set<String> g : groupings2) {
+        if (allPairings.containsAll(g))
+          validGroupPairings.add(g);
+      }
+
+      return validGroupPairings;
+    }
+
+    public Collection<String> getMatchingAlleles(String pattern) {
+      final RabinKarp rabinKarp = new RabinKarp(pattern);
+      return map.keySet().stream().filter(s -> rabinKarp.search(s) < s.length())
+          .collect(Collectors.toSet());
+    }
+
   }
 
   public static class TypePair implements Comparable<TypePair> {

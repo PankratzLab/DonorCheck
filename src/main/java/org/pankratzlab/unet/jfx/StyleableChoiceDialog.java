@@ -1,15 +1,14 @@
 package org.pankratzlab.unet.jfx;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-
+import java.util.Map;
+import com.google.common.collect.Multimap;
 import com.sun.javafx.scene.control.skin.resources.ControlResources;
-
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -22,6 +21,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.util.Callback;
+import javafx.util.StringConverter;
 
 /**
  * A dialog that shows a list of choices to the user, from which they can pick one item at most.
@@ -31,6 +31,7 @@ import javafx.util.Callback;
  *        {@link #getResult()} when the dialog is dismissed.
  * @since JavaFX 8u40
  */
+@SuppressWarnings("restriction")
 public class StyleableChoiceDialog<T> extends Dialog<T> {
 
   /**************************************************************************
@@ -41,38 +42,15 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
 
   private final GridPane grid;
   private final Label label;
-  private final ComboBox<T> comboBox;
+  private final ComboBox<T> comboBox1;
+  private final ComboBox<T> comboBox2;
   private final T defaultChoice;
 
   /**************************************************************************
    *
-   * Constructors
+   * Constructor
    *
    **************************************************************************/
-
-  /**
-   * Creates a default, empty instance of ChoiceDialog with no set items and a null default choice.
-   * Users of this constructor will subsequently need to call {@link #getItems()} to specify which
-   * items to show to the user.
-   */
-  public StyleableChoiceDialog() {
-    this((T) null, (T[]) null);
-  }
-
-  /**
-   * Creates a new ChoiceDialog instance with the first argument specifying the default choice that
-   * should be shown to the user, and all following arguments considered a varargs array of all
-   * available choices for the user. It is expected that the defaultChoice be one of the elements in
-   * the choices varargs array. If this is not true, then defaultChoice will be set to null and the
-   * dialog will show with the initial choice set to the first item in the list of choices.
-   *
-   * @param defaultChoice The item to display as the pre-selected choice in the dialog. This item
-   *        must be contained within the choices varargs array.
-   * @param choices All possible choices to present to the user.
-   */
-  public StyleableChoiceDialog(T defaultChoice, @SuppressWarnings("unchecked") T... choices) {
-    this(defaultChoice, choices == null ? Collections.emptyList() : Arrays.asList(choices));
-  }
 
   /**
    * Creates a new ChoiceDialog instance with the first argument specifying the default choice that
@@ -85,12 +63,14 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
    *        must be contained within the choices varargs array.
    * @param choices All possible choices to present to the user.
    */
-  public StyleableChoiceDialog(T defaultChoice, Collection<T> choices) {
+  public StyleableChoiceDialog(T defaultChoice, Collection<T> choices,
+      Multimap<T, T> secondChoiceMap, Map<T, ? extends Object> valueMap) {
     final DialogPane dialogPane = getDialogPane();
 
     // -- grid
     this.grid = new GridPane();
     this.grid.setHgap(10);
+    this.grid.setVgap(10);
     this.grid.setMaxWidth(Double.MAX_VALUE);
     this.grid.setAlignment(Pos.CENTER_LEFT);
 
@@ -99,8 +79,6 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
     label.setPrefWidth(Region.USE_COMPUTED_SIZE);
     label.textProperty().bind(dialogPane.contentTextProperty());
 
-    dialogPane.contentTextProperty().addListener(o -> updateGrid());
-
     setTitle(ControlResources.getString("Dialog.confirm.title"));
     dialogPane.setHeaderText(ControlResources.getString("Dialog.confirm.header"));
     dialogPane.getStyleClass().add("choice-dialog");
@@ -108,25 +86,65 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
 
     final double MIN_WIDTH = 150;
 
-    comboBox = new ComboBox<T>();
-    comboBox.setMinWidth(MIN_WIDTH);
+    comboBox2 = new ComboBox<T>();
+    comboBox2.setMinWidth(MIN_WIDTH);
     if (choices != null) {
-      comboBox.getItems().addAll(choices);
+      comboBox2.getItems().addAll(choices);
     }
-    comboBox.setMaxWidth(Double.MAX_VALUE);
-    GridPane.setHgrow(comboBox, Priority.ALWAYS);
-    GridPane.setFillWidth(comboBox, true);
-    comboBox.setMaxHeight(10);
+    comboBox2.setMaxWidth(Double.MAX_VALUE);
+    GridPane.setHgrow(comboBox2, Priority.ALWAYS);
+    GridPane.setFillWidth(comboBox2, true);
+    comboBox2.setMaxHeight(10);
+    comboBox2.getSelectionModel().selectFirst();
 
-    this.defaultChoice = comboBox.getItems().contains(defaultChoice) ? defaultChoice : null;
+    comboBox1 = new ComboBox<T>();
+    // comboBox1.setEditable(true);
+    comboBox1.setMinWidth(MIN_WIDTH);
+    if (choices != null) {
+      comboBox1.getItems().addAll(choices);
+    }
+    comboBox1.setMaxWidth(Double.MAX_VALUE);
+    GridPane.setHgrow(comboBox1, Priority.ALWAYS);
+    GridPane.setFillWidth(comboBox1, true);
+    comboBox1.setMaxHeight(10);
+
+    // comboBox1.setOnKeyTyped((kv) -> {
+    // try {
+    // comboBox1.getEditor().getText();
+    // comboBox1.getItems().clear();
+    //
+    // comboBox1.getItems().addAll(choices);
+    // comboBox1.show();
+    // } catch (Throwable t) {
+    // t.printStackTrace();
+    // }
+    // // TODO
+    // });
+
+    comboBox1.valueProperty().addListener((obs, oldV, newV) -> {
+      try {
+        final Collection<T> c = secondChoiceMap.get(newV);
+
+        comboBox2.getSelectionModel().clearSelection();
+        comboBox2.getItems().setAll(c);
+        comboBox2.setDisable(c.isEmpty());
+        comboBox2.setPromptText(c.isEmpty() ? "No valid pairings found." : null);
+      } catch (Throwable t) {
+        t.printStackTrace();
+      }
+    });
+
+    this.defaultChoice = comboBox1.getItems().contains(defaultChoice) ? defaultChoice : null;
 
     if (defaultChoice == null) {
-      comboBox.getSelectionModel().selectFirst();
+      comboBox1.getSelectionModel().selectFirst();
     } else {
-      comboBox.getSelectionModel().select(defaultChoice);
+      comboBox1.getSelectionModel().select(defaultChoice);
     }
 
-    updateGrid();
+    dialogPane.contentTextProperty().addListener(o -> updateGrid(comboBox1));
+
+    updateGrid(comboBox1);
 
     setResultConverter((dialogButton) -> {
       ButtonData data = dialogButton == null ? null : dialogButton.getButtonData();
@@ -144,22 +162,42 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
    * Returns the currently selected item in the dialog.
    */
   public final T getSelectedItem() {
-    return comboBox.getSelectionModel().getSelectedItem();
+    return comboBox1.getSelectionModel().getSelectedItem();
   }
 
-  public void setComboCellFactory(Callback<ListView<T>, ListCell<T>> value) {
-    comboBox.setCellFactory(value);
+  public final T getSelectedSecondItem() {
+    return comboBox2.getSelectionModel().getSelectedItem();
   }
 
-  public void setComboButtonCell(ListCell<T> value) {
-    comboBox.setButtonCell(value);
+  public void setCombo1CellFactory(Callback<ListView<T>, ListCell<T>> value) {
+    comboBox1.setCellFactory(value);
+  }
+
+  public void setCombo2CellFactory(Callback<ListView<T>, ListCell<T>> value) {
+    comboBox2.setCellFactory(value);
+  }
+
+  public void setCombo1ButtonCell(ListCell<T> value) {
+    comboBox1.setButtonCell(value);
+  }
+
+  public void setCombo2ButtonCell(ListCell<T> value) {
+    comboBox2.setButtonCell(value);
+  }
+
+  public void setConverter1(StringConverter<T> c) {
+    comboBox1.setConverter(c);
+  }
+
+  public void setConverter2(StringConverter<T> c) {
+    comboBox2.setConverter(c);
   }
 
   /**
    * Returns the property representing the currently selected item in the dialog.
    */
   public final ReadOnlyObjectProperty<T> selectedItemProperty() {
-    return comboBox.getSelectionModel().selectedItemProperty();
+    return comboBox1.getSelectionModel().selectedItemProperty();
   }
 
   /**
@@ -168,7 +206,7 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
    * @param item The item to select in the dialog.
    */
   public final void setSelectedItem(T item) {
-    comboBox.getSelectionModel().select(item);
+    comboBox1.getSelectionModel().select(item);
   }
 
   /**
@@ -176,7 +214,7 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
    * developer to add, remove, or reorder the items to present to the user.
    */
   public final ObservableList<T> getItems() {
-    return comboBox.getItems();
+    return comboBox1.getItems();
   }
 
   /**
@@ -202,13 +240,14 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
     return label;
   }
 
-  private void updateGrid() {
+  private void updateGrid(Node focusReq) {
     grid.getChildren().clear();
 
     grid.add(label, 0, 0);
-    grid.add(comboBox, 1, 0);
+    grid.add(comboBox1, 0, 1);
+    grid.add(comboBox2, 0, 2);
     getDialogPane().setContent(grid);
 
-    Platform.runLater(() -> comboBox.requestFocus());
+    Platform.runLater(() -> focusReq.requestFocus());
   }
 }
