@@ -78,6 +78,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.MultimapBuilder.SortedSetMultimapBuilder;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import javafx.scene.control.ListCell;
@@ -102,6 +103,8 @@ public class ValidationModelBuilder {
   private static final Table<Haplotype, RaceGroup, BigDecimal> frequencyTable =
       HashBasedTable.create();
   private static final String NEGATIVE_ALLELE = "N-Negative";
+  public static final String NOT_ON_CELL_SURFACE = ".+[0-9]+[LSCAQlscaq]$";
+  public static final String NOT_EXPRESSED = ".+[0-9]+[Nn]$";
 
   {
     for (RaceGroup ethnicity : RaceGroup.values()) {
@@ -127,17 +130,8 @@ public class ValidationModelBuilder {
   private Set<SeroType> bLocusFirst = new LinkedHashSet<>();
   private Set<SeroType> cLocusFirst = new LinkedHashSet<>();
 
-  // TODO replace per-locus data structures with maps from [Sero|HLA]Locus to data structure
-  // (or tables as appropriate)
-  private Map<HLALocus, AlleleGroupPairings> alleleGroups = new HashMap<>();
-  // private List<Pair<TypePair, TypePair>> aAlleles = new ArrayList<>();
-  // private List<Pair<TypePair, TypePair>> bAlleles = new ArrayList<>();
-  // private List<Pair<TypePair, TypePair>> cAlleles = new ArrayList<>();
-  // // private List<Pair<TypePair, TypePair>> drbAlleles = new ArrayList<>();
-  // private List<Pair<TypePair, TypePair>> dqaAlleles = new ArrayList<>();
-  // private List<Pair<TypePair, TypePair>> dqbAlleles = new ArrayList<>();
-  // private List<Pair<TypePair, TypePair>> dpaAlleles = new ArrayList<>();
-  // private List<Pair<TypePair, TypePair>> dpbAlleles = new ArrayList<>();
+  private Map<HLALocus, AllelePairings> possibleAllelePairings = new HashMap<>();
+  private Map<HLALocus, AllelePairings> donorAllelePairings = new HashMap<>();
 
   private Set<HLALocus> nonCWDLoci = new TreeSet<>();
   private Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping = new HashMap<>();
@@ -267,8 +261,13 @@ public class ValidationModelBuilder {
     return !type.matches(".*\\d.*") || type.equals("98");
   }
 
-  public ValidationModelBuilder alleleGroupPairings(HLALocus locus, AlleleGroupPairings alleles) {
-    alleleGroups.put(locus, alleles);
+  public ValidationModelBuilder possibleAllelePairings(HLALocus locus, AllelePairings alleles) {
+    possibleAllelePairings.put(locus, alleles);
+    return this;
+  }
+
+  public ValidationModelBuilder donorAllelePairings(HLALocus locus, AllelePairings alleles) {
+    donorAllelePairings.put(locus, alleles);
     return this;
   }
 
@@ -515,8 +514,8 @@ public class ValidationModelBuilder {
 
     @Override
     public String toString(Supplier<TextFlow> object) {
-      final Set<String> selectedData = choices.getSelectedData(object);
-      return selectedData == null ? "" : selectedData.toString();
+      final String selectedData = choices.getSelectedData(object);
+      return selectedData == null ? "" : selectedData;
     }
 
     @Override
@@ -918,7 +917,8 @@ public class ValidationModelBuilder {
 
         Set<SeroType> locusSet;
         Set<HLAType> typesSet;
-        AlleleGroupPairings alleleList = alleleGroups.get(locus);
+        AllelePairings allelePairs = possibleAllelePairings.get(locus);
+        AllelePairings donorPairs = donorAllelePairings.get(locus);
 
         switch (locus) {
           case A:
@@ -948,12 +948,13 @@ public class ValidationModelBuilder {
             locusSet = dqbLocus;
             typesSet = dqbLocusTypes;
           default:
-            alleleList = null;
+            allelePairs = null;
+            donorPairs = null;
             locusSet = null;
             typesSet = null;
             break;
         }
-        if (alleleList == null) {
+        if (allelePairs == null || donorPairs == null) {
           // TODO
           continue;
         }
@@ -968,16 +969,13 @@ public class ValidationModelBuilder {
         String text =
             "Please select desired allele pair for this locus. Selecting the first allele will populate valid pairings for the second allele.";
 
-        PresentableAlleleChoices choices = PresentableAlleleChoices.create(alleleList);
+        PresentableAlleleChoices choices = PresentableAlleleChoices.create(allelePairs);
 
         final List<Supplier<TextFlow>> allChoices = choices.getAllChoices();
 
         Function<Supplier<TextFlow>, String> tooltipProvider = (tf) -> {
           return Objects.toString(choices.dataMap.get(tf), null);
         };
-        // Function<Supplier<TextFlow>, Supplier<TextFlow>> tooltipProvider = (tf) -> {
-        // return choices.truncatedToFullMap.get(tf);
-        // };
 
         StyleableChoiceDialog<Supplier<TextFlow>> cd = new StyleableChoiceDialog<>(
             allChoices.get(0), allChoices, choices.getAllSecondChoices(), choices.dataMap);
@@ -1000,11 +998,8 @@ public class ValidationModelBuilder {
         Supplier<TextFlow> selAllele1 = result.get();
         Supplier<TextFlow> selAllele2 = cd.getSelectedSecondItem();
 
-        Set<String> allele1Set = choices.getSelectedData(selAllele1);
-        Set<String> allele2Set = choices.getSelectedData(selAllele2);
-
-        String allele1 = allele1Set.iterator().next();
-        String allele2 = allele2Set.iterator().next();
+        String allele1 = choices.getSelectedData(selAllele1);
+        String allele2 = choices.getSelectedData(selAllele2);
 
         HLAType hlaType1 = HLAType.valueOf(allele1);
         HLAType hlaType2 = HLAType.valueOf(allele2);
@@ -1051,14 +1046,12 @@ public class ValidationModelBuilder {
   public abstract static class PresentableDataChoices<T, R> {
     List<T> choices;
     Multimap<T, T> secondChoices;
-    Map<T, T> truncatedToFullMap;
     BiMap<T, R> dataMap;
 
     public PresentableDataChoices(List<T> choices, Multimap<T, T> secondChoices,
-        Map<T, T> truncToFullMap, BiMap<T, R> presentationToDataMap) {
+        BiMap<T, R> presentationToDataMap) {
       this.choices = choices;
       this.secondChoices = secondChoices;
-      this.truncatedToFullMap = truncToFullMap;
       this.dataMap = presentationToDataMap;
     }
 
@@ -1080,103 +1073,273 @@ public class ValidationModelBuilder {
       return dataMap.get(selected);
     }
 
-    public T getNonTruncatedChoice(T selected) {
-      return truncatedToFullMap.get(selected);
-    }
-
   }
 
   public static class PresentableAlleleChoices
-      extends PresentableDataChoices<Supplier<TextFlow>, Set<String>> {
+      extends PresentableDataChoices<Supplier<TextFlow>, String> {
 
-    AlleleGroupPairings groupPairs;
+    public static PresentableAlleleChoices create(AllelePairings allelePairings) {
+      List<Supplier<TextFlow>> userChoices = new ArrayList<>();
+      ListMultimap<Supplier<TextFlow>, Supplier<TextFlow>> secondChoices =
+          SortedSetMultimapBuilder.hashKeys().arrayListValues().build();
+      BiMap<Supplier<TextFlow>, String> presentationToDataMap = HashBiMap.create();
 
-    public static PresentableAlleleChoices create(AlleleGroupPairings groupPairings) {
-      List<Supplier<TextFlow>> choices = new ArrayList<>();
-      Multimap<Supplier<TextFlow>, Supplier<TextFlow>> secondChoices = HashMultimap.create();
-      Map<Supplier<TextFlow>, Supplier<TextFlow>> truncToFullMap = new HashMap<>();
-      BiMap<Supplier<TextFlow>, Set<String>> truncToDataMap = HashBiMap.create();
+      userChoices.add(() -> new TextFlow());
 
-      choices.add(() -> new TextFlow());
+      List<String> alleleKeys = new ArrayList<>(allelePairings.map.keySet());
+      sortAlleleStrings(alleleKeys);
 
-      for (Set<String> group : groupPairings.getAllGroups()) {
-        boolean truncated1 = false;
-        Set<String> trunc = new TreeSet<>();
-        int len = 0;
-        for (String a : group) {
-          if (len > 150) {
-            truncated1 = true;
-            break;
+      List<String> choiceList = condenseIntoGroups(allelePairings, alleleKeys, true);
+
+      for (String allele : choiceList) {
+        Supplier<TextFlow> supp = () -> getText(allele);
+
+        userChoices.add(supp);
+        presentationToDataMap.put(supp, allele);
+      }
+
+      for (Supplier<TextFlow> choice : userChoices) {
+        String data = presentationToDataMap.get(choice);
+        if (data == null) {
+          continue;
+        }
+        String pairingAllele = data.contains("-") ? data.split("-")[0] : data;
+
+        List<String> pairings = new ArrayList<>(allelePairings.getValidPairings(pairingAllele));
+        sortAlleleStrings(pairings);
+
+        List<String> secondChoicePairings = condenseIntoGroups(allelePairings, pairings, false);
+
+        for (String pairing : secondChoicePairings) {
+          Supplier<TextFlow> presentationView = presentationToDataMap.inverse().get(pairing);
+          if (presentationView == null) {
+            presentationView = () -> getText(pairing);
+            presentationToDataMap.put(presentationView, pairing);
           }
-          trunc.add(a);
-          len += a.length();
-        }
-
-        boolean truncated = truncated1;
-        Supplier<TextFlow> supp = () -> getText(group, false);
-        Supplier<TextFlow> suppTrunc = () -> getText(trunc, truncated);
-
-        choices.add(suppTrunc);
-        truncToFullMap.put(suppTrunc, supp);
-        truncToDataMap.put(suppTrunc, group);
-      }
-
-      for (Supplier<TextFlow> choice : choices) {
-        Set<String> data = truncToDataMap.get(choice);
-        for (Set<String> pairing : groupPairings.getValidPairGroups(data)) {
-          Supplier<TextFlow> truncV = truncToDataMap.inverse().get(pairing);
-          secondChoices.put(choice, truncV);
+          secondChoices.put(choice, presentationView);
         }
       }
 
-
-      return new PresentableAlleleChoices(choices, secondChoices, truncToFullMap, truncToDataMap);
+      return new PresentableAlleleChoices(userChoices, secondChoices, presentationToDataMap,
+          allelePairings);
     }
+
+    private static List<String> condenseIntoGroups(AllelePairings allelePairings,
+        List<String> alleleKeys, boolean checkPairings) {
+      List<List<String>> subsets = new ArrayList<>();
+      List<String> subset = new ArrayList<>();
+
+      HLAType prev3FieldType = null;
+
+      // all allele strings should be in the correct order now
+      // now let's condense into subsets of the same allele types, with
+      // separate subsets for N/n and LSCAQ/lscaq alleles
+      for (String allele : alleleKeys) {
+        if (allele.matches(NOT_EXPRESSED) || allele.matches(NOT_ON_CELL_SURFACE)) {
+          // make sure to add the currently-being-built subset first!
+          if (subset.size() > 0) {
+            subsets.add(subset);
+            subset = new ArrayList<>();
+          }
+          // add null or lscaq alleles as single entries
+          subsets.add(Lists.newArrayList(allele));
+          // clear out known three-field type
+          prev3FieldType = null;
+          continue;
+        }
+
+        HLAType hType = HLAType.valueOf(allele);
+        if (hType.resolution() <= 2) {
+          // make sure to add the currently-being-built subset first!
+          if (subset.size() > 0) {
+            subsets.add(subset);
+            subset = new ArrayList<>();
+          }
+          // add two-field alleles as single entries
+          subsets.add(Lists.newArrayList(allele));
+          // clear out known three-field type
+          prev3FieldType = null;
+          continue;
+        }
+
+        // we know resolution is >= 3
+
+        HLAType curr3FieldType = (hType.resolution() == 3) ? hType
+            : new HLAType(hType.locus(), hType.spec().get(0), hType.spec().get(1),
+                hType.spec().get(2));
+        if (prev3FieldType != null && prev3FieldType.compareTo(curr3FieldType) != 0) {
+          // new three field type
+          subsets.add(subset);
+          subset = new ArrayList<>();
+        }
+        // same or new three-field type, either way:
+        // update known three-field type, and
+        // add four-field type to subset
+        prev3FieldType = curr3FieldType;
+        subset.add(allele);
+
+      }
+      if (subset.size() > 0) {
+        subsets.add(subset);
+      }
+
+      List<String> choiceList = new ArrayList<>();
+
+      // now we need to process the subset lists
+      // single element subsets can be added directly
+      // -- this preserves null/not-expressed subsets
+      // multiple element subsets need to be further
+      // separated into subsets: all alleles in a subset must
+      // map to the same serotype and the same second choice alleles
+
+      for (List<String> sub : subsets) {
+        if (sub.size() == 1) {
+          choiceList.add(sub.get(0));
+          continue;
+        }
+
+        List<List<String>> subSubsets = new ArrayList<>();
+        List<String> subSubset = new ArrayList<>();
+
+        SeroType prevSero = null;
+        Set<String> prevPairings = null;
+
+        for (String subAllele : sub) {
+          HLAType type = HLAType.valueOf(subAllele);
+          SeroType newSero = type.equivSafe();
+          HashSet<String> newPairings =
+              checkPairings ? Sets.newHashSet(allelePairings.getValidPairings(subAllele))
+                  : new HashSet<>();
+          if (prevSero == null) {
+            prevSero = newSero;
+            prevPairings = newPairings;
+          } else if (prevSero.compareTo(newSero) != 0) {
+            if (subSubset.size() > 0) {
+              subSubsets.add(subSubset);
+              subSubset = new ArrayList<>();
+            }
+            prevSero = newSero;
+            prevPairings = newPairings;
+          } else if (!prevPairings.containsAll(newPairings)
+              || !newPairings.containsAll(prevPairings)) {
+            if (subSubset.size() > 0) {
+              subSubsets.add(subSubset);
+              subSubset = new ArrayList<>();
+            }
+            prevSero = newSero;
+            prevPairings = newPairings;
+          }
+          subSubset.add(subAllele);
+        }
+        if (subSubset.size() > 0) {
+          subSubsets.add(subSubset);
+          subSubset = new ArrayList<>();
+        }
+
+        for (List<String> subS : subSubsets) {
+          if (subS.size() == 1) {
+            choiceList.add(subS.get(0));
+          } else {
+            choiceList.add(subS.get(0) + "-" + subS.get(subS.size() - 1));
+          }
+        }
+
+      }
+      return choiceList;
+    }
+
+    private static void sortAlleleStrings(List<String> alleleKeys) {
+      alleleKeys.sort((s1, s2) -> {
+        boolean check1N = s1.matches(NOT_EXPRESSED);
+        boolean check1C = s1.matches(NOT_ON_CELL_SURFACE);
+        boolean check2N = s2.matches(NOT_EXPRESSED);
+        boolean check2C = s2.matches(NOT_ON_CELL_SURFACE);
+        boolean check1 = check1N || check1C;
+        boolean check2 = check2N || check2C;
+        char s1C = s1.charAt(s1.length() - 1);
+        char s2C = s2.charAt(s2.length() - 1);
+        String s1Hs = check1 ? s1.substring(0, s1.length() - 1) : s1;
+        String s2Hs = check2 ? s2.substring(0, s2.length() - 1) : s2;
+
+        HLAType h1 = HLAType.valueOf(s1Hs);
+        HLAType h2 = HLAType.valueOf(s2Hs);
+
+        int comp;
+        if ((comp = h1.compareTo(h2)) != 0)
+          return comp;
+
+        if (check1 && !check2) {
+          // first element ends with special character, meaning second element should come first
+          return 1;
+        } else if (check2 && !check1) {
+          // second element ends with special character, meaning first element should come first
+          return -1;
+        }
+
+        // both end with a special character
+        if (check1N && check2N) {
+          // both null and same HLAType - these are the same allele
+          return 0;
+        } else if (check1N && !check2N) {
+          // first element is null, second is lscaq, second comes first
+          return 1;
+        } else if (!check1N && check2N) {
+          // first element is lscaq, second is null, first comes first
+          return -1;
+        }
+
+
+        // this block could probably be condensed based on knowing null status from previous checks,
+        // but it's easier to just duplicate the logic for now...
+
+        // both end with a special character
+        if (check1C && check2C) {
+          // both null and same HLAType - these are the same allele
+          return 0;
+        } else if (check1C && !check2C) {
+          // first element is null, second is lscaq, second comes first
+          return 1;
+        } else if (!check1C && check2C) {
+          // first element is lscaq, second is null, first comes first
+          return -1;
+        }
+
+        // TODO dunno what's going on here... probably should do something special?
+        return 0;
+      });
+    }
+
+    private final AllelePairings allelePairs;
 
     private PresentableAlleleChoices(List<Supplier<TextFlow>> choices,
         Multimap<Supplier<TextFlow>, Supplier<TextFlow>> secondChoices,
-        Map<Supplier<TextFlow>, Supplier<TextFlow>> truncToFullMap,
-        BiMap<Supplier<TextFlow>, Set<String>> presentationToDataMap) {
-      super(choices, secondChoices, truncToFullMap, presentationToDataMap);
+        BiMap<Supplier<TextFlow>, String> presentationToDataMap, AllelePairings allelePairs) {
+      super(choices, secondChoices, presentationToDataMap);
+      this.allelePairs = allelePairs;
     }
 
     @Override
     public List<Supplier<TextFlow>> getMatchingChoices(String userInput) {
-      String[] inputAlleles = userInput.split(", ");
-      Set<String> matching = new HashSet<>();
-      for (String in : inputAlleles) {
-        matching.addAll(groupPairs.getMatchingAlleles(in));
-      }
-      boolean valid = groupPairs.isValidGroup(matching);
-      if (!valid)
-        return new ArrayList<>();
-
-      List<Set<String>> found = groupPairs.getGroups(matching);
-
-      return found.stream().map(s -> dataMap.inverse().get(s)).filter(Predicates.notNull())
-          .collect(Collectors.toList());
+      return allelePairs.getMatchingAlleles(userInput).stream().map(s -> dataMap.inverse().get(s))
+          .filter(Predicates.notNull()).collect(Collectors.toList());
     }
 
   }
 
-  private static TextFlow getText(Set<String> alleles, boolean truncated) {
+  private static TextFlow getText(String allele) {
     List<Text> textNodes = new ArrayList<>();
-
-    List<String> all = new ArrayList<>(alleles);
-    for (int i = 0; i < all.size(); i++) {
-      addTextNodes(textNodes, all.get(i));
-      if (i < all.size() - 1)
-        textNodes.add(new Text(", "));
-    }
-
-    if (truncated) {
-      textNodes.add(new Text(",  . . . "));
+    if (allele.contains("-")) {
+      String[] a = allele.split("-");
+      addTextNodes(textNodes, a[0]);
+      textNodes.add(new Text("-"));
+      addTextNodes(textNodes, a[1]);
+    } else {
+      addTextNodes(textNodes, allele);
     }
 
     Text[] nodes = textNodes.toArray(new Text[textNodes.size()]);
     TextFlow tf = new TextFlow(nodes);
     return tf;
-
   }
 
   private static void addTextNodes(List<Text> textNodes, final String allele) {
@@ -1186,21 +1349,29 @@ public class ValidationModelBuilder {
 
     textNodes.add(new Text(alleleType.locus().name() + "*"));
 
+    String specString = alleleType.specString();
+    boolean match = allele.matches(NOT_EXPRESSED) || allele.matches(NOT_ON_CELL_SURFACE);
+
     if (status1 != Status.UNKNOWN) {
 
-      if (cwdType1.specString().length() < alleleType.specString().length()) {
+      if (cwdType1.specString().length() < specString.length()) {
         Text t1 = new Text(cwdType1.specString());
         t1.setStyle("-fx-font-weight:bold;");
         textNodes.add(t1);
-        textNodes.add(new Text(alleleType.specString().substring(cwdType1.specString().length())));
+        textNodes.add(new Text(specString.substring(cwdType1.specString().length())));
       } else {
-        Text t1 = new Text(alleleType.specString());
+        Text t1 = new Text(specString);
         t1.setStyle("-fx-font-weight:bold;");
         textNodes.add(t1);
       }
 
+      if (match) {
+        textNodes.add(new Text("" + allele.charAt(allele.length() - 1)));
+      }
+
     } else {
-      textNodes.add(new Text(alleleType.specString()));
+      textNodes
+          .add(new Text(specString + (match ? ("" + allele.charAt(allele.length() - 1)) : "")));
     }
 
     textNodes.add(
@@ -1309,6 +1480,35 @@ public class ValidationModelBuilder {
       typeString = typeString.substring(0, typeString.length() - 2);
     }
     locusSet.add(new SeroType(locus, typeString));
+  }
+
+  public static class AllelePairings {
+
+    private Multimap<String, String> map = HashMultimap.create();
+
+    /**
+     * @param a1
+     * @param a2
+     */
+    public void addPairing(String a1, String a2) {
+      map.put(a1, a2);
+      map.put(a2, a1);
+    }
+
+    public Collection<String> getValidPairings(String allele) {
+      return map.get(allele);
+    }
+
+    public boolean isValidPairing(String a1, String a2) {
+      return map.containsEntry(a1, a2);
+    }
+
+    public Collection<String> getMatchingAlleles(String pattern) {
+      final RabinKarp rabinKarp = new RabinKarp(pattern);
+      return map.keySet().stream().filter(s -> rabinKarp.search(s) < s.length())
+          .collect(Collectors.toSet());
+    }
+
   }
 
   public static class AlleleGroupPairings {
