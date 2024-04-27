@@ -60,8 +60,9 @@ public class ValidationTable {
   private final ReadOnlyListWrapper<String> auditLogLines;
   private final ReadOnlyListWrapper<BCHaplotypeRow> bcHaplotypeRows;
   private final ReadOnlyListWrapper<DRDQHaplotypeRow> drdqHaplotypeRows;
-  private final ReadOnlyObjectWrapper<String> csvValues;
   private WritableImage validationImage = null;
+
+  public final static String REMAP_SYMBOL = "⦿";
 
   public ValidationTable() {
     isValidWrapper = new ReadOnlyBooleanWrapper();
@@ -73,7 +74,7 @@ public class ValidationTable {
     auditLogLines = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     bcHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     drdqHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
-    csvValues = new ReadOnlyObjectWrapper<>();
+    new ReadOnlyObjectWrapper<>();
 
     // Each time either model changes we re-generate the rows
     firstModelWrapper.addListener((v, o, n) -> generateRows());
@@ -248,14 +249,15 @@ public class ValidationTable {
 
     auditLogLines.clear();
     if (firstModelWrapper.isNotNull().get())
-      auditLogLines.addAll(firstModelWrapper.get().getRemappings(0));
+      auditLogLines.addAll(firstModelWrapper.get().getRemappings());
     if (secondModelWrapper.isNotNull().get())
-      auditLogLines.addAll(secondModelWrapper.get().getRemappings(1));
+      auditLogLines.addAll(secondModelWrapper.get().getRemappings());
   }
 
   private String generateRowLabel(HLALocus locus) {
     return locus.name()
-        + (wasRemapped(locus, firstModelWrapper) || wasRemapped(locus, secondModelWrapper) ? " ⦿"
+        + (wasRemapped(locus, firstModelWrapper) || wasRemapped(locus, secondModelWrapper)
+            ? (" " + REMAP_SYMBOL)
             : "");
   }
 
@@ -428,9 +430,8 @@ public class ValidationTable {
   }
 
   public ObservableValue<String> getAuditLogLines() {
-    return Bindings.createStringBinding(
-        () -> auditLogLines.stream().map(s -> "⦿ " + s).collect(Collectors.joining("\n")),
-        auditLogLines);
+    return Bindings.createStringBinding(() -> auditLogLines.stream()
+        .map(s -> REMAP_SYMBOL + " " + s).collect(Collectors.joining("\n")), auditLogLines);
   }
 
   public ObservableValue<Number> getAuditLogLineCount() {

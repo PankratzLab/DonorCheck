@@ -374,7 +374,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
                   boolean val = resultsTable.getItems().get(getTableRow().getIndex())
                       .wasRemappedSecondProperty().get();
                   if (val) {
-                    setText("⦿ " + item.toString());
+                    setText(ValidationTable.REMAP_SYMBOL + " " + item.toString());
                   } else {
                     setText(item.toString());
                   }

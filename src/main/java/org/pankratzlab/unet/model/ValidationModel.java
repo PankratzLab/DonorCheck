@@ -32,7 +32,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
-import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
@@ -418,19 +417,14 @@ public class ValidationModel {
     return remapping.containsKey(locus);
   }
 
-  public String[] getRemappings(int i) {
-
+  public String[] getRemappings() {
     return remapping.entrySet().stream().map(e -> {
-      final String collectFrom =
-          e.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> {
-            return h.specString() + " - " + CommonWellDocumented.getStatus(h);
-          }).collect(Collectors.joining(" / "));
-      final String collectTo =
-          e.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> {
-            return h.specString() + " - " + CommonWellDocumented.getStatus(h);
-          }).collect(Collectors.joining(" / "));
+      final String collectFrom = e.getValue().getLeft().stream().sorted().map(TypePair::getHlaType)
+          .map((h) -> h.specString()).collect(Collectors.joining(" / "));
+      final String collectTo = e.getValue().getRight().stream().sorted().map(TypePair::getHlaType)
+          .map((h) -> h.specString()).collect(Collectors.joining(" / "));
       return "HLA-" + e.getKey().name() + " was remapped from { " + collectFrom + " } to { "
-          + collectTo + " } in " + (i == 0 ? "left" : "right") + " model";
+          + collectTo + " } in " + getSourceType();
     }).sorted().distinct().toArray(String[]::new);
   }
 }

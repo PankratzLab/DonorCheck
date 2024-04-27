@@ -116,7 +116,6 @@ public class ValidationModelBuilder {
   private String source;
   private String sourceType;
 
-
   // TODO replace per-locus data structures with maps from [Sero|HLA]Locus to data structure
   // (or tables as appropriate)
   /* These are LinkedHashSets, thus ensuring insertion order */
