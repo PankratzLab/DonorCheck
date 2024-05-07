@@ -24,7 +24,6 @@ package org.pankratzlab.unet.parser.util;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
@@ -42,7 +41,7 @@ public final class SerotypeEquivalence {
     put(builder, "64", HLALocus.B, "14:01");
     put(builder, "65", HLALocus.B, "14:02");
     put(builder, "14", HLALocus.B, "14:03");
-    put(builder, "62", HLALocus.B, "15:01", "15:04", "15:05", "15:06", "15:07", "15:15");
+    put(builder, "62", HLALocus.B, "15:01", "15:04", "15:05", "15:06", "15:07", "15:15", "15:24");
     put(builder, "75", HLALocus.B, "15:02", "15:08");
     put(builder, "72", HLALocus.B, "15:03", "15:46");
     put(builder, "70", HLALocus.B, "15:09");
