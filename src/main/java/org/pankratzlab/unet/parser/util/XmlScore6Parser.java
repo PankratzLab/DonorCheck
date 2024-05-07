@@ -105,6 +105,7 @@ public class XmlScore6Parser {
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, String>> metadataMap;
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, HLAType>> metadataTypeMap;
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, String>> metadataNonCWDMap;
+  private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, HLAType>> metadataTypeNonCWDMap;
   private static ImmutableMap<String, TriConsumer<ValidationModelBuilder, HLALocus, AllelePairings>> possibleAlleleRecordingMap;
   private static ImmutableMap<String, TriConsumer<ValidationModelBuilder, HLALocus, AllelePairings>> donorAlleleRecordingMap;
   private static ImmutableMap<HLALocus, BiConsumer<ValidationModelBuilder, String>> drbMap;
@@ -156,6 +157,29 @@ public class XmlScore6Parser {
     // setterBuilder.put("HLA-DPA1", null);
 
     metadataTypeMap = setterBuilderTypes.build();
+
+    // -- Build mapping bemetadataTypeMaptween loci sections, serotype prefixes and validation model
+    // setters --
+    Builder<String, BiConsumer<ValidationModelBuilder, HLAType>> setterBuilderTypesNonCWD =
+        ImmutableMap.builder();
+    setterBuilderTypesNonCWD.put(A_HEADER, ValidationModelBuilder::aTypeNonCWD);
+    setterBuilderTypesNonCWD.put(B_HEADER, ValidationModelBuilder::bTypeNonCWD);
+    setterBuilderTypesNonCWD.put(C_HEADER, ValidationModelBuilder::cTypeNonCWD);
+    setterBuilderTypesNonCWD.put(DQB_HEADER, ValidationModelBuilder::dqbTypeNonCWD);
+
+    // Reported as allele types
+    // DPB is already being tracked as HLATypes
+    // setterBuilderTypes.put(DPB_HEADER, ValidationModelBuilder::dpbType);
+    setterBuilderTypesNonCWD.put(DQA_HEADER, ValidationModelBuilder::dqaTypeNonCWD);
+    setterBuilderTypesNonCWD.put(DPA_HEADER, ValidationModelBuilder::dpaTypeNonCWD);
+
+    // DR52/53/54 appears as a serological combination
+    // setterBuilderTypes.put(DRB_HEADER, ValidationModelBuilder::drbType);
+
+    // NB: not in DonorNet
+    // setterBuilder.put("HLA-DPA1", null);
+
+    metadataTypeNonCWDMap = setterBuilderTypesNonCWD.build();
 
     // -- Build mapping between loci sections, serotype prefixes and validation model setters --
     Builder<String, BiConsumer<ValidationModelBuilder, String>> setterBuilderNonCWD =
@@ -444,12 +468,13 @@ public class XmlScore6Parser {
 
       // Finally, add the types to the model builder
       for (int i = 0; i < actualResultPairs.size(); i++) {
-        if (actualResultPairs.get(i).alleleCombination
-            .compareTo(firstResultPairs.get(0).alleleCombination) != 0) {
-          Status sA = CommonWellDocumented.getStatus(actualResultPairs.get(i).alleleCombination);
-          Status sF = CommonWellDocumented.getStatus(firstResultPairs.get(i).alleleCombination);
+        final HLAType alleleCombination = actualResultPairs.get(i).alleleCombination;
+        final HLAType alleleCombination2 = firstResultPairs.get(i).alleleCombination;
+        if (alleleCombination.compareTo(alleleCombination2) != 0) {
+          Status sA = CommonWellDocumented.getStatus(alleleCombination);
+          Status sF = CommonWellDocumented.getStatus(alleleCombination2);
           if (sA == Status.UNKNOWN || sF == Status.UNKNOWN) {
-            builder.locusIsNonCIWD(actualResultPairs.get(i).alleleCombination);
+            builder.locusIsNonCIWD(alleleCombination);
           }
         }
 
@@ -462,7 +487,10 @@ public class XmlScore6Parser {
           metadataNonCWDMap.get(locus).accept(builder, specStringFirst);
         }
         if (metadataTypeMap.containsKey(locus)) {
-          metadataTypeMap.get(locus).accept(builder, actualResultPairs.get(i).alleleCombination);
+          metadataTypeMap.get(locus).accept(builder, alleleCombination);
+        }
+        if (metadataTypeNonCWDMap.containsKey(locus)) {
+          metadataTypeNonCWDMap.get(locus).accept(builder, alleleCombination2);
         }
       }
 

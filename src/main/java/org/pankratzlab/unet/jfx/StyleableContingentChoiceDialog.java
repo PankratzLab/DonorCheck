@@ -1,16 +1,21 @@
 package org.pankratzlab.unet.jfx;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import com.google.common.collect.Multimap;
 import com.sun.javafx.scene.control.skin.resources.ControlResources;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
@@ -31,8 +36,7 @@ import javafx.util.StringConverter;
  *        {@link #getResult()} when the dialog is dismissed.
  * @since JavaFX 8u40
  */
-@SuppressWarnings("restriction")
-public class StyleableChoiceDialog<T> extends Dialog<T> {
+public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
 
   /**************************************************************************
    *
@@ -45,6 +49,9 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
   private final ComboBox<T> comboBox1;
   private final ComboBox<T> comboBox2;
   private final T defaultChoice;
+  private final CheckBox checkboxFilter;
+  private final Predicate<T> filterPredicate;
+
 
   /**************************************************************************
    *
@@ -62,9 +69,19 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
    * @param defaultChoice The item to display as the pre-selected choice in the dialog. This item
    *        must be contained within the choices varargs array.
    * @param choices All possible choices to present to the user.
+   * @param InvalidCoices Choices which, if selected, will disable the "Ok" button
+   * 
+   *        TODO Encapsulate filterName / filterPredicate so they are optional
    */
-  public StyleableChoiceDialog(T defaultChoice, Collection<T> choices,
-      Multimap<T, T> secondChoiceMap, Map<T, ? extends Object> valueMap) {
+  public StyleableContingentChoiceDialog(Collection<T> choices, Collection<T> invalidChoices,
+      Multimap<T, T> secondChoiceMap, Map<T, ? extends Object> valueMap, String filterName,
+      Predicate<T> filter) {
+    this(null, choices, invalidChoices, secondChoiceMap, valueMap, filterName, filter);
+  }
+
+  public StyleableContingentChoiceDialog(T defaultChoice, Collection<T> choices,
+      Collection<T> invalidChoices, Multimap<T, T> secondChoiceMap,
+      Map<T, ? extends Object> valueMap, String filterName, Predicate<T> filter) {
     final DialogPane dialogPane = getDialogPane();
 
     // -- grid
@@ -88,14 +105,11 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
 
     comboBox2 = new ComboBox<T>();
     comboBox2.setMinWidth(MIN_WIDTH);
-    if (choices != null) {
-      comboBox2.getItems().addAll(choices);
-    }
     comboBox2.setMaxWidth(Double.MAX_VALUE);
     GridPane.setHgrow(comboBox2, Priority.ALWAYS);
     GridPane.setFillWidth(comboBox2, true);
     comboBox2.setMaxHeight(10);
-    comboBox2.getSelectionModel().selectFirst();
+    comboBox2.setDisable(true);
 
     comboBox1 = new ComboBox<T>();
     // comboBox1.setEditable(true);
@@ -121,26 +135,55 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
     // // TODO
     // });
 
+
+    this.filterPredicate = filter;
+    checkboxFilter = new CheckBox(filterName);
+    checkboxFilter.selectedProperty().addListener((obs, oldV, newV) -> {
+      T sel1 = comboBox1.getSelectionModel().getSelectedItem();
+      T sel2 = comboBox2.getSelectionModel().getSelectedItem();
+
+      Collection<T> firstChoices = new ArrayList<>(choices);
+      if (newV) {
+        firstChoices = firstChoices.stream().filter(filterPredicate).collect(Collectors.toList());
+      }
+      Collection<T> secondChoices = getSecondChoices(secondChoiceMap, sel1, newV);
+
+      comboBox1.getItems().setAll(firstChoices);
+
+      updateSecondComboChoices(secondChoices);
+
+      comboBox1.getSelectionModel().select(sel1);
+      comboBox2.getSelectionModel().select(sel2);
+    });
+
     comboBox1.valueProperty().addListener((obs, oldV, newV) -> {
       try {
-        final Collection<T> c = secondChoiceMap.get(newV);
+        final Collection<T> c =
+            getSecondChoices(secondChoiceMap, newV, checkboxFilter.isSelected());
 
-        comboBox2.getSelectionModel().clearSelection();
-        comboBox2.getItems().setAll(c);
-        comboBox2.setDisable(c.isEmpty());
-        comboBox2.setPromptText(c.isEmpty() ? "No valid pairings found." : null);
+        updateSecondComboChoices(c);
       } catch (Throwable t) {
-        t.printStackTrace();
+        throw new RuntimeException(t);
       }
     });
 
     this.defaultChoice = comboBox1.getItems().contains(defaultChoice) ? defaultChoice : null;
 
-    if (defaultChoice == null) {
-      comboBox1.getSelectionModel().selectFirst();
-    } else {
+    if (defaultChoice != null) {
       comboBox1.getSelectionModel().select(defaultChoice);
     }
+
+    Node okButton = dialogPane.lookupButton(ButtonType.OK);
+
+    okButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+      return comboBox2.disableProperty().get()
+          || invalidChoices.contains(comboBox1.getSelectionModel().getSelectedItem())
+          || invalidChoices.contains(comboBox2.getSelectionModel().getSelectedItem())
+          || comboBox2.getSelectionModel().isEmpty();
+      // for this .isEmpty() call to work,
+      // the binding must include the
+      // selectedItemProperty as a dependency
+    }, comboBox2.disableProperty(), comboBox2.getSelectionModel().selectedItemProperty()));
 
     dialogPane.contentTextProperty().addListener(o -> updateGrid(comboBox1));
 
@@ -150,6 +193,25 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
       ButtonData data = dialogButton == null ? null : dialogButton.getButtonData();
       return data == ButtonData.OK_DONE ? getSelectedItem() : null;
     });
+
+
+  }
+
+  private void updateSecondComboChoices(final Collection<T> c) {
+    comboBox2.getSelectionModel().clearSelection();
+    comboBox2.getItems().setAll(c);
+    comboBox2.setDisable(c.isEmpty());
+    comboBox2.setPromptText(c.isEmpty() ? "No valid pairings found." : null);
+  }
+
+  private Collection<T> getSecondChoices(Multimap<T, T> secondChoiceMap, T newV, boolean filter) {
+    Collection<T> c = secondChoiceMap.get(newV);
+
+    if (filter) {
+      c = c.stream().filter(filterPredicate).collect(Collectors.toList());
+    }
+
+    return c;
   }
 
   /**************************************************************************
@@ -244,10 +306,12 @@ public class StyleableChoiceDialog<T> extends Dialog<T> {
     grid.getChildren().clear();
 
     grid.add(label, 0, 0);
-    grid.add(comboBox1, 0, 1);
-    grid.add(comboBox2, 0, 2);
+    grid.add(checkboxFilter, 0, 1);
+    grid.add(comboBox1, 0, 2);
+    grid.add(comboBox2, 0, 3);
     getDialogPane().setContent(grid);
 
     Platform.runLater(() -> focusReq.requestFocus());
   }
+
 }

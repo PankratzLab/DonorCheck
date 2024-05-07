@@ -42,11 +42,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import org.apache.commons.lang3.tuple.Pair;
+import org.pankratzlab.BackgroundDataProcessor;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
@@ -58,7 +60,7 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-import org.pankratzlab.unet.jfx.StyleableChoiceDialog;
+import org.pankratzlab.unet.jfx.StyleableContingentChoiceDialog;
 import org.pankratzlab.unet.parser.util.BwSerotypes;
 import org.pankratzlab.unet.parser.util.BwSerotypes.BwGroup;
 import org.pankratzlab.unet.parser.util.DRAssociations;
@@ -128,6 +130,9 @@ public class ValidationModelBuilder {
   private Set<SeroType> aLocusFirst = new LinkedHashSet<>();
   private Set<SeroType> bLocusFirst = new LinkedHashSet<>();
   private Set<SeroType> cLocusFirst = new LinkedHashSet<>();
+  private Set<HLAType> aLocusFirstTypes;
+  private Set<HLAType> bLocusFirstTypes;
+  private Set<HLAType> cLocusFirstTypes;
 
   private Map<HLALocus, AllelePairings> possibleAllelePairings = new HashMap<>();
   private Map<HLALocus, AllelePairings> donorAllelePairings = new HashMap<>();
@@ -145,6 +150,11 @@ public class ValidationModelBuilder {
   private Set<HLAType> dqbLocusTypes;
   private Set<HLAType> dpaLocusTypes;
   private Set<HLAType> dpbLocusTypes;
+
+  private Set<HLAType> dqaLocusTypesNonCWD;
+  private Set<HLAType> dqbLocusTypesNonCWD;
+  private Set<HLAType> dpaLocusTypesNonCWD;
+  private Set<HLAType> dpbLocusTypesNonCWD;
 
   private Set<SeroType> drbLocusNonCWD;
   private Set<SeroType> dqaLocusNonCWD;
@@ -197,6 +207,12 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder aTypeNonCWD(HLAType aType) {
+    aLocusFirstTypes = makeIfNull(aLocusFirstTypes);
+    addToLocus(aLocusFirstTypes, HLALocus.A, aType);
+    return this;
+  }
+
   public ValidationModelBuilder aNonCWD(String aType) {
     if (test1(aType)) {
       return null;
@@ -221,6 +237,11 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder bTypeNonCWD(HLAType bType) {
+    bLocusFirstTypes = makeIfNull(bLocusFirstTypes);
+    addToLocus(bLocusFirstTypes, HLALocus.B, bType);
+    return this;
+  }
 
   public ValidationModelBuilder bNonCWD(String bType) {
     if (test1(bType)) {
@@ -246,6 +267,11 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder cTypeNonCWD(HLAType cType) {
+    cLocusFirstTypes = makeIfNull(cLocusFirstTypes);
+    addToLocus(cLocusFirstTypes, HLALocus.C, cType);
+    return this;
+  }
 
   public ValidationModelBuilder cNonCWD(String cType) {
     if (test1(cType)) {
@@ -414,6 +440,15 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder dqbTypeNonCWD(HLAType dqbType) {
+    if (test2(dqbType)) {
+      return null;
+    }
+    dqbLocusTypesNonCWD = makeIfNull(dqbLocusTypesNonCWD);
+    addToLocus(dqbLocusTypesNonCWD, HLALocus.DQB1, dqbType);
+    return this;
+  }
+
   public ValidationModelBuilder dqaType(HLAType dqaType) {
     if (test2(dqaType)) {
       return null;
@@ -423,12 +458,30 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder dqaTypeNonCWD(HLAType dqaType) {
+    if (test2(dqaType)) {
+      return null;
+    }
+    dqaLocusTypesNonCWD = makeIfNull(dqaLocusTypesNonCWD);
+    addToLocus(dqaLocusTypesNonCWD, HLALocus.DQA1, dqaType);
+    return this;
+  }
+
   public ValidationModelBuilder dpaType(HLAType dpaType) {
     if (test2(dpaType)) {
       return null;
     }
     dpaLocusTypes = makeIfNull(dpaLocusTypes);
     addToLocus(dpaLocusTypes, HLALocus.DPA1, dpaType);
+    return this;
+  }
+
+  public ValidationModelBuilder dpaTypeNonCWD(HLAType dpaType) {
+    if (test2(dpaType)) {
+      return null;
+    }
+    dpaLocusTypesNonCWD = makeIfNull(dpaLocusTypesNonCWD);
+    addToLocus(dpaLocusTypesNonCWD, HLALocus.DPA1, dpaType);
     return this;
   }
 
@@ -513,7 +566,7 @@ public class ValidationModelBuilder {
 
     @Override
     public String toString(Supplier<TextFlow> object) {
-      final String selectedData = choices.getSelectedData(object);
+      final String selectedData = choices.getData(object);
       return selectedData == null ? "" : selectedData;
     }
 
@@ -915,135 +968,185 @@ public class ValidationModelBuilder {
     Collections.sort(dr52Locus);
     Collections.sort(dr53Locus);
 
+    return new ValidationResult(true, Optional.empty());
+  }
+
+  BackgroundDataProcessor<HLALocus, PresentableAlleleChoices> choiceSupplier;
+
+  public boolean hasCorrectionsIfSoStartLoading() {
     if (!nonCWDLoci.isEmpty()) {
-      for (HLALocus locus : nonCWDLoci) {
+      // start loading data in the background
+      choiceSupplier = new BackgroundDataProcessor<>(nonCWDLoci,
+          (locus) -> PresentableAlleleChoices.create(locus, getAllelePairs(locus)), (t) -> {
+            t.printStackTrace();
+            return null;
+          });
+      return true;
+    }
+    return false;
+  }
 
-        Set<SeroType> locusSet;
-        Set<HLAType> typesSet;
-        AllelePairings allelePairs = possibleAllelePairings.get(locus);
-        AllelePairings donorPairs = donorAllelePairings.get(locus);
+  public ValidationResult processCorrections() {
 
-        switch (locus) {
-          case A:
-            locusSet = aLocusCWD;
-            typesSet = aLocusCWDTypes;
-            break;
-          case B:
-            locusSet = bLocusCWD;
-            typesSet = bLocusCWDTypes;
-            break;
-          case C:
-            locusSet = cLocusCWD;
-            typesSet = cLocusCWDTypes;
-            break;
-          case DPA1:
-            locusSet = dpaLocus;
-            typesSet = dpaLocusTypes;
-            break;
-          case DQA1:
-            locusSet = dqaLocus;
-            typesSet = dqaLocusTypes;
-            break;
-          case DPB1:
-            locusSet = null;
-            typesSet = dpbLocusTypes;
-          case DQB1:
-            locusSet = dqbLocus;
-            typesSet = dqbLocusTypes;
-          default:
-            allelePairs = null;
-            donorPairs = null;
-            locusSet = null;
-            typesSet = null;
-            break;
-        }
-        if (allelePairs == null || donorPairs == null) {
-          // TODO
-          continue;
-        }
+    for (HLALocus locus : nonCWDLoci) {
+      AllelePairings allelePairs = possibleAllelePairings.get(locus);
+      AllelePairings donorPairs = donorAllelePairings.get(locus);
 
-        Iterator<SeroType> iter = locusSet == null ? null : locusSet.iterator();
-        String header = "Assigned allele pair (" + typesSet.stream().map(ht -> {
-          return (iter == null ? "" : (iter.next()) + " / ") + ht.specString() + " - "
-              + CommonWellDocumented.getEquivStatus(ht);
-        }).collect(Collectors.joining(", ")) + ") for HLA-" + locus.name()
-            + " locus is not Common / Well-Documented.";
+      Set<SeroType> locusSet;
+      Set<SeroType> locusSetNonCWD;
+      Set<HLAType> typesSet;
+      Set<HLAType> typesSetNonCWD;
 
-        String text =
-            "Please select desired allele pair for this locus. Selecting the first allele will populate valid pairings for the second allele.";
-
-        PresentableAlleleChoices choices = PresentableAlleleChoices.create(allelePairs);
-
-        final List<Supplier<TextFlow>> allChoices = choices.getAllChoices();
-
-        Function<Supplier<TextFlow>, String> tooltipProvider = (tf) -> {
-          return Objects.toString(choices.dataMap.get(tf), null);
-        };
-
-        StyleableChoiceDialog<Supplier<TextFlow>> cd = new StyleableChoiceDialog<>(
-            allChoices.get(0), allChoices, choices.getAllSecondChoices(), choices.dataMap);
-        cd.setTitle("Select HLA-" + locus.name() + " Alleles");
-        cd.setHeaderText(header);
-        cd.setContentText(text);
-        cd.setCombo1CellFactory(listView -> new SimpleTableObjectListCell(tooltipProvider));
-        cd.setCombo1ButtonCell(new SimpleTableObjectListCell(tooltipProvider));
-        cd.setCombo2CellFactory(listView -> new SimpleTableObjectListCell(tooltipProvider));
-        cd.setCombo2ButtonCell(new SimpleTableObjectListCell(tooltipProvider));
-        cd.setConverter1(new AlleleStringConverter(choices));
-        cd.setConverter2(new AlleleStringConverter(choices));
-
-        Optional<Supplier<TextFlow>> result = cd.showAndWait();
-
-        if (!result.isPresent()) {
-          return new ValidationResult(false, Optional.empty());
-        }
-
-        Supplier<TextFlow> selAllele1 = result.get();
-        Supplier<TextFlow> selAllele2 = cd.getSelectedSecondItem();
-
-        String allele1 = choices.getSelectedData(selAllele1);
-        String allele2 = choices.getSelectedData(selAllele2);
-
-        HLAType hlaType1 = HLAType.valueOf(allele1);
-        HLAType hlaType2 = HLAType.valueOf(allele2);
-        SeroType seroType1 = hlaType1.equivSafe();
-        SeroType seroType2 = hlaType2.equivSafe();
-
-        final Iterator<HLAType> typeIter = typesSet.iterator();
-        HLAType hlaType1Old = typeIter.next();
-        HLAType hlaType2Old = typeIter.hasNext() ? typeIter.next() : hlaType1Old;
-
-        final Iterator<SeroType> seroIter = locusSet.iterator();
-        SeroType seroType1Old = seroIter.next();
-        SeroType seroType2Old = seroIter.hasNext() ? seroIter.next() : seroType1Old;
-
-        locusSet.clear();
-        locusSet.add(seroType1);
-        locusSet.add(seroType2);
-        typesSet.clear();
-        typesSet.add(hlaType1);
-        typesSet.add(hlaType2);
-
-        boolean a1Match =
-            hlaType1.compareTo(hlaType1Old) == 0 || hlaType1.compareTo(hlaType2Old) == 0;
-        boolean a2Match =
-            hlaType2.compareTo(hlaType1Old) == 0 || hlaType2.compareTo(hlaType2Old) == 0;
-
-        if (!a1Match || !a2Match) {
-          ImmutableSortedSet<TypePair> prevSet = ImmutableSortedSet
-              .of(new TypePair(hlaType1Old, seroType1Old), new TypePair(hlaType2Old, seroType2Old));
-
-          ImmutableSortedSet<TypePair> newSet = ImmutableSortedSet
-              .of(new TypePair(hlaType1, seroType1), new TypePair(hlaType2, seroType2));
-
-
-          remapping.put(locus, Pair.of(prevSet, newSet));
-        }
+      // TODO replace this switch-statement with OOP design somehow...
+      switch (locus) {
+        case A:
+          locusSet = aLocusCWD;
+          locusSetNonCWD = aLocusFirst;
+          typesSet = aLocusCWDTypes;
+          typesSetNonCWD = aLocusFirstTypes;
+          break;
+        case B:
+          locusSet = bLocusCWD;
+          locusSetNonCWD = bLocusFirst;
+          typesSet = bLocusCWDTypes;
+          typesSetNonCWD = bLocusFirstTypes;
+          break;
+        case C:
+          locusSet = cLocusCWD;
+          locusSetNonCWD = cLocusFirst;
+          typesSet = cLocusCWDTypes;
+          typesSetNonCWD = cLocusFirstTypes;
+          break;
+        case DPA1:
+          locusSet = dpaLocus;
+          locusSetNonCWD = dpaLocusNonCWD;
+          typesSet = dpaLocusTypes;
+          typesSetNonCWD = dpaLocusTypesNonCWD;
+          break;
+        case DQA1:
+          locusSet = dqaLocus;
+          locusSetNonCWD = dqaLocusNonCWD;
+          typesSet = dqaLocusTypes;
+          typesSetNonCWD = dqaLocusTypesNonCWD;
+          break;
+        case DPB1:
+          locusSet = null;
+          locusSetNonCWD = dpbLocusNonCWD.stream().map(HLAType::equivSafe)
+              .collect(ImmutableSet.toImmutableSet());
+          typesSet = dpbLocusTypes;
+          typesSetNonCWD = dpbLocusTypesNonCWD;
+        case DQB1:
+          locusSet = dqbLocus;
+          locusSetNonCWD = dqbLocusNonCWD;
+          typesSet = dqbLocusTypes;
+          typesSetNonCWD = dqbLocusTypesNonCWD;
+        default:
+          allelePairs = null;
+          donorPairs = null;
+          locusSet = null;
+          locusSetNonCWD = null;
+          typesSet = null;
+          typesSetNonCWD = null;
+          break;
+      }
+      if (allelePairs == null || donorPairs == null) {
+        // TODO
+        continue;
       }
 
+      Iterator<SeroType> iter = locusSetNonCWD == null ? null : locusSetNonCWD.iterator();
+      String header = "Assigned allele pair (" + typesSetNonCWD.stream().map(ht -> {
+        return (iter == null ? "" : (iter.next()) + " / ") + ht.specString() + " - "
+            + CommonWellDocumented.getEquivStatus(ht);
+      }).collect(Collectors.joining(", ")) + ") for HLA-" + locus.name()
+          + " locus is not Common / Well-Documented.";
+
+      String text =
+          "Please select desired allele pair for this locus. Selecting the first allele will populate valid pairings for the second allele.";
+
+      // FIXME TODO this needs to be done on a Task thread to show a progress spinner if it blocks
+      // while loading. However, the choice dialogs need to be created on the JavaFX thread.
+      // But also, this method overall needs to return a single validation result object ...
+      PresentableAlleleChoices choices = choiceSupplier.get(locus);
+
+      final List<Supplier<TextFlow>> allChoices = choices.getAllChoices();
+
+      Function<Supplier<TextFlow>, String> tooltipProvider = (tf) -> {
+        return Objects.toString(choices.dataMap.get(tf), null);
+      };
+
+      String filterName = "Show CIWD Alleles Only";
+      Predicate<Supplier<TextFlow>> filter = (tf) -> {
+        return isAnyPartCWD(choices.getData(tf));
+      };
+
+      StyleableContingentChoiceDialog<Supplier<TextFlow>> cd =
+          new StyleableContingentChoiceDialog<>(allChoices, Lists.newArrayList(),
+              choices.getAllSecondChoices(), choices.dataMap, filterName, filter);
+      cd.setTitle("Select HLA-" + locus.name() + " Alleles");
+      cd.setHeaderText(header);
+      cd.setContentText(text);
+      cd.setCombo1CellFactory(listView -> new SimpleTableObjectListCell(tooltipProvider));
+      cd.setCombo1ButtonCell(new SimpleTableObjectListCell(tooltipProvider));
+      cd.setCombo2CellFactory(listView -> new SimpleTableObjectListCell(tooltipProvider));
+      cd.setCombo2ButtonCell(new SimpleTableObjectListCell(tooltipProvider));
+      cd.setConverter1(new AlleleStringConverter(choices));
+      cd.setConverter2(new AlleleStringConverter(choices));
+
+      Optional<Supplier<TextFlow>> result = cd.showAndWait();
+
+      if (!result.isPresent()) {
+        return new ValidationResult(false, Optional.empty());
+      }
+
+      Supplier<TextFlow> selAllele1 = result.get();
+      Supplier<TextFlow> selAllele2 = cd.getSelectedSecondItem();
+
+      String allele1 = choices.getData(selAllele1);
+      String allele2 = choices.getData(selAllele2);
+
+      HLAType hlaType1 = HLAType.valueOf(allele1);
+      HLAType hlaType2 = HLAType.valueOf(allele2);
+      SeroType seroType1 = hlaType1.equivSafe();
+      SeroType seroType2 = hlaType2.equivSafe();
+
+      final Iterator<HLAType> typeIter = typesSet.iterator();
+      HLAType hlaType1Old = typeIter.next();
+      HLAType hlaType2Old = typeIter.hasNext() ? typeIter.next() : hlaType1Old;
+
+      final Iterator<SeroType> seroIter = locusSet.iterator();
+      SeroType seroType1Old = seroIter.next();
+      SeroType seroType2Old = seroIter.hasNext() ? seroIter.next() : seroType1Old;
+
+      locusSet.clear();
+      locusSet.add(seroType1);
+      locusSet.add(seroType2);
+      typesSet.clear();
+      typesSet.add(hlaType1);
+      typesSet.add(hlaType2);
+
+      boolean a1Match =
+          hlaType1.compareTo(hlaType1Old) == 0 || hlaType1.compareTo(hlaType2Old) == 0;
+      boolean a2Match =
+          hlaType2.compareTo(hlaType1Old) == 0 || hlaType2.compareTo(hlaType2Old) == 0;
+
+      if (!a1Match || !a2Match) {
+        ImmutableSortedSet<TypePair> prevSet = ImmutableSortedSet
+            .of(new TypePair(hlaType1Old, seroType1Old), new TypePair(hlaType2Old, seroType2Old));
+
+        ImmutableSortedSet<TypePair> newSet = ImmutableSortedSet
+            .of(new TypePair(hlaType1, seroType1), new TypePair(hlaType2, seroType2));
+
+
+        remapping.put(locus, Pair.of(prevSet, newSet));
+      }
     }
 
     return new ValidationResult(true, Optional.empty());
+  }
+
+  private AllelePairings getAllelePairs(HLALocus locus) {
+    return possibleAllelePairings.get(locus);
   }
 
   public abstract static class PresentableDataChoices<T, R> {
@@ -1072,8 +1175,12 @@ public class ValidationModelBuilder {
 
     public abstract List<T> getMatchingChoices(String userInput);
 
-    public R getSelectedData(T selected) {
-      return dataMap.get(selected);
+    public R getData(T presentable) {
+      return dataMap.get(presentable);
+    }
+
+    public T getPresentation(R data) {
+      return dataMap.inverse().get(data);
     }
 
   }
@@ -1081,13 +1188,12 @@ public class ValidationModelBuilder {
   public static class PresentableAlleleChoices
       extends PresentableDataChoices<Supplier<TextFlow>, String> {
 
-    public static PresentableAlleleChoices create(AllelePairings allelePairings) {
+    public static PresentableAlleleChoices create(HLALocus locus, AllelePairings allelePairings) {
+
       List<Supplier<TextFlow>> userChoices = new ArrayList<>();
       ListMultimap<Supplier<TextFlow>, Supplier<TextFlow>> secondChoices =
           SortedSetMultimapBuilder.hashKeys().arrayListValues().build();
       BiMap<Supplier<TextFlow>, String> presentationToDataMap = HashBiMap.create();
-
-      userChoices.add(() -> new TextFlow());
 
       List<String> alleleKeys = new ArrayList<>(allelePairings.map.keySet());
       sortAlleleStrings(alleleKeys);
@@ -1100,6 +1206,7 @@ public class ValidationModelBuilder {
         userChoices.add(supp);
         presentationToDataMap.put(supp, allele);
       }
+
 
       for (Supplier<TextFlow> choice : userChoices) {
         String data = presentationToDataMap.get(choice);
@@ -1129,13 +1236,14 @@ public class ValidationModelBuilder {
 
     private static List<String> condenseIntoGroups(AllelePairings allelePairings,
         List<String> alleleKeys, boolean checkPairings) {
+
       List<List<String>> subsets = new ArrayList<>();
       List<String> subset = new ArrayList<>();
 
       HLAType prev3FieldType = null;
 
       // all allele strings should be in the correct order now
-      // now let's condense into subsets of the same allele types, with
+      // now let's condense into subsets of the same serotypes, with
       // separate subsets for N/n and LSCAQ/lscaq alleles
       for (String allele : alleleKeys) {
         if (allele.matches(NOT_EXPRESSED) || allele.matches(NOT_ON_CELL_SURFACE)) {
@@ -1259,8 +1367,8 @@ public class ValidationModelBuilder {
         boolean check2C = s2.matches(NOT_ON_CELL_SURFACE);
         boolean check1 = check1N || check1C;
         boolean check2 = check2N || check2C;
-        char s1C = s1.charAt(s1.length() - 1);
-        char s2C = s2.charAt(s2.length() - 1);
+        // char s1C = s1.charAt(s1.length() - 1);
+        // char s2C = s2.charAt(s2.length() - 1);
         String s1Hs = check1 ? s1.substring(0, s1.length() - 1) : s1;
         String s2Hs = check2 ? s2.substring(0, s2.length() - 1) : s2;
 
@@ -1333,11 +1441,11 @@ public class ValidationModelBuilder {
     List<Text> textNodes = new ArrayList<>();
     if (allele.contains("-")) {
       String[] a = allele.split("-");
-      addTextNodes(textNodes, a[0]);
-      textNodes.add(new Text("-"));
-      addTextNodes(textNodes, a[1]);
+      addTextNodes(textNodes, a[0], false);
+      textNodes.add(new Text(" - "));
+      addTextNodes(textNodes, a[1], true);
     } else {
-      addTextNodes(textNodes, allele);
+      addTextNodes(textNodes, allele, true);
     }
 
     Text[] nodes = textNodes.toArray(new Text[textNodes.size()]);
@@ -1345,7 +1453,14 @@ public class ValidationModelBuilder {
     return tf;
   }
 
-  private static void addTextNodes(List<Text> textNodes, final String allele) {
+  private boolean isAnyPartCWD(String allele) {
+    HLAType alleleType = HLAType.valueOf(allele);
+    Status status1 = CommonWellDocumented.getStatus(alleleType);
+
+    return status1 != Status.UNKNOWN;
+  }
+
+  private static void addTextNodes(List<Text> textNodes, final String allele, boolean addSero) {
     HLAType alleleType = HLAType.valueOf(allele);
     HLAType cwdType1 = CommonWellDocumented.getCWDType(alleleType);
     Status status1 = CommonWellDocumented.getStatus(alleleType);
@@ -1377,8 +1492,10 @@ public class ValidationModelBuilder {
           .add(new Text(specString + (match ? ("" + allele.charAt(allele.length() - 1)) : "")));
     }
 
-    textNodes.add(
-        new Text(" (" + alleleType.locus().name() + alleleType.equivSafe().specString() + ")"));
+    if (addSero) {
+      textNodes.add(
+          new Text(" (" + alleleType.locus().name() + alleleType.equivSafe().specString() + ")"));
+    }
   }
 
   private static class SimpleTableObjectListCell extends ListCell<Supplier<TextFlow>> {
