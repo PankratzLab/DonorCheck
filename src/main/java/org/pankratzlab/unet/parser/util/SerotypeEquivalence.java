@@ -21,6 +21,12 @@
  */
 package org.pankratzlab.unet.parser.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
@@ -30,9 +36,34 @@ import com.google.common.collect.ImmutableMap.Builder;
 /** Utility class recording the mapping of genotypes to reported serotypes */
 public final class SerotypeEquivalence {
 
+  private static final String CAREDX_FILE = "ExpertWhoSerology_20240110_3.54.xml";
   private static final ImmutableMap<HLAType, SeroType> equivalencies;
 
   static {
+    equivalencies = buildOldLookup();
+  }
+
+  private static ImmutableMap<HLAType, SeroType> buildNewLookup() {
+    Builder<HLAType, SeroType> builder = ImmutableMap.builder();
+
+    try (InputStream xmlStream =
+        SerotypeEquivalence.class.getClassLoader().getResourceAsStream(CAREDX_FILE)) {
+      Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
+
+      Elements elementsByTag = element.getElementsByTag(SINGLE_LOCUS_TAG);
+      for (Element e : elementsByTag) {
+        processLocus(builder, e);
+      }
+
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw new IllegalStateException("Invalid XML file: " + CAREDX_FILE);
+    }
+
+    return builder.build();
+  }
+
+  private static ImmutableMap<HLAType, SeroType> buildOldLookup() {
     // Build the equivalencies map
     Builder<HLAType, SeroType> builder = ImmutableMap.builder();
     // TODO would be nice to read this from a file instead
@@ -72,7 +103,7 @@ public final class SerotypeEquivalence {
     put(builder, "8", HLALocus.DQB1, "03:02", "03:05");
     put(builder, "9", HLALocus.DQB1, "03:03");
 
-    equivalencies = builder.build();
+    return builder.build();
   }
 
   // put method for creating the reference table used in the get method.
