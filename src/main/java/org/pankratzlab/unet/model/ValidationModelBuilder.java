@@ -729,24 +729,28 @@ public class ValidationModelBuilder {
         double bestCWD;
         int i;
 
-        bestCWD = CommonWellDocumented.getEquivStatus(firstStrandTypes.get(0)).getWeight();
-        i = 1;
-        while (i < firstStrandTypes.size() && CommonWellDocumented
-            .getEquivStatus(firstStrandTypes.get(i)).getWeight() == bestCWD) {
-          i++;
-        }
-        for (int j = firstStrandTypes.size() - 1; j >= i; j--) {
-          firstStrandTypes.remove(j);
+        if (!firstStrandTypes.isEmpty()) {
+          bestCWD = CommonWellDocumented.getEquivStatus(firstStrandTypes.get(0)).getWeight();
+          i = 1;
+          while (i < firstStrandTypes.size() && CommonWellDocumented
+              .getEquivStatus(firstStrandTypes.get(i)).getWeight() == bestCWD) {
+            i++;
+          }
+          for (int j = firstStrandTypes.size() - 1; j >= i; j--) {
+            firstStrandTypes.remove(j);
+          }
         }
 
-        bestCWD = CommonWellDocumented.getEquivStatus(secondStrandTypes.get(0)).getWeight();
-        i = 1;
-        while (i < secondStrandTypes.size() && CommonWellDocumented
-            .getEquivStatus(secondStrandTypes.get(i)).getWeight() == bestCWD) {
-          i++;
-        }
-        for (int j = secondStrandTypes.size() - 1; j >= i; j--) {
-          secondStrandTypes.remove(j);
+        if (!secondStrandTypes.isEmpty()) {
+          bestCWD = CommonWellDocumented.getEquivStatus(secondStrandTypes.get(0)).getWeight();
+          i = 1;
+          while (i < secondStrandTypes.size() && CommonWellDocumented
+              .getEquivStatus(secondStrandTypes.get(i)).getWeight() == bestCWD) {
+            i++;
+          }
+          for (int j = secondStrandTypes.size() - 1; j >= i; j--) {
+            secondStrandTypes.remove(j);
+          }
         }
 
         // set up the second strand options to iterate over after the first haplotype is built
