@@ -1,6 +1,5 @@
 package org.pankratzlab.unet.jfx;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -10,6 +9,7 @@ import com.sun.javafx.scene.control.skin.resources.ControlResources;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -49,7 +49,8 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
   private final ComboBox<T> comboBox1;
   private final ComboBox<T> comboBox2;
   private final T defaultChoice;
-  private final CheckBox checkboxFilter;
+  private final CheckBox checkboxFilter1;
+  private final CheckBox checkboxFilter2;
   private final Predicate<T> filterPredicate;
 
 
@@ -122,46 +123,22 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     GridPane.setFillWidth(comboBox1, true);
     comboBox1.setMaxHeight(10);
 
-    // comboBox1.setOnKeyTyped((kv) -> {
-    // try {
-    // comboBox1.getEditor().getText();
-    // comboBox1.getItems().clear();
-    //
-    // comboBox1.getItems().addAll(choices);
-    // comboBox1.show();
-    // } catch (Throwable t) {
-    // t.printStackTrace();
-    // }
-    // // TODO
-    // });
-
-
     this.filterPredicate = filter;
-    checkboxFilter = new CheckBox(filterName);
-    checkboxFilter.selectedProperty().addListener((obs, oldV, newV) -> {
-      T sel1 = comboBox1.getSelectionModel().getSelectedItem();
-      T sel2 = comboBox2.getSelectionModel().getSelectedItem();
 
-      Collection<T> firstChoices = new ArrayList<>(choices);
-      if (newV) {
-        firstChoices = firstChoices.stream().filter(filterPredicate).collect(Collectors.toList());
-      }
-      Collection<T> secondChoices = getSecondChoices(secondChoiceMap, sel1, newV);
+    checkboxFilter1 = new CheckBox(filterName);
+    checkboxFilter2 = new CheckBox(filterName);
 
-      comboBox1.getItems().setAll(firstChoices);
-
-      updateSecondComboChoices(secondChoices);
-
-      comboBox1.getSelectionModel().select(sel1);
-      comboBox2.getSelectionModel().select(sel2);
-    });
+    checkboxFilter1.selectedProperty()
+        .addListener((obs, oldV, newV) -> updateFirstComboChoices(newV, choices));
+    checkboxFilter2.selectedProperty()
+        .addListener((obs, oldV, newV) -> updateSecondComboState(secondChoiceMap, newV));
 
     comboBox1.valueProperty().addListener((obs, oldV, newV) -> {
       try {
-        final Collection<T> c =
-            getSecondChoices(secondChoiceMap, newV, checkboxFilter.isSelected());
-
-        updateSecondComboChoices(c);
+        Collection<T> c = getSecondChoices(secondChoiceMap, newV, checkboxFilter2.isSelected());
+        comboBox2.getSelectionModel().clearSelection();
+        comboBox2.getItems().setAll(c);
+        comboBox2.setDisable(c.isEmpty());
       } catch (Throwable t) {
         throw new RuntimeException(t);
       }
@@ -197,11 +174,30 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
 
   }
 
-  private void updateSecondComboChoices(final Collection<T> c) {
-    comboBox2.getSelectionModel().clearSelection();
-    comboBox2.getItems().setAll(c);
-    comboBox2.setDisable(c.isEmpty());
-    comboBox2.setPromptText(c.isEmpty() ? "No valid pairings found." : null);
+  private void updateFirstComboChoices(boolean filterActive, Collection<T> choices) {
+    ObservableList<T> filteredChoices =
+        choices.stream().filter(item -> !filterActive || filterPredicate.test(item))
+            .collect(Collectors.toCollection(FXCollections::observableArrayList));
+    comboBox1.setItems(filteredChoices);
+    if (!filteredChoices.contains(comboBox1.getSelectionModel().getSelectedItem())) {
+      comboBox1.getSelectionModel().clearSelection();
+    }
+  }
+
+
+  private void updateSecondComboState(Multimap<T, T> secondChoiceMap, boolean filterActive) {
+    T selectedFirstItem = comboBox1.getSelectionModel().getSelectedItem();
+    ObservableList<T> secondChoices =
+        FXCollections.observableArrayList(secondChoiceMap.get(selectedFirstItem));
+    if (filterActive) {
+      secondChoices = secondChoices.stream().filter(filterPredicate)
+          .collect(Collectors.toCollection(FXCollections::observableArrayList));
+    }
+    comboBox2.setItems(secondChoices);
+    comboBox2.setDisable(secondChoices.isEmpty());
+    if (!secondChoices.contains(comboBox2.getSelectionModel().getSelectedItem())) {
+      comboBox2.getSelectionModel().clearSelection();
+    }
   }
 
   private Collection<T> getSecondChoices(Multimap<T, T> secondChoiceMap, T newV, boolean filter) {
@@ -306,9 +302,10 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     grid.getChildren().clear();
 
     grid.add(label, 0, 0);
-    grid.add(checkboxFilter, 0, 1);
+    grid.add(checkboxFilter1, 0, 1);
     grid.add(comboBox1, 0, 2);
-    grid.add(comboBox2, 0, 3);
+    grid.add(checkboxFilter2, 0, 3);
+    grid.add(comboBox2, 0, 4);
     getDialogPane().setContent(grid);
 
     Platform.runLater(() -> focusReq.requestFocus());
