@@ -941,15 +941,16 @@ public class XmlScore6Parser {
       SeroType st2 = combination.getAntigenCombination();
 
       if (st.compareTo(st1) != 0 || st.compareTo(st2) != 0 || st1.compareTo(st2) != 0) {
-        System.out.println(
-            "Discrepant lookup (special | equivSafe | parsed): " + st + " | " + st1 + " | " + st2);
+        System.err.println(
+            "Discrepant lookup (score6 | equivSafe | file):\t" + st + "\t" + st1 + "\t" + st2);
       }
 
       return st.specString();
     }
 
+    // TODO why not return combination.antigenCombination?
     // Not a special case allele - use standard rules
-    return getAlleleSpec(combination);
+    return combination.alleleCombination.equivSafe().specString();
   }
 
   /** @return The {@link HLAType} specificity of an allele + antigen pairing */

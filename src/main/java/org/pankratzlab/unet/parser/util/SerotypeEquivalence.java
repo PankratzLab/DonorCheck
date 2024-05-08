@@ -23,6 +23,7 @@ package org.pankratzlab.unet.parser.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -32,27 +33,33 @@ import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Sets;
 
 /** Utility class recording the mapping of genotypes to reported serotypes */
 public final class SerotypeEquivalence {
 
   private static final String CAREDX_FILE = "ExpertWhoSerology_20240110_3.54.xml";
-  private static final ImmutableMap<HLAType, SeroType> equivalencies;
+  private static final ImmutableMap<HLAType, SeroType> careDxEquivalencies;
+  private static final ImmutableMap<HLAType, SeroType> manualEquivalencies;
+
+  private static final Set<String> INVALID =
+      Sets.newHashSet(null, "-", "Undefined", "Null", "NotExpressed", "Blank");
 
   static {
-    equivalencies = buildOldLookup();
+    careDxEquivalencies = buildLookupFromCareDxXMLFile();
+    manualEquivalencies = buildManualOverrideLookup();
   }
 
-  private static ImmutableMap<HLAType, SeroType> buildNewLookup() {
+  private static ImmutableMap<HLAType, SeroType> buildLookupFromCareDxXMLFile() {
     Builder<HLAType, SeroType> builder = ImmutableMap.builder();
 
     try (InputStream xmlStream =
         SerotypeEquivalence.class.getClassLoader().getResourceAsStream(CAREDX_FILE)) {
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
 
-      Elements elementsByTag = element.getElementsByTag(SINGLE_LOCUS_TAG);
+      Elements elementsByTag = parsed.getElementsByTag("allele");
       for (Element e : elementsByTag) {
-        processLocus(builder, e);
+        processAllele(builder, e);
       }
 
     } catch (IOException e) {
@@ -63,7 +70,38 @@ public final class SerotypeEquivalence {
     return builder.build();
   }
 
-  private static ImmutableMap<HLAType, SeroType> buildOldLookup() {
+  private static void processAllele(Builder<HLAType, SeroType> builder, Element e) {
+    Element elementById = e.getElementsByTag("allelename").get(0);
+    if (elementById == null) {
+      elementById = e.getElementsByTag("alleleName").get(0);
+    }
+    if (elementById == null) {
+      System.err.println("Couldn't find allele name: " + e.toString());
+      return;
+    }
+    final String alleleText = elementById.text();
+    HLAType allele = HLAType.valueOf(alleleText);
+    Elements expertElements = e.getElementsByTag("expert");
+    String careDxSeroText = expertElements.isEmpty() ? null : expertElements.get(0).text();
+    Elements whoElements = e.getElementsByTag("WHO");
+    String whoSeroText = whoElements.isEmpty() ? null : whoElements.get(0).text();
+    if (INVALID.contains(careDxSeroText) && INVALID.contains(whoSeroText))
+      return;
+
+    try {
+      HLALocus locus = HLALocus.valueOf("" + careDxSeroText.charAt(0));
+      put(builder, careDxSeroText.substring(1), locus, allele.specString());
+    } catch (IllegalArgumentException e1) {
+      try {
+        HLALocus locus = HLALocus.valueOf("" + whoSeroText.charAt(0));
+        put(builder, whoSeroText.substring(1), locus, allele.specString());
+      } catch (IllegalArgumentException e2) {
+        return;
+      }
+    }
+  }
+
+  private static ImmutableMap<HLAType, SeroType> buildManualOverrideLookup() {
     // Build the equivalencies map
     Builder<HLAType, SeroType> builder = ImmutableMap.builder();
     // TODO would be nice to read this from a file instead
@@ -126,6 +164,6 @@ public final class SerotypeEquivalence {
       // All the equivalencies are based on 2-field alleles
       allele = new HLAType(allele.locus(), allele.spec().subList(0, 2));
     }
-    return equivalencies.get(allele);
+    return manualEquivalencies.getOrDefault(allele, careDxEquivalencies.get(allele));
   }
 }
