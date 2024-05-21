@@ -8,9 +8,9 @@ import com.google.common.collect.Multimap;
 import com.sun.javafx.scene.control.skin.resources.ControlResources;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ButtonBar.ButtonData;
@@ -22,9 +22,12 @@ import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
@@ -46,12 +49,16 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
 
   private final GridPane grid;
   private final Label label;
+  private final RadioButton opt1Choice;
+  private final RadioButton opt2Choice;
+  private final RadioButton manualChoice;
   private final ComboBox<T> comboBox1;
   private final ComboBox<T> comboBox2;
-  private final T defaultChoice;
   private final CheckBox checkboxFilter1;
   private final CheckBox checkboxFilter2;
   private final Predicate<T> filterPredicate;
+  private final Option<T> opt1;
+  private final Option<T> opt2;
 
 
   /**************************************************************************
@@ -74,15 +81,17 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
    * 
    *        TODO Encapsulate filterName / filterPredicate so they are optional
    */
-  public StyleableContingentChoiceDialog(Collection<T> choices, Collection<T> invalidChoices,
-      Multimap<T, T> secondChoiceMap, Map<T, ? extends Object> valueMap, String filterName,
-      Predicate<T> filter) {
-    this(null, choices, invalidChoices, secondChoiceMap, valueMap, filterName, filter);
-  }
-
   public StyleableContingentChoiceDialog(T defaultChoice, Collection<T> choices,
       Collection<T> invalidChoices, Multimap<T, T> secondChoiceMap,
-      Map<T, ? extends Object> valueMap, String filterName, Predicate<T> filter) {
+      Map<T, ? extends Object> valueMap, String filterName,
+      Predicate<T> filter/*
+                          * , BiPredicate<String, T> textEntryMatcher
+                          */, Option<T> opt1, Option<T> opt2, Node manualChoiceGraphic) {
+
+    // this.textEntryPredicate = textEntryMatcher;
+    this.opt1 = opt1;
+    this.opt2 = opt2;
+
     final DialogPane dialogPane = getDialogPane();
 
     // -- grid
@@ -94,7 +103,6 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
 
     // -- label
     label = createContentLabel(dialogPane.getContentText());
-    label.setPrefWidth(Region.USE_COMPUTED_SIZE);
     label.textProperty().bind(dialogPane.contentTextProperty());
 
     setTitle(ControlResources.getString("Dialog.confirm.title"));
@@ -102,12 +110,12 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     dialogPane.getStyleClass().add("choice-dialog");
     dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-    final double MIN_WIDTH = 150;
+    final double MIN_WIDTH = 50;
 
     comboBox2 = new ComboBox<T>();
     comboBox2.setMinWidth(MIN_WIDTH);
     comboBox2.setMaxWidth(Double.MAX_VALUE);
-    GridPane.setHgrow(comboBox2, Priority.ALWAYS);
+    GridPane.setHgrow(comboBox2, Priority.SOMETIMES);
     GridPane.setFillWidth(comboBox2, true);
     comboBox2.setMaxHeight(10);
     comboBox2.setDisable(true);
@@ -119,7 +127,7 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
       comboBox1.getItems().addAll(choices);
     }
     comboBox1.setMaxWidth(Double.MAX_VALUE);
-    GridPane.setHgrow(comboBox1, Priority.ALWAYS);
+    GridPane.setHgrow(comboBox1, Priority.SOMETIMES);
     GridPane.setFillWidth(comboBox1, true);
     comboBox1.setMaxHeight(10);
 
@@ -131,40 +139,78 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     checkboxFilter1.selectedProperty()
         .addListener((obs, oldV, newV) -> updateFirstComboChoices(newV, choices));
     checkboxFilter2.selectedProperty()
-        .addListener((obs, oldV, newV) -> updateSecondComboState(secondChoiceMap, newV));
+        .addListener((obs, oldV, newV) -> updateSecondComboState(secondChoiceMap,
+            comboBox1.getSelectionModel().getSelectedItem(), newV));
 
-    comboBox1.valueProperty().addListener((obs, oldV, newV) -> {
-      try {
-        Collection<T> c = getSecondChoices(secondChoiceMap, newV, checkboxFilter2.isSelected());
-        comboBox2.getSelectionModel().clearSelection();
-        comboBox2.getItems().setAll(c);
-        comboBox2.setDisable(c.isEmpty());
-      } catch (Throwable t) {
-        throw new RuntimeException(t);
-      }
-    });
+    opt1Choice = new RadioButton();
+    opt2Choice = new RadioButton();
 
-    this.defaultChoice = comboBox1.getItems().contains(defaultChoice) ? defaultChoice : null;
+    opt1.graphic.setOnMouseClicked(opt1Choice.getOnMouseClicked());
+    opt1.graphic.setOnMouseEntered(opt1Choice.getOnMouseEntered());
+    opt1.graphic.setOnMouseExited(opt1Choice.getOnMouseExited());
+    opt1.graphic.setOnMousePressed(opt1Choice.getOnMousePressed());
+    opt1.graphic.setOnMouseReleased(opt1Choice.getOnMouseReleased());
+
+    opt2.graphic.setOnMouseClicked(opt2Choice.getOnMouseClicked());
+    opt2.graphic.setOnMouseEntered(opt2Choice.getOnMouseEntered());
+    opt2.graphic.setOnMouseExited(opt2Choice.getOnMouseExited());
+    opt2.graphic.setOnMousePressed(opt2Choice.getOnMousePressed());
+    opt2.graphic.setOnMouseReleased(opt2Choice.getOnMouseReleased());
+
+    manualChoice = new RadioButton();
+    manualChoice.setGraphic(manualChoiceGraphic);
+
+    ToggleGroup group = new ToggleGroup();
+    opt1Choice.setToggleGroup(group);
+    opt2Choice.setToggleGroup(group);
+    manualChoice.setToggleGroup(group);
 
     if (defaultChoice != null) {
       comboBox1.getSelectionModel().select(defaultChoice);
     }
 
+    // these are basic bindings
+    checkboxFilter1.disableProperty().bind(manualChoice.selectedProperty().not());
+    checkboxFilter2.disableProperty().bind(manualChoice.selectedProperty().not());
+    comboBox1.disableProperty().bind(manualChoice.selectedProperty().not());
+
+    // this is a more complex binding:
+    // we want to disable the combobox if no options are available
+    comboBox2.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+      boolean enable = manualChoice.selectedProperty().get()
+          && !comboBox1.getSelectionModel().isEmpty() && !comboBox2.getItems().isEmpty();
+      return !enable;
+    }, manualChoice.selectedProperty(), comboBox1.selectionModelProperty(),
+        comboBox1.getSelectionModel().selectedItemProperty(), comboBox2.itemsProperty()));
+
+    // update the second combobox items when the first combobox selection changes
+    comboBox1.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+      // comboBox1.valueProperty().addListener((obs, oldV, newV) -> {
+      try {
+        updateSecondComboState(secondChoiceMap, newV, checkboxFilter2.isSelected());
+      } catch (Throwable t) {
+        throw new RuntimeException(t);
+      }
+    });
+
     Node okButton = dialogPane.lookupButton(ButtonType.OK);
 
     okButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
-      return comboBox2.disableProperty().get()
+      return (comboBox2.disableProperty().get()
           || invalidChoices.contains(comboBox1.getSelectionModel().getSelectedItem())
           || invalidChoices.contains(comboBox2.getSelectionModel().getSelectedItem())
-          || comboBox2.getSelectionModel().isEmpty();
+          || comboBox2.getSelectionModel().isEmpty())
+          && !(opt1Choice.selectedProperty().get() || opt2Choice.selectedProperty().get());
       // for this .isEmpty() call to work,
       // the binding must include the
       // selectedItemProperty as a dependency
-    }, comboBox2.disableProperty(), comboBox2.getSelectionModel().selectedItemProperty()));
+    }, comboBox2.disableProperty(), comboBox2.getSelectionModel().selectedItemProperty(),
+        opt1Choice.selectedProperty(), opt2Choice.selectedProperty()));
 
-    dialogPane.contentTextProperty().addListener(o -> updateGrid(comboBox1));
+    dialogPane.contentTextProperty()
+        .addListener(o -> updateGrid(this.getDialogPane().lookupButton(ButtonType.CANCEL)));
 
-    updateGrid(comboBox1);
+    updateGrid(this.getDialogPane().lookupButton(ButtonType.CANCEL));
 
     setResultConverter((dialogButton) -> {
       ButtonData data = dialogButton == null ? null : dialogButton.getButtonData();
@@ -174,41 +220,43 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
 
   }
 
-  private void updateFirstComboChoices(boolean filterActive, Collection<T> choices) {
+  private ObservableList<T> getFirstComboChoices(boolean filterActive, Collection<T> choices) {
     ObservableList<T> filteredChoices =
         choices.stream().filter(item -> !filterActive || filterPredicate.test(item))
             .collect(Collectors.toCollection(FXCollections::observableArrayList));
+    return filteredChoices;
+  }
+
+  private ObservableList<T> getSecondComboChoices(Multimap<T, T> secondChoiceMap,
+      T selectedFirstItem, boolean filterActive) {
+    ObservableList<T> secondChoices;
+    secondChoices = FXCollections.observableArrayList(secondChoiceMap.get(selectedFirstItem));
+    if (filterActive) {
+      secondChoices = secondChoices.stream().filter(filterPredicate)
+          .collect(Collectors.toCollection(FXCollections::observableArrayList));
+    }
+    return secondChoices;
+  }
+
+  private void updateFirstComboChoices(boolean filterActive, Collection<T> choices) {
+    ObservableList<T> filteredChoices = getFirstComboChoices(filterActive, choices);
     comboBox1.setItems(filteredChoices);
     if (!filteredChoices.contains(comboBox1.getSelectionModel().getSelectedItem())) {
       comboBox1.getSelectionModel().clearSelection();
     }
   }
 
-
-  private void updateSecondComboState(Multimap<T, T> secondChoiceMap, boolean filterActive) {
-    T selectedFirstItem = comboBox1.getSelectionModel().getSelectedItem();
-    ObservableList<T> secondChoices =
-        FXCollections.observableArrayList(secondChoiceMap.get(selectedFirstItem));
-    if (filterActive) {
-      secondChoices = secondChoices.stream().filter(filterPredicate)
-          .collect(Collectors.toCollection(FXCollections::observableArrayList));
-    }
+  private void updateSecondComboState(Multimap<T, T> secondChoiceMap, T selectedFirstItem,
+      boolean filterActive) {
+    ObservableList<T> secondChoices;
+    secondChoices = getSecondComboChoices(secondChoiceMap, selectedFirstItem, filterActive);
     comboBox2.setItems(secondChoices);
-    comboBox2.setDisable(secondChoices.isEmpty());
     if (!secondChoices.contains(comboBox2.getSelectionModel().getSelectedItem())) {
       comboBox2.getSelectionModel().clearSelection();
     }
   }
 
-  private Collection<T> getSecondChoices(Multimap<T, T> secondChoiceMap, T newV, boolean filter) {
-    Collection<T> c = secondChoiceMap.get(newV);
 
-    if (filter) {
-      c = c.stream().filter(filterPredicate).collect(Collectors.toList());
-    }
-
-    return c;
-  }
 
   /**************************************************************************
    *
@@ -220,11 +268,25 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
    * Returns the currently selected item in the dialog.
    */
   public final T getSelectedItem() {
-    return comboBox1.getSelectionModel().getSelectedItem();
+    if (manualChoice.isSelected()) {
+      return comboBox1.getSelectionModel().getSelectedItem();
+    } else if (opt1Choice.isSelected()) {
+      return opt1.opt1;
+    } else if (opt2Choice.isSelected()) {
+      return opt2.opt1;
+    }
+    return null;
   }
 
   public final T getSelectedSecondItem() {
-    return comboBox2.getSelectionModel().getSelectedItem();
+    if (manualChoice.isSelected()) {
+      return comboBox2.getSelectionModel().getSelectedItem();
+    } else if (opt1Choice.isSelected()) {
+      return opt1.opt2;
+    } else if (opt2Choice.isSelected()) {
+      return opt2.opt2;
+    }
+    return null;
   }
 
   public void setCombo1CellFactory(Callback<ListView<T>, ListCell<T>> value) {
@@ -251,37 +313,6 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     comboBox2.setConverter(c);
   }
 
-  /**
-   * Returns the property representing the currently selected item in the dialog.
-   */
-  public final ReadOnlyObjectProperty<T> selectedItemProperty() {
-    return comboBox1.getSelectionModel().selectedItemProperty();
-  }
-
-  /**
-   * Sets the currently selected item in the dialog.
-   * 
-   * @param item The item to select in the dialog.
-   */
-  public final void setSelectedItem(T item) {
-    comboBox1.getSelectionModel().select(item);
-  }
-
-  /**
-   * Returns the list of all items that will be displayed to users. This list can be modified by the
-   * developer to add, remove, or reorder the items to present to the user.
-   */
-  public final ObservableList<T> getItems() {
-    return comboBox1.getItems();
-  }
-
-  /**
-   * Returns the default choice that was specified in the constructor.
-   */
-  public final T getDefaultChoice() {
-    return defaultChoice;
-  }
-
   /**************************************************************************
    *
    * Private Implementation
@@ -302,13 +333,46 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     grid.getChildren().clear();
 
     grid.add(label, 0, 0);
-    grid.add(checkboxFilter1, 0, 1);
-    grid.add(comboBox1, 0, 2);
-    grid.add(checkboxFilter2, 0, 3);
-    grid.add(comboBox2, 0, 4);
+    HBox hBox1 = new HBox();
+    hBox1.getChildren().add(opt1Choice);
+    hBox1.getChildren().add(opt1.graphic);
+    HBox.setHgrow(opt1.graphic, Priority.ALWAYS);
+
+
+    grid.add(hBox1, 0, 1);
+    HBox hBox2 = new HBox();
+    hBox2.getChildren().add(opt2Choice);
+    hBox2.getChildren().add(opt2.graphic);
+    HBox.setHgrow(opt2.graphic, Priority.ALWAYS);
+    grid.add(hBox2, 0, 2);
+    grid.add(manualChoice, 0, 3);
+    VBox subGrid = new VBox();
+    subGrid.setSpacing(10);
+    subGrid.setPadding(new Insets(0, 0, 0, 20));
+    subGrid.getChildren().add(checkboxFilter1);
+    subGrid.getChildren().add(comboBox1);
+    subGrid.getChildren().add(checkboxFilter2);
+    subGrid.getChildren().add(comboBox2);
+    grid.add(subGrid, 0, 4);
+
+    grid.setPadding(new Insets(10, 0, 10, 25));
+
     getDialogPane().setContent(grid);
 
     Platform.runLater(() -> focusReq.requestFocus());
+  }
+
+  public static class Option<T> {
+    final Node graphic;
+    final T opt1;
+    final T opt2;
+
+    public Option(Node graphic, T opt1, T opt2) {
+      this.graphic = graphic;
+      this.opt1 = opt1;
+      this.opt2 = opt2;
+    }
+
   }
 
 }

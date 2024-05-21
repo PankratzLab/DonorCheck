@@ -48,6 +48,37 @@ public final class SerotypeEquivalence {
   static {
     careDxEquivalencies = buildLookupFromCareDxXMLFile();
     manualEquivalencies = buildManualOverrideLookup();
+
+    // List<String> test = Lists.newArrayList("B*15:15", "B*15:15:01", "B*15:15:01:01");
+    // Set<HLAType> hset = new HashSet<>();
+    // for (String t : test) {
+    // HLAType h = HLAType.valueOf(t);
+    // hset.add(h);
+    // System.out.println(h.toString() + "\t" + h.equivSafe());
+    // }
+    //
+    // test =
+    // Lists.newArrayList("B*15:08", "B*15:08:01", "B*15:08:01:01", "B*15:08:01:02", "B*15:08:02");
+    // hset = new HashSet<>();
+    // for (String t : test) {
+    // HLAType h = HLAType.valueOf(t);
+    // hset.add(h);
+    // System.out.println(h.toString() + "\t" + h.equivSafe());
+    // }
+
+    for (HLAType h : manualEquivalencies.keySet()) {
+      SeroType newS = careDxEquivalencies.get(h);
+      SeroType oldS = manualEquivalencies.get(h);
+      SeroType autoS = h.equivSafe();
+      SeroType autoLS = h.lowResEquiv();
+      if (newS == null) {
+        System.out.println(h + "\t" + oldS + "\t" + autoLS + "\t" + autoS);
+      } else if (oldS.compareTo(newS) != 0) {
+        System.out.println(
+            "----------- " + h + ": was " + oldS + " || now is " + newS + " (auto: " + autoS + ")");
+      }
+    }
+
   }
 
   private static ImmutableMap<HLAType, SeroType> buildLookupFromCareDxXMLFile() {
@@ -147,6 +178,9 @@ public final class SerotypeEquivalence {
   // put method for creating the reference table used in the get method.
   private static void put(Builder<HLAType, SeroType> builder, String serotypeSpec, HLALocus locus,
       String... hlaSpecs) {
+    if (serotypeSpec.contains("(")) {
+      System.out.println();
+    }
     SeroType s = new SeroType(locus.sero(), serotypeSpec);
     // create a one to one table for mapping alleles to serotype
     for (String allele : hlaSpecs) {
@@ -160,10 +194,20 @@ public final class SerotypeEquivalence {
    *         explicit mapping exists.
    */
   public static SeroType get(HLAType allele) {
+    HLAType manualAllele = allele;
     if (allele.spec().size() > 2) {
-      // All the equivalencies are based on 2-field alleles
-      allele = new HLAType(allele.locus(), allele.spec().subList(0, 2));
+      // All the manual equivalencies are based on 2-field alleles
+      manualAllele = new HLAType(allele.locus(), allele.spec().subList(0, 2));
     }
-    return manualEquivalencies.getOrDefault(allele, careDxEquivalencies.get(allele));
+    if (manualEquivalencies.containsKey(manualAllele)) {
+      return manualEquivalencies.get(manualAllele);
+    }
+    if (careDxEquivalencies.containsKey(allele)) {
+      return careDxEquivalencies.get(allele);
+    }
+    if (careDxEquivalencies.containsKey(manualAllele)) {
+      return careDxEquivalencies.get(manualAllele);
+    }
+    return null;
   }
 }

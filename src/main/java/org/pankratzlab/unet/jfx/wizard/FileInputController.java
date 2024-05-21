@@ -167,6 +167,8 @@ public class FileInputController extends AbstractValidatingWizardController {
             alertInvalid(donorParser, selectedFile, validationResult);
           }
 
+
+
           // check for corrections
           if (builder.hasCorrectionsIfSoStartLoading()) {
 

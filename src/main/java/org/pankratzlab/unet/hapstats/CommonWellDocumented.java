@@ -24,7 +24,6 @@ package org.pankratzlab.unet.hapstats;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
-import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.parser.XmlDonorParser;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -144,30 +142,35 @@ public final class CommonWellDocumented {
     cd.setContentText("You may change this selection from the DonorCheck menu bar.");
     Optional<SOURCE> result = cd.showAndWait();
     result.ifPresent(r -> {
-      try {
-        switch (r) {
-          case CWD_200:
-            loadCWD200();
-            break;
-          case CIWD_300:
-            loadCIWD300();
-            break;
-          default:
-            break;
-        }
-
-        // save the selected value
-        HLAProperties.get().setProperty(CWD_PROP, r.name());
-
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+      loadCIWDVersion(r);
     });
 
     if (!result.isPresent()) {
-      throw new IllegalStateException("CWD DB must be selected");
+      // user cancelled, load previous/default version
+      loadCIWDVersion(def);
     }
 
+  }
+
+  private static void loadCIWDVersion(SOURCE r) {
+    try {
+      switch (r) {
+        case CWD_200:
+          loadCWD200();
+          break;
+        case CIWD_300:
+          loadCIWD300();
+          break;
+        default:
+          break;
+      }
+
+      // save the selected value
+      HLAProperties.get().setProperty(CWD_PROP, r.name());
+
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   public static void loadCWD200() {
@@ -278,7 +281,7 @@ public final class CommonWellDocumented {
     // adding or removing trailing :01's does not change the allele specificity
     // Try adding :01's to the specificity
     HLAType specModified = type;
-    while (Objects.nonNull((specModified = growSpec(specModified)))) {
+    while (Objects.nonNull((specModified = HLAType.growSpec(specModified)))) {
       if (ALLELE_FREQS.containsKey(specModified)) {
         return specModified;
       }
@@ -286,7 +289,7 @@ public final class CommonWellDocumented {
 
     // Try removing fourth field, or tailing :01's, to the specificity
     specModified = type;
-    while (Objects.nonNull((specModified = reduceSpec(specModified)))) {
+    while (Objects.nonNull((specModified = HLAType.reduceSpec(specModified)))) {
       if (ALLELE_FREQS.containsKey(specModified)) {
         return specModified;
       }
@@ -302,7 +305,7 @@ public final class CommonWellDocumented {
     // adding or removing trailing :01's does not change the allele specificity
     // Try adding :01's to the specificity
     HLAType specModified = type;
-    while (Objects.nonNull((specModified = growSpec(specModified)))) {
+    while (Objects.nonNull((specModified = HLAType.growSpec(specModified)))) {
       if (ALLELE_FREQS.containsKey(specModified)) {
         return ALLELE_FREQS.get(specModified);
       }
@@ -310,55 +313,12 @@ public final class CommonWellDocumented {
 
     // Try removing fourth field, or tailing :01's, to the specificity
     specModified = type;
-    while (Objects.nonNull((specModified = reduceSpec(specModified)))) {
+    while (Objects.nonNull((specModified = HLAType.reduceSpec(specModified)))) {
       if (ALLELE_FREQS.containsKey(specModified)) {
         return ALLELE_FREQS.get(specModified);
       }
     }
     return Status.UNKNOWN;
-  }
-
-  /**
-   * @param equivType Input type to reduce
-   * @return The input {@link HLAType} with its tailing "01" field removed, or null if the allele
-   *         can not be reduced
-   */
-  private static HLAType reduceSpec(HLAType equivType) {
-    List<Integer> spec = equivType.spec();
-
-    if (spec.size() < 2 || (spec.size() < 4 && spec.get(spec.size() - 1) != 1)) {
-      // We can only remove a trailing "01 "specificity, and only if we have 3- or more fields
-      return null;
-    }
-
-    spec = spec.subList(0, spec.size() - 1);
-    return modifiedSpec(equivType, spec);
-  }
-
-  /**
-   * @param equivType Input type to expand
-   * @return The input {@link HLAType} with an additional "01" field, or null if the allele can not
-   *         be further expanded
-   */
-  private static HLAType growSpec(HLAType equivType) {
-    List<Integer> spec = new ArrayList<>(equivType.spec());
-
-    if (spec.size() >= 4) {
-      // We can only expand 2- and 3-field specificities
-      return null;
-    }
-
-    spec.add(1);
-
-    return modifiedSpec(equivType, spec);
-  }
-
-  /** Helper method to create an updated HLAType */
-  private static HLAType modifiedSpec(HLAType equivType, List<Integer> spec) {
-    if (equivType instanceof NullType) {
-      return new NullType(equivType.locus(), spec);
-    }
-    return new HLAType(equivType.locus(), spec);
   }
 
   /**

@@ -31,7 +31,7 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -45,11 +45,7 @@ import com.google.common.collect.SetMultimap;
 
 /** Persistent map of {@link HLAType}s to equivalent {@link SeroType}s. Use when converting. */
 public final class AntigenDictionary implements Serializable {
-  private static final long serialVersionUID = 10L;
-
-  public static final int LATEST_REVISION =
-      1 + HLAType.LATEST_REVISION + SeroType.LATEST_REVISION + Antigen.LATEST_REVISION;
-  private int revision = LATEST_REVISION;
+  private static final long serialVersionUID = 11L;
 
   public static final String REL_DNA_SER_PROP = "rel.dna.ser.file";
 
@@ -178,6 +174,7 @@ public final class AntigenDictionary implements Serializable {
     }
     ImmutableSetMultimap.Builder<HLAType, SeroType> hlaBuilder = ImmutableSetMultimap.builder();
     ImmutableSetMultimap.Builder<SeroType, HLAType> seroBuilder = ImmutableSetMultimap.builder();
+
     // NB: what's considered a valid HLA type diverges from the HLA map keyset and thus must be
     // tracked separately
     Builder<HLAType> validHLATypes = ImmutableSet.builder();
@@ -208,7 +205,7 @@ public final class AntigenDictionary implements Serializable {
 
         // Parse out the serological specificities for this mapping
         // Since the columns are ordered by specificity, we use the first column with valid entries
-        Set<String> seroSpecs = new HashSet<>();
+        Set<String> seroSpecs = new LinkedHashSet<>();
         for (int i = 2; i <= 5 && i < columns.length; i++) {
           String types = columns[i];
           // Each HLA type may map to multiple serotypes
