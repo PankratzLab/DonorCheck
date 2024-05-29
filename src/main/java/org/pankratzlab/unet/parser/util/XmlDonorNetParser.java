@@ -26,7 +26,6 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -35,7 +34,6 @@ import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.XmlDonorParser;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
@@ -86,14 +84,14 @@ public class XmlDonorNetParser {
     getXMLTagVal(donorRoot, "c2").ifPresent(builder::c);
     getXMLTagVal(donorRoot, "dr1").ifPresent(s -> builder.drb(decodeValue(drbMap, s)));
     getXMLTagVal(donorRoot, "dr2").ifPresent(s -> builder.drb(decodeValue(drbMap, s)));
-    getXMLTagVal(donorRoot, "dq1").ifPresent(s -> builder.dqb(decodeValue(dqbMap, s)));
-    getXMLTagVal(donorRoot, "dq2").ifPresent(s -> builder.dqb(decodeValue(dqbMap, s)));
-    getXMLTagVal(donorRoot, "dqa1").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
-    getXMLTagVal(donorRoot, "dqa2").ifPresent(s -> builder.dqa(decodeValue(dqaMap, s)));
-    getXMLTagVal(donorRoot, "dpa1").ifPresent(s -> builder.dpa(decodeValue(dpaMap, s)));
-    getXMLTagVal(donorRoot, "dpa2").ifPresent(s -> builder.dpa(decodeValue(dpaMap, s)));
-    getXMLTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
-    getXMLTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
+    getXMLTagVal(donorRoot, "dq1").ifPresent(s -> builder.dqbSerotype(decodeValue(dqbMap, s)));
+    getXMLTagVal(donorRoot, "dq2").ifPresent(s -> builder.dqbSerotype(decodeValue(dqbMap, s)));
+    getXMLTagVal(donorRoot, "dqa1").ifPresent(s -> builder.dqaSerotype(decodeValue(dqaMap, s)));
+    getXMLTagVal(donorRoot, "dqa2").ifPresent(s -> builder.dqaSerotype(decodeValue(dqaMap, s)));
+    getXMLTagVal(donorRoot, "dpa1").ifPresent(s -> builder.dpaSerotype(decodeValue(dpaMap, s)));
+    getXMLTagVal(donorRoot, "dpa2").ifPresent(s -> builder.dpaSerotype(decodeValue(dpaMap, s)));
+    getXMLTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpbSerotype(decodeValue(dpbMap, s)));
+    getXMLTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpbSerotype(decodeValue(dpbMap, s)));
 
     getXMLTagVal(donorRoot, "bw4").ifPresent(s -> builder.bw4(decodeXMLBoolean(s)));
     getXMLTagVal(donorRoot, "bw6").ifPresent(s -> builder.bw6(decodeXMLBoolean(s)));

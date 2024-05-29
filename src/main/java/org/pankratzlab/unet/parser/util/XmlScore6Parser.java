@@ -120,12 +120,12 @@ public class XmlScore6Parser {
     setterBuilder.put(A_HEADER, ValidationModelBuilder::a);
     setterBuilder.put(B_HEADER, ValidationModelBuilder::b);
     setterBuilder.put(C_HEADER, ValidationModelBuilder::c);
-    setterBuilder.put(DQB_HEADER, ValidationModelBuilder::dqb);
+    setterBuilder.put(DQB_HEADER, ValidationModelBuilder::dqbSerotype);
 
     // Reported as allele types
-    setterBuilder.put(DPB_HEADER, ValidationModelBuilder::dpb);
-    setterBuilder.put(DQA_HEADER, ValidationModelBuilder::dqa);
-    setterBuilder.put(DPA_HEADER, ValidationModelBuilder::dpa);
+    setterBuilder.put(DPB_HEADER, ValidationModelBuilder::dpbSerotype);
+    setterBuilder.put(DQA_HEADER, ValidationModelBuilder::dqaSerotype);
+    setterBuilder.put(DPA_HEADER, ValidationModelBuilder::dpaSerotype);
 
     // DR52/53/54 appears as a serological combination
     setterBuilder.put(DRB_HEADER, ValidationModelBuilder::drb);
@@ -146,7 +146,7 @@ public class XmlScore6Parser {
 
     // Reported as allele types
     // DPB is already being tracked as HLATypes
-    // setterBuilderTypes.put(DPB_HEADER, ValidationModelBuilder::dpbType);
+    setterBuilderTypes.put(DPB_HEADER, ValidationModelBuilder::dpb);
     setterBuilderTypes.put(DQA_HEADER, ValidationModelBuilder::dqaType);
     setterBuilderTypes.put(DPA_HEADER, ValidationModelBuilder::dpaType);
 
@@ -169,7 +169,7 @@ public class XmlScore6Parser {
 
     // Reported as allele types
     // DPB is already being tracked as HLATypes
-    // setterBuilderTypes.put(DPB_HEADER, ValidationModelBuilder::dpbType);
+    setterBuilderTypesNonCWD.put(DPB_HEADER, ValidationModelBuilder::dpbNonCIWD);
     setterBuilderTypesNonCWD.put(DQA_HEADER, ValidationModelBuilder::dqaTypeNonCWD);
     setterBuilderTypesNonCWD.put(DPA_HEADER, ValidationModelBuilder::dpaTypeNonCWD);
 
@@ -366,6 +366,7 @@ public class XmlScore6Parser {
         if (hlaLocus == null) {
           hlaLocus = locusType;
         } else if (hlaLocus.compareTo(locusType) != 0) {
+          // TODO FIXME do something other than print to system out
           System.out
               .println("Parsed different locus (prev / new): " + hlaLocus + " / " + locusType);
         }
@@ -497,6 +498,7 @@ public class XmlScore6Parser {
       // record alleles for reassignment if necessary
       if (possibleAlleleRecordingMap.containsKey(locus)) {
         if (hlaLocus == null) {
+          // TODO FIXME do something other than print to system out
           System.out.println("Couldn't set alleles - no locus parsed from " + locus);
         } else {
           possibleAlleleRecordingMap.get(locus).accept(builder, hlaLocus, allPossibleAllelePairs);
@@ -985,16 +987,21 @@ public class XmlScore6Parser {
   private static String getAlleleSpec(ResultCombination combination) {
     // Standard operating procedure is to just report the first field of the allele
     HLAType hlaType = combination.getAlleleCombination();
-    StringJoiner sj = new StringJoiner(":");
-    sj.add(String.valueOf(hlaType.spec().get(0)));
 
-    if (Objects.equals(HLALocus.DPA1, hlaType.locus())
-        || Objects.equals(HLALocus.DPB1, hlaType.locus())) {
-      // DPA and DPB report two fields
-      sj.add(String.valueOf(hlaType.spec().get(1)));
+    if (hlaType.locus() == HLALocus.DPA1 || hlaType.locus() == HLALocus.DPB1) {
+      StringJoiner sj = new StringJoiner(":");
+      sj.add(String.valueOf(hlaType.spec().get(0)));
+
+      if (Objects.equals(HLALocus.DPA1, hlaType.locus())
+          || Objects.equals(HLALocus.DPB1, hlaType.locus())) {
+        // DPA and DPB report two fields
+        sj.add(String.valueOf(hlaType.spec().get(1)));
+      }
+
+      return sj.toString();
     }
 
-    return sj.toString();
+    return hlaType.equivSafe().specString();
   }
 
   /**
@@ -1013,6 +1020,7 @@ public class XmlScore6Parser {
         Objects.requireNonNull(antigenCombination);
         Objects.requireNonNull(alleleCombination);
       } catch (NullPointerException e) {
+        // TODO FIXME do something other than print to system out
         System.out.println();
       }
       this.alleleCombination = alleleCombination;

@@ -66,18 +66,18 @@ public final class SerotypeEquivalence {
     // System.out.println(h.toString() + "\t" + h.equivSafe());
     // }
 
-    for (HLAType h : manualEquivalencies.keySet()) {
-      SeroType newS = careDxEquivalencies.get(h);
-      SeroType oldS = manualEquivalencies.get(h);
-      SeroType autoS = h.equivSafe();
-      SeroType autoLS = h.lowResEquiv();
-      if (newS == null) {
-        System.out.println(h + "\t" + oldS + "\t" + autoLS + "\t" + autoS);
-      } else if (oldS.compareTo(newS) != 0) {
-        System.out.println(
-            "----------- " + h + ": was " + oldS + " || now is " + newS + " (auto: " + autoS + ")");
-      }
-    }
+    // for (HLAType h : manualEquivalencies.keySet()) {
+    // SeroType newS = careDxEquivalencies.get(h);
+    // SeroType oldS = manualEquivalencies.get(h);
+    // SeroType autoS = h.equivSafe();
+    // SeroType autoLS = h.lowResEquiv();
+    // if (newS == null) {
+    // System.out.println(h + "\t" + oldS + "\t" + autoLS + "\t" + autoS);
+    // } else if (oldS.compareTo(newS) != 0) {
+    // System.out.println(
+    // "----------- " + h + ": was " + oldS + " || now is " + newS + " (auto: " + autoS + ")");
+    // }
+    // }
 
   }
 
@@ -178,9 +178,6 @@ public final class SerotypeEquivalence {
   // put method for creating the reference table used in the get method.
   private static void put(Builder<HLAType, SeroType> builder, String serotypeSpec, HLALocus locus,
       String... hlaSpecs) {
-    if (serotypeSpec.contains("(")) {
-      System.out.println();
-    }
     SeroType s = new SeroType(locus.sero(), serotypeSpec);
     // create a one to one table for mapping alleles to serotype
     for (String allele : hlaSpecs) {

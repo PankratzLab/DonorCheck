@@ -28,14 +28,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
-
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -372,8 +370,8 @@ public class PdfSureTyperParser {
     setterBuilder.put(HLA_B, new TypeSetter("B", ValidationModelBuilder::b));
     setterBuilder.put(HLA_C, new TypeSetter("Cw", ValidationModelBuilder::c));
     setterBuilder.put(HLA_DRB1, new TypeSetter("DR", ValidationModelBuilder::drb));
-    setterBuilder.put(HLA_DQA1, new TypeSetter("DQA1*", ValidationModelBuilder::dqa));
-    setterBuilder.put(HLA_DQB1, new TypeSetter("DQ", ValidationModelBuilder::dqb));
+    setterBuilder.put(HLA_DQA1, new TypeSetter("DQA1*", ValidationModelBuilder::dqaSerotype));
+    setterBuilder.put(HLA_DQB1, new TypeSetter("DQ", ValidationModelBuilder::dqbSerotype));
 
     setterBuilder.put(HLA_DRB3, new TypeSetter("DRB3*", ValidationModelBuilder::dr52));
     setterBuilder.put(HLA_DRB4, new TypeSetter("DRB4*", ValidationModelBuilder::dr53));
@@ -384,9 +382,9 @@ public class PdfSureTyperParser {
 
     // DPA1 is present in the typing data but we do not currently track it in the validation model
     // (not entered in DonorNet)
-    setterBuilder.put(HLA_DPA1, new TypeSetter("DPA1*", ValidationModelBuilder::dpa));
+    setterBuilder.put(HLA_DPA1, new TypeSetter("DPA1*", ValidationModelBuilder::dpaSerotype));
 
-    setterBuilder.put(HLA_DPB1, new TypeSetter("DPB1*", ValidationModelBuilder::dpb));
+    setterBuilder.put(HLA_DPB1, new TypeSetter("DPB1*", ValidationModelBuilder::dpbSerotype));
 
     // Boolean values appear as literal values, indicating true, and are simply absent if false
     setterBuilder.put(BW, new TypeSetter("", PdfSureTyperParser::decodeBw));

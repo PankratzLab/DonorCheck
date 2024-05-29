@@ -25,7 +25,9 @@ import java.io.File;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import org.pankratzlab.BackgroundDataProcessor;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
@@ -33,6 +35,8 @@ import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.model.remap.GUIRemapProcessor;
+import org.pankratzlab.unet.model.remap.GUIRemapProcessor.PresentableAlleleChoices;
 import org.pankratzlab.unet.parser.DonorFileParser;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
@@ -170,15 +174,35 @@ public class FileInputController extends AbstractValidatingWizardController {
 
 
           // check for corrections
-          if (builder.hasCorrectionsIfSoStartLoading()) {
+          if (builder.hasCorrections()) {
 
+            BackgroundDataProcessor<HLALocus, PresentableAlleleChoices> choiceSupplier =
+                new BackgroundDataProcessor<>(builder.getNonCWDLoci(),
+                    (locus) -> PresentableAlleleChoices.create(locus,
+                        builder.getAllelePairs(locus)),
+                    (t) -> {
+                      t.printStackTrace();
+                      return null;
+                    });
+            GUIRemapProcessor processor = new GUIRemapProcessor(choiceSupplier);
 
             Platform.runLater(() -> {
-              ValidationResult validationResult1 = builder.processCorrections();
-              if (!validationResult1.valid) {
-                alertInvalid(donorParser, selectedFile, validationResult);
-              } else {
-                finish(donorParser, setter, linkedFile, selectedFile, builder);
+              try {
+                ValidationResult validationResult1 = builder.processCorrections(processor);
+                if (!validationResult1.valid) {
+                  alertInvalid(donorParser, selectedFile, validationResult);
+                } else {
+                  finish(donorParser, setter, linkedFile, selectedFile, builder);
+                }
+              } catch (Throwable e) {
+                Platform.runLater(() -> {
+                  Alert alert = new Alert(AlertType.ERROR);
+                  alert.setHeaderText(donorParser.getErrorText()
+                      + "\nPlease notify the developers as this may indicate the data has changed."
+                      + "\nOffending file: " + selectedFile.getName());
+                  alert.showAndWait();
+                  e.printStackTrace();
+                });
               }
             });
 

@@ -39,6 +39,7 @@ import javafx.util.StringConverter;
  *        {@link #getResult()} when the dialog is dismissed.
  * @since JavaFX 8u40
  */
+@SuppressWarnings("restriction")
 public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
 
   /**************************************************************************

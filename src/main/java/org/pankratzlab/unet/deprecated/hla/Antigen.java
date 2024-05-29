@@ -231,8 +231,10 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
       int[] iVal = new int[1];
       Matcher matcher = SPEC_PATTERN.matcher(spec);
       matcher.find();
-      // Extracts value from parentheses if they were present
-      String val = matcher.group(2) != null ? matcher.group(2) : matcher.group(1);
+
+      // Extracts value outside of parentheses if they were present (changed from returning value
+      // inside parens, 5/24 - @rcoleb)
+      String val = matcher.group(1);
 
       if (val.contains(SPEC_DELIM)) {
         // Was passed XX:YY
