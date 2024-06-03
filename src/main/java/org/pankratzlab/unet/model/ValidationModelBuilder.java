@@ -770,8 +770,11 @@ public class ValidationModelBuilder {
 
         // sorts in descending order, notice h2's weight is found first
         Comparator<HLAType> c = ((h1, h2) -> {
-          return Double.compare(CommonWellDocumented.getEquivStatus(h2).getWeight(),
+          int d = Double.compare(CommonWellDocumented.getEquivStatus(h2).getWeight(),
               CommonWellDocumented.getEquivStatus(h1).getWeight());
+          if (d != 0)
+            return d;
+          return h2.compareTo(h1);
         });
         firstStrandTypes.sort(c);
         secondStrandTypes.sort(c);

@@ -356,7 +356,7 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     subGrid.getChildren().add(comboBox2);
     grid.add(subGrid, 0, 4);
 
-    grid.setPadding(new Insets(10, 0, 10, 25));
+    grid.setPadding(new Insets(10, 25, 10, 25));
 
     getDialogPane().setContent(grid);
 

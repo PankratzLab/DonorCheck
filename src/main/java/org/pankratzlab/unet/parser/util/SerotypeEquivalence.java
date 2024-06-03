@@ -71,6 +71,9 @@ public final class SerotypeEquivalence {
     // SeroType oldS = manualEquivalencies.get(h);
     // SeroType autoS = h.equivSafe();
     // SeroType autoLS = h.lowResEquiv();
+    // if (h.locus() == HLALocus.B && h.spec().get(0) == 15 && h.spec().get(1) == 46) {
+    // System.out.println(h + "\t" + oldS + "\t" + autoLS + "\t" + autoS);
+    // }
     // if (newS == null) {
     // System.out.println(h + "\t" + oldS + "\t" + autoLS + "\t" + autoS);
     // } else if (oldS.compareTo(newS) != 0) {
@@ -143,7 +146,7 @@ public final class SerotypeEquivalence {
     put(builder, "14", HLALocus.B, "14:03");
     put(builder, "62", HLALocus.B, "15:01", "15:04", "15:05", "15:06", "15:07", "15:15", "15:24");
     put(builder, "75", HLALocus.B, "15:02", "15:08");
-    put(builder, "72", HLALocus.B, "15:03", "15:46");
+    put(builder, "72", HLALocus.B, "15:46", "15:03");
     put(builder, "70", HLALocus.B, "15:09");
     put(builder, "71", HLALocus.B, "15:10", "15:18");
     put(builder, "76", HLALocus.B, "15:12", "15:14");
