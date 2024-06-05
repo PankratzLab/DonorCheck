@@ -31,7 +31,6 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -205,12 +204,13 @@ public final class AntigenDictionary implements Serializable {
 
         // Parse out the serological specificities for this mapping
         // Since the columns are ordered by specificity, we use the first column with valid entries
-        Set<String> seroSpecs = new LinkedHashSet<>();
+        // Set<String> seroSpecs = new LinkedHashSet<>();
+        List<String> seroSpecs = new ArrayList<>();
         for (int i = 2; i <= 5 && i < columns.length; i++) {
           String types = columns[i];
           // Each HLA type may map to multiple serotypes
           for (String t : types.split(TYPE_DELIM)) {
-            if (!t.isEmpty()) {
+            if (!t.isEmpty() && !seroSpecs.contains(t)) {
               seroSpecs.add(t);
             }
           }
@@ -236,25 +236,26 @@ public final class AntigenDictionary implements Serializable {
         for (int i = 0; i < specValues.length; i++) {
           specValues[i] = specValues[i].trim().replaceAll("[^0-9]", "");
           spec.add(Integer.parseInt(specValues[i]));
+        }
 
-          HLAType hlaType = new HLAType(l, spec);
+        HLAType hlaType = new HLAType(l, spec);
 
-          SeroLocus sl = l.sero();
-          for (String t : seroSpecs) {
-            // Convert unknown types to the first spec value
-            if (UNKNOWN_TYPE.equals(t)) {
-              t = specValues[0];
-            }
-            SeroType seroType = new SeroType(sl, t);
-            hlaBuilder.put(hlaType, seroType);
+        SeroLocus sl = l.sero();
+        for (String t : seroSpecs) {
+          // Convert unknown types to the first spec value
+          if (UNKNOWN_TYPE.equals(t)) {
+            t = specValues[0];
+          }
+          SeroType seroType = new SeroType(sl, t);
+          hlaBuilder.put(hlaType, seroType);
 
-            // Only map from sero > hla if we have 2 or more specificities
-            if (spec.size() > 1) {
-              validHLATypes.add(hlaType);
-              seroBuilder.put(seroType, hlaType);
-            }
+          // Only map from sero > hla if we have 2 or more specificities
+          if (spec.size() > 1) {
+            validHLATypes.add(hlaType);
+            seroBuilder.put(seroType, hlaType);
           }
         }
+        // }
       }
 
       // Build the singleton map and write it to disk
