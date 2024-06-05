@@ -566,6 +566,56 @@ public class ValidationModelBuilder {
     return ensureValidity();
   }
 
+  private boolean test(Set<SeroType> set) {
+    return set == null || set.isEmpty();
+  }
+
+  private boolean test1(Set<HLAType> set) {
+    return set == null || set.isEmpty();
+  }
+
+  private Set<SeroType> getFinalTypes(HLALocus locus) {
+    Set<SeroType> returnTypes;
+    switch (locus) {
+      case A:
+        returnTypes = test(aLocusFirst) ? aLocusCWD : aLocusFirst;
+        break;
+      case B:
+        returnTypes = test(bLocusFirst) ? bLocusCWD : bLocusFirst;
+        break;
+      case C:
+        returnTypes = test(cLocusFirst) ? cLocusCWD : cLocusFirst;
+        break;
+      case DRB1:
+      case DRB3:
+      case DRB4:
+      case DRB5:
+        returnTypes = test(drbLocusNonCWD) ? drbLocus : drbLocusNonCWD;
+        break;
+      case DQA1:
+        returnTypes = test(dqaLocusNonCWD) ? dqaLocus : dqaLocusNonCWD;
+        break;
+      case DQB1:
+        returnTypes = test(dqbLocusNonCWD) ? dqbLocus : dqbLocusNonCWD;
+        break;
+      case DPA1:
+        returnTypes = test(dpaLocusNonCWD) ? dpaLocus : dpaLocusNonCWD;
+        break;
+      case DPB1:
+      case MICA:
+      default:
+        return null;
+    }
+    returnTypes = new LinkedHashSet<>(returnTypes);
+    if (remapping.containsKey(locus)) {
+      List<SeroType> types = remapping.get(locus).getRight().stream().map(TypePair::getSeroType)
+          .collect(Collectors.toList());
+      returnTypes.clear();
+      returnTypes.addAll(types);
+    }
+    return returnTypes;
+  }
+
   /** @return The immutable {@link ValidationModel} based on the current builder state. */
   public ValidationModel build() {
     Multimap<RaceGroup, Haplotype> bcCwdHaplotypes = buildBCHaplotypes(bHaplotypes, cHaplotypes);
@@ -575,9 +625,11 @@ public class ValidationModelBuilder {
 
     frequencyTable.clear();
 
-    ValidationModel validationModel = new ValidationModel(donorId, source, sourceType, aLocusCWD,
-        bLocusCWD, cLocusCWD, drbLocus, dqbLocus, dqaLocus, dpaLocus, getFinalDPBTypes(), bw4, bw6,
-        dr51Locus, dr52Locus, dr53Locus, bcCwdHaplotypes, drDqDR345Haplotypes, remapping);
+    ValidationModel validationModel = new ValidationModel(donorId, source, sourceType,
+        getFinalTypes(HLALocus.A), getFinalTypes(HLALocus.B), getFinalTypes(HLALocus.C),
+        getFinalTypes(HLALocus.DRB1), getFinalTypes(HLALocus.DQB1), getFinalTypes(HLALocus.DQA1),
+        getFinalTypes(HLALocus.DPA1), getFinalDPBTypes(), bw4, bw6, dr51Locus, dr52Locus, dr53Locus,
+        bcCwdHaplotypes, drDqDR345Haplotypes, remapping);
     return validationModel;
   }
 
@@ -585,10 +637,24 @@ public class ValidationModelBuilder {
   // not be entered into UNOS
   private Set<HLAType> getFinalDPBTypes() {
     Set<HLAType> dpbTypes = new HashSet<>();
-    Set<HLAType> dpbSource = dpbLocusTypes;
-    if (dpbSource == null || dpbSource.isEmpty()) {
-      dpbSource = dpbLocus.stream().map(s -> new HLAType(HLALocus.DPB1, s.spec()))
-          .collect(ImmutableSet.toImmutableSet());
+    Set<HLAType> dpbSource = new LinkedHashSet<>();
+
+    Set<HLAType> returnTypes = new LinkedHashSet<>();
+    if (remapping.containsKey(HLALocus.DPB1)) {
+      List<HLAType> types = remapping.get(HLALocus.DPB1).getRight().stream()
+          .map(TypePair::getHlaType).collect(Collectors.toList());
+      returnTypes.clear();
+      returnTypes.addAll(types);
+    }
+    if (!returnTypes.isEmpty()) {
+      dpbSource.addAll(returnTypes);
+    } else {
+      dpbSource = test1(dpbLocusTypesNonCWD) ? dpbLocusTypes : dpbLocusTypesNonCWD;
+      Set<SeroType> dpbBackup = test1(dpbLocusNonCWD) ? dpbLocus : trim(dpbLocusNonCWD);
+      if (dpbSource == null || dpbSource.isEmpty()) {
+        dpbSource = dpbBackup.stream().map(s -> new HLAType(HLALocus.DPB1, s.spec()))
+            .collect(ImmutableSet.toImmutableSet());
+      }
     }
     for (HLAType dpbType1 : dpbSource) {
       String dpbType = dpbType1.specString();

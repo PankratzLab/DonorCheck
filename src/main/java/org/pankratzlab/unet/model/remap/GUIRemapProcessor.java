@@ -202,12 +202,12 @@ public class GUIRemapProcessor implements RemapProcessor {
         hlaType2.compareTo(hlaType1_First) == 0 || hlaType2.compareTo(hlaType2_First) == 0;
 
     if (!a1Match || !a2Match) {
-      locusSet.clear();
-      locusSet.add(seroType1);
-      locusSet.add(seroType2);
-      typesSet.clear();
-      typesSet.add(hlaType1);
-      typesSet.add(hlaType2);
+      // locusSet.clear();
+      // locusSet.add(seroType1);
+      // locusSet.add(seroType2);
+      // typesSet.clear();
+      // typesSet.add(hlaType1);
+      // typesSet.add(hlaType2);
 
       ImmutableSortedSet<TypePair> prevSet =
           ImmutableSortedSet.of(new TypePair(hlaType1_First, seroType1_First),
