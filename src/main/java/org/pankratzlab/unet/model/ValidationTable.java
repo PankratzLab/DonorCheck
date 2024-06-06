@@ -74,7 +74,6 @@ public class ValidationTable {
     auditLogLines = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     bcHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     drdqHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
-    new ReadOnlyObjectWrapper<>();
 
     // Each time either model changes we re-generate the rows
     firstModelWrapper.addListener((v, o, n) -> generateRows());

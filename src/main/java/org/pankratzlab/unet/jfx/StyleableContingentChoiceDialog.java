@@ -122,7 +122,6 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     comboBox2.setDisable(true);
 
     comboBox1 = new ComboBox<T>();
-    // comboBox1.setEditable(true);
     comboBox1.setMinWidth(MIN_WIDTH);
     if (choices != null) {
       comboBox1.getItems().addAll(choices);
@@ -146,18 +145,6 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     opt1Choice = new RadioButton();
     opt2Choice = new RadioButton();
 
-    opt1.graphic.setOnMouseClicked(opt1Choice.getOnMouseClicked());
-    opt1.graphic.setOnMouseEntered(opt1Choice.getOnMouseEntered());
-    opt1.graphic.setOnMouseExited(opt1Choice.getOnMouseExited());
-    opt1.graphic.setOnMousePressed(opt1Choice.getOnMousePressed());
-    opt1.graphic.setOnMouseReleased(opt1Choice.getOnMouseReleased());
-
-    opt2.graphic.setOnMouseClicked(opt2Choice.getOnMouseClicked());
-    opt2.graphic.setOnMouseEntered(opt2Choice.getOnMouseEntered());
-    opt2.graphic.setOnMouseExited(opt2Choice.getOnMouseExited());
-    opt2.graphic.setOnMousePressed(opt2Choice.getOnMousePressed());
-    opt2.graphic.setOnMouseReleased(opt2Choice.getOnMouseReleased());
-
     manualChoice = new RadioButton();
     manualChoice.setGraphic(manualChoiceGraphic);
 
@@ -169,6 +156,19 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
     if (defaultChoice != null) {
       comboBox1.getSelectionModel().select(defaultChoice);
     }
+
+    // bind mouse behavior so the radio buttons fire events when the graphics are interacted with
+    opt1.graphic.setOnMouseClicked(event -> opt1Choice.fireEvent(event));
+    opt1.graphic.setOnMouseEntered(event -> opt1Choice.fireEvent(event));
+    opt1.graphic.setOnMouseExited(event -> opt1Choice.fireEvent(event));
+    opt1.graphic.setOnMousePressed(event -> opt1Choice.fireEvent(event));
+    opt1.graphic.setOnMouseReleased(event -> opt1Choice.fireEvent(event));
+
+    opt2.graphic.setOnMouseClicked(event -> opt2Choice.fireEvent(event));
+    opt2.graphic.setOnMouseEntered(event -> opt2Choice.fireEvent(event));
+    opt2.graphic.setOnMouseExited(event -> opt2Choice.fireEvent(event));
+    opt2.graphic.setOnMousePressed(event -> opt2Choice.fireEvent(event));
+    opt2.graphic.setOnMouseReleased(event -> opt2Choice.fireEvent(event));
 
     // these are basic bindings
     checkboxFilter1.disableProperty().bind(manualChoice.selectedProperty().not());
@@ -217,7 +217,6 @@ public class StyleableContingentChoiceDialog<T> extends Dialog<T> {
       ButtonData data = dialogButton == null ? null : dialogButton.getButtonData();
       return data == ButtonData.OK_DONE ? getSelectedItem() : null;
     });
-
 
   }
 
