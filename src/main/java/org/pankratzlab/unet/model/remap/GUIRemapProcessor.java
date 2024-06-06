@@ -65,7 +65,7 @@ public class GUIRemapProcessor implements RemapProcessor {
     AllelePairings allelePairs = builder.getPossibleAllelePairsForLocus(locus);
     AllelePairings donorPairs = builder.getDonorAllelePairsForLocus(locus);
 
-    Set<SeroType> locusSet = builder.getCWDSeroTypesForLocus(locus);
+    // Set<SeroType> locusSet = builder.getCWDSeroTypesForLocus(locus);
     Set<SeroType> locusSetNonCWD = builder.getAllSeroTypesForLocus(locus);
     Set<HLAType> typesSet = builder.getCWDTypesForLocus(locus);
     Set<HLAType> typesSetNonCWD = builder.getAllTypesForLocus(locus);
@@ -110,9 +110,11 @@ public class GUIRemapProcessor implements RemapProcessor {
     assignedPane.setAlignment(Pos.CENTER_LEFT);
     Label assignedHeader = new Label("Assigned allele pair: ");
     TextFlow assignedTextFlow = new TextFlow();
-    addTextNodes(assignedTextFlow, hlaType1_First.toString(), true);
+    CIWDAlleleStringPresentationUtils.addTextNodes(assignedTextFlow, hlaType1_First.toString(),
+        true);
     assignedTextFlow.getChildren().add(new Text(" | "));
-    addTextNodes(assignedTextFlow, hlaType2_First.toString(), true);
+    CIWDAlleleStringPresentationUtils.addTextNodes(assignedTextFlow, hlaType2_First.toString(),
+        true);
     Label assignedHeaderLbl = new Label("", assignedTextFlow);
     assignedHeaderLbl.setMaxWidth(Double.MAX_VALUE);
     assignedHeaderLbl.setMaxHeight(Double.MAX_VALUE);
@@ -125,9 +127,9 @@ public class GUIRemapProcessor implements RemapProcessor {
     ciwdPane.setAlignment(Pos.CENTER_LEFT);
     Label ciwdHeader = new Label("Common / Well-Documented allele pair: ");
     TextFlow ciwdTextFlow = new TextFlow();
-    addTextNodes(ciwdTextFlow, hlaType1_CIWD.toString(), true);
+    CIWDAlleleStringPresentationUtils.addTextNodes(ciwdTextFlow, hlaType1_CIWD.toString(), true);
     ciwdTextFlow.getChildren().add(new Text(" | "));
-    addTextNodes(ciwdTextFlow, hlaType2_CIWD.toString(), true);
+    CIWDAlleleStringPresentationUtils.addTextNodes(ciwdTextFlow, hlaType2_CIWD.toString(), true);
     Label ciwdHeaderLbl = new Label("", ciwdTextFlow);
     ciwdHeaderLbl.setMaxWidth(Double.MAX_VALUE);
     ciwdHeaderLbl.setMaxHeight(Double.MAX_VALUE);
@@ -236,59 +238,6 @@ public class GUIRemapProcessor implements RemapProcessor {
     return status1 != Status.UNKNOWN;
   }
 
-  public static TextFlow getText(String allele) {
-    TextFlow flow = new TextFlow();
-    if (allele.contains("-")) {
-      String[] a = allele.split("-");
-      addTextNodes(flow, a[0], false);
-      flow.getChildren().add(new Text(" - "));
-      addTextNodes(flow, a[1], true);
-    } else {
-      addTextNodes(flow, allele, true);
-    }
-
-    return flow;
-  }
-
-  static void addTextNodes(TextFlow flow, final String allele, boolean addSero) {
-    HLAType alleleType = HLAType.valueOf(allele);
-    HLAType cwdType1 = CommonWellDocumented.getCWDType(alleleType);
-    Status status1 = CommonWellDocumented.getStatus(alleleType);
-
-    flow.getChildren().add(new Text(alleleType.locus().name() + "*"));
-
-    String specString = alleleType.specString();
-    boolean match = allele.matches(ValidationModelBuilder.NOT_EXPRESSED)
-        || allele.matches(ValidationModelBuilder.NOT_ON_CELL_SURFACE);
-
-    if (status1 != Status.UNKNOWN) {
-
-      if (cwdType1.specString().length() < specString.length()) {
-        Text t1 = new Text(cwdType1.specString());
-        t1.setStyle("-fx-font-weight:bold;");
-        flow.getChildren().add(t1);
-        flow.getChildren().add(new Text(specString.substring(cwdType1.specString().length())));
-      } else {
-        Text t1 = new Text(specString);
-        t1.setStyle("-fx-font-weight:bold;");
-        flow.getChildren().add(t1);
-      }
-
-      if (match) {
-        flow.getChildren().add(new Text("" + allele.charAt(allele.length() - 1)));
-      }
-
-    } else {
-      flow.getChildren()
-          .add(new Text(specString + (match ? ("" + allele.charAt(allele.length() - 1)) : "")));
-    }
-
-    if (addSero) {
-      flow.getChildren().add(
-          new Text(" (" + alleleType.locus().name() + alleleType.equivSafe().specString() + ")"));
-    }
-  }
-
   public final static class AlleleStringConverter extends StringConverter<Supplier<TextFlow>> {
     private final GUIRemapProcessor.PresentableAlleleChoices choices;
 
@@ -362,7 +311,7 @@ public class GUIRemapProcessor implements RemapProcessor {
           condenseIntoGroups(allelePairings, alleleKeys, true);
 
       for (String allele : choiceList.keySet()) {
-        Supplier<TextFlow> supp = () -> getText(allele);
+        Supplier<TextFlow> supp = () -> CIWDAlleleStringPresentationUtils.getText(allele);
 
         userChoices.add(supp);
         presentationToDataMap.put(supp, allele);
@@ -385,7 +334,7 @@ public class GUIRemapProcessor implements RemapProcessor {
         for (String pairing : secondChoicePairings.keySet()) {
           Supplier<TextFlow> presentationView = presentationToDataMap.inverse().get(pairing);
           if (presentationView == null) {
-            presentationView = () -> getText(pairing);
+            presentationView = () -> CIWDAlleleStringPresentationUtils.getText(pairing);
             presentationToDataMap.put(presentationView, pairing);
           }
           secondChoices.put(choice, presentationView);
