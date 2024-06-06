@@ -1052,8 +1052,7 @@ public class ValidationModelBuilder {
         remapPair = remapProcessor.processRemapping(locus, this);
       } catch (CancellationException e) {
         cancelled = true;
-      } catch (Throwable t) {
-        t.printStackTrace();
+        break;
       }
 
       if (remapPair != null) {
