@@ -32,6 +32,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
@@ -50,7 +51,7 @@ public class ValidationModel {
 
   private final String donorId;
   private final String source;
-  private final String sourceType;
+  private final SourceType sourceType;
   private final ImmutableSortedSet<SeroType> aLocus;
   private final ImmutableSortedSet<SeroType> bLocus;
   private final ImmutableSortedSet<SeroType> cLocus;
@@ -68,11 +69,12 @@ public class ValidationModel {
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
   private final ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping;
 
-  public ValidationModel(String donorId, String source, String sourceType, Collection<SeroType> a,
-      Collection<SeroType> b, Collection<SeroType> c, Collection<SeroType> drb,
-      Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<SeroType> dpa,
-      Collection<HLAType> dpb, boolean bw4, boolean bw6, List<HLAType> dr51, List<HLAType> dr52,
-      List<HLAType> dr53, Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
+  public ValidationModel(String donorId, String source, SourceType sourceType,
+      Collection<SeroType> a, Collection<SeroType> b, Collection<SeroType> c,
+      Collection<SeroType> drb, Collection<SeroType> dqb, Collection<SeroType> dqa,
+      Collection<SeroType> dpa, Collection<HLAType> dpb, boolean bw4, boolean bw6,
+      List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
+      Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
       Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes,
       Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping) {
     this.donorId = donorId;
@@ -111,7 +113,7 @@ public class ValidationModel {
     return source;
   }
 
-  public String getSourceType() {
+  public SourceType getSourceType() {
     return sourceType;
   }
 
@@ -357,7 +359,7 @@ public class ValidationModel {
     StringJoiner sj = new StringJoiner("\n");
     sj.add(getDonorId());
     sj.add(getSource());
-    sj.add(getSourceType());
+    sj.add(getSourceType().name());
     addPair(sj, getA1(), getA2());
     addPair(sj, getB1(), getB2());
     addPair(sj, getC1(), getC2());

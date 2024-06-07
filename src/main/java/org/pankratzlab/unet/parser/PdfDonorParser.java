@@ -23,10 +23,10 @@ package org.pankratzlab.unet.parser;
 
 import java.io.File;
 import java.io.IOException;
-
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.PdfSureTyperParser;
 
@@ -81,7 +81,7 @@ public class PdfDonorParser extends AbstractDonorFileParser {
         String[] pdfLines = pdfText.split(System.getProperty("line.separator"));
 
         // Pass the text to the appropriate parser
-        builder.sourceType("SureTyper");
+        builder.sourceType(SourceType.SureTyper);
         PdfSureTyperParser.parseTypes(builder, pdfLines);
         // FIXME currently not well supported
         // else if (pdfText.contains(QTYPER)) {

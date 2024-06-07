@@ -48,6 +48,7 @@ import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.deprecated.hla.SeroLocus;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.hapstats.AlleleGroups;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
@@ -100,7 +101,7 @@ public class ValidationModelBuilder {
 
   private String donorId;
   private String source;
-  private String sourceType;
+  private SourceType sourceType;
 
   // TODO replace per-locus data structures with maps from [Sero|HLA]Locus to data structure
   // (or tables as appropriate)
@@ -174,9 +175,14 @@ public class ValidationModelBuilder {
   }
 
   /** @param source Name for the source of this model */
-  public ValidationModelBuilder sourceType(String sourceType) {
+  public ValidationModelBuilder sourceType(SourceType sourceType) {
     this.sourceType = sourceType;
     return this;
+  }
+
+  /** @param source Name for the source of this model */
+  public SourceType getSourceType() {
+    return sourceType;
   }
 
   public ValidationModelBuilder a(String aSeroType) {

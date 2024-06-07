@@ -30,6 +30,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
@@ -94,7 +95,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
       // Test for saved or unsaved HTML state
       // No selected elements means this has been saved previously
       Elements selectedElements = parsed.getElementsByAttribute(SELECTED_ATTRIBUTE);
-      builder.sourceType("DonorNet");
+      builder.sourceType(SourceType.DonorNet);
 
       if (selectedElements.isEmpty()) {
         buildModelFromHTML(builder, parsed, this::getSavedHTMLType);
