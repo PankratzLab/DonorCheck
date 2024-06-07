@@ -21,6 +21,23 @@ import com.google.common.collect.Table;
 
 public class XMLRemapProcessor implements RemapProcessor {
 
+  public static class NoRemapProcessor implements RemapProcessor {
+    @Override
+    public Pair<Set<TypePair>, Set<TypePair>> processRemapping(HLALocus locus,
+        ValidationModelBuilder builder) throws CancellationException {
+      Set<HLAType> types = builder.getAllTypesForLocus(locus);
+      HLAType[] tp = types.toArray(new HLAType[types.size()]);
+      if (tp.length == 1) {
+        tp = new HLAType[] {tp[0], tp[0]};
+      }
+      return Pair.of(
+          ImmutableSet.of(new TypePair(tp[0], tp[0].equivSafe()),
+              new TypePair(tp[1], tp[1].equivSafe())),
+          ImmutableSet.of(new TypePair(tp[0], tp[0].equivSafe()),
+              new TypePair(tp[1], tp[1].equivSafe())));
+    }
+  }
+
   private Table<SourceType, HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remappings =
       HashBasedTable.create();
 
@@ -29,17 +46,19 @@ public class XMLRemapProcessor implements RemapProcessor {
       Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
       Elements remapElements = parsed.getElementsByTag("remappings");
       remapElements = remapElements.get(0).getElementsByTag("remap");
+      SourceType source =
+          SourceType.valueOf(remapElements.get(0).getElementsByTag("sourceType").get(0).text());
       remapElements.forEach(e -> {
         e.getElementsByTag("remapLocus").forEach(locusElement -> {
           // TODO catch missing or malformed SourceType values and report
-          SourceType source =
-              SourceType.valueOf(locusElement.getElementsByTag("sourceType").get(0).text());
           // TODO catch missing or malformed locus values and report
           HLALocus locus = HLALocus.valueOf(locusElement.getElementsByTag("locus").get(0).text());
-          HLAType[] fromAlleles = locusElement.getElementsByTag("fromAllele").stream()
-              .map(Element::text).map(HLAType::valueOf).toArray(HLAType[]::new);
-          HLAType[] toAlleles = locusElement.getElementsByTag("toAllele").stream()
-              .map(Element::text).map(HLAType::valueOf).toArray(HLAType[]::new);
+          HLAType[] fromAlleles =
+              locusElement.getElementsByTag("fromAllele").stream().map(Element::text)
+                  .map(s -> locus.name() + "*" + s).map(HLAType::valueOf).toArray(HLAType[]::new);
+          HLAType[] toAlleles =
+              locusElement.getElementsByTag("toAllele").stream().map(Element::text)
+                  .map(s -> locus.name() + "*" + s).map(HLAType::valueOf).toArray(HLAType[]::new);
           // TODO catch missing or malformed allele values and report
           remappings.put(source, locus,
               Pair.of(

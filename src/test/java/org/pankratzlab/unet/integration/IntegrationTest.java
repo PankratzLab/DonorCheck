@@ -10,13 +10,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.model.remap.RemapProcessor;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
@@ -47,6 +50,14 @@ public class IntegrationTest {
 
   public IntegrationTest(File individualDirectory) {
     individualDir = individualDirectory;
+  }
+
+  @Before
+  public void setup() {
+    assumeTrue(Objects.nonNull(System.getProperty(TEST_DIR_PROPERTY)));
+    assumeTrue(Objects.nonNull(individualDir));
+
+    CommonWellDocumented.loadCIWD300();
   }
 
   @Test
@@ -81,7 +92,7 @@ public class IntegrationTest {
           individualModels.size() == 1);
 
       testIfModelsAgree(individualModels);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       e.printStackTrace(System.err);
       fail(individualName + ": failed with exception " + e.toString());
     }
@@ -123,6 +134,8 @@ public class IntegrationTest {
         if (donorNetHtmlFile.exists()) {
           new HtmlDonorParser().parseModel(builder, donorNetHtmlFile);
         }
+      } else if (individualFileName.endsWith(DONORNET_HTML_FILE.toLowerCase())) {
+        new HtmlDonorParser().parseModel(builder, individualFile);
       } else if (individualFileName.endsWith(DONORNET_XML_FILE)
           || individualFileName.endsWith(SCORE6_XML_FILE)) {
         new XmlDonorParser().parseModel(builder, individualFile);
@@ -130,8 +143,11 @@ public class IntegrationTest {
         new PdfDonorParser().parseModel(builder, individualFile);
       } else if (individualFileName.endsWith(REMAP_FILE)) {
         // construct RemapProcessor from XML remap file
-        remapProcessor = new XMLRemapProcessor(individualFileName);
+        remapProcessor = new XMLRemapProcessor(individualFile.getAbsolutePath());
         // no model to be built from this file, so continue;
+        continue;
+      } else {
+        // skip any other files
         continue;
       }
       modelBuilders.add(builder);
@@ -142,14 +158,20 @@ public class IntegrationTest {
 
       if (builder.hasCorrections()) {
         // assertion check if builder *should* have corrections
-        assertTrue(remapProcessor != null);
-        assertTrue(remapProcessor.hasRemappings(builder.getSourceType()));
+        RemapProcessor remapper;
+        if (remapProcessor != null) {
+          assertTrue(remapProcessor.hasRemappings(builder.getSourceType()));
+          remapper = remapProcessor;
+        } else {
+          remapper = new XMLRemapProcessor.NoRemapProcessor();
+        }
 
-        ValidationResult result = builder.processCorrections(remapProcessor);
+        ValidationResult result = builder.processCorrections(remapper);
         assertTrue(result.valid);
         assertFalse(result.validationMessage.isPresent());
       } else {
-        assertTrue(remapProcessor == null);
+        assertTrue(
+            remapProcessor == null || !remapProcessor.hasRemappings(builder.getSourceType()));
       }
 
       models.add(builder.build());
