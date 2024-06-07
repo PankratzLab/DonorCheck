@@ -44,7 +44,7 @@ import com.google.common.collect.SetMultimap;
 
 /** Persistent map of {@link HLAType}s to equivalent {@link SeroType}s. Use when converting. */
 public final class AntigenDictionary implements Serializable {
-  private static final long serialVersionUID = 11L;
+  private static final long serialVersionUID = 12L;
 
   public static final String REL_DNA_SER_PROP = "rel.dna.ser.file";
 
