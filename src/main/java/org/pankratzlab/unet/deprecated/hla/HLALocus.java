@@ -25,10 +25,10 @@ import java.util.Objects;
 
 /** {@link Locus} implementation for HLA types */
 public enum HLALocus implements Locus<HLALocus> {
-  A(SeroLocus.A, TIER_1), B(SeroLocus.B, TIER_1), C(SeroLocus.C, TIER_1), DRB1(SeroLocus.DRB,
-      TIER_2), DRB3(SeroLocus.DRB, TIER_2), DRB4(SeroLocus.DRB, TIER_2), DRB5(SeroLocus.DRB,
-          TIER_2), DQA1(SeroLocus.DQA, TIER_2), DQB1(SeroLocus.DQB, TIER_2), DPA1(SeroLocus.DPA,
-              TIER_2), DPB1(SeroLocus.DPB, TIER_2), MICA(SeroLocus.MICA, TIER_2);
+  A(SeroLocus.A, MHC_CLASS_1), B(SeroLocus.B, MHC_CLASS_1), C(SeroLocus.C, MHC_CLASS_1), DRB1(SeroLocus.DRB,
+      MHC_CLASS_2), DRB3(SeroLocus.DRB, MHC_CLASS_2), DRB4(SeroLocus.DRB, MHC_CLASS_2), DRB5(SeroLocus.DRB,
+          MHC_CLASS_2), DQA1(SeroLocus.DQA, MHC_CLASS_2), DQB1(SeroLocus.DQB, MHC_CLASS_2), DPA1(SeroLocus.DPA,
+              MHC_CLASS_2), DPB1(SeroLocus.DPB, MHC_CLASS_2), MICA(SeroLocus.MICA, MHC_CLASS_2);
 
   private final SeroLocus sero;
   private final int tier;

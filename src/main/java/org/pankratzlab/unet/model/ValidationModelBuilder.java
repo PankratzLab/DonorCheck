@@ -127,27 +127,26 @@ public class ValidationModelBuilder {
   private Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping = new HashMap<>();
 
   private Set<SeroType> drbLocus;
-  // private Set<HLAType> drbLocusTypes;
   private Set<SeroType> drbLocusNonCWD;
 
   private Set<SeroType> dqaLocus;
-  private Set<HLAType> dqaLocusTypes;
-  private Set<HLAType> dqaLocusTypesNonCWD;
   private Set<SeroType> dqaLocusNonCWD;
+  private Set<HLAType> dqaLocusAlleles;
+  private Set<HLAType> dqaLocusAllelesNonCWD;
 
   private Set<SeroType> dqbLocus;
-  private Set<HLAType> dqbLocusTypes;
-  private Set<HLAType> dqbLocusTypesNonCWD;
   private Set<SeroType> dqbLocusNonCWD;
+  private Set<HLAType> dqbLocusAlleles;
+  private Set<HLAType> dqbLocusAllelesNonCWD;
 
   private Set<SeroType> dpaLocus;
-  private Set<HLAType> dpaLocusTypes;
-  private Set<HLAType> dpaLocusTypesNonCWD;
   private Set<SeroType> dpaLocusNonCWD;
+  private Set<HLAType> dpaLocusAlleles;
+  private Set<HLAType> dpaLocusAllelesNonCWD;
 
   private Set<SeroType> dpbLocus;
-  private Set<HLAType> dpbLocusTypes;
-  private Set<HLAType> dpbLocusTypesNonCWD;
+  private Set<HLAType> dpbLocusAlleles;
+  private Set<HLAType> dpbLocusAllelesNonCWD;
   private Set<HLAType> dpbLocusNonCWD;
 
   private Boolean bw4;
@@ -319,6 +318,13 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  /**
+   * DR51 is a HLA-DR serotype that recognizes the antigens encoded by the minor DR locus HLA-DRB5
+   * (cc wikipedia)
+   * 
+   * @param dr51
+   * @return
+   */
   public ValidationModelBuilder dr51(String dr51) {
     if (isPositive(dr51)) {
       dr51Locus.add(new HLAType(HLALocus.DRB5, dr51));
@@ -326,6 +332,12 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  /**
+   * DR52 is an HLA-DR serotype that recognizes gene products of HLA-DRB3 locus (cc wikipedia)
+   * 
+   * @param dr52
+   * @return
+   */
   public ValidationModelBuilder dr52(String dr52) {
     if (isPositive(dr52)) {
       dr52Locus.add(new HLAType(HLALocus.DRB3, dr52));
@@ -333,6 +345,12 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  /**
+   * DR53 is an HLA-DR serotype that recognizes gene products of HLA-DRB4 (cc wikipedia)
+   * 
+   * @param dr53
+   * @return
+   */
   public ValidationModelBuilder dr53(String dr53) {
     if (isPositive(dr53)) {
       dr53Locus.add(new HLAType(HLALocus.DRB4, dr53));
@@ -411,8 +429,8 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dpb(HLAType dpbType) {
-    dpbLocusTypes = makeIfNull(dpbLocusTypes);
-    dpbLocusTypes.add(dpbType);
+    dpbLocusAlleles = makeIfNull(dpbLocusAlleles);
+    dpbLocusAlleles.add(dpbType);
     return this;
   }
 
@@ -425,8 +443,8 @@ public class ValidationModelBuilder {
   }
 
   public ValidationModelBuilder dpbNonCIWD(HLAType dpbType) {
-    dpbLocusTypesNonCWD = makeIfNull(dpbLocusTypesNonCWD);
-    dpbLocusTypesNonCWD.add(dpbType);
+    dpbLocusAllelesNonCWD = makeIfNull(dpbLocusAllelesNonCWD);
+    dpbLocusAllelesNonCWD.add(dpbType);
     return this;
   }
 
@@ -434,8 +452,8 @@ public class ValidationModelBuilder {
     if (test2(dqbType)) {
       return null;
     }
-    dqbLocusTypes = makeIfNull(dqbLocusTypes);
-    addToLocus(dqbLocusTypes, HLALocus.DQB1, dqbType);
+    dqbLocusAlleles = makeIfNull(dqbLocusAlleles);
+    addToLocus(dqbLocusAlleles, HLALocus.DQB1, dqbType);
     return this;
   }
 
@@ -443,8 +461,8 @@ public class ValidationModelBuilder {
     if (test2(dqbType)) {
       return null;
     }
-    dqbLocusTypesNonCWD = makeIfNull(dqbLocusTypesNonCWD);
-    addToLocus(dqbLocusTypesNonCWD, HLALocus.DQB1, dqbType);
+    dqbLocusAllelesNonCWD = makeIfNull(dqbLocusAllelesNonCWD);
+    addToLocus(dqbLocusAllelesNonCWD, HLALocus.DQB1, dqbType);
     return this;
   }
 
@@ -452,8 +470,8 @@ public class ValidationModelBuilder {
     if (test2(dqaType)) {
       return null;
     }
-    dqaLocusTypes = makeIfNull(dqaLocusTypes);
-    addToLocus(dqaLocusTypes, HLALocus.DQA1, dqaType);
+    dqaLocusAlleles = makeIfNull(dqaLocusAlleles);
+    addToLocus(dqaLocusAlleles, HLALocus.DQA1, dqaType);
     return this;
   }
 
@@ -461,8 +479,8 @@ public class ValidationModelBuilder {
     if (test2(dqaType)) {
       return null;
     }
-    dqaLocusTypesNonCWD = makeIfNull(dqaLocusTypesNonCWD);
-    addToLocus(dqaLocusTypesNonCWD, HLALocus.DQA1, dqaType);
+    dqaLocusAllelesNonCWD = makeIfNull(dqaLocusAllelesNonCWD);
+    addToLocus(dqaLocusAllelesNonCWD, HLALocus.DQA1, dqaType);
     return this;
   }
 
@@ -470,8 +488,8 @@ public class ValidationModelBuilder {
     if (test2(dpaType)) {
       return null;
     }
-    dpaLocusTypes = makeIfNull(dpaLocusTypes);
-    addToLocus(dpaLocusTypes, HLALocus.DPA1, dpaType);
+    dpaLocusAlleles = makeIfNull(dpaLocusAlleles);
+    addToLocus(dpaLocusAlleles, HLALocus.DPA1, dpaType);
     return this;
   }
 
@@ -479,8 +497,8 @@ public class ValidationModelBuilder {
     if (test2(dpaType)) {
       return null;
     }
-    dpaLocusTypesNonCWD = makeIfNull(dpaLocusTypesNonCWD);
-    addToLocus(dpaLocusTypesNonCWD, HLALocus.DPA1, dpaType);
+    dpaLocusAllelesNonCWD = makeIfNull(dpaLocusAllelesNonCWD);
+    addToLocus(dpaLocusAllelesNonCWD, HLALocus.DPA1, dpaType);
     return this;
   }
 
@@ -655,7 +673,7 @@ public class ValidationModelBuilder {
     if (!returnTypes.isEmpty()) {
       dpbSource.addAll(returnTypes);
     } else {
-      dpbSource = test1(dpbLocusTypesNonCWD) ? dpbLocusTypes : dpbLocusTypesNonCWD;
+      dpbSource = test1(dpbLocusAllelesNonCWD) ? dpbLocusAlleles : dpbLocusAllelesNonCWD;
       Set<SeroType> dpbBackup = test1(dpbLocusNonCWD) ? dpbLocus : trim(dpbLocusNonCWD);
       if (dpbSource == null || dpbSource.isEmpty()) {
         dpbSource = dpbBackup.stream().map(s -> new HLAType(HLALocus.DPB1, s.spec()))
@@ -1157,13 +1175,13 @@ public class ValidationModelBuilder {
       case C:
         return cLocusCWDTypes;
       case DPA1:
-        return dpaLocusTypes;
+        return dpaLocusAlleles;
       case DQA1:
-        return dqaLocusTypes;
+        return dqaLocusAlleles;
       case DPB1:
-        return dpbLocusTypes;
+        return dpbLocusAlleles;
       case DQB1:
-        return dqbLocusTypes;
+        return dqbLocusAlleles;
       case DRB1:
       case DRB3:
       case DRB4:
@@ -1183,17 +1201,18 @@ public class ValidationModelBuilder {
       case C:
         return cLocusFirstTypes;
       case DPA1:
-        return dpaLocusTypesNonCWD;
+        return dpaLocusAllelesNonCWD;
       case DQA1:
-        return dqaLocusTypesNonCWD;
+        return dqaLocusAllelesNonCWD;
       case DPB1:
-        return dpbLocusTypesNonCWD;
+        return dpbLocusAllelesNonCWD;
       case DQB1:
-        return dqbLocusTypesNonCWD;
+        return dqbLocusAllelesNonCWD;
       case DRB1:
       case DRB3:
       case DRB4:
       case DRB5:
+      case MICA:
       default:
         return null;
     }
