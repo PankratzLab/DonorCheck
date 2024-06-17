@@ -61,7 +61,6 @@ public class DRDQHaplotypeRow extends AbstractHaplotypeRow {
           break;
       }
     }
-    // TODO split into separate throws indicating which is missing
     if (Objects.isNull(dqb1)) {
       throw new IllegalArgumentException(
           "Invalid DRB345-DRB1-DQB1 haplotype, missing DQB1: " + haplotype.toShortString());

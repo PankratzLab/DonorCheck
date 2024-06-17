@@ -69,7 +69,7 @@ public final class CommonWellDocumented {
       CacheBuilder.newBuilder().build(CacheLoader.from(CommonWellDocumented::doGetStatus));
 
   public static enum Status {
-    COMMON(1.0), INTERMEDIATE(0.5), WELL_DOCUMENTED(0.5), UNKNOWN(0.0);
+    COMMON(1.0), INTERMEDIATE(0.5), WELL_DOCUMENTED(0.25), UNKNOWN(0.0);
 
     private final double weight;
 
