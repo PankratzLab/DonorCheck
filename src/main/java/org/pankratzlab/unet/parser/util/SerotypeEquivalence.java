@@ -43,7 +43,7 @@ public final class SerotypeEquivalence {
   private static final ImmutableMap<HLAType, SeroType> manualEquivalencies;
 
   private static final Set<String> INVALID =
-      Sets.newHashSet(null, "-", "Undefined", "Null", "NotExpressed", "Blank");
+      Sets.newHashSet("-", "Undefined", "Null", "NotExpressed", "Blank");
 
   static {
     careDxEquivalencies = buildLookupFromCareDxXMLFile();
@@ -93,7 +93,12 @@ public final class SerotypeEquivalence {
 
       Elements elementsByTag = parsed.getElementsByTag("allele");
       for (Element e : elementsByTag) {
-        processAllele(builder, e);
+        try {
+          processAllele(builder, e);
+        } catch (NullPointerException e1) {
+          System.err.println("Couldn't find allele name: " + e.toString());
+          continue;
+        }
       }
 
     } catch (IOException e) {
@@ -119,8 +124,13 @@ public final class SerotypeEquivalence {
     String careDxSeroText = expertElements.isEmpty() ? null : expertElements.get(0).text();
     Elements whoElements = e.getElementsByTag("WHO");
     String whoSeroText = whoElements.isEmpty() ? null : whoElements.get(0).text();
-    if (INVALID.contains(careDxSeroText) && INVALID.contains(whoSeroText))
+    boolean inval1 = careDxSeroText == null || INVALID.stream().map(String::toLowerCase)
+        .filter(s -> careDxSeroText.toLowerCase().contains(s)).count() > 0;
+    boolean inval2 = whoSeroText == null || INVALID.stream().map(String::toLowerCase)
+        .filter(s -> whoSeroText.toLowerCase().contains(s)).count() > 0;
+    if (inval1 && inval2) {
       return;
+    }
 
     try {
       HLALocus locus = HLALocus.valueOf("" + careDxSeroText.charAt(0));
