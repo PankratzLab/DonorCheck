@@ -206,15 +206,18 @@ public final class AntigenDictionary implements Serializable {
         // Since the columns are ordered by specificity, we use the first column with valid entries
         // Set<String> seroSpecs = new LinkedHashSet<>();
         List<String> seroSpecs = new ArrayList<>();
-        for (int i = 2; i <= 5 && i < columns.length; i++) {
-          String types = columns[i];
-          // Each HLA type may map to multiple serotypes
-          for (String t : types.split(TYPE_DELIM)) {
-            if (!t.isEmpty() && !seroSpecs.contains(t)) {
-              seroSpecs.add(t);
-            }
-          }
+        if (!columns[2].isEmpty()) {
+          seroSpecs.add(columns[2]);
         }
+        // for (int i = 2; i <= 5 && i < columns.length; i++) {
+        // String types = columns[i];
+        // // Each HLA type may map to multiple serotypes
+        // for (String t : types.split(TYPE_DELIM)) {
+        // if (!t.isEmpty() && !seroSpecs.contains(t)) {
+        // seroSpecs.add(t);
+        // }
+        // }
+        // }
 
         // Skip null types
         if (seroSpecs.stream().anyMatch(NULL_TYPE::equals)) {
