@@ -26,6 +26,11 @@ public class XMLRemapProcessor implements RemapProcessor {
     public Pair<Set<TypePair>, Set<TypePair>> processRemapping(HLALocus locus,
         ValidationModelBuilder builder) throws CancellationException {
       Set<HLAType> types = builder.getAllTypesForLocus(locus);
+      if (types == null || types.size() == 0) {
+        // no types available for remapping, so return null to indicate locus should use
+        // default-assigned types
+        return null;
+      }
       HLAType[] tp = types.toArray(new HLAType[types.size()]);
       if (tp.length == 1) {
         tp = new HLAType[] {tp[0], tp[0]};

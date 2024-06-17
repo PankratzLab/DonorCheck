@@ -2,9 +2,9 @@ package org.pankratzlab.unet.integration;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeNotNull;
 import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -94,7 +94,7 @@ public class IntegrationTest {
       testIfModelsAgree(individualModels);
     } catch (Throwable e) {
       e.printStackTrace(System.err);
-      fail(individualName + ": failed with exception " + e.toString());
+      fail(individualName + ": failed with exception " + e.toString(), e);
     }
   }
 
