@@ -3,7 +3,6 @@ package org.pankratzlab.unet.parser.util;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
@@ -12,7 +11,6 @@ import org.pankratzlab.unet.hapstats.HaplotypeUtils;
 import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
@@ -57,13 +55,13 @@ public class XmlSureTyperParser {
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DRB1).text()
         .replaceAll("DR", "").split("\\s")).forEach(builder::drb);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQB1).text()
-        .replaceAll("DQ", "").split("\\s")).forEach(builder::dqb);
+        .replaceAll("DQ", "").split("\\s")).forEach(builder::dqbSerotype);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQA1).text()
-        .replaceAll("DQA1\\*", "").split("\\s")).forEach(builder::dqa);
+        .replaceAll("DQA1\\*", "").split("\\s")).forEach(builder::dqaSerotype);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPA1).text()
-        .replaceAll("DPA1\\*", "").split("\\s")).forEach(builder::dpa);
+        .replaceAll("DPA1\\*", "").split("\\s")).forEach(builder::dpaSerotype);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPB1).text()
-        .replaceAll("DPB1\\*", "").split("\\s")).forEach(builder::dpb);
+        .replaceAll("DPB1\\*", "").split("\\s")).forEach(builder::dpbSerotype);
     builder
         .bw4(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw4"));
     builder

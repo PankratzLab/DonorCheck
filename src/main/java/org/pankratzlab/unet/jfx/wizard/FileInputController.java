@@ -25,13 +25,18 @@ import java.io.File;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import org.pankratzlab.BackgroundDataProcessor;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.model.remap.GUIRemapProcessor;
+import org.pankratzlab.unet.model.remap.GUIRemapProcessor.PresentableAlleleChoices;
 import org.pankratzlab.unet.parser.DonorFileParser;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
@@ -155,35 +160,38 @@ public class FileInputController extends AbstractValidatingWizardController {
         ValidationModelBuilder builder = new ValidationModelBuilder();
 
         try {
+          // parse the model
           donorParser.parseModel(builder, selectedFile);
 
-          // building the model may involve user input, so we need to run this on the JavaFX
-          // Application thread
-          Platform.runLater(() -> {
+          // check that the model is valid
+          ValidationResult validationResult = builder.validate();
 
-            // check that the model is valid
-            org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult validationResult =
-                builder.validate();
+          if (!validationResult.valid) {
+            // if a value is present, show error message
+            alertInvalid(donorParser, selectedFile, validationResult);
+          }
 
-            if (!validationResult.valid) {
+          // check for corrections
+          if (builder.hasCorrections()) {
 
-              // if a value is present, show error message
-              if (validationResult.validationMessage.isPresent()) {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setHeaderText(donorParser.getErrorText()
-                    + "\nPlease notify the developers as this may indicate the data has changed."
-                    + "\nOffending file: " + selectedFile.getName());
-                alert.showAndWait();
-              }
+            BackgroundDataProcessor<HLALocus, PresentableAlleleChoices> choiceSupplier =
+                new BackgroundDataProcessor<>(builder.getNonCWDLoci(),
+                    (locus) -> PresentableAlleleChoices.create(locus,
+                        builder.getAllelePairs(locus)),
+                    (t) -> {
+                      t.printStackTrace();
+                      return null;
+                    });
+            GUIRemapProcessor processor = new GUIRemapProcessor(choiceSupplier);
 
-              // either way, invalid model so fail
-              return;
-            }
-            Task<Void> buildModelText = JFXUtilHelper.createProgressTask(() -> {
-              // valid model, build and set
+            Platform.runLater(() -> {
               try {
-                setter.accept(getTable(), builder.build());
-                linkedFile.set(selectedFile);
+                ValidationResult validationResult1 = builder.processCorrections(processor);
+                if (!validationResult1.valid) {
+                  alertInvalid(donorParser, selectedFile, validationResult);
+                } else {
+                  finish(donorParser, setter, linkedFile, selectedFile, builder);
+                }
               } catch (Throwable e) {
                 Platform.runLater(() -> {
                   Alert alert = new Alert(AlertType.ERROR);
@@ -194,10 +202,14 @@ public class FileInputController extends AbstractValidatingWizardController {
                   e.printStackTrace();
                 });
               }
-
             });
-            new Thread(buildModelText).start();
-          });
+
+          } else {
+            Platform.runLater(() -> {
+              finish(donorParser, setter, linkedFile, selectedFile, builder);
+            });
+          }
+
         } catch (Throwable e) {
           Platform.runLater(() -> {
             Alert alert = new Alert(AlertType.ERROR);
@@ -214,6 +226,42 @@ public class FileInputController extends AbstractValidatingWizardController {
 
       new Thread(loadFileTask).start();
     }
+  }
+
+  private void alertInvalid(DonorFileParser donorParser, File selectedFile,
+      ValidationResult validationResult) {
+    if (validationResult.validationMessage.isPresent()) {
+      Platform.runLater(() -> {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setHeaderText(donorParser.getErrorText()
+            + "\nPlease notify the developers as this may indicate the data has changed."
+            + "\nOffending file: " + selectedFile.getName());
+        alert.showAndWait();
+      });
+    }
+  }
+
+  private void finish(DonorFileParser donorParser,
+      BiConsumer<ValidationTable, ValidationModel> setter, ReadOnlyObjectWrapper<File> linkedFile,
+      File selectedFile, ValidationModelBuilder builder) {
+    Task<Void> buildModelText = JFXUtilHelper.createProgressTask(() -> {
+      // valid model, build and set
+      try {
+        setter.accept(getTable(), builder.build());
+        linkedFile.set(selectedFile);
+      } catch (Throwable e) {
+        Platform.runLater(() -> {
+          Alert alert = new Alert(AlertType.ERROR);
+          alert.setHeaderText(donorParser.getErrorText()
+              + "\nPlease notify the developers as this may indicate the data has changed."
+              + "\nOffending file: " + selectedFile.getName());
+          alert.showAndWait();
+          e.printStackTrace();
+        });
+      }
+
+    });
+    new Thread(buildModelText).start();
   }
 
   /**

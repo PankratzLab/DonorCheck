@@ -285,7 +285,6 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   @Override
   protected void refreshTable(ValidationTable table) {
     // Can only finish the wizard if the validation is successful
-
     rootPane.setInvalidBinding(table.isValidProperty().not());
     resultsTable.setItems(table.getValidationRows());
     table.isValidProperty().addListener(e -> updateDisplay(table.isValidProperty().get()));
@@ -296,7 +295,6 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
     bcHaplotypeTable.setItems(table.getBCHaplotypeRows());
     drdqHaplotypeTable.setItems(table.getDRDQHaplotypeRows());
-
   }
 
   /** Perform required actions when the page is being displayed */

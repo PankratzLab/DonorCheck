@@ -23,8 +23,8 @@ package org.pankratzlab.unet.deprecated.hla;
 
 /** Marker interface for antigen loci */
 public interface Locus<L> extends Comparable<L> {
-  public static int TIER_1 = 1;
-  public static int TIER_2 = 2;
+  public static int MHC_CLASS_1 = 1;
+  public static int MHC_CLASS_2 = 2;
 
   /** @return Name of this locus */
   String name();

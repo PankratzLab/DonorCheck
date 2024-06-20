@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
@@ -75,6 +74,11 @@ public final class DRAssociations {
   public static Optional<HLALocus> getDRBLocus(SeroType drType) {
     if (Objects.nonNull(drType) && drMap().containsKey(drType)) {
       return Optional.of(drMap().get(drType));
+    } else if (Objects.nonNull(drType) && drType.specString().length() > 2) {
+      SeroType subType = new SeroType(drType.locus(), drType.specString().substring(0, 2));
+      if (drMap().containsKey(subType)) {
+        return Optional.of(drMap().get(subType));
+      }
     }
     return Optional.ofNullable(null);
   }

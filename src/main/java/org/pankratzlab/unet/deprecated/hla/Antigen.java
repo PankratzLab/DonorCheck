@@ -2,7 +2,7 @@
  * #%L
  * DonorCheck
  * %%
- * Copyright (C) 2018 - 2019 Computational Pathology - University of Minnesota
+ * Copyright (C) 2018 - 2024 Computational Pathology - University of Minnesota
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -39,7 +39,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 
@@ -232,16 +231,22 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
       int[] iVal = new int[1];
       Matcher matcher = SPEC_PATTERN.matcher(spec);
       matcher.find();
-      // Extracts value from parents if they were present
-      String val = matcher.group(2) != null ? matcher.group(2) : matcher.group(1);
+
+      // Extracts value outside of parentheses if they were present (changed from returning value
+      // inside parens, 5/24 - @rcoleb)
+      String val = matcher.group(1);
 
       if (val.contains(SPEC_DELIM)) {
         // Was passed XX:YY
         return parse(val.split(SPEC_DELIM));
       }
       // "0105" should be "01:05"
-      if (val.length() > 2 && val.charAt(0) == '0') {
-        return parse(new String[] {spec.substring(0, 2), spec.substring(2)});
+      if (val.length() > 2) {
+        if (val.charAt(0) == '0') {
+          return parse(new String[] {spec.substring(0, 2), spec.substring(2)});
+        } else {
+          // System.out.println();
+        }
       }
       iVal[0] = Integer.parseInt(val);
       return parse(iVal);

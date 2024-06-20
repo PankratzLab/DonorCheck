@@ -29,8 +29,8 @@ import com.google.common.collect.ImmutableList;
 
 /** {@link Locus} implementation for serological types */
 public enum SeroLocus implements Locus<SeroLocus> {
-  A(2, TIER_1), B(2, TIER_1), C(3, TIER_1), DRB(1, TIER_2, "DR"), DQB(1, TIER_2, "DQ"), DQA(1,
-      TIER_2), DPB(1, TIER_2, "DP"), DPA(1, TIER_2), MICA(1, -1);
+  A(2, MHC_CLASS_1), B(2, MHC_CLASS_1), C(3, MHC_CLASS_1), DRB(1, MHC_CLASS_2, "DR"), DQB(1, MHC_CLASS_2, "DQ"), DQA(1,
+      MHC_CLASS_2), DPB(1, MHC_CLASS_2, "DP"), DPA(1, MHC_CLASS_2), MICA(1, -1);
 
   private final int severity;
   private final int tier;

@@ -27,6 +27,7 @@ import java.security.InvalidParameterException;
 import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.util.XmlDonorNetParser;
 import org.pankratzlab.unet.parser.util.XmlScore6Parser;
@@ -89,13 +90,13 @@ public class XmlDonorParser extends AbstractDonorFileParser {
 
         // Based on XML contents, pass to specific XML parser
         if (XmlDonorNetParser.ROOT_ELEMENT.equals(rootElement)) {
-          builder.sourceType("DonorNet");
+          builder.sourceType(SourceType.DonorNet);
           XmlDonorNetParser.buildModelFromXML(builder, parsed);
         } else if (XmlScore6Parser.ROOT_ELEMENT.equals(rootElement)) {
-          builder.sourceType("Score6");
+          builder.sourceType(SourceType.Score6);
           XmlScore6Parser.buildModelFromXML(builder, parsed);
         } else if (XmlSureTyperParser.ROOT_ELEMENT.equals(rootElement)) {
-          builder.sourceType("SureTyper");
+          builder.sourceType(SourceType.SureTyper);
           XmlSureTyperParser.buildModelFromXML(builder, parsed);
         }
       } else {

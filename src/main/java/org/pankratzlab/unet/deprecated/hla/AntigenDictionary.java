@@ -31,7 +31,6 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -45,11 +44,7 @@ import com.google.common.collect.SetMultimap;
 
 /** Persistent map of {@link HLAType}s to equivalent {@link SeroType}s. Use when converting. */
 public final class AntigenDictionary implements Serializable {
-  private static final long serialVersionUID = 10L;
-
-  public static final int LATEST_REVISION =
-      1 + HLAType.LATEST_REVISION + SeroType.LATEST_REVISION + Antigen.LATEST_REVISION;
-  private int revision = LATEST_REVISION;
+  private static final long serialVersionUID = 12L;
 
   public static final String REL_DNA_SER_PROP = "rel.dna.ser.file";
 
@@ -178,6 +173,7 @@ public final class AntigenDictionary implements Serializable {
     }
     ImmutableSetMultimap.Builder<HLAType, SeroType> hlaBuilder = ImmutableSetMultimap.builder();
     ImmutableSetMultimap.Builder<SeroType, HLAType> seroBuilder = ImmutableSetMultimap.builder();
+
     // NB: what's considered a valid HLA type diverges from the HLA map keyset and thus must be
     // tracked separately
     Builder<HLAType> validHLATypes = ImmutableSet.builder();
@@ -208,16 +204,20 @@ public final class AntigenDictionary implements Serializable {
 
         // Parse out the serological specificities for this mapping
         // Since the columns are ordered by specificity, we use the first column with valid entries
-        Set<String> seroSpecs = new HashSet<>();
-        for (int i = 2; i <= 5 && i < columns.length; i++) {
-          String types = columns[i];
-          // Each HLA type may map to multiple serotypes
-          for (String t : types.split(TYPE_DELIM)) {
-            if (!t.isEmpty()) {
-              seroSpecs.add(t);
-            }
-          }
+        // Set<String> seroSpecs = new LinkedHashSet<>();
+        List<String> seroSpecs = new ArrayList<>();
+        if (!columns[2].isEmpty()) {
+          seroSpecs.add(columns[2]);
         }
+        // for (int i = 2; i <= 5 && i < columns.length; i++) {
+        // String types = columns[i];
+        // // Each HLA type may map to multiple serotypes
+        // for (String t : types.split(TYPE_DELIM)) {
+        // if (!t.isEmpty() && !seroSpecs.contains(t)) {
+        // seroSpecs.add(t);
+        // }
+        // }
+        // }
 
         // Skip null types
         if (seroSpecs.stream().anyMatch(NULL_TYPE::equals)) {
@@ -239,25 +239,26 @@ public final class AntigenDictionary implements Serializable {
         for (int i = 0; i < specValues.length; i++) {
           specValues[i] = specValues[i].trim().replaceAll("[^0-9]", "");
           spec.add(Integer.parseInt(specValues[i]));
+        }
 
-          HLAType hlaType = new HLAType(l, spec);
+        HLAType hlaType = new HLAType(l, spec);
 
-          SeroLocus sl = l.sero();
-          for (String t : seroSpecs) {
-            // Convert unknown types to the first spec value
-            if (UNKNOWN_TYPE.equals(t)) {
-              t = specValues[0];
-            }
-            SeroType seroType = new SeroType(sl, t);
-            hlaBuilder.put(hlaType, seroType);
+        SeroLocus sl = l.sero();
+        for (String t : seroSpecs) {
+          // Convert unknown types to the first spec value
+          if (UNKNOWN_TYPE.equals(t)) {
+            t = specValues[0];
+          }
+          SeroType seroType = new SeroType(sl, t);
+          hlaBuilder.put(hlaType, seroType);
 
-            // Only map from sero > hla if we have 2 or more specificities
-            if (spec.size() > 1) {
-              validHLATypes.add(hlaType);
-              seroBuilder.put(seroType, hlaType);
-            }
+          // Only map from sero > hla if we have 2 or more specificities
+          if (spec.size() > 1) {
+            validHLATypes.add(hlaType);
+            seroBuilder.put(seroType, hlaType);
           }
         }
+        // }
       }
 
       // Build the singleton map and write it to disk

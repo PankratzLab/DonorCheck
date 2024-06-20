@@ -22,11 +22,9 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
-
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.hapstats.Haplotype;
 import org.pankratzlab.unet.hapstats.RaceGroup;
-
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 
@@ -63,9 +61,17 @@ public class DRDQHaplotypeRow extends AbstractHaplotypeRow {
           break;
       }
     }
-    if (Objects.isNull(dqb1) || Objects.isNull(drb1) || Objects.isNull(drb345)) {
+    if (Objects.isNull(dqb1)) {
       throw new IllegalArgumentException(
-          "Invalid DRB345-DRB1-DQB1 haplotype: " + haplotype.toShortString());
+          "Invalid DRB345-DRB1-DQB1 haplotype, missing DQB1: " + haplotype.toShortString());
+    }
+    if (Objects.isNull(drb1)) {
+      throw new IllegalArgumentException(
+          "Invalid DRB345-DRB1-DQB1 haplotype, missing DRB1: " + haplotype.toShortString());
+    }
+    if (Objects.isNull(drb345)) {
+      throw new IllegalArgumentException(
+          "Invalid DRB345-DRB1-DQB1 haplotype, missing DRB345: " + haplotype.toShortString());
     }
 
     alleleDRB1 = getAlleleWrapper(drb1);

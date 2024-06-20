@@ -2,26 +2,27 @@ package org.pankratzlab.unet.integration;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeNotNull;
 import static org.junit.Assume.assumeTrue;
-
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.model.remap.RemapProcessor;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
-
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -38,6 +39,7 @@ import com.google.common.collect.ImmutableList;
 @RunWith(Parameterized.class)
 public class IntegrationTest {
 
+  private static final String REMAP_FILE = "remap.xml";
   private static final String SURETYPER_PDF_FILE = "typer.pdf";
   private static final String SCORE6_XML_FILE = "score6.xml";
   private static final String DONORNET_XML_FILE = "donornet.xml";
@@ -48,6 +50,14 @@ public class IntegrationTest {
 
   public IntegrationTest(File individualDirectory) {
     individualDir = individualDirectory;
+  }
+
+  @Before
+  public void setup() {
+    assumeTrue(Objects.nonNull(System.getProperty(TEST_DIR_PROPERTY)));
+    assumeTrue(Objects.nonNull(individualDir));
+
+    CommonWellDocumented.loadCIWD300();
   }
 
   @Test
@@ -82,9 +92,9 @@ public class IntegrationTest {
           individualModels.size() == 1);
 
       testIfModelsAgree(individualModels);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       e.printStackTrace(System.err);
-      fail(individualName + ": failed with exception " + e.toString());
+      fail(individualName + ": failed with exception " + e.toString(), e);
     }
   }
 
@@ -111,7 +121,8 @@ public class IntegrationTest {
    * return the results
    */
   private List<ValidationModel> parseIndividualFiles(File individualDir) {
-    List<ValidationModel> models = new ArrayList<>();
+    List<ValidationModelBuilder> modelBuilders = new ArrayList<>();
+    XMLRemapProcessor remapProcessor = null;
 
     for (File individualFile : individualDir.listFiles()) {
       ValidationModelBuilder builder = new ValidationModelBuilder();
@@ -122,16 +133,48 @@ public class IntegrationTest {
             new File(individualFile.getAbsolutePath() + File.separator + DONORNET_HTML_FILE);
         if (donorNetHtmlFile.exists()) {
           new HtmlDonorParser().parseModel(builder, donorNetHtmlFile);
-          models.add(builder.build());
         }
+      } else if (individualFileName.endsWith(DONORNET_HTML_FILE.toLowerCase())) {
+        new HtmlDonorParser().parseModel(builder, individualFile);
       } else if (individualFileName.endsWith(DONORNET_XML_FILE)
           || individualFileName.endsWith(SCORE6_XML_FILE)) {
         new XmlDonorParser().parseModel(builder, individualFile);
-        models.add(builder.build());
       } else if (individualFileName.endsWith(SURETYPER_PDF_FILE)) {
         new PdfDonorParser().parseModel(builder, individualFile);
-        models.add(builder.build());
+      } else if (individualFileName.endsWith(REMAP_FILE)) {
+        // construct RemapProcessor from XML remap file
+        remapProcessor = new XMLRemapProcessor(individualFile.getAbsolutePath());
+        // no model to be built from this file, so continue;
+        continue;
+      } else {
+        // skip any other files
+        continue;
       }
+      modelBuilders.add(builder);
+    }
+
+    List<ValidationModel> models = new ArrayList<>();
+    for (ValidationModelBuilder builder : modelBuilders) {
+
+      if (builder.hasCorrections()) {
+        // assertion check if builder *should* have corrections
+        RemapProcessor remapper;
+        if (remapProcessor != null) {
+          assertTrue(remapProcessor.hasRemappings(builder.getSourceType()));
+          remapper = remapProcessor;
+        } else {
+          remapper = new XMLRemapProcessor.NoRemapProcessor();
+        }
+
+        ValidationResult result = builder.processCorrections(remapper);
+        assertTrue(result.valid);
+        assertFalse(result.validationMessage.isPresent());
+      } else {
+        assertTrue(
+            remapProcessor == null || !remapProcessor.hasRemappings(builder.getSourceType()));
+      }
+
+      models.add(builder.build());
     }
 
     return models;

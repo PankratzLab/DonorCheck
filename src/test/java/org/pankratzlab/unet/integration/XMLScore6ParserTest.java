@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationModel;
@@ -37,6 +38,7 @@ public class XMLScore6ParserTest {
   @BeforeAll
   private static void init() {
     HaplotypeTestingUtils.initiateFreqTablesTesting();
+    CommonWellDocumented.loadCIWD300();
   }
 
   // create parameters to be used as CSV source for checking Donor ID parsing

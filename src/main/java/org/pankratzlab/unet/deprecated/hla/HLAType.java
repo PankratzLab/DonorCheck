@@ -21,7 +21,9 @@
  */
 package org.pankratzlab.unet.deprecated.hla;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,7 +31,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import com.google.common.primitives.Ints;
 
 /** {@link Antigen} implementation for HLA antigens */
@@ -85,25 +86,52 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
    * Note: this method is similar to {@link AntigenDictionary#lookup(HLAType)}, with two exceptions:
    *
    * <ul>
-   * <li>In the case of multiple {@link SeroType} mappings, only the first will be returned
+   * <li><b>In the case of multiple {@link SeroType} mappings, only the first will be returned</b>
    * <li>If there is no explicit mapping for this type, a {@code SeroType} will be created using the
    * equivalent {@link SeroLocus} and the first value in this type's {@link #spec()}
    * </ul>
    *
-   * @return {@link SeroType} equivalent of this antigen
-   * @throws IllegalStateException If this type has ambiguous serotype equivalencies
+   * @return {@link SeroType} equivalent of this antigen <br />
+   *         <br />
+   * 
    */
   public SeroType equiv() {
+    Set<SeroType> lookup = new HashSet<>();
     try {
-      Set<SeroType> lookup = AntigenDictionary.lookup(this);
-      if (lookup.size() == 1) {
-        return lookup.iterator().next();
-      } else if (lookup.size() > 1) {
-        throw new IllegalStateException(
-            "HLA type: " + this + " has multiple serotype equivalencies");
-      }
+      lookup = AntigenDictionary.lookup(this);
     } catch (IllegalArgumentException e) {
+      if (this.resolution() < 3) {
+        // grow spec with 01s until a mapping (if any) is found)
+        HLAType t = this;
+        while (t != null && lookup.isEmpty()) {
+          t = growSpec(t);
+          try {
+            lookup = AntigenDictionary.lookup(t);
+          } catch (IllegalArgumentException e2) {
+            // might not need this
+            lookup = new HashSet<>();
+          }
+        }
+      } else if (this.resolution() > 2) {
+        // reduce spec by removing any 01s
+        HLAType t = this;
+        while (t != null && lookup.isEmpty()) {
+          t = reduceSpec(t);
+          try {
+            lookup = AntigenDictionary.lookup(t);
+          } catch (IllegalArgumentException e2) {
+            // might not need this
+            lookup = new HashSet<>();
+          }
+        }
+      }
       // No-op
+    }
+
+    if (lookup.size() == 1) {
+      return lookup.iterator().next();
+    } else if (lookup.size() > 1) {
+      return lookup.iterator().next();
     }
 
     // If we don't have an explicit mapping of this HLAType, just use the first spec
@@ -146,6 +174,49 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
     List<Integer> values = Ints.asList(p);
 
     return values;
+  }
+
+  /**
+   * @param equivType Input type to reduce
+   * @return The input {@link HLAType} with its tailing "01" field removed, or null if the allele
+   *         can not be reduced
+   */
+  public static HLAType reduceSpec(HLAType equivType) {
+    List<Integer> spec = equivType.spec();
+
+    if (spec.size() < 2 || (spec.size() < 4 && spec.get(spec.size() - 1) != 1)) {
+      // We can only remove a trailing "01 "specificity, and only if we have 3- or more fields
+      return null;
+    }
+
+    spec = spec.subList(0, spec.size() - 1);
+    return HLAType.modifiedSpec(equivType, spec);
+  }
+
+  /**
+   * @param equivType Input type to expand
+   * @return The input {@link HLAType} with an additional "01" field, or null if the allele can not
+   *         be further expanded
+   */
+  public static HLAType growSpec(HLAType equivType) {
+    List<Integer> spec = new ArrayList<>(equivType.spec());
+
+    if (spec.size() >= 4) {
+      // We can only expand 2- and 3-field specificities
+      return null;
+    }
+
+    spec.add(1);
+
+    return HLAType.modifiedSpec(equivType, spec);
+  }
+
+  /** Helper method to create an updated HLAType */
+  private static HLAType modifiedSpec(HLAType equivType, List<Integer> spec) {
+    if (equivType instanceof NullType) {
+      return new NullType(equivType.locus(), spec);
+    }
+    return new HLAType(equivType.locus(), spec);
   }
 
   /** @see Antigen#is(String, Pattern) */

@@ -105,6 +105,7 @@ public class XmlScore6Parser {
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, String>> metadataMap;
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, HLAType>> metadataTypeMap;
   private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, String>> metadataNonCWDMap;
+  private static ImmutableMap<String, BiConsumer<ValidationModelBuilder, HLAType>> metadataTypeNonCWDMap;
   private static ImmutableMap<String, TriConsumer<ValidationModelBuilder, HLALocus, AllelePairings>> possibleAlleleRecordingMap;
   private static ImmutableMap<String, TriConsumer<ValidationModelBuilder, HLALocus, AllelePairings>> donorAlleleRecordingMap;
   private static ImmutableMap<HLALocus, BiConsumer<ValidationModelBuilder, String>> drbMap;
@@ -119,12 +120,12 @@ public class XmlScore6Parser {
     setterBuilder.put(A_HEADER, ValidationModelBuilder::a);
     setterBuilder.put(B_HEADER, ValidationModelBuilder::b);
     setterBuilder.put(C_HEADER, ValidationModelBuilder::c);
-    setterBuilder.put(DQB_HEADER, ValidationModelBuilder::dqb);
+    setterBuilder.put(DQB_HEADER, ValidationModelBuilder::dqbSerotype);
 
     // Reported as allele types
-    setterBuilder.put(DPB_HEADER, ValidationModelBuilder::dpb);
-    setterBuilder.put(DQA_HEADER, ValidationModelBuilder::dqa);
-    setterBuilder.put(DPA_HEADER, ValidationModelBuilder::dpa);
+    setterBuilder.put(DPB_HEADER, ValidationModelBuilder::dpbSerotype);
+    setterBuilder.put(DQA_HEADER, ValidationModelBuilder::dqaSerotype);
+    setterBuilder.put(DPA_HEADER, ValidationModelBuilder::dpaSerotype);
 
     // DR52/53/54 appears as a serological combination
     setterBuilder.put(DRB_HEADER, ValidationModelBuilder::drb);
@@ -145,7 +146,7 @@ public class XmlScore6Parser {
 
     // Reported as allele types
     // DPB is already being tracked as HLATypes
-    // setterBuilderTypes.put(DPB_HEADER, ValidationModelBuilder::dpbType);
+    setterBuilderTypes.put(DPB_HEADER, ValidationModelBuilder::dpb);
     setterBuilderTypes.put(DQA_HEADER, ValidationModelBuilder::dqaType);
     setterBuilderTypes.put(DPA_HEADER, ValidationModelBuilder::dpaType);
 
@@ -156,6 +157,29 @@ public class XmlScore6Parser {
     // setterBuilder.put("HLA-DPA1", null);
 
     metadataTypeMap = setterBuilderTypes.build();
+
+    // -- Build mapping bemetadataTypeMaptween loci sections, serotype prefixes and validation model
+    // setters --
+    Builder<String, BiConsumer<ValidationModelBuilder, HLAType>> setterBuilderTypesNonCWD =
+        ImmutableMap.builder();
+    setterBuilderTypesNonCWD.put(A_HEADER, ValidationModelBuilder::aTypeNonCWD);
+    setterBuilderTypesNonCWD.put(B_HEADER, ValidationModelBuilder::bTypeNonCWD);
+    setterBuilderTypesNonCWD.put(C_HEADER, ValidationModelBuilder::cTypeNonCWD);
+    setterBuilderTypesNonCWD.put(DQB_HEADER, ValidationModelBuilder::dqbTypeNonCWD);
+
+    // Reported as allele types
+    // DPB is already being tracked as HLATypes
+    setterBuilderTypesNonCWD.put(DPB_HEADER, ValidationModelBuilder::dpbNonCIWD);
+    setterBuilderTypesNonCWD.put(DQA_HEADER, ValidationModelBuilder::dqaTypeNonCWD);
+    setterBuilderTypesNonCWD.put(DPA_HEADER, ValidationModelBuilder::dpaTypeNonCWD);
+
+    // DR52/53/54 appears as a serological combination
+    // setterBuilderTypes.put(DRB_HEADER, ValidationModelBuilder::drbType);
+
+    // NB: not in DonorNet
+    // setterBuilder.put("HLA-DPA1", null);
+
+    metadataTypeNonCWDMap = setterBuilderTypesNonCWD.build();
 
     // -- Build mapping between loci sections, serotype prefixes and validation model setters --
     Builder<String, BiConsumer<ValidationModelBuilder, String>> setterBuilderNonCWD =
@@ -184,6 +208,7 @@ public class XmlScore6Parser {
     setterBuilderAlleles.put(DQB_HEADER, ValidationModelBuilder::possibleAllelePairings);
     setterBuilderAlleles.put(DPA_HEADER, ValidationModelBuilder::possibleAllelePairings);
     setterBuilderAlleles.put(DPB_HEADER, ValidationModelBuilder::possibleAllelePairings);
+    setterBuilderAlleles.put(DRB_HEADER, ValidationModelBuilder::possibleAllelePairings);
 
     possibleAlleleRecordingMap = setterBuilderAlleles.build();
 
@@ -196,6 +221,7 @@ public class XmlScore6Parser {
     setterBuilderDonorAlleles.put(DQB_HEADER, ValidationModelBuilder::donorAllelePairings);
     setterBuilderDonorAlleles.put(DPA_HEADER, ValidationModelBuilder::donorAllelePairings);
     setterBuilderDonorAlleles.put(DPB_HEADER, ValidationModelBuilder::donorAllelePairings);
+    setterBuilderDonorAlleles.put(DRB_HEADER, ValidationModelBuilder::donorAllelePairings);
 
     donorAlleleRecordingMap = setterBuilderDonorAlleles.build();
 
@@ -256,6 +282,7 @@ public class XmlScore6Parser {
       Elements resultCombinations = typedLocus.getElementsByTag(ALLELE_RESULTS_TAG).get(0)
           .getElementsByTag(RESULT_COMBINATION_TAG);
 
+      // each locus has one allele combination block which contains possible allele pairs
       Elements alleleCombinations = typedLocus.getElementsByTag(ALLELE_COMBINATIONS_TAG).get(0)
           .getElementsByTag(RESULT_COMBINATION_TAG);
 
@@ -266,14 +293,16 @@ public class XmlScore6Parser {
       int selectedResultIndex = -1;
       int selectedDRB345Index = -1;
       List<ResultCombination> firstResultPairs = new ArrayList<>();
-      List<ResultCombination> actualResultPairs = new ArrayList<>();
+      List<ResultCombination> ciwdResultPairs = new ArrayList<>();
       List<ResultCombination> drb345Pairs = new ArrayList<>();
+      List<ResultCombination> drb345PairsFirst = new ArrayList<>();
 
       HLALocus hlaLocus = null;
 
       AllelePairings allPossibleAllelePairs = new AllelePairings();
       AllelePairings donorAllelePairs = new AllelePairings();
 
+      // first, iterate through allele list element pairs and parse possible allele pairings
       for (int i = 0; i < pairs.size(); i++) {
         Element currPair = pairs.get(i);
         Elements a1Alleles =
@@ -289,6 +318,17 @@ public class XmlScore6Parser {
           }
         }
       }
+
+      // next, parse alleleCombinations elements for donor's possible allele pairs
+      // these are different from the alleleResults elements
+      /*
+       * Class-1 Loci (A/B/C) have one set of possible allele pairs in the alleleResults element
+       * 
+       * Class-2 Loci (DR/DP/DQ) can have multiple sets of possible allele pairs in the
+       * alleleResults element
+       * 
+       * TODO clarify how/why these are different
+       */
 
       for (int currentResult = 0; currentResult < alleleCombinations.size(); currentResult++) {
         Element currentCombination = alleleCombinations.get(currentResult);
@@ -306,7 +346,7 @@ public class XmlScore6Parser {
             // unexpressed DRB345s
             // In this scenario, we can fall back to looking at the DRB1 alleles to figure out what
             // we should find.
-            locusType = deduceDRB345Locus(actualResultPairs);
+            locusType = deduceDRB345Locus(ciwdResultPairs);
           }
         } else {
           locusType = HLALocus.safeValueOf(locus.substring(locus.indexOf("-") + 1));
@@ -316,7 +356,15 @@ public class XmlScore6Parser {
         parseAlleleCombinations(currentCombination, locusType, donorAllelePairs);
       }
 
-      // Parse the allele pairs in the result section
+      // Parse the allele lists in the result section
+      // the first allele in each list goes into the "firstResultPairs" list
+      // the first **CIWD allele** goes into the "actualResultPairs" list
+
+      /*
+       * if we're parsing a Class-2 locus, we find the "best" pair to use for the
+       * "actualResultPairs" list, and then use the first pairing from that pair for the
+       * "firstResultPairs" list
+       */
       for (int currentResult = 0; currentResult < resultCombinations.size(); currentResult++) {
         Element currentCombination = resultCombinations.get(currentResult);
         HLALocus locusType = null;
@@ -333,7 +381,7 @@ public class XmlScore6Parser {
             // unexpressed DRB345s
             // In this scenario, we can fall back to looking at the DRB1 alleles to figure out what
             // we should find.
-            locusType = deduceDRB345Locus(actualResultPairs);
+            locusType = deduceDRB345Locus(ciwdResultPairs);
           }
         } else {
           locusType = HLALocus.safeValueOf(locus.substring(locus.indexOf("-") + 1));
@@ -342,39 +390,46 @@ public class XmlScore6Parser {
         if (hlaLocus == null) {
           hlaLocus = locusType;
         } else if (hlaLocus.compareTo(locusType) != 0) {
-          System.out
-              .println("Parsed different locus (prev / new): " + hlaLocus + " / " + locusType);
+          /*
+           * This seems to only happen when parsing the DRB3/4/5 loci, as the original locus is DRB1
+           */
         }
 
         // Each combination is an allele/antigen pair
-        List<ResultCombination> combinations =
+        List<ResultCombination> comboCIWD =
             parseResultCombinations(currentCombination, locusType, true);
-        List<ResultCombination> combinations1 =
+        List<ResultCombination> comboFirst =
             parseResultCombinations(currentCombination, locusType, false);
 
-        List<ResultCombination> toUpdate = actualResultPairs;
+        List<ResultCombination> toUpdateCIWD = ciwdResultPairs;
         List<ResultCombination> toUpdateFirst = firstResultPairs;
 
         if (isDRB345) {
-          toUpdate = drb345Pairs;
+          toUpdateCIWD = drb345Pairs;
+          toUpdateFirst = drb345PairsFirst;
 
           // Ensure we only check DRB345 combinations that are consistent with the DRB1 result
-          Multiset<HLALocus> countDRB1 = countDRB1(actualResultPairs);
-          Multiset<HLALocus> countDRB345 = countDRB345(combinations);
+          Multiset<HLALocus> countDRB1 = countDRB1(ciwdResultPairs);
+          Multiset<HLALocus> countDRB345 = countDRB345(comboCIWD);
           if (countDRB345.size() > countDRB1.size() || !countDRB1.containsAll(countDRB345)) {
             continue;
           }
         }
 
         // Check if the current combination is better than the last best combination
-        if (!toUpdate.isEmpty() && isTestListPreferred(toUpdate, combinations)) {
-          toUpdate.clear();
+        if (!toUpdateCIWD.isEmpty() && isTestListPreferred(toUpdateCIWD, comboCIWD)) {
+          // if so, clear both CIWD/First lists
+          toUpdateCIWD.clear();
+          toUpdateFirst.clear();
         }
 
-        if (toUpdate.isEmpty()) {
+        if (toUpdateCIWD.isEmpty()) {
           // Record this set
-          toUpdate.addAll(combinations);
-          toUpdateFirst.addAll(combinations1);
+          toUpdateCIWD.addAll(comboCIWD);
+          if (!toUpdateFirst.isEmpty()) {
+            toUpdateFirst.clear();
+          }
+          toUpdateFirst.addAll(comboFirst);
 
           if (!isDRB345) {
             // The selected result is the selected non-DRB345 index
@@ -386,9 +441,9 @@ public class XmlScore6Parser {
       }
 
       // -- Locus-specific processing of the individual types --
-      if (!Objects.isNull(drb345Pairs) && !drb345Pairs.isEmpty()) {
+      if (!Objects.isNull(drb345PairsFirst) && !drb345PairsFirst.isEmpty()) {
         // Set the DRB345 types
-        for (ResultCombination drbType : drb345Pairs) {
+        for (ResultCombination drbType : drb345PairsFirst) {
           HLAType drbAllele = drbType.getAlleleCombination();
           if (drbMap.containsKey(drbAllele.locus())) {
             String drbString = String.valueOf(drbAllele.spec().get(0));
@@ -409,7 +464,7 @@ public class XmlScore6Parser {
             identityLocusMap(HLALocus.DRB1), ValidationModelBuilder::drHaplotype);
         if (selectedDRB345Index > 0) {
           addHaplotypes(builder, resultCombinations.get(selectedDRB345Index),
-              drb345Map(actualResultPairs), ValidationModelBuilder::dr345Haplotype);
+              drb345Map(ciwdResultPairs), ValidationModelBuilder::dr345Haplotype);
         } else {
           builder.dr345Haplotype(ArrayListMultimap.create());
         }
@@ -417,15 +472,15 @@ public class XmlScore6Parser {
         addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
             identityLocusMap(HLALocus.B), ValidationModelBuilder::bHaplotype);
 
-        for (int strandIdx = 0; strandIdx < actualResultPairs.size(); strandIdx++) {
+        for (int strandIdx = 0; strandIdx < ciwdResultPairs.size(); strandIdx++) {
           // B*47:03 is considered BW6 despite B47 antigen being considered BW4
-          if (actualResultPairs.get(strandIdx).alleleCombination.toString().contains("B*47:03")) {
+          if (ciwdResultPairs.get(strandIdx).alleleCombination.toString().contains("B*47:03")) {
             builder.bw6(true);
             break;
           }
           // Update the appropriate builder flags
           BwGroup bw =
-              BwSerotypes.getBwGroup(actualResultPairs.get(strandIdx).getAntigenCombination());
+              BwSerotypes.getBwGroup(ciwdResultPairs.get(strandIdx).getAntigenCombination());
           switch (bw) {
             case Bw4:
               builder.bw4(true);
@@ -443,17 +498,45 @@ public class XmlScore6Parser {
       }
 
       // Finally, add the types to the model builder
-      for (int i = 0; i < actualResultPairs.size(); i++) {
-        if (actualResultPairs.get(i).alleleCombination
-            .compareTo(firstResultPairs.get(0).alleleCombination) != 0) {
-          Status sA = CommonWellDocumented.getStatus(actualResultPairs.get(i).alleleCombination);
-          Status sF = CommonWellDocumented.getStatus(firstResultPairs.get(i).alleleCombination);
-          if (sA == Status.UNKNOWN || sF == Status.UNKNOWN) {
-            builder.locusIsNonCIWD(actualResultPairs.get(i).alleleCombination);
-          }
-        }
+      // if the first two fields of the firstResultPairs alleles are the same
+      // as the first two fields of the actualResultPairs alleles, we don't
+      // need to flag this locus as non-CIWD
+      Set<HLAType> ciwdTwoField = new HashSet<>();
+      Set<HLAType> firstTwoField = new HashSet<>();
 
-        String specStringActual = specStringGeneratorMap.get(locus).apply(actualResultPairs.get(i));
+      for (int i = 0; i < ciwdResultPairs.size(); i++) {
+        HLAType ciwdAllele = ciwdResultPairs.get(i).alleleCombination;
+        if (ciwdAllele.resolution() > 2) {
+          ciwdAllele =
+              new HLAType(ciwdAllele.locus(), ciwdAllele.spec().get(0), ciwdAllele.spec().get(1));
+        } else if (ciwdAllele.resolution() == 1) {
+          // TODO
+        }
+        ciwdTwoField.add(ciwdAllele);
+      }
+
+      for (int i = 0; i < firstResultPairs.size(); i++) {
+        HLAType firstAllele = firstResultPairs.get(i).alleleCombination;
+        if (firstAllele.resolution() > 2) {
+          firstAllele = new HLAType(firstAllele.locus(), firstAllele.spec().get(0),
+              firstAllele.spec().get(1));
+        } else if (firstAllele.resolution() == 1) {
+          // TODO
+        }
+        firstTwoField.add(firstAllele);
+      }
+
+      boolean hasUnknown = firstResultPairs.stream().map(ResultCombination::getAlleleCombination)
+          .map(CommonWellDocumented::getStatus).filter(c -> c == Status.UNKNOWN).count() > 0;
+      if (hasUnknown && !ciwdTwoField.containsAll(firstTwoField)) {
+        builder.locusIsNonCIWD(ciwdResultPairs.get(0).alleleCombination);
+      }
+
+      for (int i = 0; i < ciwdResultPairs.size(); i++) {
+        final HLAType alleleCombination = ciwdResultPairs.get(i).alleleCombination;
+        final HLAType alleleCombination2 = firstResultPairs.get(i).alleleCombination;
+
+        String specStringActual = specStringGeneratorMap.get(locus).apply(ciwdResultPairs.get(i));
         String specStringFirst = specStringGeneratorMap.get(locus).apply(firstResultPairs.get(i));
 
         metadataMap.get(locus).accept(builder, specStringActual);
@@ -462,13 +545,17 @@ public class XmlScore6Parser {
           metadataNonCWDMap.get(locus).accept(builder, specStringFirst);
         }
         if (metadataTypeMap.containsKey(locus)) {
-          metadataTypeMap.get(locus).accept(builder, actualResultPairs.get(i).alleleCombination);
+          metadataTypeMap.get(locus).accept(builder, alleleCombination);
+        }
+        if (metadataTypeNonCWDMap.containsKey(locus)) {
+          metadataTypeNonCWDMap.get(locus).accept(builder, alleleCombination2);
         }
       }
 
       // record alleles for reassignment if necessary
       if (possibleAlleleRecordingMap.containsKey(locus)) {
         if (hlaLocus == null) {
+          // TODO FIXME do something other than print to system out
           System.out.println("Couldn't set alleles - no locus parsed from " + locus);
         } else {
           possibleAlleleRecordingMap.get(locus).accept(builder, hlaLocus, allPossibleAllelePairs);
@@ -603,8 +690,10 @@ public class XmlScore6Parser {
 
     String alleleString = typeFunction
         .apply(resultCombinations.getElementsByTag(alleleComboTag + combinationIndex), locus);
-    String antigenString = typeFunction
+    String antigenString1 = typeFunction
         .apply(resultCombinations.getElementsByTag(SERO_COMBINATION_TAG + combinationIndex), null);
+    String antigenString =
+        parseSerotype(resultCombinations.getElementsByTag(SERO_COMBINATION_TAG + combinationIndex));
 
     if (!hasCombination(resultCombinations, combinationIndex, alleleComboTag)
         && !DISREGARD_SERO.contains(locus.toString())) {
@@ -618,7 +707,7 @@ public class XmlScore6Parser {
 
     if (alleleString != null) {
 
-      // Ensure this is a recognized alleles
+      // Ensure this is a recognized allele
       try {
         allele = HLAType.valueOf(alleleString);
         // This type is valid
@@ -641,6 +730,36 @@ public class XmlScore6Parser {
       return new ResultCombination(antigen, allele);
     }
     return null;
+  }
+
+  private static String parseSerotype(Elements results) {
+    String typeText = null;
+    if (!results.isEmpty() && results.get(0).hasText()) {
+      String type = null;
+      String[] resultTypes = results.get(0).text().replaceAll("\\s+", "").split(RESULT_SEPARATOR);
+
+      for (int result =
+          0; (Strings.isNullOrEmpty(type) || UNDEFINED_TOKENS.contains(type) || isNullType(type))
+              && result < resultTypes.length; result++) {
+        String tmp = resultTypes[result];
+        if (tmp.isEmpty()) {
+          // Sometimes a leading comma can create empty strings - skip these
+          continue;
+        }
+        if (isNullType(tmp) && Objects.nonNull(type)) {
+          // Null type overrides undefined, but not other types
+          continue;
+        } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type) && !isNullType(type)) {
+          // Undefined type overrides null, but not any other type
+          continue;
+        }
+        if (Objects.nonNull(tmp)) {
+          type = tmp;
+        }
+      }
+      typeText = type;
+    }
+    return typeText;
   }
 
   /**
@@ -828,30 +947,34 @@ public class XmlScore6Parser {
       String type = null;
       String[] resultTypes = results.get(0).text().replaceAll("\\s+", "").split(RESULT_SEPARATOR);
 
-      for (int result =
-          0; (Strings.isNullOrEmpty(type) || UNDEFINED_TYPE.equals(type) || isNullType(type))
-              && result < resultTypes.length; result++) {
+      for (int result = 0; (Strings.isNullOrEmpty(type)) && result < resultTypes.length; result++) {
         String tmp = resultTypes[result];
         if (tmp.isEmpty()) {
           // Sometimes a leading comma can create empty strings - skip these
           continue;
         }
 
-        // Null and Undefined types don't take precedence over any other values
-        if (isNullType(tmp) && Objects.nonNull(type)) {
-          // Null type overrides undefined, but not other types
-          continue;
-        } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type) && !isNullType(type)) {
-          // Undefined type overrides null, but not any other type
-          continue;
-        } else if (tmp.matches(ValidationModelBuilder.NOT_ON_CELL_SURFACE)) {
-          // This is an allele which is unlikely to be expressed, per
-          // http://hla.alleles.org/nomenclature/naming.html
-          continue;
+        int sep = -1;
+        if ((sep = tmp.indexOf("-")) != -1) {
+          tmp = tmp.substring(0, sep);
         }
+
+        // // Null and Undefined types don't take precedence over any other values
+        // if (isNullType(tmp) && Objects.nonNull(type)) {
+        // // Null type overrides undefined, but not other types
+        // continue;
+        // } else if (UNDEFINED_TOKENS.contains(tmp) && Objects.nonNull(type) && !isNullType(type))
+        // {
+        // // Undefined type overrides null, but not any other type
+        // continue;
+        // } else if (tmp.matches(ValidationModelBuilder.NOT_ON_CELL_SURFACE)) {
+        // // This is an allele which is unlikely to be expressed, per
+        // // http://hla.alleles.org/nomenclature/naming.html
+        // continue;
+        // }
         if (Objects.nonNull(tmp)) {
           // Sometimes the inheritance structure of the types is listed. We only want the first
-          // (most specific) type, with the best CWD status
+          // (most specific) type.
           if (tmp.contains(PARENT_TYPE_SEPARATOR)) {
             tmp = tmp.substring(0, tmp.indexOf(PARENT_TYPE_SEPARATOR));
           }
@@ -887,6 +1010,11 @@ public class XmlScore6Parser {
         if (tmp.isEmpty()) {
           // Sometimes a leading comma can create empty strings - skip these
           continue;
+        }
+
+        int sep = -1;
+        if ((sep = tmp.indexOf("-")) != -1) {
+          tmp = tmp.substring(0, sep);
         }
 
         // Null and Undefined types don't take precedence over any other values
@@ -941,31 +1069,37 @@ public class XmlScore6Parser {
       SeroType st2 = combination.getAntigenCombination();
 
       if (st.compareTo(st1) != 0 || st.compareTo(st2) != 0 || st1.compareTo(st2) != 0) {
-        System.out.println(
-            "Discrepant lookup (special | equivSafe | parsed): " + st + " | " + st1 + " | " + st2);
+        System.err.println(
+            "Discrepant lookup (score6 | equivSafe | file):\t" + st + "\t" + st1 + "\t" + st2);
       }
 
       return st.specString();
     }
 
+    // TODO why not return combination.antigenCombination?
     // Not a special case allele - use standard rules
-    return getAlleleSpec(combination);
+    return combination.alleleCombination.equivSafe().specString();
   }
 
   /** @return The {@link HLAType} specificity of an allele + antigen pairing */
   private static String getAlleleSpec(ResultCombination combination) {
     // Standard operating procedure is to just report the first field of the allele
     HLAType hlaType = combination.getAlleleCombination();
-    StringJoiner sj = new StringJoiner(":");
-    sj.add(String.valueOf(hlaType.spec().get(0)));
 
-    if (Objects.equals(HLALocus.DPA1, hlaType.locus())
-        || Objects.equals(HLALocus.DPB1, hlaType.locus())) {
-      // DPA and DPB report two fields
-      sj.add(String.valueOf(hlaType.spec().get(1)));
+    if (hlaType.locus() == HLALocus.DPA1 || hlaType.locus() == HLALocus.DPB1) {
+      StringJoiner sj = new StringJoiner(":");
+      sj.add(String.valueOf(hlaType.spec().get(0)));
+
+      if (Objects.equals(HLALocus.DPA1, hlaType.locus())
+          || Objects.equals(HLALocus.DPB1, hlaType.locus())) {
+        // DPA and DPB report two fields
+        sj.add(String.valueOf(hlaType.spec().get(1)));
+      }
+
+      return sj.toString();
     }
 
-    return sj.toString();
+    return hlaType.equivSafe().specString();
   }
 
   /**
@@ -984,6 +1118,7 @@ public class XmlScore6Parser {
         Objects.requireNonNull(antigenCombination);
         Objects.requireNonNull(alleleCombination);
       } catch (NullPointerException e) {
+        // TODO FIXME do something other than print to system out
         System.out.println();
       }
       this.alleleCombination = alleleCombination;

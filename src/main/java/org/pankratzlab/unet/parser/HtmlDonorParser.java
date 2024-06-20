@@ -26,11 +26,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.BiFunction;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
@@ -95,7 +95,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
       // Test for saved or unsaved HTML state
       // No selected elements means this has been saved previously
       Elements selectedElements = parsed.getElementsByAttribute(SELECTED_ATTRIBUTE);
-      builder.sourceType("DonorNet");
+      builder.sourceType(SourceType.DonorNet);
 
       if (selectedElements.isEmpty()) {
         buildModelFromHTML(builder, parsed, this::getSavedHTMLType);
@@ -123,18 +123,18 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
     typeParser.apply(parsed, "C2").ifPresent(builder::c);
     typeParser.apply(parsed, "DR1").ifPresent(builder::drb);
     typeParser.apply(parsed, "DR2").ifPresent(builder::drb);
-    typeParser.apply(parsed, "DQB1").ifPresent(builder::dqb);
-    typeParser.apply(parsed, "DQB2").ifPresent(builder::dqb);
-    typeParser.apply(parsed, "DQA1").ifPresent(builder::dqa);
-    typeParser.apply(parsed, "DQA2").ifPresent(builder::dqa);
+    typeParser.apply(parsed, "DQB1").ifPresent(builder::dqbSerotype);
+    typeParser.apply(parsed, "DQB2").ifPresent(builder::dqbSerotype);
+    typeParser.apply(parsed, "DQA1").ifPresent(builder::dqaSerotype);
+    typeParser.apply(parsed, "DQA2").ifPresent(builder::dqaSerotype);
     if (parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + "DPA1").size() != 0) {
-      typeParser.apply(parsed, "DPA1").ifPresent(builder::dpa);
+      typeParser.apply(parsed, "DPA1").ifPresent(builder::dpaSerotype);
     }
     if (parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + "DPA2").size() != 0) {
-      typeParser.apply(parsed, "DPA2").ifPresent(builder::dpa);
+      typeParser.apply(parsed, "DPA2").ifPresent(builder::dpaSerotype);
     }
-    typeParser.apply(parsed, "DPB1").ifPresent(builder::dpb);
-    typeParser.apply(parsed, "DPB2").ifPresent(builder::dpb);
+    typeParser.apply(parsed, "DPB1").ifPresent(builder::dpbSerotype);
+    typeParser.apply(parsed, "DPB2").ifPresent(builder::dpbSerotype);
 
     typeParser.apply(parsed, "BW4").ifPresent(s -> builder.bw4(decodeHTMLBoolean(s)));
     typeParser.apply(parsed, "BW6").ifPresent(s -> builder.bw6(decodeHTMLBoolean(s)));
