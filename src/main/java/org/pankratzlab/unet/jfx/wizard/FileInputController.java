@@ -266,7 +266,7 @@ public class FileInputController extends AbstractValidatingWizardController {
 
   /**
    * The {@link FileInputController#FILE_DISPLAY_CLASS} value links to the
-   * {@link resources/fileInput.css} style-sheet.
+   * {@link-plain resources/fileInput.css} style-sheet.
    * 
    * We only want to apply this style when a file has been selected, so we remove this style class
    * from the TextField and only add it back if the {@code file} argument is not null.
