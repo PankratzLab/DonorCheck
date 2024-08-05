@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.pankratzlab</groupId>
-	<artifactId>donor-check</artifactId>
+	<artifactId>donorcheck</artifactId>
 	<!-- if version number changes, be sure to update in project.properties file also -->
-	<version>0.1.15</version>
+	<version>2.1.15</version>
 	<packaging>jar</packaging>
 
 	<description>A stand-alone tool for validating DonorNet typing entries.</description>
@@ -34,7 +33,7 @@
 			<email>cole0482@umn.edu</email>
 		</developer>
 	</developers>
-	
+
 
 	<repositories>
 		<repository>
@@ -63,25 +62,28 @@
 
 	<properties>
 		<outname>DonorCheck</outname>
-		<appName>donor-check</appName>
+		<appName>DonorCheck</appName>
+		<copyright>(c)2024 Computational Pathology - University of Minnesota, GNU General Public License, v2</copyright>
+		<configuration-vendor>Division of Computational Pathology, UMTC</configuration-vendor>
 		<mainClass>org.pankratzlab.unet.jfx.TypeValidationEntry</mainClass>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<!-- Controls the Java and Maven compliance versions -->
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<winVer>na</winVer>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+		<app.dir>${project.build.directory}/app</app.dir>
+		<resources.dir>${project.basedir}/src/main/resources/</resources.dir>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.pankratzlab</groupId>
-			<artifactId>BackgroundDataProcessor-java8</artifactId>
+			<artifactId>BackgroundDataProcessor-java11</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
- 			 <groupId>org.apache.maven</groupId>
- 			 <artifactId>maven-model</artifactId>
- 			 <version>3.3.9</version>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-model</artifactId>
+			<version>3.3.9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
@@ -91,7 +93,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>23.0</version>
+			<version>33.2.1-jre</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
@@ -188,182 +190,107 @@
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-controls</artifactId>
-			<version>11</version>
+			<version>22.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-fxml</artifactId>
-			<version>11</version>
+			<version>22.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-graphics</artifactId>
-			<version>11</version>
+			<version>22.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-base</artifactId>
-			<version>11</version>
+			<version>22.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-swing</artifactId>
-			<version>11</version>
+			<version>22.0.2</version>
 		</dependency>
 	</dependencies>
-	
 
-	
 
 	<build>
-		<!-- Make "mvn" with no arguments do something reasonable (compile, test, 
-			package to jar, install to local repository). -->
-		<defaultGoal>install</defaultGoal>
-		<finalName>${outname}</finalName>
-		
-		<resources>
-			<resource>
-  				<directory>src/main/resources</directory>
-    			<filtering>true</filtering>
-  			</resource>
-  		</resources>
 
 		<!-- The pluginManagement block controls plugin configuration in all modules -->
 		<pluginManagement>
 			<plugins>
-				<plugin>
-					<artifactId>maven-antrun-plugin</artifactId>
-					<version>1.8</version>
-				</plugin>
-
+				<!-- clean lifecycle, see
+				https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
 				<plugin>
 					<artifactId>maven-clean-plugin</artifactId>
-					<version>2.5</version>
+					<version>3.4.0</version>
+				</plugin>
+				<!-- default lifecycle, jar packaging: see
+				https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
+				<plugin>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.3.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.13.0</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.3.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>3.1.2</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>3.1.2</version>
+				</plugin>
+				<!-- site lifecycle, see
+				https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
+				<plugin>
+					<artifactId>maven-site-plugin</artifactId>
+					<version>3.12.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-project-info-reports-plugin</artifactId>
+					<version>3.6.2</version>
+				</plugin>
+				<!-- Exec Maven plugin -
+				http://www.mojohaus.org/exec-maven-plugin/ This 
+			plugin launches a Java class using Maven. -->
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>exec-maven-plugin</artifactId>
+					<version>3.3.0</version>
+				</plugin>
+				<plugin>
+					<groupId>com.github.akman</groupId>
+					<artifactId>jpackage-maven-plugin</artifactId>
+					<version>0.1.5</version>
+				</plugin>
+				<!--
+				<plugin>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>3.4.0</version>
 				</plugin>
 
 				<plugin>
 					<artifactId>maven-dependency-plugin</artifactId>
-					<version>2.8</version>
+					<version>3.4.0</version>
 				</plugin>
 
 				<plugin>
 					<artifactId>maven-deploy-plugin</artifactId>
-					<version>2.8.1</version>
+					<version>3.1.2</version>
 				</plugin>
 
 				<plugin>
 					<artifactId>maven-install-plugin</artifactId>
-					<version>2.5.1</version>
+					<version>3.1.2</version>
 				</plugin>
-
-
-				<!--NOTICE - the jar, assembly, and JavaFX plugins all require consistent 
-					manifest configuration, to ensure data is consistent between .jars. Each 
-					controls a different paradigm respectively: building the individual component 
-					jar, the combined uber-jar and the native bundle. If there is a way to declare 
-					this information once without copying and pasting that would be preferred! -->
-
-				<plugin>
-					<artifactId>maven-jar-plugin</artifactId>
-					<version>2.5</version>
-					<!-- Always add classpath to JAR manifests. -->
-					<configuration>
-						<archive>
-							<manifest>
-								<addClasspath>true</addClasspath>
-								<mainClass>${mainClass}</mainClass>
-							</manifest>
-							<manifestEntries>
-								<!-- Add SCM revision from buildnumber plugin, if available. -->
-								<Implementation-Title>Revision</Implementation-Title>
-								<Implementation-Version>${buildNumber}</Implementation-Version>
-								<!-- Add a formatted timestamp for the build. -->
-								<Specification-Title>DonorCheck</Specification-Title>
-								<Specification-Version>${project.version}</Specification-Version>
-								<Compile-Time>${timestamp}</Compile-Time>
-								<Build-Type>Development</Build-Type>
-								<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
-							</manifestEntries>
-						</archive>
-						<skipIfEmpty>true</skipIfEmpty>
-					</configuration>
-				</plugin>
-
-				<plugin>
-					<artifactId>maven-assembly-plugin</artifactId>
-					<version>2.4</version>
-					<configuration>
-						<archive>
-							<manifest>
-								<addClasspath>true</addClasspath>
-								<mainClass>${mainClass}</mainClass>
-							</manifest>
-							<manifestEntries>
-								<!-- Add SCM revision from buildnumber plugin, if available. -->
-								<Implementation-Title>Revision</Implementation-Title>
-								<Implementation-Version>${buildNumber}</Implementation-Version>
-								<!-- Add a formatted timestamp for the build. -->
-								<Specification-Title>DonorCheck</Specification-Title>
-								<Specification-Version>${project.version}</Specification-Version>
-								<Compile-Time>${timestamp}</Compile-Time>
-								<Build-Type>Development</Build-Type>
-								<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
-							</manifestEntries>
-						</archive>
-					</configuration>
-				</plugin>
-
-				<plugin>
-					<groupId>com.zenjava</groupId>
-					<artifactId>javafx-maven-plugin</artifactId>
-					<version>8.6.0</version>
-					<configuration>
-						<mainClass>${mainClass}</mainClass>
-						<vendor>Division of Computational Pathology, UMTC</vendor>
-						<jfxMainAppJarName>${outname}-jfx.jar</jfxMainAppJarName>
-						<bundleArguments>
-							<icon>${project.basedir}/src/main/deploy/package/windows/donorCheck.ico</icon>
-						</bundleArguments>
-						<!-- See http://www.oracle.com/technetwork/java/hotspotfaq-138619.html#gc_heap_32bit -->
-						<jvmArgs>
-							<argument>-Xmx1g</argument>
-							<argument>-Xms256m</argument>
-						</jvmArgs>
-						<needShortcut>true</needShortcut>
-						<needMenu>true</needMenu>
-						<nativeReleaseVersion>${project.version}</nativeReleaseVersion>
-						<additionalAppResources>${resourcesDir}</additionalAppResources>
-						<manifestAttributes>
-							<!-- Add SCM revision from buildnumber plugin, if available. -->
-							<Implementation-Title>Revision</Implementation-Title>
-							<Implementation-Version>${buildNumber}</Implementation-Version>
-							<!-- Add a formatted timestamp for the build. -->
-							<Specification-Title>DonorCheck</Specification-Title>
-							<Specification-Version>${project.version}</Specification-Version>
-							<Compile-Time>${timestamp}</Compile-Time>
-							<Build-Type>Development</Build-Type>
-							<Implementation-Vendor>(c)2018 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
-						</manifestAttributes>
-					</configuration>
-					<executions>
-						<execution>
-							<id>create-jfxjar</id>
-							<phase>package</phase>
-							<goals>
-								<goal>build-jar</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>create-native</id>
-							<phase>package</phase>
-							<goals>
-								<goal>build-native</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-
-				<!-- End of build configuration plugins -->
 
 				<plugin>
 					<artifactId>maven-plugin-plugin</artifactId>
@@ -372,241 +299,167 @@
 
 				<plugin>
 					<artifactId>maven-release-plugin</artifactId>
-					<version>2.5</version>
+					<version>3.0.1</version>
 				</plugin>
 
 				<plugin>
 					<artifactId>maven-resources-plugin</artifactId>
-					<version>2.6</version>
+					<version>3.3.1</version>
 				</plugin>
 
 				<plugin>
 					<artifactId>maven-site-plugin</artifactId>
-					<version>3.4</version>
+					<version>3.12.1</version>
 				</plugin>
-
-				<plugin>
-					<artifactId>maven-source-plugin</artifactId>
-					<version>2.3</version>
-					<!-- Build source artifact in addition to main artifact. -->
-					<executions>
-						<execution>
-							<goals>
-								<goal>jar-no-fork</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.17</version>
-					<configuration>
-						<argLine>-Xmx1g</argLine>
-					</configuration>
+					<version>3.3.1</version>
 				</plugin>
+				
 
-				<!-- Build Number Maven plugin - http://www.mojohaus.org/buildnumber-maven-plugin/ 
-					This plugin embeds a build number in the JAR manifest. -->
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>buildnumber-maven-plugin</artifactId>
-					<version>1.3</version>
-					<!-- Record SCM revision in manifest. -->
-					<executions>
-						<execution>
-							<phase>validate</phase>
-							<goals>
-								<goal>create</goal>
-							</goals>
-						</execution>
-					</executions>
-					<configuration>
-						<getRevisionOnlyOnce>true</getRevisionOnlyOnce>
-						<revisionOnScmFailure>UNKNOWN</revisionOnScmFailure>
-					</configuration>
-				</plugin>
-
-				<!-- Exec Maven plugin - http://www.mojohaus.org/exec-maven-plugin/ This 
-					plugin launches a Java class using Maven. -->
+				 Exec Maven plugin - http://www.mojohaus.org/exec-maven-plugin/ This 
+					plugin launches a Java class using Maven. 
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>exec-maven-plugin</artifactId>
 					<version>1.3.1</version>
 				</plugin>
 
-				<!-- License Maven plugin - http://www.mojohaus.org/license-maven-plugin/ 
-					This plugin manages project licenses and source file headers. -->
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>license-maven-plugin</artifactId>
-					<version>1.19</version>
-					<configuration>
-						<licenseName>gpl_v2</licenseName>
-						<projectName>DonorCheck</projectName>
-						<organizationName>Computational Pathology - University of Minnesota</organizationName>
-						<addJavaLicenseAfterPackage>false</addJavaLicenseAfterPackage>
-						<canUpdateDescription>true</canUpdateDescription>
-						<canUpdateCopyright>true</canUpdateCopyright>
-						<includes>
-							<include>**/*.java</include>
-						</includes>
-						<excludes>
-							<exclude>**/*Test.java</exclude>
-						</excludes>
-					</configuration>
-				</plugin>
 
-				<!-- Versions Maven plugin - http://www.mojohaus.org/versions-maven-plugin/ 
-					Check for new plugin versions using "mvn versions:display-plugin-updates" -->
 				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>versions-maven-plugin</artifactId>
-					<version>2.1</version>
-				</plugin>
-
+					<groupId>com.github.akman</groupId>
+					<artifactId>jpackage-maven-plugin</artifactId>
+					<version>0.1.5</version>
+				</plugin>-->
 			</plugins>
 		</pluginManagement>
 
-		<plugins>
-			<!-- Default license information -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>license-maven-plugin</artifactId>
-			</plugin>
 
-			<!-- Enable takari.io maven lifecycles -->
-			<!-- Currently disabled because eclipse integration sucks! <plugin> <groupId>io.takari.maven.plugins</groupId> 
-				<artifactId>takari-lifecycle-plugin</artifactId> <version>${takari.version}</version> 
-				<extensions>true</extensions> </plugin> -->
-
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-			</plugin>
-
-			<!-- Generate a package-friendly version property. -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>1.12</version>
-			</plugin>
-
-			<!-- Add Implementation-Build entry to JAR manifest. -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>buildnumber-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-		<!-- We use wagon-webdav-jackrabbit 1.0 for deploys, since it is compatible 
-			with both Maven 2.2.x and Maven 3.0.x cross-platform. -->
-		<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-webdav-jackrabbit</artifactId>
-				<version>1.0</version>
-			</extension>
-		</extensions>
 	</build>
 	<profiles>
+		<profile>
+			<id>jar-with-dependencies</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<build>
+				<resources>
+					<resource>
+						<directory>src/main/resources</directory>
+					</resource>
+				</resources>
+				<plugins>
+					<!-- 
+						DonorCheck uses the Maven Assembly plugin to create a 'fat jar', 
+						i.e. a jar file with all necessary dependency libraries included inside of it. 
+						Because other applications don't depend on DonorCheck as a library, 
+						the Maven Assembly plugin is more appropriate to use rather than the Maven Shade plugin. 
+					-->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<configuration>
+							<finalName>${project.artifactId}</finalName>
+							<archive>
+								<manifest>
+									<mainClass>${mainClass}</mainClass>
+								</manifest>
+								<manifestEntries>
+									<!-- Add SCM revision from buildnumber plugin, if available. -->
+									<Implementation-Title>Revision</Implementation-Title>
+									<Implementation-Version>${buildNumber}</Implementation-Version>
+									<!-- Add a formatted timestamp for the build. -->
+									<Specification-Title>DonorCheck</Specification-Title>
+									<Specification-Version>${project.version}</Specification-Version>
+									<Compile-Time>${timestamp}</Compile-Time>
+									<Build-Type>Development</Build-Type>
+									<Implementation-Vendor>(c)2024 Computational Pathology - University of Minnesota, GNU General Public License, v2</Implementation-Vendor>
+								</manifestEntries>
+							</archive>
+							<!-- this tag tells the plugin to include all of the dependencies in the jar -->
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+							<!-- this tag tells the plugin to not append "jar-with-dependencies" to the created filename -->
+							<appendAssemblyId>false</appendAssemblyId>
+							<!-- 
+								this tells the plugin to put the created jar in a specific 
+								subdirectory, away from other files, so that later the 
+								jpackage plugin can bundle just this directory.
+						 	-->
+							<outputDirectory>target/package/</outputDirectory>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 		<profile>
 			<!-- This profile is used to create an installer for new releases -->
 			<id>jfx-installer</id>
 			<build>
-				<resources>
-					<resource>
-  						<directory>src/main/resources</directory>
-    					<filtering>true</filtering>
-  					</resource>
-  				</resources>
 				<plugins>
 					<plugin>
-						<groupId>com.zenjava</groupId>
-						<artifactId>javafx-maven-plugin</artifactId>
-						<version>8.6.0</version>
-					</plugin>
-					<plugin>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<version>1.8</version>
-						<dependencies>
-							<dependency>
-								<groupId>ant-contrib</groupId>
-								<artifactId>ant-contrib</artifactId>
-								<version>1.0b3</version>
-								<exclusions>
-									<exclusion>
-										<groupId>ant</groupId>
-										<artifactId>ant</artifactId>
-									</exclusion>
-								</exclusions>
-							</dependency>
-							<dependency>
-								<groupId>org.apache.ant</groupId>
-								<artifactId>ant-nodeps</artifactId>
-								<version>1.8.1</version>
-							</dependency>
-						</dependencies>
+						<groupId>com.github.akman</groupId>
+						<artifactId>jpackage-maven-plugin</artifactId>
 						<executions>
 							<execution>
-								<id>rename-installers</id>
-								<phase>package</phase>
-								<configuration>
-									<!-- Rename the native installer bundles for each platform -->
-									<target>
-										<!-- Linux - .deb -->
-										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
-											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${project.version}.deb" />
-											<ac:then>
-												<move
-													file="${project.build.directory}/jfx/native/${outname}-${project.version}.deb"
-													tofile="${project.build.directory}/jfx/native/${appName}-installer-linux.deb" />
-											</ac:then>
-										</ac:if>
-										<!-- Linux - .rpm -->
-										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
-											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${project.version}-1.x86_64.rpm" />
-											<ac:then>
-												<move
-													file="${project.build.directory}/jfx/native/${outname}-${project.version}-1.x86_64.rpm"
-													tofile="${project.build.directory}/jfx/native/${appName}-installer-linux.rpm" />
-											</ac:then>
-										</ac:if>
-										<!-- Windows - .exe -->
-										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
-											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${project.version}.exe" />
-											<ac:then>
-												<move
-													file="${project.build.directory}/jfx/native/${outname}-${project.version}.exe"
-													tofile="${project.build.directory}/jfx/native/${appName}-installer-${winVer}.exe" />
-											</ac:then>
-										</ac:if>
-										<!-- Windows - .msi -->
-										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
-											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${project.version}.msi" />
-											<ac:then>
-												<move
-													file="${project.build.directory}/jfx/native/${outname}-${project.version}.msi"
-													tofile="${project.build.directory}/jfx/native/${appName}-installer-${winVer}.msi" />
-											</ac:then>
-										</ac:if>
-										<!-- OSX - .app -->
-										<ac:if xmlns:ac="antlib:net.sf.antcontrib">
-											<ac:available
-												file="${project.build.directory}/jfx/native/${outname}-${project.version}.app" />
-											<ac:then>
-												<move
-													file="${project.build.directory}/jfx/native/${outname}-${project.version}.app"
-													tofile="${project.build.directory}/jfx/native/${appName}-installer-osx.app" />
-											</ac:then>
-										</ac:if>
-									</target>
-								</configuration>
+								<id>create-jfxjar</id>
+								<phase>install</phase>
 								<goals>
-									<goal>run</goal>
+									<goal>jpackage</goal>
 								</goals>
+								<configuration>
+									<!-- 
+										NB: 'appname' and 'appName' are *NOT* the same value!
+										For DonorCheck, 'appname' is 'TypeValidationEntry', while
+										'appName' is 'DonorCheck'.
+									-->
+									<name>${appName}</name>
+									<!-- Enable adding the application to the system menu. -->
+									<winmenu>true</winmenu>
+									<!-- Enable creating a desktop shortcut for the application. -->
+									<winshortcut>true</winshortcut>
+									<!-- 
+										Enable requesting to perform an install on a per-user basis. 
+										Removes the need for admin privileges / installs the application 
+										to the AppData directory. 
+									-->
+									<winperuserinstall>true</winperuserinstall>
+									<appversion>${project.version}</appversion>
+									<vendor>${configuration-vendor}</vendor>
+									<icon>${project.basedir}/src/main/resources/icon.ico</icon>
+									<javaoptions>-Xmx1g -Xms256m</javaoptions>
+									<mainclass>${mainClass}</mainclass>
+
+									<!-- 
+										enable this flag to show a cmd console when running TiterCalc; 
+										somewhat useful for debugging the exe-to-jar process, but doesn't 
+										show java errors / exception output 
+									-->
+									<!--<winconsole>true</winconsole>-->
+
+									<!-- Start menu group this application is placed in. -->
+									<winmenugroup>HLA-Suite</winmenugroup>
+
+									<!-- location of files to be included in the EXE/installer -->
+									<input>target/package/</input>
+
+									<!-- Main jar to be run; path is relative to input directory above -->
+									<mainjar>${project.artifactId}.jar</mainjar>
+
+									<temp>wix</temp>
+
+									<copyright>${copyright}</copyright>
+									<verbose>true</verbose>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
@@ -639,58 +492,6 @@
 			<properties>
 				<winVer>win64</winVer>
 			</properties>
-		</profile>
-		<profile>
-			<!-- This profile is used to build a self-contained .jar. The preferred method of distribution is a javafx installer: see profile 'jfx-installer'. -->
-			<id>assemble</id>
-			<build>
-				<resources>
-					<resource>
-  						<directory>src/main/resources</directory>
-    					<filtering>true</filtering>
-  					</resource>
-  				</resources>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version>
-						<configuration>
-							<finalName>${outname}</finalName>
-							<appendAssemblyId>false</appendAssemblyId>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
-						</configuration>
-						<executions>
-							<execution>
-								<id>make-assembly</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>chmod-jar</id>
-								<phase>package</phase>
-								<configuration>
-									<target>
-										<chmod file="${project.build.directory}/${outname}.jar"
-											perm="ugo+rx" />
-									</target>
-								</configuration>
-								<goals>
-									<goal>run</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
 		</profile>
 	</profiles>
 
