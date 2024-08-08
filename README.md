@@ -30,3 +30,18 @@ You are welcome to use [GitHub issues](https://github.com/PankratzLab/DonorCheck
 * Report bugs
 * Discuss feature requests
 * Contribute new donor formats
+
+# Building DonorCheck
+
+## Building / Running DonorCheck in Eclipse:  
+1) Java 21 must be on the module path  
+2) JavaFX must be added as a user library to the classpath  
+
+
+## Building a DonorCheck release / installer:  
+1) Requires a Java 21 SDK  
+2) Maven goals are `clean install`  
+3) Maven profiles are `jar-with-dependencies jfx-installer`  
+4) WiX 3 must be installed  
+	1) [JPackage doesn't work with WiX 4/5](https://bugs.openjdk.org/browse/JDK-8319457) - Java 24 will support WiX 4/5  
+5) The release installer will be created in `target/jpackage/`  
