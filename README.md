@@ -33,12 +33,12 @@ You are welcome to use [GitHub issues](https://github.com/PankratzLab/DonorCheck
 
 # Building DonorCheck
 
-## Building / Running DonorCheck in Eclipse:  
+### Building / Running DonorCheck in Eclipse:  
 1) Java 21 must be on the module path  
 2) JavaFX must be added as a user library to the classpath  
 
 
-## Building a DonorCheck release / installer:  
+### Building a DonorCheck release / installer:  
 1) Requires a Java 21 SDK  
 2) Maven goals are `clean install`  
 3) Maven profiles are `jar-with-dependencies jfx-installer`  
