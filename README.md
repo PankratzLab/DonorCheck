@@ -14,6 +14,21 @@ We currently provide pre-built installers for Windows only.
 
 * [Windows 64-bit](https://github.com/PankratzLab/DonorCheck/releases/latest/)
 
+For all other operating systems, you will need to download the JAR file and run it using Java 21 or later.
+* [JAR file](https://github.com/PankratzLab/DonorCheck/releases/latest/)
+If you don't have Java or if it's not the latest version, you can download an open-source implementation of a Java 21 here:
+* [Amazon Coretto 21](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html)
+If you want to install a newer version of Java, look for the highest version number at the link below and then look for the link on the left side of the page that says Downloads.
+* [Latest version of Amazon Coretto](https://docs.aws.amazon.com/corretto/)
+
+If you don't use the Windows installer, we recommend creating a batch file to speed up the launch of the program
+* Open a text file and write inside java -Xmx#g -jar DonorCheck.jar
+* #g is the number of gigabytes of memory to use
+* Example: java -Xmx1g -jar DonorCheck.jar
+* Save the text file as DonorCheck.bat in the same directory as DonorCheck.jar
+* If you are on MacOS or another version of Linux, make the file executable by typing this at the command line: chmod +x DonorCheck.bat
+* Double-click or otherwise launch DonorCheck.bat
+
 # Code use
 
 This project is open source, distributed under the GPL v2 license. The application is free for use and redistribution.
