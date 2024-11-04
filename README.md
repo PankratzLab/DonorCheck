@@ -16,8 +16,10 @@ We currently provide pre-built installers for Windows only.
 
 For all other operating systems, you will need to download the JAR file and run it using Java 21 or later.
 * [JAR file](https://github.com/PankratzLab/DonorCheck/releases/latest/)
+
 If you don't have Java or if it's not the latest version, you can download an open-source implementation of a Java 21 here:
 * [Amazon Coretto 21](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html)
+
 If you want to install a newer version of Java, look for the highest version number at the link below and then look for the link on the left side of the page that says Downloads.
 * [Latest version of Amazon Coretto](https://docs.aws.amazon.com/corretto/)
 
