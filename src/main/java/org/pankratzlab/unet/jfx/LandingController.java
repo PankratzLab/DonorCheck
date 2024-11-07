@@ -33,7 +33,6 @@ import javax.annotation.Nullable;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
-import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
@@ -65,10 +64,6 @@ public class LandingController {
 
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String MACUI_ENTRY = "/MACUIConversionPanel.fxml";
-  private static final String XML_TUTORIAL = "/XMLDownloadTutorial.fxml";
-  private static final String HTML_TUTORIAL = "/HTMLDownloadTutorial.fxml";
-  private static final String NMDP_DOWNLOAD = "/NMDPDownloadPrompt.fxml";
-  private static final String REL_SER_DOWNLOAD = "/RelDnaSerDownloadPrompt.fxml";
 
   private static final String INPUT_STEP = "/FileInput.fxml";
   private static final String RESULTS_STEP = "/ValidationResults.fxml";
@@ -94,24 +89,12 @@ public class LandingController {
 
   @FXML
   void chooseFreqTables(ActionEvent event) {
-    DownloadNMDPController dc = new DownloadNMDPController();
-    showTutorial(NMDP_DOWNLOAD, dc, "Set Frequency Directory");
-    if (dc.isDirty()) {
-      new Thread(JFXUtilHelper.createProgressTask(() -> {
-        HaplotypeFrequencies.doInitialization();
-      })).start();
-    }
+    TutorialHelper.chooseFreqTables(event);
   }
 
   @FXML
   void chooseRelSerLookupFile(ActionEvent event) {
-    SerotypeLookupFileController controller = new SerotypeLookupFileController();
-    showTutorial(REL_SER_DOWNLOAD, controller, "Set HLA Serotype Lookup File");
-    if (controller.isDirty()) {
-      new Thread(JFXUtilHelper.createProgressTask(() -> {
-        AntigenDictionary.clearCache();
-      })).start();
-    }
+    TutorialHelper.chooseRelSerLookupFile(event);
   }
 
   @FXML
@@ -122,12 +105,12 @@ public class LandingController {
 
   @FXML
   void tutorialHTMLDownload(ActionEvent event) {
-    showTutorial(HTML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
+    TutorialHelper.tutorialHTMLDownload(event);
   }
 
   @FXML
   void tutorialXMLDownload(ActionEvent event) {
-    showTutorial(XML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
+    TutorialHelper.tutorialXMLDownload(event);
   }
 
   @FXML
@@ -167,7 +150,7 @@ public class LandingController {
       Platform.runLater(() -> {
         if (!HaplotypeFrequencies.successfullyInitialized()) {
           Alert alert = new Alert(AlertType.INFORMATION,
-              "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
+              "Haplotype Frequency Tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
                   + "Would you like to set these tables now?\n\n"
                   + "Note: you can adjust these tables any time from the 'Haplotype' menu",
               ButtonType.YES, ButtonType.NO);
@@ -215,26 +198,6 @@ public class LandingController {
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
     new Thread(runValidationTask).start();
-  }
-
-  /** TODO */
-  private void showTutorial(String tutorialFxml, Object controller, String title) {
-    try (InputStream is = TypeValidationApp.class.getResourceAsStream(tutorialFxml)) {
-      FXMLLoader loader = new FXMLLoader();
-      loader.setController(controller);
-      // NB: reading the controller from FMXL can cause problems
-
-      Alert alert = new Alert(AlertType.NONE, "", ButtonType.OK);
-      alert.getDialogPane().setContent(loader.load(is));
-      alert.setTitle(title);
-      alert.setHeaderText("");
-      alert.showAndWait();
-    } catch (IOException e) {
-      e.printStackTrace();
-      Alert alert = new Alert(AlertType.ERROR, "");
-      alert.setHeaderText("Failed to read tutorial page definition: " + tutorialFxml);
-      alert.showAndWait();
-    }
   }
 
   /**

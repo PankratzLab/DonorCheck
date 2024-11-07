@@ -31,6 +31,7 @@ import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
+import org.pankratzlab.unet.jfx.TutorialHelper;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
@@ -93,6 +94,16 @@ public class FileInputController extends AbstractValidatingWizardController {
         .add(createFileBox(XmlDonorParser.class, ValidationTable::setSecondModel));
 
     rootPane().setInvalidBinding(invalidBinding);
+  }
+
+  @FXML
+  void tutorialHTMLDownload(ActionEvent event) {
+    TutorialHelper.tutorialHTMLDownload(event);
+  }
+
+  @FXML
+  void tutorialXMLDownload(ActionEvent event) {
+    TutorialHelper.tutorialXMLDownload(event);
   }
 
   private HBox createFileBox(Class<? extends DonorFileParser> defaultSelected,

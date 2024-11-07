@@ -1,12 +1,22 @@
 package org.pankratzlab.unet.unit.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.Set;
 import org.junit.Test;
+import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
+import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.parser.util.DRAssociations;
 
 public class DRAssociationsTest {
+
+  @Test
+  public void DRAssociations_getDRBGroup() {
+    SeroType type = new SeroType("DRB3", 3);
+    Set<HLAType> s = AntigenDictionary.lookup(type);
+    System.out.println(s);
+  }
 
   @Test
   public void DRAssociations_getDRBLocus() {
