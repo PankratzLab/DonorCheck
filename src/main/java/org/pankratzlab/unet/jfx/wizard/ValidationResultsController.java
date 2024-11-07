@@ -72,6 +72,12 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private static final String UNKNOWN_HAPLOTYPE_CLASS = "unknown-haplotype";
   private static final Set<String> HAPLOTYPE_CLASSES =
       ImmutableSet.of(WD_ALLELE_CLASS, UK_ALLELE_CLASS, UNKNOWN_HAPLOTYPE_CLASS);
+  private final Label noHapPatientLabel1 = new Label("No haplotype data found for patient.");
+  private final Label noHapDataLabel1 = new Label(
+      " In order to review haplotype frequencies and flag rare haplotypes,\n download data from NMDP or another source.");
+  private final Label noHapPatientLabel2 = new Label("No haplotype data found for patient.");
+  private final Label noHapDataLabel2 = new Label(
+      " In order to review haplotype frequencies and flag rare haplotypes,\n download data from NMDP or another source.");
 
   @FXML
   private ResourceBundle resources;
@@ -293,8 +299,18 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     firstSourceCol.textProperty().bind(table.firstColSource());
     secondSourceCol.textProperty().bind(table.secondColSource());
 
-    bcHaplotypeTable.setItems(table.getBCHaplotypeRows());
-    drdqHaplotypeTable.setItems(table.getDRDQHaplotypeRows());
+    bcHaplotypeTable.getItems().clear();
+    drdqHaplotypeTable.getItems().clear();
+
+    if (HaplotypeFrequencies.successfullyInitialized()) {
+      bcHaplotypeTable.setPlaceholder(noHapPatientLabel1);
+      drdqHaplotypeTable.setPlaceholder(noHapPatientLabel2);
+      bcHaplotypeTable.setItems(table.getBCHaplotypeRows());
+      drdqHaplotypeTable.setItems(table.getDRDQHaplotypeRows());
+    } else {
+      bcHaplotypeTable.setPlaceholder(noHapDataLabel1);
+      drdqHaplotypeTable.setPlaceholder(noHapDataLabel2);
+    }
   }
 
   /** Perform required actions when the page is being displayed */

@@ -29,6 +29,7 @@ import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
 import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
 import javafx.beans.binding.Bindings;
@@ -241,7 +242,7 @@ public class ValidationTable {
     drdqHaplotypeRows.clear();
 
     ValidationModel model = chooseHaplotypeModel(firstModelWrapper.get(), secondModelWrapper.get());
-    if (Objects.nonNull(model)) {
+    if (Objects.nonNull(model) && HaplotypeFrequencies.successfullyInitialized()) {
       makeBCHaplotypeRows(bcHaplotypeRows, model);
       makeDRDQHaplotypeRows(drdqHaplotypeRows, model);
     }

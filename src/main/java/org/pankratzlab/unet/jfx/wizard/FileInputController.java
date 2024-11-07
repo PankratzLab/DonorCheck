@@ -259,7 +259,9 @@ public class FileInputController extends AbstractValidatingWizardController {
       // valid model, build and set
       try {
         setter.accept(getTable(), builder.build());
-        linkedFile.set(selectedFile);
+        Platform.runLater(() -> {
+          linkedFile.set(selectedFile);
+        });
       } catch (Throwable e) {
         Platform.runLater(() -> {
           Alert alert = new Alert(AlertType.ERROR);
