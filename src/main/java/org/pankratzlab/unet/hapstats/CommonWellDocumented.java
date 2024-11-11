@@ -83,7 +83,18 @@ public final class CommonWellDocumented {
   }
 
   private static enum SOURCE {
-    CWD_200("CWD 2.0.0"), CIWD_300("CIWD 3.0.0");
+    CWD_200("CWD 2.0.0") {
+      @Override
+      public void load() {
+        loadCWD200();
+      }
+    },
+    CIWD_300("CIWD 3.0.0") {
+      @Override
+      public void load() {
+        loadCIWD300();
+      }
+    };
 
     SOURCE(String d) {
       displayName = d;
@@ -95,6 +106,10 @@ public final class CommonWellDocumented {
     public String toString() {
       return displayName;
     }
+
+    public abstract void load();
+
+
   }
 
   public static void initFromProperty() {
@@ -154,16 +169,8 @@ public final class CommonWellDocumented {
 
   private static void loadCIWDVersion(SOURCE r) {
     try {
-      switch (r) {
-        case CWD_200:
-          loadCWD200();
-          break;
-        case CIWD_300:
-          loadCIWD300();
-          break;
-        default:
-          break;
-      }
+
+      r.load();
 
       // save the selected value
       HLAProperties.get().setProperty(CWD_PROP, r.name());
