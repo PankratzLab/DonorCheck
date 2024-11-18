@@ -57,6 +57,7 @@ public class IntegrationTest {
     assumeTrue(Objects.nonNull(System.getProperty(TEST_DIR_PROPERTY)));
     assumeTrue(Objects.nonNull(individualDir));
 
+
     CommonWellDocumented.loadCIWD300();
   }
 

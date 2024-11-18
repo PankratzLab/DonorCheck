@@ -49,7 +49,7 @@ public final class AntigenDictionary implements Serializable {
   public static final String REL_DNA_SER_PROP = "rel.dna.ser.file";
 
   public static final String SERIALIZED_MAP = Info.HLA_HOME + ".hla/map.ser";
-  private static final String MASTER_MAP_RECORDS = "rel_dna_ser.txt";
+  public static final String MASTER_MAP_RECORDS = "rel_dna_ser.txt";
   private static final String COMMENT = "#";
   private static final String COL_DELIM = ";";
   private static final String SPEC_DELIM = ":";
@@ -298,7 +298,7 @@ public final class AntigenDictionary implements Serializable {
     return getVersion(filePath);
   }
 
-  private static String getVersion(String file) {
+  public static String getVersion(String file) {
     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
       return findVersion(reader);
     } catch (Throwable e) {
@@ -307,7 +307,7 @@ public final class AntigenDictionary implements Serializable {
     return null;
   }
 
-  private static String getBundledVersion() {
+  public static String getBundledVersion() {
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(
         AntigenDictionary.class.getClassLoader().getResourceAsStream(MASTER_MAP_RECORDS)))) {
       return findVersion(reader);
@@ -329,7 +329,9 @@ public final class AntigenDictionary implements Serializable {
 
   public static void clearCache() {
     try {
-      Files.delete(Paths.get(SERIALIZED_MAP));
+      if (new File(SERIALIZED_MAP).exists()) {
+        Files.delete(Paths.get(SERIALIZED_MAP));
+      }
       map = null;
     } catch (IOException e) {
       throw new RuntimeException(

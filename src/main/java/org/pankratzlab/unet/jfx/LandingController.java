@@ -36,13 +36,19 @@ import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.macui.MACUIController;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.validation.ValidationTestFileSet;
+import org.pankratzlab.unet.validation.ValidationTesting;
+import org.pankratzlab.unet.validation.ValidationTesting.TestRun;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Table;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
@@ -57,6 +63,8 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
@@ -67,6 +75,7 @@ public class LandingController {
 
   private static final String INPUT_STEP = "/FileInput.fxml";
   private static final String RESULTS_STEP = "/ValidationResults.fxml";
+  private static final String TESTING_MGMT = "/ValidationTestMgmt.fxml";
 
   @FXML
   private ResourceBundle resources;
@@ -106,6 +115,80 @@ public class LandingController {
   @FXML
   void tutorialHTMLDownload(ActionEvent event) {
     TutorialHelper.tutorialHTMLDownload(event);
+  }
+
+  @FXML
+  void manageTestingFiles(ActionEvent event) {
+    Task<Table<SOURCE, String, List<ValidationTestFileSet>>> manageValidationTask =
+        JFXUtilHelper.createProgressTask(() -> {
+          // first, load the test data
+          return ValidationTesting.loadValidationDirectory();
+        });
+
+    EventHandler<WorkerStateEvent> doValidation = e -> {
+      Platform.runLater(() -> {
+        Table<SOURCE, String, List<ValidationTestFileSet>> testData;
+        try {
+          testData = manageValidationTask.get();
+        } catch (Exception e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+          return;
+        }
+        ValidationTestMgmtController controller = new ValidationTestMgmtController();
+
+        FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
+        loader.setController(controller);
+
+
+        Scene newScene;
+        try {
+          newScene = new Scene(loader.load());
+          Stage inputStage = new Stage();
+          inputStage.initOwner(rootPane.getScene().getWindow());
+          inputStage.initModality(Modality.APPLICATION_MODAL);
+          inputStage.setTitle("Manage Testing Files");
+          inputStage.setResizable(true);
+          inputStage.setScene(newScene);
+          controller.setTable(testData);
+          inputStage.showAndWait();
+        } catch (IOException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+      });
+    };
+
+    manageValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
+
+
+    new Thread(manageValidationTask).start();
+  }
+
+  @FXML
+  void runTesting(ActionEvent event) {
+    Task<ImmutableMap<ValidationTestFileSet, TestRun>> runValidationTask =
+        JFXUtilHelper.createProgressTask(() -> {
+          Table<SOURCE, String, List<ValidationTestFileSet>> tests =
+              ValidationTesting.loadValidationDirectory();
+
+          List<ValidationTestFileSet> allTests = new ArrayList<>();
+          for (String relFile : tests.columnKeySet()) {
+            for (SOURCE cwd : tests.column(relFile).keySet()) {
+              allTests.addAll(tests.get(cwd, relFile));
+            }
+          }
+
+          return ValidationTesting.runTests(allTests);
+        });
+
+    EventHandler<WorkerStateEvent> doValidation = e -> {
+      // TODO do something with results
+    };
+
+    runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
+
+    new Thread(runValidationTask).start();
   }
 
   @FXML

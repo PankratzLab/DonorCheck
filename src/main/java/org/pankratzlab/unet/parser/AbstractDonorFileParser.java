@@ -35,6 +35,7 @@ public abstract class AbstractDonorFileParser implements DonorFileParser {
       throw new InvalidParameterException("Unknown File Type: " + file.getName());
     }
 
+    builder.file(file.getAbsolutePath());
     builder.source(file.getName());
 
     doParse(builder, file);

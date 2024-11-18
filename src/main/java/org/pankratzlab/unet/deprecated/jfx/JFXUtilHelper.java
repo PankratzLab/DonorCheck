@@ -21,6 +21,7 @@
  */
 package org.pankratzlab.unet.deprecated.jfx;
 
+import java.util.concurrent.Callable;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
@@ -77,7 +78,7 @@ public final class JFXUtilHelper {
    * Helper method to add hooks to close the given {@link Stage} when the given {@link Task}
    * completes.
    */
-  public static void addCloseHooks(Stage stage, Task<Void> task) {
+  public static <T> void addCloseHooks(Stage stage, Task<T> task) {
     EventHandler<WorkerStateEvent> closeStage = (w) -> {
       Platform.runLater(() -> {
         stage.close();
@@ -103,6 +104,27 @@ public final class JFXUtilHelper {
         Platform.runLater(() -> progressStage.show());
         runnable.run();
         return null;
+      }
+    };
+    addCloseHooks(progressStage, progressTask);
+
+    return progressTask;
+  }
+
+  /**
+   * Helper method to combine {@link #createProgressStage()} and
+   * {@link #addCloseHooks(Stage, Task)}, generating a {@link Task} that creates and shows a
+   * progress dialog while running a {@link Runnable} and then closes the progress graphic when
+   * finished.
+   */
+  public static <T> Task<T> createProgressTask(Callable<T> runnable) {
+    Stage progressStage = createProgressStage();
+    Task<T> progressTask = new Task<T>() {
+
+      @Override
+      protected T call() throws Exception {
+        Platform.runLater(() -> progressStage.show());
+        return runnable.call();
       }
     };
     addCloseHooks(progressStage, progressTask);

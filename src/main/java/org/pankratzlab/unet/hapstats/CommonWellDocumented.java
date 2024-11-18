@@ -82,7 +82,7 @@ public final class CommonWellDocumented {
     }
   }
 
-  private static enum SOURCE {
+  public static enum SOURCE {
     CWD_200("CWD 2.0.0") {
       @Override
       public void load() {
@@ -140,16 +140,7 @@ public final class CommonWellDocumented {
   public static void init() {
     doGetStatusCache.invalidateAll();
 
-    SOURCE def = SOURCE.CIWD_300;
-
-    if (HLAProperties.get().containsKey(CWD_PROP)) {
-      String propVal = HLAProperties.get().getProperty(CWD_PROP);
-      try {
-        def = SOURCE.valueOf(propVal);
-      } catch (IllegalArgumentException e) {
-        // can't interpret saved value, use hardcoded default
-      }
-    }
+    SOURCE def = loadPropertyCWDSource();
 
     ChoiceDialog<SOURCE> cd = new ChoiceDialog<>(def, SOURCE.values());
     cd.setTitle("Select CWD/CIWD Database");
@@ -167,7 +158,25 @@ public final class CommonWellDocumented {
 
   }
 
-  private static void loadCIWDVersion(SOURCE r) {
+  public static boolean isLoaded() {
+    return ALLELE_FREQS != null && !ALLELE_FREQS.isEmpty();
+  }
+
+  public static SOURCE loadPropertyCWDSource() {
+    SOURCE def = SOURCE.CIWD_300;
+
+    if (HLAProperties.get().containsKey(CWD_PROP)) {
+      String propVal = HLAProperties.get().getProperty(CWD_PROP);
+      try {
+        def = SOURCE.valueOf(propVal);
+      } catch (IllegalArgumentException e) {
+        // can't interpret saved value, use hardcoded default
+      }
+    }
+    return def;
+  }
+
+  public static void loadCIWDVersion(SOURCE r) {
     try {
 
       r.load();

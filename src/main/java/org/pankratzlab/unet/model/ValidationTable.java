@@ -23,15 +23,20 @@ package org.pankratzlab.unet.model;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.hapstats.RaceGroup;
+import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
 import org.pankratzlab.unet.model.ValidationRow.RowBuilder;
+import com.google.common.collect.ImmutableMap;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
@@ -53,9 +58,13 @@ import javafx.scene.image.WritableImage;
 public class ValidationTable {
 
   private final ReadOnlyBooleanWrapper isValidWrapper;
+  private final ReadOnlyObjectWrapper<String> firstFileWrapper;
   private final ReadOnlyObjectWrapper<String> firstSourceWrapper;
+  private final ReadOnlyObjectWrapper<SourceType> firstSourceTypeWrapper;
   private final ReadOnlyObjectWrapper<ValidationModel> firstModelWrapper;
+  private final ReadOnlyObjectWrapper<String> secondFileWrapper;
   private final ReadOnlyObjectWrapper<String> secondSourceWrapper;
+  private final ReadOnlyObjectWrapper<SourceType> secondSourceTypeWrapper;
   private final ReadOnlyObjectWrapper<ValidationModel> secondModelWrapper;
   private final ReadOnlyListWrapper<ValidationRow<?>> validationRows;
   private final ReadOnlyListWrapper<String> auditLogLines;
@@ -67,10 +76,14 @@ public class ValidationTable {
 
   public ValidationTable() {
     isValidWrapper = new ReadOnlyBooleanWrapper();
+    firstFileWrapper = new ReadOnlyObjectWrapper<>();
     firstSourceWrapper = new ReadOnlyObjectWrapper<>();
-    secondSourceWrapper = new ReadOnlyObjectWrapper<>();
     firstModelWrapper = new ReadOnlyObjectWrapper<>();
+    firstSourceTypeWrapper = new ReadOnlyObjectWrapper<>();
+    secondFileWrapper = new ReadOnlyObjectWrapper<>();
+    secondSourceWrapper = new ReadOnlyObjectWrapper<>();
     secondModelWrapper = new ReadOnlyObjectWrapper<>();
+    secondSourceTypeWrapper = new ReadOnlyObjectWrapper<>();
     validationRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     auditLogLines = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
     bcHaplotypeRows = new ReadOnlyListWrapper<>(FXCollections.observableArrayList());
@@ -96,12 +109,28 @@ public class ValidationTable {
     return "";
   }
 
+  public ReadOnlyObjectProperty<String> firstColFile() {
+    return firstFileWrapper.getReadOnlyProperty();
+  }
+
+  public ReadOnlyObjectProperty<String> secondColFile() {
+    return secondFileWrapper.getReadOnlyProperty();
+  }
+
   public ReadOnlyObjectProperty<String> firstColSource() {
     return firstSourceWrapper.getReadOnlyProperty();
   }
 
   public ReadOnlyObjectProperty<String> secondColSource() {
     return secondSourceWrapper.getReadOnlyProperty();
+  }
+
+  public ReadOnlyObjectProperty<SourceType> firstColSourceType() {
+    return firstSourceTypeWrapper.getReadOnlyProperty();
+  }
+
+  public ReadOnlyObjectProperty<SourceType> secondColSourceType() {
+    return secondSourceTypeWrapper.getReadOnlyProperty();
   }
 
   /** @return An image of the validation state */
@@ -116,13 +145,17 @@ public class ValidationTable {
 
   /** @param model New {@link ValidationModel} for the first column in the table */
   public void setFirstModel(ValidationModel model) {
+    firstFileWrapper.set(model.getFile());
     firstSourceWrapper.set(model.getSource());
+    firstSourceTypeWrapper.set(model.getSourceType());
     firstModelWrapper.set(model);
   }
 
   /** @param model New {@link ValidationModel} for the second column in the table */
   public void setSecondModel(ValidationModel model) {
+    secondFileWrapper.set(model.getFile());
     secondSourceWrapper.set(model.getSource());
+    secondSourceTypeWrapper.set(model.getSourceType());
     secondModelWrapper.set(model);
   }
 
@@ -247,11 +280,7 @@ public class ValidationTable {
       makeDRDQHaplotypeRows(drdqHaplotypeRows, model);
     }
 
-    auditLogLines.clear();
-    if (firstModelWrapper.isNotNull().get())
-      auditLogLines.addAll(firstModelWrapper.get().getRemappings());
-    if (secondModelWrapper.isNotNull().get())
-      auditLogLines.addAll(secondModelWrapper.get().getRemappings());
+    generateAuditLogLines();
   }
 
   private String generateRowLabel(HLALocus locus) {
@@ -427,6 +456,37 @@ public class ValidationTable {
       return null;
     }
     return getter.apply(wrapper.get());
+  }
+
+  private void generateAuditLogLines() {
+    auditLogLines.clear();
+    if (firstModelWrapper.isNotNull().get())
+      auditLogLines.addAll(generateRemappings(firstModelWrapper.get()));
+    if (secondModelWrapper.isNotNull().get())
+      auditLogLines.addAll(generateRemappings(secondModelWrapper.get()));
+  }
+
+  public ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> getFirstRemappings() {
+    if (firstModelWrapper.isNotNull().get())
+      return firstModelWrapper.get().getRemappings();
+    return ImmutableMap.of();
+  }
+
+  public ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> getSecondRemappings() {
+    if (secondModelWrapper.isNotNull().get())
+      return secondModelWrapper.get().getRemappings();
+    return ImmutableMap.of();
+  }
+
+  private String[] generateRemappings(ValidationModel model) {
+    return model.getRemappings().entrySet().stream().map(e -> {
+      final String collectFrom = e.getValue().getLeft().stream().sorted().map(TypePair::getHlaType)
+          .map((h) -> h.specString()).collect(Collectors.joining(" / "));
+      final String collectTo = e.getValue().getRight().stream().sorted().map(TypePair::getHlaType)
+          .map((h) -> h.specString()).collect(Collectors.joining(" / "));
+      return "HLA-" + e.getKey().name() + " was remapped from { " + collectFrom + " } to { "
+          + collectTo + " } in " + model.getSourceType();
+    }).sorted().distinct().toArray(String[]::new);
   }
 
   public ObservableValue<String> getAuditLogLines() {

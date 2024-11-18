@@ -1,7 +1,5 @@
 package org.pankratzlab.unet.model.remap;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -576,25 +574,9 @@ public class GUIRemapProcessor implements RemapProcessor {
       // Function<Supplier<TextFlow>, Supplier<TextFlow>> tooltipProvider) {
       this.tooltipProvider = tooltipProvider;
 
-      // hack for adjusting tooltip delay / etc
-      // from https://stackoverflow.com/a/43291239/875496
-      // TODO FIXME change when JavaFX9+ is available
-      try {
-        Class<?> clazz = tooltip.getClass().getDeclaredClasses()[0];
-        Constructor<?> constructor = clazz.getDeclaredConstructor(Duration.class, Duration.class,
-            Duration.class, boolean.class);
-        constructor.setAccessible(true);
-        Object tooltipBehavior = constructor.newInstance(new Duration(50), // open
-            new Duration(500000), // visible
-            new Duration(100), // close
-            false);
-        Field fieldBehavior = tooltip.getClass().getDeclaredField("BEHAVIOR");
-        fieldBehavior.setAccessible(true);
-        fieldBehavior.set(tooltip, tooltipBehavior);
-      } catch (Throwable t) {
-        t.printStackTrace();
-      }
-
+      tooltip.setShowDelay(new Duration(50));
+      tooltip.setShowDuration(new Duration(500000));
+      tooltip.setHideDelay(new Duration(100));
       tooltip.setWrapText(true);
       tooltip.setMaxWidth(600);
 

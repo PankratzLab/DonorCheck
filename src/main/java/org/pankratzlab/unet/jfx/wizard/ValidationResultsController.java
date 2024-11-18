@@ -40,6 +40,8 @@ import org.pankratzlab.unet.model.DRDQHaplotypeRow;
 import org.pankratzlab.unet.model.HaplotypeRow;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.validation.ValidationTesting;
+import org.pankratzlab.unet.validation.ValidationTesting.TestInfo;
 import com.google.common.collect.ImmutableSet;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ObservableList;
@@ -96,6 +98,9 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   @FXML
   private MenuItem printOption;
+
+  @FXML
+  MenuItem addToValidationOption;
 
   @FXML
   private TableView<ValidationRow<?>> resultsTable;
@@ -220,6 +225,44 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
         }
       }
     }
+  }
+
+  @FXML
+  void addInputsToValidationSet() {
+
+    // show dialog with warning about avoiding PII
+    Alert alert = new Alert(AlertType.WARNING,
+        "Caution - DonorCheck will retain a copy of the current input files here:\n"
+            + ValidationTesting.VALIDATION_DIRECTORY
+            + "\n\nPlease ensure that input files do not contain Personally Identifiable Information (PII).",
+        ButtonType.OK, ButtonType.CANCEL);
+    alert.setTitle("PII Warning");
+    alert.setHeaderText("");
+    Optional<ButtonType> selVal = alert.showAndWait();
+    if (selVal.isPresent() && selVal.get() == ButtonType.CANCEL) {
+      return;
+    }
+
+    // disallow adding file-pairs if validation doesn't pass
+    boolean validInputs = getTable().isValidProperty().get();
+    if (!validInputs) {
+      Alert alert1 = new Alert(AlertType.ERROR,
+          "Only valid inputs can be added to the validation testing set.", ButtonType.OK,
+          ButtonType.CANCEL);
+      alert1.setTitle("Error - Invalid Inputs");
+      alert1.setHeaderText("");
+      alert1.showAndWait();
+      return;
+    }
+
+    TestInfo file1 = new TestInfo(getTable().getId(), getTable().firstColFile().get(),
+        getTable().getFirstRemappings(), getTable().firstColSourceType().get());
+    TestInfo file2 = new TestInfo(getTable().getId(), getTable().secondColFile().get(),
+        getTable().getSecondRemappings(), getTable().secondColSourceType().get());
+    ValidationTesting.addToValidationSet(file1, file2);
+
+    // TODO show message to user that inputs have been added to validation set
+
   }
 
   @FXML
