@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
@@ -125,8 +126,7 @@ public class ValidationTestMgmtController {
     relDnaSerVersion.setCellValueFactory(
         new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
           public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
-            // TODO either track rel_dna_ser version or load / cache it from the provided file
-            return p.getValue().relDnaSerFile;
+            return p.getValue().relDnaSerFile.map(AntigenDictionary::getVersion).orElse("");
           }
         });
 
