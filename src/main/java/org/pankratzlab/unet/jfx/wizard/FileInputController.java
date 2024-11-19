@@ -259,7 +259,6 @@ public class FileInputController extends AbstractValidatingWizardController {
       // valid model, build and set
       try {
         setter.accept(getTable(), builder.build());
-        System.out.println(selectedFile.getAbsolutePath());
         Platform.runLater(() -> {
           linkedFile.set(selectedFile);
         });

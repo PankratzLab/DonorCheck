@@ -26,9 +26,12 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 
 public class ValidationTestMgmtController {
@@ -86,6 +89,8 @@ public class ValidationTestMgmtController {
     assert runSelectedButton != null : "fx:id=\"runSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert runAllButton != null : "fx:id=\"runAllButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
 
+    testTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
     testIDColumn.setCellValueFactory(
         new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
           public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
@@ -104,6 +109,28 @@ public class ValidationTestMgmtController {
         new Callback<CellDataFeatures<ValidationTestFileSet, Boolean>, ObservableValue<Boolean>>() {
           public ObservableValue<Boolean> call(CellDataFeatures<ValidationTestFileSet, Boolean> p) {
             return p.getValue().lastPassingState;
+          }
+        });
+
+    passingStatusColumn.setCellFactory(
+        new Callback<TableColumn<ValidationTestFileSet, Boolean>, TableCell<ValidationTestFileSet, Boolean>>() {
+
+          @Override
+          public TableCell<ValidationTestFileSet, Boolean> call(
+              TableColumn<ValidationTestFileSet, Boolean> param) {
+            return new TableCell<ValidationTestFileSet, Boolean>() {
+              @Override
+              protected void updateItem(Boolean value, boolean empty) {
+                super.updateItem(value, empty);
+                if (value == null) {
+                  setText(null);
+                  setStyle("");
+                } else {
+                  setText(value ? "Passing" : "Failing");
+                  setStyle("-fx-background-color: " + (value ? "LimeGreen" : "OrangeRed"));
+                }
+              }
+            };
           }
         });
 
@@ -152,7 +179,7 @@ public class ValidationTestMgmtController {
 
   @FXML
   void close() {
-    // TODO
+    ((Stage) closeButton.getScene().getWindow()).close();
   }
 
   @FXML
@@ -176,25 +203,18 @@ public class ValidationTestMgmtController {
 
   @FXML
   void runSelected() {
-    // run on background thread
-    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
-      ValidationTesting.runTests(testTable.selectionModelProperty().get().getSelectedItems());
-    });
-
-    EventHandler<WorkerStateEvent> showResults = e -> {
-      // TODO do something with results
-    };
-
-    runValidationTask.addEventHandler(WorkerStateEvent.ANY, showResults);
-
-    new Thread(runValidationTask).start();
+    runTasks(testTable.selectionModelProperty().get().getSelectedItems());
   }
 
   @FXML
   void runAll() {
+    runTasks(testTable.getItems());
+  }
+
+  private void runTasks(List<ValidationTestFileSet> tests) {
     // run on background thread
     Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
-      ValidationTesting.runTests(testTable.getItems());
+      ValidationTesting.runTests(tests);
     });
 
     EventHandler<WorkerStateEvent> showResults = e -> {
@@ -205,5 +225,6 @@ public class ValidationTestMgmtController {
 
     new Thread(runValidationTask).start();
   }
+
 
 }

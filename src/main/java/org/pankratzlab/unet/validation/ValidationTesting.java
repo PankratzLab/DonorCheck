@@ -33,6 +33,7 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
+import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.model.remap.RemapProcessor;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
@@ -81,6 +82,41 @@ public class ValidationTesting {
 
   }
 
+  public static TestRun runTest(ValidationTestFileSet test) {
+    SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
+    String currentRel = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+
+    SOURCE source = test.cwdSource.get();
+    String rel = test.relDnaSerFile.get();
+    boolean changedCWID = false;
+    boolean changedRel = false;
+
+    if (current != source || !CommonWellDocumented.isLoaded()) {
+      CommonWellDocumented.loadCIWDVersion(source);
+      changedCWID = true;
+    }
+    if (!new File(currentRel).equals(new File(rel))) {
+      HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
+      AntigenDictionary.clearCache();
+      changedRel = true;
+    }
+
+    TEST_RESULT result = runTestInternal(test);
+    TestRun returnVal = new TestRun(test, result, new Date());
+
+    if (changedCWID) {
+      CommonWellDocumented.loadCIWDVersion(current);
+    }
+    if (changedRel) {
+      HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
+      AntigenDictionary.clearCache();
+    }
+
+    updateTestResults(Map.of(test, returnVal));
+
+    return returnVal;
+  }
+
   public static ImmutableMap<ValidationTestFileSet, TestRun> runTests(
       List<ValidationTestFileSet> tests) {
 
@@ -95,6 +131,8 @@ public class ValidationTesting {
 
     SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
     String currentRel = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+    boolean changedCWID = false;
+    boolean changedRel = false;
 
     for (SOURCE source : SOURCE.values()) {
       Map<String, List<ValidationTestFileSet>> relMap = table.row(source);
@@ -104,6 +142,7 @@ public class ValidationTesting {
 
       if (current != source || !CommonWellDocumented.isLoaded()) {
         CommonWellDocumented.loadCIWDVersion(source);
+        changedCWID = true;
       }
 
       for (String rel : relMap.keySet()) {
@@ -112,13 +151,14 @@ public class ValidationTesting {
         if (!new File(currentRel).equals(new File(rel))) {
           HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
           AntigenDictionary.clearCache();
+          changedRel = true;
         }
 
         for (ValidationTestFileSet test : testFiles) {
           // TODO log test run
           System.out.println("Running test: " + test.filePaths.toString());
 
-          TEST_RESULT result = runTest(test);
+          TEST_RESULT result = runTestInternal(test);
 
           // TODO log test result
           System.out.println("Result: " + result);
@@ -128,8 +168,13 @@ public class ValidationTesting {
       }
     }
 
-    CommonWellDocumented.loadCIWDVersion(current);
-    HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
+    if (changedCWID) {
+      CommonWellDocumented.loadCIWDVersion(current);
+    }
+    if (changedRel) {
+      HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
+      AntigenDictionary.clearCache();
+    }
 
     updateTestResults(results);
 
@@ -139,7 +184,8 @@ public class ValidationTesting {
   public enum TEST_RESULT {
     NO_TEST_FILES(false), // test directory doesn't contain any test files'
     NOT_ENOUGH_TEST_FILES(false), // test directory only have one test file
-    INVALID_TEST_FILE(false), // error when loading/parsing file
+    INVALID_TEST_FILE(false), // input file is invalid
+    ERROR_LOADING_TEST_FILE(false), // error when loading file
     MISSING_REMAP_FILE(false), // file requires remappings but remap file doesn't exist
     INVALID_REMAP_FILE(false), // error when loading/parsing remap file
     INVALID_REMAPPINGS(false), // remappings in file don't match required remappings
@@ -154,7 +200,7 @@ public class ValidationTesting {
 
   }
 
-  private static TEST_RESULT runTest(ValidationTestFileSet test) {
+  private static TEST_RESULT runTestInternal(ValidationTestFileSet test) {
     List<ValidationModelBuilder> modelBuilders = new ArrayList<>();
     XMLRemapProcessor remapProcessor = null;
 
@@ -164,16 +210,21 @@ public class ValidationTesting {
 
       try {
         // TODO make this an enum to avoid cascading ifs
-        if (filePath.toLowerCase().endsWith(DONORNET_HTML_FILE.toLowerCase())) {
+        if (filePath.toLowerCase().endsWith(".html")) {
           new HtmlDonorParser().parseModel(builder, file);
-        } else if (filePath.endsWith(DONORNET_XML_FILE) || filePath.endsWith(SCORE6_XML_FILE)) {
+        } else if (filePath.toLowerCase().endsWith(".xml")) {
           new XmlDonorParser().parseModel(builder, file);
-        } else if (filePath.endsWith(SURETYPER_PDF_FILE)) {
+        } else if (filePath.endsWith(".pdf")) {
           new PdfDonorParser().parseModel(builder, file);
         }
       } catch (Exception e) {
         // TODO include which file is invalid (will need to test both if first is invalid)
         e.printStackTrace(); // TODO log exception somehow
+        return TEST_RESULT.ERROR_LOADING_TEST_FILE;
+      }
+
+      ValidationResult validationResult = builder.validate();
+      if (!validationResult.valid) {
         return TEST_RESULT.INVALID_TEST_FILE;
       }
 
