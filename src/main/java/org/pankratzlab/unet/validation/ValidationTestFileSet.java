@@ -1,23 +1,31 @@
 package org.pankratzlab.unet.validation;
 
+import java.io.File;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyListProperty;
 import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlySetProperty;
+import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
 
 public class ValidationTestFileSet {
 
   public final ReadOnlyStringProperty id;
 
   public final ReadOnlyListProperty<String> filePaths;
+
+  public final ReadOnlySetProperty<SourceType> sourceTypes;
 
   public final ReadOnlyStringProperty remapFile;
 
@@ -90,6 +98,16 @@ public class ValidationTestFileSet {
       Boolean lastPassingState) {
     this.id = new ReadOnlyStringWrapper(id);
     this.filePaths = new ReadOnlyListWrapper<>(FXCollections.observableList(filePaths));
+    final ObservableSet<SourceType> observableSet =
+        FXCollections.observableSet(filePaths.stream().map(s -> {
+          try {
+            return SourceType.parseType(new File(s));
+          } catch (IllegalArgumentException e) {
+            // TODO should deal with nulls somehow?
+            return null;
+          }
+        }).collect(Collectors.toSet()));
+    this.sourceTypes = new ReadOnlySetWrapper<>(observableSet);
     this.remapFile = new ReadOnlyStringWrapper(remapFile);
     this.cwdSource = new ReadOnlyObjectWrapper<>(cwdSource);
     this.relDnaSerFile = new ReadOnlyStringWrapper(relDnaSerFile);

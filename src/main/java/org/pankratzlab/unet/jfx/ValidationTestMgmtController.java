@@ -3,10 +3,13 @@ package org.pankratzlab.unet.jfx;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
+import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
@@ -14,10 +17,10 @@ import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
 import com.google.common.collect.Table;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
@@ -55,7 +58,7 @@ public class ValidationTestMgmtController {
   TableColumn<ValidationTestFileSet, Boolean> passingStatusColumn;
 
   @FXML
-  TableColumn<ValidationTestFileSet, String> testFileTypesColumn;
+  TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> testFileTypesColumn;
 
   @FXML
   TableColumn<ValidationTestFileSet, CommonWellDocumented.SOURCE> ciwdVersionColumn;
@@ -135,10 +138,10 @@ public class ValidationTestMgmtController {
         });
 
     testFileTypesColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
-          public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
-            // TODO convert file paths to file types
-            return new SimpleStringProperty();
+        new Callback<CellDataFeatures<ValidationTestFileSet, ObservableSet<SourceType>>, ObservableValue<ObservableSet<SourceType>>>() {
+          public ObservableValue<ObservableSet<SourceType>> call(
+              CellDataFeatures<ValidationTestFileSet, ObservableSet<SourceType>> p) {
+            return p.getValue().sourceTypes;
           }
         });
 
@@ -195,8 +198,31 @@ public class ValidationTestMgmtController {
     Optional<ButtonType> selVal = alert.showAndWait();
 
     if (selVal.isPresent() && selVal.get() == ButtonType.OK) {
-      ValidationTesting.deleteTests(toRemove);
+      Map<ValidationTestFileSet, Boolean> results = ValidationTesting.deleteTests(toRemove);
+      Set<ValidationTestFileSet> removed = results.entrySet().stream().filter(e -> e.getValue())
+          .map(Map.Entry::getKey).collect(Collectors.toSet());
+      Set<ValidationTestFileSet> notRemoved = results.entrySet().stream().filter(e -> !e.getValue())
+          .map(Map.Entry::getKey).collect(Collectors.toSet());
       testTable.getItems().removeAll(toRemove);
+
+      if (removed.size() == toRemove.size()) {
+        Alert alert1 = new Alert(AlertType.INFORMATION,
+            "Successfully removed " + toRemove.size() + " test" + (toRemove.size() > 1 ? "s" : ""),
+            ButtonType.CLOSE);
+        alert1.setTitle("Successfully Removed Tests");
+        alert1.setHeaderText("");
+        alert1.showAndWait();
+      } else {
+        Alert alert1 = new Alert(AlertType.WARNING,
+            "Failed to remove " + notRemoved.size() + " test" + (notRemoved.size() > 1 ? "s" : "")
+                + "\n\nSuccessfully removed " + removed.size() + " test"
+                + (removed.size() > 1 ? "s" : ""),
+            ButtonType.CLOSE);
+        alert1.setTitle("Failed to Remove Tests");
+        alert1.setHeaderText("");
+        alert1.showAndWait();
+      }
+
     }
 
   }
@@ -213,9 +239,17 @@ public class ValidationTestMgmtController {
 
   private void runTasks(List<ValidationTestFileSet> tests) {
     // run on background thread
-    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
-      ValidationTesting.runTests(tests);
-    });
+
+    List<ValidationTestFileSet> sorted = ValidationTesting.sortTests(tests);
+
+    List<Runnable> tasks = sorted.stream().map(t -> new Runnable() {
+      @Override
+      public void run() {
+        ValidationTesting.runTest(t);
+      }
+    }).collect(Collectors.toList());
+
+    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(tasks);
 
     EventHandler<WorkerStateEvent> showResults = e -> {
       // TODO do something with results

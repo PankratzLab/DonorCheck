@@ -593,8 +593,8 @@ public class ValidationModelBuilder {
 
   }
 
-  public ValidationResult validate() {
-    return ensureValidity();
+  public ValidationResult validate(boolean showAlertIfInvalid) {
+    return ensureValidity(showAlertIfInvalid);
   }
 
   private boolean test(Set<SeroType> set) {
@@ -1037,7 +1037,7 @@ public class ValidationModelBuilder {
    * @return Optional<String> Value is present if the model has not been fully populated, or
    *         populated incorrectly.
    */
-  private ValidationResult ensureValidity() {
+  private ValidationResult ensureValidity(boolean show) {
     // Ensure all fields have been set
     for (Object o : Lists.newArrayList(donorId, source, aLocusCWD, bLocusCWD, cLocusCWD, drbLocus,
         dqbLocus, dqaLocus, getFinalDPBTypes(), bw4, bw6)) {

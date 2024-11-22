@@ -21,6 +21,7 @@
  */
 package org.pankratzlab.unet.deprecated.jfx;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -32,15 +33,18 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-/** Static utility class providing common JavaFX funcitons */
+/** Static utility class providing common JavaFX functions */
 public final class JFXUtilHelper {
+
+  public static final double PROGRESS_POPUP_SIZE = 100;
 
   private JFXUtilHelper() {
     // Prevent instantiation of static utility class
@@ -59,12 +63,43 @@ public final class JFXUtilHelper {
     return alert;
   }
 
+  public static class ProgressStage {
+    public final Stage stage;
+    public final ProgressIndicator pi;
+
+    public ProgressStage(Stage stage, ProgressIndicator pi) {
+      this.stage = stage;
+      this.pi = pi;
+    }
+  }
+
+  /** @return A modal stage pre-built with a progress indicator */
+  public static ProgressStage createDeterminiteProgressStage() {
+    ProgressIndicator pi = new ProgressIndicator(0);
+    VBox vbox = new VBox(pi);
+    VBox.setVgrow(pi, Priority.ALWAYS);
+    vbox.setMinSize(PROGRESS_POPUP_SIZE, PROGRESS_POPUP_SIZE);
+    vbox.setPrefSize(PROGRESS_POPUP_SIZE, PROGRESS_POPUP_SIZE);
+    vbox.setMaxSize(PROGRESS_POPUP_SIZE, PROGRESS_POPUP_SIZE);
+    pi.setMaxSize(PROGRESS_POPUP_SIZE, PROGRESS_POPUP_SIZE);
+    vbox.setStyle("-fx-border-color: lightgray; -fx-border-radius: 5; -fx-border-thickness: 2;");
+    BorderPane root = new BorderPane(vbox);
+    Stage loadingStage = new Stage(StageStyle.TRANSPARENT);
+    loadingStage.initModality(Modality.APPLICATION_MODAL);
+    Scene loadingScene = new Scene(root, Color.TRANSPARENT);
+    loadingStage.setScene(loadingScene);
+    loadingStage.centerOnScreen();
+    return new ProgressStage(loadingStage, pi);
+  }
+
+
   /** @return A modal stage pre-built with a progress indicator */
   public static Stage createProgressStage() {
     ProgressIndicator pi = new ProgressIndicator();
     VBox root = new VBox(pi);
-    pi.setPrefWidth(Screen.getPrimary().getBounds().getWidth() / 10);
-    pi.setPrefHeight(Screen.getPrimary().getBounds().getHeight() / 10);
+    VBox.setVgrow(pi, Priority.ALWAYS);
+    pi.setPrefSize(PROGRESS_POPUP_SIZE, PROGRESS_POPUP_SIZE);
+    pi.setMaxSize(PROGRESS_POPUP_SIZE, PROGRESS_POPUP_SIZE);
     root.setStyle("-fx-border-color: lightgray; -fx-border-radius: 5; -fx-border-thickness: 2;");
     Stage loadingStage = new Stage(StageStyle.TRANSPARENT);
     loadingStage.initModality(Modality.APPLICATION_MODAL);
@@ -87,6 +122,32 @@ public final class JFXUtilHelper {
     task.setOnCancelled(closeStage);
     task.setOnFailed(closeStage);
     task.setOnSucceeded(closeStage);
+  }
+
+  /**
+   * Helper method to combine {@link #createProgressStage()} and
+   * {@link #addCloseHooks(Stage, Task)}, generating a {@link Task} that creates and shows a
+   * progress dialog while running a {@link Runnable} and then closes the progress graphic when
+   * finished.
+   */
+  public static Task<Void> createProgressTask(List<Runnable> runnables) {
+    ProgressStage progressStage = createDeterminiteProgressStage();
+    Task<Void> progressTask = new Task<Void>() {
+
+      @Override
+      protected Void call() throws Exception {
+        Platform.runLater(() -> progressStage.stage.show());
+        for (Runnable runnable : runnables) {
+          runnable.run();
+          updateProgress(runnables.indexOf(runnable) + 1, runnables.size());
+        }
+        return null;
+      }
+    };
+    progressStage.pi.progressProperty().bind(progressTask.progressProperty());
+    addCloseHooks(progressStage.stage, progressTask);
+
+    return progressTask;
   }
 
   /**

@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -36,9 +38,6 @@ import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.model.remap.RemapProcessor;
-import org.pankratzlab.unet.parser.HtmlDonorParser;
-import org.pankratzlab.unet.parser.PdfDonorParser;
-import org.pankratzlab.unet.parser.XmlDonorParser;
 import org.pankratzlab.unet.validation.ValidationTestFileSet.ValidationTestFileSetBuilder;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
@@ -115,6 +114,15 @@ public class ValidationTesting {
     updateTestResults(Map.of(test, returnVal));
 
     return returnVal;
+  }
+
+  public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
+    return tests.stream().sorted((t1, t2) -> {
+      int c = t1.cwdSource.get().compareTo(t2.cwdSource.get());
+      if (c != 0)
+        return c;
+      return t1.relDnaSerFile.get().compareTo(t2.relDnaSerFile.get());
+    }).collect(Collectors.toList());
   }
 
   public static ImmutableMap<ValidationTestFileSet, TestRun> runTests(
@@ -209,21 +217,14 @@ public class ValidationTesting {
       File file = new File(filePath);
 
       try {
-        // TODO make this an enum to avoid cascading ifs
-        if (filePath.toLowerCase().endsWith(".html")) {
-          new HtmlDonorParser().parseModel(builder, file);
-        } else if (filePath.toLowerCase().endsWith(".xml")) {
-          new XmlDonorParser().parseModel(builder, file);
-        } else if (filePath.endsWith(".pdf")) {
-          new PdfDonorParser().parseModel(builder, file);
-        }
+        SourceType.parseFile(builder, file);
       } catch (Exception e) {
         // TODO include which file is invalid (will need to test both if first is invalid)
         e.printStackTrace(); // TODO log exception somehow
         return TEST_RESULT.ERROR_LOADING_TEST_FILE;
       }
 
-      ValidationResult validationResult = builder.validate();
+      ValidationResult validationResult = builder.validate(false);
       if (!validationResult.valid) {
         return TEST_RESULT.INVALID_TEST_FILE;
       }
@@ -590,7 +591,6 @@ public class ValidationTesting {
     String relPath = VALIDATION_DIRECTORY + REL + "/" + relStr;
     builder.relDnaSerFile(relPath);
 
-
     // TODO currently saving only one run date & result
     // TODO store results for multiple runs in a new file
     String lastRunStr = props.getProperty(LAST_RUN_PROP);
@@ -614,9 +614,24 @@ public class ValidationTesting {
 
   }
 
-  public static void deleteTests(List<ValidationTestFileSet> toRemove) {
-    // TODO Auto-generated method stub
-
+  public static Map<ValidationTestFileSet, Boolean> deleteTests(
+      List<ValidationTestFileSet> toRemove) {
+    Map<ValidationTestFileSet, Boolean> success = new HashMap<>();
+    for (ValidationTestFileSet testSet : toRemove) {
+      boolean successDel = true;
+      String dir = VALIDATION_DIRECTORY + safeFilename(testSet.id.get()) + "/";
+      try {
+        FileUtils.deleteDirectory(new File(dir));
+      } catch (IOException | IllegalArgumentException e) {
+        try {
+          FileUtils.deleteDirectory(new File(dir));
+        } catch (IOException | IllegalArgumentException e1) {
+          successDel = false;
+        }
+      }
+      success.put(testSet, successDel);
+    }
+    return success;
   }
 
 }

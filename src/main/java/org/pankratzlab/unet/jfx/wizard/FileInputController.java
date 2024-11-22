@@ -175,7 +175,7 @@ public class FileInputController extends AbstractValidatingWizardController {
           donorParser.parseModel(builder, selectedFile);
 
           // check that the model is valid
-          ValidationResult validationResult = builder.validate();
+          ValidationResult validationResult = builder.validate(true);
 
           if (!validationResult.valid) {
             // if a value is present, show error message

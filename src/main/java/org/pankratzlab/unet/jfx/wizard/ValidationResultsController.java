@@ -261,7 +261,13 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
         getTable().getSecondRemappings(), getTable().secondColSourceType().get());
     ValidationTesting.addToValidationSet(file1, file2);
 
-    // TODO show message to user that inputs have been added to validation set
+    Alert alert1 = new Alert(AlertType.INFORMATION,
+        "Successfully added " + getTable().getId() + " to validation testing set.",
+        ButtonType.CLOSE);
+    alert1.setTitle("Successfully Added.");
+    alert1.setHeaderText("");
+    alert1.showAndWait();
+    return;
 
   }
 
