@@ -31,8 +31,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-
-<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+<VBox prefHeight="400.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
 	<children>
 		<ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
 			<content>
@@ -53,11 +52,13 @@
 				<Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
 			</VBox.margin>
 			<children>
-				<Button fx:id="closeButton" onAction="#close" mnemonicParsing="false" text="Close" />
+				<Button fx:id="closeButton" mnemonicParsing="false" onAction="#close" text="Close" />
 				<Region HBox.hgrow="ALWAYS" />
-           		<Button fx:id="removeSelectedButton" onAction="#removeSelected" mnemonicParsing="false" prefWidth="150.0" text="Remove Selected Tests" />
-				<Button fx:id="runSelectedButton" onAction="#runSelected" mnemonicParsing="false" prefWidth="150.0" text="Run Selected Tests" />
-				<Button fx:id="runAllButton" onAction="#runAll" mnemonicParsing="false" prefWidth="150.0" text="Run All Tests" />
+           		<Button fx:id="removeSelectedButton" mnemonicParsing="false" onAction="#removeSelected" prefWidth="150.0" text="Remove Selected Tests" />
+				<Button fx:id="runSelectedButton" mnemonicParsing="false" onAction="#runSelected" prefWidth="150.0" text="Run Selected Tests" />
+				<Button fx:id="runAllButton" mnemonicParsing="false" onAction="#runAll" prefWidth="150.0" text="Run All Tests" />
+            	<Region HBox.hgrow="ALWAYS" />
+            	<Button fx:id="openTestButton" mnemonicParsing="false" onAction="#openSelectedTest" text="Open Test" />
 			</children>
 		</HBox>
 	</children>

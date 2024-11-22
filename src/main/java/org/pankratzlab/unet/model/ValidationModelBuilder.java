@@ -656,8 +656,6 @@ public class ValidationModelBuilder {
 
     frequencyTable.clear();
 
-    System.out.println(dr52Locus);
-
     ValidationModel validationModel = new ValidationModel(donorId, filepath, source, sourceType,
         getFinalTypes(HLALocus.A), getFinalTypes(HLALocus.B), getFinalTypes(HLALocus.C),
         getFinalTypes(HLALocus.DRB1), getFinalTypes(HLALocus.DQB1), getFinalTypes(HLALocus.DQA1),

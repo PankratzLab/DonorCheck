@@ -70,12 +70,12 @@ public class GUIRemapProcessor implements RemapProcessor {
 
     if (allelePairs == null || donorPairs == null) {
       // TODO
-      System.out.println("No allele pairs for locus " + locus);
+      // System.out.println("No allele pairs for locus " + locus);
       return null;
     }
     if (typesSetNonCWD == null || typesSetNonCWD.isEmpty()) {
       // TODO
-      System.out.println("No types for locus " + locus);
+      // System.out.println("No types for locus " + locus);
       return null;
     }
 

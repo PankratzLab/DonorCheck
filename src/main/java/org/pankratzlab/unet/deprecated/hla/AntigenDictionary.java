@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import org.pankratzlab.unet.deprecated.util.SerializeUtils;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
@@ -267,13 +266,14 @@ public final class AntigenDictionary implements Serializable {
       SerializeUtils.write(typeMap, SERIALIZED_MAP);
       map = typeMap;
 
-      List<HLAType> multi = map.hlaDict.keySet().stream()
-          .filter(ht -> map.hlaDict.get(ht).size() > 1).collect(Collectors.toList());
-      System.out.println("Found " + multi.size() + " HLAType(s) with multiple SeroType mappings:");
-      for (HLAType t : multi) {
-        System.out.println("\t" + t.toString() + " --> "
-            + map.hlaDict.get(t).stream().map(s -> s.toString()).collect(Collectors.joining(", ")));
-      }
+      // List<HLAType> multi = map.hlaDict.keySet().stream()
+      // .filter(ht -> map.hlaDict.get(ht).size() > 1).collect(Collectors.toList());
+      // System.out.println("Found " + multi.size() + " HLAType(s) with multiple SeroType
+      // mappings:");
+      // for (HLAType t : multi) {
+      // System.out.println("\t" + t.toString() + " --> "
+      // + map.hlaDict.get(t).stream().map(s -> s.toString()).collect(Collectors.joining(", ")));
+      // }
 
     } catch (Exception e) {
       e.printStackTrace();

@@ -124,8 +124,6 @@ public abstract class ValidationRow<T> {
 
   /** @return true iff the XML and PDF column values are the same */
   private boolean isValid() {
-    System.out.println("Comp: " + firstColWrapper.get() + " == " + secondColWrapper.get() + "  "
-        + Objects.equals(firstColWrapper.get(), secondColWrapper.get()));
     return Objects.equals(firstColWrapper.get(), secondColWrapper.get());
   }
 

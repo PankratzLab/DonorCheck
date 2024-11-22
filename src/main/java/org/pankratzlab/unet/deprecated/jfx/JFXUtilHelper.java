@@ -63,18 +63,18 @@ public final class JFXUtilHelper {
     return alert;
   }
 
-  public static class ProgressStage {
+  private static class ProgressStage {
     public final Stage stage;
     public final ProgressIndicator pi;
 
-    public ProgressStage(Stage stage, ProgressIndicator pi) {
+    private ProgressStage(Stage stage, ProgressIndicator pi) {
       this.stage = stage;
       this.pi = pi;
     }
   }
 
   /** @return A modal stage pre-built with a progress indicator */
-  public static ProgressStage createDeterminiteProgressStage() {
+  private static ProgressStage createDeterminiteProgressStage() {
     ProgressIndicator pi = new ProgressIndicator(0);
     VBox vbox = new VBox(pi);
     VBox.setVgrow(pi, Priority.ALWAYS);
@@ -94,7 +94,7 @@ public final class JFXUtilHelper {
 
 
   /** @return A modal stage pre-built with a progress indicator */
-  public static Stage createProgressStage() {
+  private static Stage createProgressStage() {
     ProgressIndicator pi = new ProgressIndicator();
     VBox root = new VBox(pi);
     VBox.setVgrow(pi, Priority.ALWAYS);
@@ -113,7 +113,7 @@ public final class JFXUtilHelper {
    * Helper method to add hooks to close the given {@link Stage} when the given {@link Task}
    * completes.
    */
-  public static <T> void addCloseHooks(Stage stage, Task<T> task) {
+  private static <T> void addCloseHooks(Stage stage, Task<T> task) {
     EventHandler<WorkerStateEvent> closeStage = (w) -> {
       Platform.runLater(() -> {
         stage.close();

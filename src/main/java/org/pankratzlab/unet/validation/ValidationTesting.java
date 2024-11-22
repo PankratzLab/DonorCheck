@@ -11,30 +11,32 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
-import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
+import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
-import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.model.remap.RemapProcessor;
@@ -43,19 +45,22 @@ import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.EventHandler;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextArea;
 
 public class ValidationTesting {
 
-  private static final String SURETYPER_PDF_FILE = "typer.pdf";
-  private static final String SCORE6_XML_FILE = "score6.xml";
-  private static final String DONORNET_XML_FILE = "donornet.xml";
-  private static final String DONORNET_HTML_FILE = "DonorEdit.html";
   private static final String REMAP_XML = "remap.xml";
   private static final String TEST_PROPERTIES = "test.properties";
 
+  public static final String REL_DIRECTORY = Info.HLA_HOME + "rel_dna_ser_files/";
   public static final String VALIDATION_DIRECTORY = Info.HLA_HOME + "validation/";
 
   private static final String CWD_PROP = "cwd";
@@ -64,24 +69,333 @@ public class ValidationTesting {
   private static final String LAST_RESULT_PROP = "last_result";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-  public static class TestInfo {
-    public final String label;
-    public final String file;
-    public final ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remappings;
-    public final SourceType sourceType;
-
-    public TestInfo(String label, String file,
-        ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remappings,
-        SourceType sourceType) {
-      this.label = label;
-      this.file = file;
-      this.remappings = remappings;
-      this.sourceType = sourceType;
-    }
-
+  public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
+    return tests.stream().sorted((t1, t2) -> {
+      int c = t1.cwdSource.get().compareTo(t2.cwdSource.get());
+      if (c != 0)
+        return c;
+      return t1.relDnaSerFile.get().compareTo(t2.relDnaSerFile.get());
+    }).collect(Collectors.toList());
   }
 
-  public static TestRun runTest(ValidationTestFileSet test) {
+  public static boolean addToValidationSet(TestInfo file1, TestInfo file2) {
+    // Tests can only be added from the validation results screen, which
+    // means that we know the test set has exactly two files, and therefore
+    // we don't have to check that the ID's match (if they don't match, the result
+    // will be a failure)
+  
+    File valDir = new File(VALIDATION_DIRECTORY);
+    if (!valDir.exists()) {
+      valDir.mkdir();
+    }
+  
+    String reldir = REL_DIRECTORY;
+    String subdir = VALIDATION_DIRECTORY + safeFilename(file1.label) + "/";
+  
+    final File testDir = new File(subdir);
+  
+    // first check if test already exists
+    if (testDir.exists()) {
+      AlertHelper.showMessage_TestAlreadyExists(file1, subdir);
+      return false;
+    }
+  
+    // show dialog with warning about avoiding PII
+    Optional<ButtonType> selVal = AlertHelper.showMessage_PII();
+    if (selVal.isPresent() && selVal.get() == ButtonType.CANCEL) {
+      return false;
+    }
+  
+    testDir.mkdirs();
+  
+    try {
+      Files.copy(new File(file1.file), new File(subdir + new File(file1.file).getName()));
+    } catch (Exception e) {
+      AlertHelper.showMessage_ErrorCopyingInputFile(file1, subdir);
+      e.printStackTrace(); // TODO log exceptions appropriately;
+      // cleanup sub-dir before exiting
+      deleteTestDirectory(subdir);
+      return false;
+    }
+  
+    try {
+      Files.copy(new File(file2.file), new File(subdir + new File(file2.file).getName()));
+    } catch (Exception e) {
+      AlertHelper.showMessage_ErrorCopyingInputFile(file2, subdir);
+      e.printStackTrace(); // TODO log exceptions appropriately;
+      // cleanup sub-dir before exiting
+      deleteTestDirectory(subdir);
+      return false;
+    }
+  
+    File relDirFile = new File(reldir);
+    if (!relDirFile.exists()) {
+      relDirFile.mkdir();
+    }
+  
+    String relDnaSerFile = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+    String newRelFileName;
+    String newRelDnaSerFile;
+    if (!Strings.isNullOrEmpty(relDnaSerFile) && new File(relDnaSerFile).exists()) {
+      File file = new File(relDnaSerFile);
+      String fileName = file.getName();
+      String version = AntigenDictionary.getVersion(file.getAbsolutePath()).trim();
+  
+      newRelFileName = version + "_" + fileName;
+  
+      // make sure new filename is filename-safe
+      newRelFileName = safeFilename(newRelFileName);
+  
+      newRelDnaSerFile = reldir + newRelFileName;
+  
+      // copy file to testDir
+      File newRelFile = new File(newRelDnaSerFile);
+      if (!newRelFile.exists()) {
+        try {
+          Files.copy(file, newRelFile);
+        } catch (Exception e) {
+          AlertHelper.showMessage_ErrorCopyingRelFile(newRelFileName);
+          e.printStackTrace(); // TODO log exceptions appropriately;
+          // cleanup sub-dir before exiting
+          deleteTestDirectory(subdir);
+          return false;
+        }
+      }
+  
+    } else {
+      String fileName = AntigenDictionary.MASTER_MAP_RECORDS;
+      String bundledVersion = AntigenDictionary.getBundledVersion();
+  
+      newRelFileName = bundledVersion + "_" + fileName;
+      // make sure new filename is platform-safe
+      newRelFileName = safeFilename(newRelFileName);
+  
+      newRelDnaSerFile = reldir + newRelFileName;
+  
+      // Copy internal file to testDir
+      File newRelFile = new File(reldir + newRelFileName);
+      if (!newRelFile.exists()) {
+        try (InputStream is = AntigenDictionary.class.getClassLoader()
+            .getResourceAsStream(AntigenDictionary.MASTER_MAP_RECORDS)) {
+          java.nio.file.Files.copy(is, newRelFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        } catch (Exception e) {
+          AlertHelper.showMessage_ErrorCopyingRelFile(newRelFileName);
+          e.printStackTrace();
+          // cleanup sub-dir before exiting
+          deleteTestDirectory(subdir);
+          return false;
+        }
+      }
+    }
+  
+    if (!file1.remappings.isEmpty() || !file2.remappings.isEmpty()) {
+  
+      Document doc = Jsoup.parse("", "", Parser.xmlParser());
+      // Set the output settings to XML syntax
+      doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+  
+      // Create the root element <remappings>
+      Element remappings = doc.appendElement("remappings");
+  
+      if (!file1.remappings.isEmpty()) {
+        addXMLInfo(remappings, file1);
+      }
+  
+      if (!file2.remappings.isEmpty()) {
+        addXMLInfo(remappings, file2);
+      }
+  
+      // create remapping file
+      try (FileWriter writer = new FileWriter(subdir + REMAP_XML)) {
+        writer.write(doc.outerHtml());
+      } catch (IOException e) {
+        AlertHelper.showMessage_ErrorWritingRemapXMLFile(newRelFileName);
+        e.printStackTrace(); // TODO log exceptions appropriately;
+        // cleanup sub-dir before exiting
+        deleteTestDirectory(subdir);
+        return false;
+      }
+    }
+  
+    // write test properties file containing CWD type and rel_dna_ser filename
+    Properties props = new Properties();
+    props.setProperty(CWD_PROP, CommonWellDocumented.loadPropertyCWDSource().name());
+    props.setProperty(REL, newRelFileName);
+    try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
+      props.store(fos, null);
+    } catch (Exception e) {
+      AlertHelper.showMessage_ErrorWritingPropertiesFile(subdir + TEST_PROPERTIES);
+      e.printStackTrace(); // TODO log exceptions appropriately;
+      // cleanup sub-dir before exiting
+      deleteTestDirectory(subdir);
+      return false;
+    }
+  
+    return true;
+  }
+
+  public static void runTests(List<ValidationTestFileSet> tests) {
+    List<ValidationTestFileSet> sorted = ValidationTesting.sortTests(tests);
+  
+    Set<ValidationTestFileSet> successfulTests = Collections.synchronizedSet(new HashSet<>());
+    Set<ValidationTestFileSet> failedTests = Collections.synchronizedSet(new HashSet<>());
+    Map<ValidationTestFileSet, Exception> exceptionTests = new ConcurrentHashMap<>();
+    List<Runnable> tasks = sorted.stream().map(t -> new Runnable() {
+      @Override
+      public void run() {
+        try {
+          TestRun result = ValidationTesting.runTest(t);
+          if (result.result.isPassing) {
+            successfulTests.add(t);
+          } else {
+            failedTests.add(t);
+          }
+        } catch (Exception e) {
+          exceptionTests.put(t, e);
+        }
+      }
+    }).collect(Collectors.toList());
+  
+    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(tasks);
+  
+    EventHandler<WorkerStateEvent> showResults = e -> {
+      Alert alert1 = new Alert(AlertType.INFORMATION,
+          "Test Results:\n\nPassing: " + successfulTests.size() + "\n\nFailing: "
+              + failedTests.size() + "\n\nExceptions: " + exceptionTests.size()
+              + "\n\n(Please report any exceptions to the developers.)",
+          ButtonType.CLOSE);
+      alert1.setTitle("Test Results");
+      alert1.setHeaderText("");
+      alert1.showAndWait();
+    };
+  
+    runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, showResults);
+    runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, showResults);
+  
+    new Thread(runValidationTask).start();
+  }
+
+  public static void updateTestResults(Map<ValidationTestFileSet, TestRun> newResults) {
+    for (Entry<ValidationTestFileSet, TestRun> entry : newResults.entrySet()) {
+      String subdir = VALIDATION_DIRECTORY + safeFilename(entry.getKey().id.get()) + "/";
+      File testPropertiesFile = new File(subdir + TEST_PROPERTIES);
+      Properties props = new Properties();
+      if (testPropertiesFile.exists()) {
+        try (FileInputStream fis = new FileInputStream(testPropertiesFile)) {
+          props.load(fis);
+        } catch (Exception e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      } else {
+        props.setProperty(CWD_PROP, entry.getKey().cwdSource.get().name());
+        String relName = entry.getKey().relDnaSerFile.get();
+        if (relName.startsWith(REL_DIRECTORY)) {
+          relName = relName.substring(REL_DIRECTORY.length());
+        }
+        props.getProperty(REL, relName);
+      }
+  
+      entry.getKey().lastRunDate.set(entry.getValue().runTime);
+      props.setProperty(LAST_RUN_PROP, DATE_FORMAT.format(entry.getValue().runTime));
+  
+      entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
+      props.setProperty(LAST_RESULT_PROP, Boolean.toString(entry.getValue().result.isPassing));
+  
+      try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
+        props.store(fos, null);
+      } catch (Exception e) {
+        // TODO handle exceptions appropriately;
+        // notify user of inability to copy bundled rel_dna_ser file, and cleanup appropriately
+        e.printStackTrace();
+      }
+    }
+  
+  }
+
+  public static Table<SOURCE, String, List<ValidationTestFileSet>> loadValidationDirectory() {
+    Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets =
+        HashBasedTable.create();
+  
+    List<String> invalidTests = new ArrayList<>();
+    File dir = new File(VALIDATION_DIRECTORY);
+    if (dir.exists() && dir.isDirectory()) {
+      // The test directory is a test root, where child directories correspond to individuals.
+      // Each individual should be tested individually
+      for (File individualFile : dir.listFiles()) {
+        if (individualFile.isDirectory()) {
+  
+          ValidationTestFileSetBuilder builder = ValidationTestFileSet.builder();
+          builder.id(individualFile.getName());
+  
+          try {
+            loadTestMetadata(individualFile, builder);
+          } catch (IllegalStateException e) {
+            // catch exceptions and handle them appropriately (skip loading test, but report)
+            invalidTests.add(individualFile.getName());
+            continue;
+          }
+  
+          String remapFile = null;
+          Builder<String> inputFilesBuilder = ImmutableList.builder();
+          for (File testFile : individualFile.listFiles()) {
+            if (testFile.getName().equals(REMAP_XML)) {
+              remapFile = testFile.getAbsolutePath();
+            } else if (testFile.getName().equals(TEST_PROPERTIES)) {
+              // skip
+            } else {
+              inputFilesBuilder.add(testFile.getAbsolutePath());
+            }
+          }
+          builder.filePaths(inputFilesBuilder.build());
+          builder.remapFile(remapFile);
+  
+          // Tests can only be added from the validation results screen, which
+          // means that we know the test set has exactly two files, and therefore
+          // we don't have to check the number of files present
+  
+          ValidationTestFileSet testSet = builder.build();
+  
+          addTestSetToTable(testSets, testSet);
+        }
+      }
+    }
+  
+    if (invalidTests.size() > 0) {
+      Alert alert1 = new Alert(AlertType.ERROR);
+      alert1.getButtonTypes().add(ButtonType.CLOSE);
+  
+      String content = "Please remove the listed tests manually from this directory: \n\n"
+          + VALIDATION_DIRECTORY + "\n";
+      for (String invalidTest : invalidTests) {
+        content += "\n" + invalidTest;
+      }
+      TextArea textArea = new TextArea(content);
+      textArea.setEditable(false);
+      textArea.setWrapText(true);
+  
+      alert1.setTitle("Error Loading Tests");
+      alert1.setHeaderText("Failed to Load " + invalidTests.size() + " Tests");
+      alert1.getDialogPane().setContent(textArea);
+      alert1.setResizable(true);
+      alert1.showAndWait();
+    }
+  
+    return testSets;
+  }
+
+  public static Map<ValidationTestFileSet, Boolean> deleteTests(
+      List<ValidationTestFileSet> toRemove) {
+    Map<ValidationTestFileSet, Boolean> success = new HashMap<>();
+    for (ValidationTestFileSet testSet : toRemove) {
+      String dir = VALIDATION_DIRECTORY + safeFilename(testSet.id.get()) + "/";
+      boolean successDel = deleteTestDirectory(dir);
+      success.put(testSet, successDel);
+    }
+    return success;
+  }
+
+  private static TestRun runTest(ValidationTestFileSet test) {
     SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
     String currentRel = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
 
@@ -116,98 +430,6 @@ public class ValidationTesting {
     return returnVal;
   }
 
-  public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
-    return tests.stream().sorted((t1, t2) -> {
-      int c = t1.cwdSource.get().compareTo(t2.cwdSource.get());
-      if (c != 0)
-        return c;
-      return t1.relDnaSerFile.get().compareTo(t2.relDnaSerFile.get());
-    }).collect(Collectors.toList());
-  }
-
-  public static ImmutableMap<ValidationTestFileSet, TestRun> runTests(
-      List<ValidationTestFileSet> tests) {
-
-    Map<ValidationTestFileSet, TestRun> results = new HashMap<>();
-
-    Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> table =
-        HashBasedTable.create();
-
-    for (ValidationTestFileSet test : tests) {
-      addTestSetToTable(table, test);
-    }
-
-    SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
-    String currentRel = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
-    boolean changedCWID = false;
-    boolean changedRel = false;
-
-    for (SOURCE source : SOURCE.values()) {
-      Map<String, List<ValidationTestFileSet>> relMap = table.row(source);
-      if (relMap.isEmpty()) {
-        continue;
-      }
-
-      if (current != source || !CommonWellDocumented.isLoaded()) {
-        CommonWellDocumented.loadCIWDVersion(source);
-        changedCWID = true;
-      }
-
-      for (String rel : relMap.keySet()) {
-        List<ValidationTestFileSet> testFiles = relMap.get(rel);
-
-        if (!new File(currentRel).equals(new File(rel))) {
-          HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
-          AntigenDictionary.clearCache();
-          changedRel = true;
-        }
-
-        for (ValidationTestFileSet test : testFiles) {
-          // TODO log test run
-          System.out.println("Running test: " + test.filePaths.toString());
-
-          TEST_RESULT result = runTestInternal(test);
-
-          // TODO log test result
-          System.out.println("Result: " + result);
-
-          results.put(test, new TestRun(test, result, new Date()));
-        }
-      }
-    }
-
-    if (changedCWID) {
-      CommonWellDocumented.loadCIWDVersion(current);
-    }
-    if (changedRel) {
-      HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
-      AntigenDictionary.clearCache();
-    }
-
-    updateTestResults(results);
-
-    return ImmutableMap.copyOf(results);
-  }
-
-  public enum TEST_RESULT {
-    NO_TEST_FILES(false), // test directory doesn't contain any test files'
-    NOT_ENOUGH_TEST_FILES(false), // test directory only have one test file
-    INVALID_TEST_FILE(false), // input file is invalid
-    ERROR_LOADING_TEST_FILE(false), // error when loading file
-    MISSING_REMAP_FILE(false), // file requires remappings but remap file doesn't exist
-    INVALID_REMAP_FILE(false), // error when loading/parsing remap file
-    INVALID_REMAPPINGS(false), // remappings in file don't match required remappings
-    TEST_FAILURE(false), // validation failed
-    TEST_SUCCESS(true); // validation passed
-
-    public final boolean isPassing;
-
-    private TEST_RESULT(boolean passes) {
-      this.isPassing = passes;
-    }
-
-  }
-
   private static TEST_RESULT runTestInternal(ValidationTestFileSet test) {
     List<ValidationModelBuilder> modelBuilders = new ArrayList<>();
     XMLRemapProcessor remapProcessor = null;
@@ -219,9 +441,8 @@ public class ValidationTesting {
       try {
         SourceType.parseFile(builder, file);
       } catch (Exception e) {
-        // TODO include which file is invalid (will need to test both if first is invalid)
-        e.printStackTrace(); // TODO log exception somehow
-        return TEST_RESULT.ERROR_LOADING_TEST_FILE;
+        throw new TestExceptions.SourceFileParsingException(
+            "Error parsing file: " + file.getAbsolutePath(), e);
       }
 
       ValidationResult validationResult = builder.validate(false);
@@ -242,9 +463,8 @@ public class ValidationTesting {
       try {
         remapProcessor = new XMLRemapProcessor(test.remapFile.get());
       } catch (IllegalStateException e) {
-        // TODO respond appropriately to invalid remap file
-        e.printStackTrace();
-        return TEST_RESULT.INVALID_REMAP_FILE;
+        throw new TestExceptions.XMLRemapFileException(
+            "Error reading XML remappings file: " + test.remapFile.get(), e);
       }
 
     }
@@ -258,8 +478,8 @@ public class ValidationTesting {
         if (remapProcessor != null) {
 
           if (!remapProcessor.hasRemappings(builder.getSourceType())) {
-            // TODO test to ensure this is correct behavior
-            // if the remap file doesn't have the correct remappings
+            // builder is expecting remappings for this file, but
+            // the remapping file doesn't have the expected remappings
             return TEST_RESULT.INVALID_REMAPPINGS;
           }
           // assertTrue();
@@ -268,12 +488,7 @@ public class ValidationTesting {
           remapper = new XMLRemapProcessor.NoRemapProcessor();
         }
 
-        // TODO determine if result is necessary or not
-        /* ValidationResult result = */builder.processCorrections(remapper);
-
-        // TODO replace asserts with actual behavior
-        // assertTrue(result.valid);
-        // assertFalse(result.validationMessage.isPresent());
+        builder.processCorrections(remapper);
       } else {
         if (remapProcessor != null && remapProcessor.hasRemappings(builder.getSourceType())) {
           // builder says no remappings, but remap file says remappings do exist
@@ -284,7 +499,6 @@ public class ValidationTesting {
       models.add(builder.build());
     }
 
-    // TODO do something with eventual return value
     boolean valid = testIfModelsAgree(models);
     return valid ? TEST_RESULT.TEST_SUCCESS : TEST_RESULT.TEST_FAILURE;
   }
@@ -294,7 +508,12 @@ public class ValidationTesting {
     ValidationTable table = new ValidationTable();
     table.setFirstModel(base);
 
-    // TODO defaulting to true means a test case with only one input file is automatically valid
+    // defaulting to true means a test case with only one input file is automatically valid
+
+    // However, tests can only be added from the validation results screen, which
+    // means that we know the test set has exactly two files, and therefore
+    // we don't have to check the number of files present
+
     boolean valid = true;
     for (int index = 1; index < individualModels.size(); index++) {
       ValidationModel test = individualModels.get(index);
@@ -303,132 +522,6 @@ public class ValidationTesting {
       valid &= table.isValidProperty().get();
     }
     return valid;
-  }
-
-  public static void addToValidationSet(TestInfo file1, TestInfo file2) {
-    // TODO ensure labels match between file1 and file2
-
-    File valDir = new File(VALIDATION_DIRECTORY);
-    if (!valDir.exists()) {
-      valDir.mkdir();
-    }
-
-    // TODO invalid characters from label
-    String reldir = VALIDATION_DIRECTORY + REL + "/";
-    String subdir = VALIDATION_DIRECTORY + safeFilename(file1.label) + "/";
-
-    final File testDir = new File(subdir);
-
-    if (testDir.exists()) {
-      // TODO notify user, show directory path and cancel operation
-    }
-
-    testDir.mkdirs();
-
-    try {
-      Files.copy(new File(file1.file), new File(subdir + new File(file1.file).getName()));
-      Files.copy(new File(file2.file), new File(subdir + new File(file2.file).getName()));
-    } catch (Exception e) {
-      // TODO handle exceptions appropriately;
-      // notify user of inability to add files and cleanup appropriately
-      e.printStackTrace();
-    }
-
-    File relDirFile = new File(reldir);
-    if (!relDirFile.exists()) {
-      relDirFile.mkdir();
-    }
-
-    String relDnaSerFile = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
-    String newRelFileName;
-    String newRelDnaSerFile;
-    if (!Strings.isNullOrEmpty(relDnaSerFile) && new File(relDnaSerFile).exists()) {
-      File file = new File(relDnaSerFile);
-      String fileName = file.getName();
-      String version = AntigenDictionary.getVersion(file.getAbsolutePath()).trim();
-
-      newRelFileName = version + "_" + fileName;
-
-      // make sure new filename is filename-safe
-      newRelFileName = safeFilename(newRelFileName);
-
-      newRelDnaSerFile = reldir + newRelFileName;
-
-      // copy file to testDir
-      File newRelFile = new File(newRelDnaSerFile);
-      if (!newRelFile.exists()) {
-        try {
-          Files.copy(file, newRelFile);
-        } catch (Exception e) {
-          // TODO handle exceptions appropriately;
-          // notify user of inability to copy rel_dna_ser file, and cleanup appropriately
-          e.printStackTrace();
-        }
-      }
-
-    } else {
-      String fileName = AntigenDictionary.MASTER_MAP_RECORDS;
-      String bundledVersion = AntigenDictionary.getBundledVersion();
-
-      newRelFileName = bundledVersion + "_" + fileName;
-      // make sure new filename is platform-safe
-      newRelFileName = safeFilename(newRelFileName);
-
-      newRelDnaSerFile = reldir + newRelFileName;
-
-      // Copy internal file to testDir
-      File newRelFile = new File(reldir + newRelFileName);
-      if (!newRelFile.exists()) {
-        try (InputStream is = AntigenDictionary.class.getClassLoader()
-            .getResourceAsStream(AntigenDictionary.MASTER_MAP_RECORDS)) {
-          java.nio.file.Files.copy(is, newRelFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
-        } catch (Exception e) {
-          // TODO handle exceptions appropriately;
-          // notify user of inability to copy bundled rel_dna_ser file, and cleanup appropriately
-          e.printStackTrace();
-        }
-      }
-    }
-
-    if (!file1.remappings.isEmpty() || !file2.remappings.isEmpty()) {
-
-      Document doc = Jsoup.parse("", "", Parser.xmlParser());
-      // Set the output settings to XML syntax
-      doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
-
-      // Create the root element <remappings>
-      Element remappings = doc.appendElement("remappings");
-
-      if (!file1.remappings.isEmpty()) {
-        addXMLInfo(remappings, file1);
-      }
-
-      if (!file2.remappings.isEmpty()) {
-        addXMLInfo(remappings, file2);
-      }
-
-      // create remapping file
-      try (FileWriter writer = new FileWriter(subdir + REMAP_XML)) {
-        writer.write(doc.outerHtml());
-      } catch (IOException e) {
-        // TODO handle exceptions appropriately;
-        // notify user of inability to copy bundled rel_dna_ser file, and cleanup appropriately
-        e.printStackTrace();
-      }
-    }
-
-    // write test properties file containing CWD type and rel_dna_ser filename
-    Properties props = new Properties();
-    props.setProperty(CWD_PROP, CommonWellDocumented.loadPropertyCWDSource().name());
-    props.setProperty(REL, newRelFileName);
-    try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
-      props.store(fos, null);
-    } catch (Exception e) {
-      // TODO handle exceptions appropriately;
-      // notify user of inability to copy bundled rel_dna_ser file, and cleanup appropriately
-      e.printStackTrace();
-    }
-
   }
 
   private static String safeFilename(String newRelFileName) {
@@ -461,99 +554,6 @@ public class ValidationTesting {
 
   }
 
-  public static class TestRun {
-    public final ValidationTestFileSet testFileSet;
-    public final TEST_RESULT result;
-    public final Date runTime;
-
-    public TestRun(ValidationTestFileSet testFileSet, TEST_RESULT result, Date runTime) {
-      this.testFileSet = testFileSet;
-      this.result = result;
-      this.runTime = runTime;
-    }
-
-  }
-
-  public static void updateTestResults(Map<ValidationTestFileSet, TestRun> newResults) {
-    for (Entry<ValidationTestFileSet, TestRun> entry : newResults.entrySet()) {
-      String subdir = VALIDATION_DIRECTORY + safeFilename(entry.getKey().id.get()) + "/";
-      File testPropertiesFile = new File(subdir + TEST_PROPERTIES);
-      Properties props = new Properties();
-      if (testPropertiesFile.exists()) {
-        try (FileInputStream fis = new FileInputStream(testPropertiesFile)) {
-          props.load(fis);
-        } catch (Exception e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-      } else {
-        props.setProperty(CWD_PROP, entry.getKey().cwdSource.get().name());
-        String relName = entry.getKey().relDnaSerFile.get();
-        if (relName.startsWith(VALIDATION_DIRECTORY + REL + "/")) {
-          relName = relName.substring((VALIDATION_DIRECTORY + REL + "/").length());
-        }
-        props.getProperty(REL, relName);
-      }
-
-      entry.getKey().lastRunDate.set(entry.getValue().runTime);
-      props.setProperty(LAST_RUN_PROP, DATE_FORMAT.format(entry.getValue().runTime));
-
-      entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
-      props.setProperty(LAST_RESULT_PROP, Boolean.toString(entry.getValue().result.isPassing));
-
-      try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
-        props.store(fos, null);
-      } catch (Exception e) {
-        // TODO handle exceptions appropriately;
-        // notify user of inability to copy bundled rel_dna_ser file, and cleanup appropriately
-        e.printStackTrace();
-      }
-    }
-
-  }
-
-  public static Table<SOURCE, String, List<ValidationTestFileSet>> loadValidationDirectory() {
-    Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets =
-        HashBasedTable.create();
-
-    File dir = new File(VALIDATION_DIRECTORY);
-    if (dir.exists() && dir.isDirectory()) {
-      // The test directory is a test root, where child directories correspond to individuals.
-      // Each individual should be tested individually
-      for (File individualFile : dir.listFiles()) {
-        if (individualFile.isDirectory() && !individualFile.getName().equals(REL)) {
-
-          ValidationTestFileSetBuilder builder = ValidationTestFileSet.builder();
-          builder.id(individualFile.getName());
-
-          loadTestMetadata(individualFile, builder);
-
-          String remapFile = null;
-          Builder<String> inputFilesBuilder = ImmutableList.builder();
-          for (File testFile : individualFile.listFiles()) {
-            if (testFile.getName().equals(REMAP_XML)) {
-              remapFile = testFile.getAbsolutePath();
-            } else if (testFile.getName().equals(TEST_PROPERTIES)) {
-              // skip
-            } else {
-              inputFilesBuilder.add(testFile.getAbsolutePath());
-            }
-          }
-          builder.filePaths(inputFilesBuilder.build());
-          builder.remapFile(remapFile);
-
-          // TODO ensure testSet has at least two input files
-
-          ValidationTestFileSet testSet = builder.build();
-
-          addTestSetToTable(testSets, testSet);
-        }
-      }
-    }
-
-    return testSets;
-  }
-
   private static void addTestSetToTable(
       Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets,
       ValidationTestFileSet testSet) {
@@ -570,25 +570,23 @@ public class ValidationTesting {
       try (FileInputStream fis = new FileInputStream(testPropertiesFile)) {
         props.load(fis);
       } catch (Exception e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
+        throw new IllegalStateException(
+            "Unable to load test properties file: " + testPropertiesFile.getAbsolutePath(), e);
       }
     }
     String cwdStr = props.getProperty(CWD_PROP);
     String relStr = props.getProperty(REL);
 
-    // TODO check that properties are valid
-
     CommonWellDocumented.SOURCE cwdSource = null;
     try {
       cwdSource = CommonWellDocumented.SOURCE.valueOf(cwdStr);
     } catch (Exception e) {
-      // TODO not a valid CWD Source, respond appropriately
-      e.printStackTrace();
+      // not a valid CWD Source
+      throw new IllegalStateException("Invalid CWD Source property value: " + cwdStr, e);
     }
     builder.cwdSource(cwdSource);
 
-    String relPath = VALIDATION_DIRECTORY + REL + "/" + relStr;
+    String relPath = REL_DIRECTORY + relStr;
     builder.relDnaSerFile(relPath);
 
     // TODO currently saving only one run date & result
@@ -602,8 +600,8 @@ public class ValidationTesting {
       try {
         lastRunDate = DATE_FORMAT.parse(lastRunStr);
       } catch (ParseException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
+        // not a valid date
+        throw new IllegalStateException("Invalid last run date property value: " + lastRunStr, e);
       }
     }
     builder.lastRunDate(lastRunDate);
@@ -614,24 +612,18 @@ public class ValidationTesting {
 
   }
 
-  public static Map<ValidationTestFileSet, Boolean> deleteTests(
-      List<ValidationTestFileSet> toRemove) {
-    Map<ValidationTestFileSet, Boolean> success = new HashMap<>();
-    for (ValidationTestFileSet testSet : toRemove) {
-      boolean successDel = true;
-      String dir = VALIDATION_DIRECTORY + safeFilename(testSet.id.get()) + "/";
+  private static boolean deleteTestDirectory(String dir) {
+    boolean successDel = true;
+    try {
+      FileUtils.deleteDirectory(new File(dir));
+    } catch (IOException | IllegalArgumentException e) {
       try {
         FileUtils.deleteDirectory(new File(dir));
-      } catch (IOException | IllegalArgumentException e) {
-        try {
-          FileUtils.deleteDirectory(new File(dir));
-        } catch (IOException | IllegalArgumentException e1) {
-          successDel = false;
-        }
+      } catch (IOException | IllegalArgumentException e1) {
+        successDel = false;
       }
-      success.put(testSet, successDel);
     }
-    return success;
+    return successDel;
   }
 
 }

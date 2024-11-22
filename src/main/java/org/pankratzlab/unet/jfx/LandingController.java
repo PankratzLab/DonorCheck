@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
@@ -45,9 +46,7 @@ import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
-import org.pankratzlab.unet.validation.ValidationTesting.TestRun;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -70,11 +69,12 @@ import javafx.stage.Window;
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
 public class LandingController {
 
+  static final String DONORCHECK_VERSION = "DONORCHECK_VERSION";
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String MACUI_ENTRY = "/MACUIConversionPanel.fxml";
 
   private static final String INPUT_STEP = "/FileInput.fxml";
-  private static final String RESULTS_STEP = "/ValidationResults.fxml";
+  static final String RESULTS_STEP = "/ValidationResults.fxml";
   private static final String TESTING_MGMT = "/ValidationTestMgmt.fxml";
 
   @FXML
@@ -131,15 +131,18 @@ public class LandingController {
         try {
           testData = manageValidationTask.get();
         } catch (Exception e1) {
-          // TODO Auto-generated catch block
           e1.printStackTrace();
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
+              ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
           return;
         }
         ValidationTestMgmtController controller = new ValidationTestMgmtController();
 
         FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
         loader.setController(controller);
-
 
         Scene newScene;
         try {
@@ -153,8 +156,12 @@ public class LandingController {
           controller.setTable(testData);
           inputStage.showAndWait();
         } catch (IOException e1) {
-          // TODO Auto-generated catch block
           e1.printStackTrace();
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
+              ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
         }
       });
     };
@@ -167,28 +174,42 @@ public class LandingController {
 
   @FXML
   void runTesting(ActionEvent event) {
-    Task<ImmutableMap<ValidationTestFileSet, TestRun>> runValidationTask =
-        JFXUtilHelper.createProgressTask(() -> {
-          Table<SOURCE, String, List<ValidationTestFileSet>> tests =
-              ValidationTesting.loadValidationDirectory();
+    Task<List<ValidationTestFileSet>> loadTestsTask = JFXUtilHelper.createProgressTask(() -> {
+      Table<SOURCE, String, List<ValidationTestFileSet>> tests =
+          ValidationTesting.loadValidationDirectory();
 
-          List<ValidationTestFileSet> allTests = new ArrayList<>();
-          for (String relFile : tests.columnKeySet()) {
-            for (SOURCE cwd : tests.column(relFile).keySet()) {
-              allTests.addAll(tests.get(cwd, relFile));
-            }
-          }
+      List<ValidationTestFileSet> allTests = new ArrayList<>();
+      for (String relFile : tests.columnKeySet()) {
+        for (SOURCE cwd : tests.column(relFile).keySet()) {
+          allTests.addAll(tests.get(cwd, relFile));
+        }
+      }
 
-          return ValidationTesting.runTests(allTests);
-        });
+      allTests = ValidationTesting.sortTests(allTests);
+
+      return allTests;
+    });
 
     EventHandler<WorkerStateEvent> doValidation = e -> {
-      // TODO do something with results
+      List<ValidationTestFileSet> allTests;
+      try {
+        allTests = loadTestsTask.get();
+      } catch (InterruptedException | ExecutionException e1) {
+        e1.printStackTrace();
+        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
+            ButtonType.CLOSE);
+        alert1.setTitle("Error");
+        alert1.setHeaderText("");
+        alert1.showAndWait();
+        return;
+      }
+
+      ValidationTesting.runTests(allTests);
     };
 
-    runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
+    loadTestsTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
-    new Thread(runValidationTask).start();
+    new Thread(loadTestsTask).start();
   }
 
   @FXML
@@ -290,8 +311,8 @@ public class LandingController {
    * @param controller Controller instance to attach to this page
    * @throws IOException If errors during FXML reading
    */
-  private void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML,
-      Object controller) throws IOException {
+  public static void makePage(List<WizardPane> pages, @Nullable ValidationTable table,
+      String pageFXML, Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems
@@ -323,6 +344,7 @@ public class LandingController {
       e.printStackTrace();
     }
 
+    System.setProperty(DONORCHECK_VERSION, version);
     System.setProperty(CurrentDirectoryProvider.BASE_DIR_PROP_NAME, UNET_BASE_DIR_PROP);
   }
 }

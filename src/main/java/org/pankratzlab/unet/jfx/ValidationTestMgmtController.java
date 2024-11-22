@@ -1,6 +1,9 @@
 package org.pankratzlab.unet.jfx;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -8,14 +11,25 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.controlsfx.dialog.Wizard;
+import org.controlsfx.dialog.Wizard.LinearFlow;
+import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
+import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
+import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
+import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
+import org.pankratzlab.unet.model.ValidationModelBuilder;
+import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
+import org.pankratzlab.unet.validation.XMLRemapProcessor;
+import com.google.common.base.Strings;
 import com.google.common.collect.Table;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -35,6 +49,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Callback;
 
 public class ValidationTestMgmtController {
@@ -77,6 +92,9 @@ public class ValidationTestMgmtController {
 
   @FXML
   Button runAllButton;
+
+  @FXML
+  Button openTestButton;
 
   @FXML
   void initialize() {
@@ -145,6 +163,28 @@ public class ValidationTestMgmtController {
           }
         });
 
+
+    testFileTypesColumn.setCellFactory(
+        new Callback<TableColumn<ValidationTestFileSet, ObservableSet<SourceType>>, TableCell<ValidationTestFileSet, ObservableSet<SourceType>>>() {
+
+          @Override
+          public TableCell<ValidationTestFileSet, ObservableSet<SourceType>> call(
+              TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> param) {
+            return new TableCell<ValidationTestFileSet, ObservableSet<SourceType>>() {
+              @Override
+              protected void updateItem(ObservableSet<SourceType> value, boolean empty) {
+                super.updateItem(value, empty);
+                if (value == null) {
+                  setText(null);
+                } else {
+                  setText(value.stream().sorted().map(SourceType::name)
+                      .collect(Collectors.joining(", ")));
+                }
+              }
+            };
+          }
+        });
+
     ciwdVersionColumn.setCellValueFactory(
         new Callback<CellDataFeatures<ValidationTestFileSet, CommonWellDocumented.SOURCE>, ObservableValue<CommonWellDocumented.SOURCE>>() {
           public ObservableValue<CommonWellDocumented.SOURCE> call(
@@ -171,6 +211,10 @@ public class ValidationTestMgmtController {
     runAllButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
       return testTable.getItems().isEmpty();
     }, testTable.itemsProperty()));
+
+    openTestButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+      return testTable.getSelectionModel().getSelectedIndices().size() != 1;
+    }, testTable.getSelectionModel().selectedIndexProperty()));
 
   }
 
@@ -237,27 +281,120 @@ public class ValidationTestMgmtController {
     runTasks(testTable.getItems());
   }
 
-  private void runTasks(List<ValidationTestFileSet> tests) {
-    // run on background thread
+  @FXML
+  void openSelectedTest() {
+    final ValidationTestFileSet selectedItem = testTable.getSelectionModel().getSelectedItem();
 
-    List<ValidationTestFileSet> sorted = ValidationTesting.sortTests(tests);
+    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
+      HaplotypeFrequencies.successfullyInitialized();
+    });
+    EventHandler<WorkerStateEvent> doValidation = (w) -> {
 
-    List<Runnable> tasks = sorted.stream().map(t -> new Runnable() {
-      @Override
-      public void run() {
-        ValidationTesting.runTest(t);
-      }
-    }).collect(Collectors.toList());
+      // Don't actually run this as an event, though - make it a runnable on the JFX App thread
+      Platform.runLater(() -> {
+        if (!HaplotypeFrequencies.successfullyInitialized()) {
+          Alert alert = new Alert(AlertType.INFORMATION,
+              "Haplotype Frequency Tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
+                  + "Would you like to set these tables now?\n\n"
+                  + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+              ButtonType.YES, ButtonType.NO);
+          alert.setTitle("No haplotype frequencies");
+          alert.setHeaderText("");
+          alert.showAndWait().filter(response -> response == ButtonType.YES)
+              .ifPresent(response -> TutorialHelper.chooseFreqTables(null));
+        } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
+          Alert alert =
+              new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
+          alert.setTitle("Missing Haplotype Table(s)");
+          alert.setHeaderText("");
+          alert.showAndWait();
+        }
 
-    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(tasks);
+        SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
+        String currentRel = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
 
-    EventHandler<WorkerStateEvent> showResults = e -> {
-      // TODO do something with results
+        SOURCE source = selectedItem.cwdSource.get();
+        String rel = selectedItem.relDnaSerFile.get();
+        boolean changedCWID = false;
+        boolean changedRel = false;
+
+        if (current != source || !CommonWellDocumented.isLoaded()) {
+          CommonWellDocumented.loadCIWDVersion(source);
+          changedCWID = true;
+        }
+        if (!new File(currentRel).equals(new File(rel))) {
+          HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
+          AntigenDictionary.clearCache();
+          changedRel = true;
+        }
+
+        ValidationTable table = new ValidationTable();
+
+        List<WizardPane> pages = new ArrayList<>();
+
+        String f1 = selectedItem.filePaths.get().get(0);
+        String f2 = selectedItem.filePaths.get().get(1);
+        ValidationModelBuilder builder1 = new ValidationModelBuilder();
+        ValidationModelBuilder builder2 = new ValidationModelBuilder();
+        SourceType.parseFile(builder1, new File(f1));
+        SourceType.parseFile(builder2, new File(f2));
+        builder1.validate(false);
+        builder2.validate(false);
+        if (selectedItem.remapFile != null && selectedItem.remapFile.get() != null
+            && new File(selectedItem.remapFile.get()).exists()) {
+          XMLRemapProcessor processor = new XMLRemapProcessor(selectedItem.remapFile.get());
+          if (builder1.hasCorrections() && processor.hasRemappings(builder1.getSourceType())) {
+            builder1.processCorrections(processor);
+          }
+          if (builder2.hasCorrections() && processor.hasRemappings(builder2.getSourceType())) {
+            builder2.processCorrections(processor);
+          }
+        }
+
+        try {
+          LandingController.makePage(pages, table, LandingController.RESULTS_STEP,
+              new ValidationResultsController());
+          Wizard.Flow pageFlow = new LinearFlow(pages);
+
+          pages.get(0).getButtonTypes();
+
+          Stage stage = new Stage();
+          final Window window = stage.getOwner();
+          Wizard validationWizard = new Wizard(window);
+          final String string = System.getProperty(LandingController.DONORCHECK_VERSION, "");
+          validationWizard.setTitle("DonorCheck " + string);
+          validationWizard.setFlow(pageFlow);
+
+          table.setFirstModel(builder1.build());
+          table.setSecondModel(builder2.build());
+
+          // show wizard and wait for response
+          validationWizard.showAndWait();
+
+          if (changedCWID) {
+            CommonWellDocumented.loadCIWDVersion(current);
+          }
+          if (changedRel) {
+            HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
+            AntigenDictionary.clearCache();
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e.getMessage(),
+              ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
+        }
+      });
     };
-
-    runValidationTask.addEventHandler(WorkerStateEvent.ANY, showResults);
+    runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
     new Thread(runValidationTask).start();
+  }
+
+  private void runTasks(List<ValidationTestFileSet> tests) {
+    ValidationTesting.runTests(tests);
   }
 
 
