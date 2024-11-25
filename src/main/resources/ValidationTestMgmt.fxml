@@ -40,6 +40,7 @@
 						<TableColumn id="testIdColumn" fx:id="testIDColumn" editable="false" minWidth="30.0" prefWidth="75.0" text="Test ID" />
 						<TableColumn id="lastRunColumn" fx:id="lastRunColumn" editable="false" minWidth="30.0" prefWidth="125.0" text="Last Run" />
 						<TableColumn id="passingStatusColumn" fx:id="passingStatusColumn" editable="false" minWidth="30.0" prefWidth="65.0" text="Passed?" />
+						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="30.0" prefWidth="65.0" text="Result" />
 						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="150.0" text="Test File Types" />
                   <TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" prefWidth="100.0" text="CIWD Version" />
                   <TableColumn id="relDnaSerVersion" fx:id="relDnaSerVersion" prefWidth="125.0" text="Serotype Version" />

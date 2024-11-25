@@ -6,9 +6,10 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.StandardCopyOption;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -53,12 +55,12 @@ import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextArea;
 
 public class ValidationTesting {
 
   private static final String REMAP_XML = "remap.xml";
   private static final String TEST_PROPERTIES = "test.properties";
+  private static final String TEST_LOG = "test.log";
 
   public static final String REL_DIRECTORY = Info.HLA_HOME + "rel_dna_ser_files/";
   public static final String VALIDATION_DIRECTORY = Info.HLA_HOME + "validation/";
@@ -83,31 +85,31 @@ public class ValidationTesting {
     // means that we know the test set has exactly two files, and therefore
     // we don't have to check that the ID's match (if they don't match, the result
     // will be a failure)
-  
+
     File valDir = new File(VALIDATION_DIRECTORY);
     if (!valDir.exists()) {
       valDir.mkdir();
     }
-  
+
     String reldir = REL_DIRECTORY;
     String subdir = VALIDATION_DIRECTORY + safeFilename(file1.label) + "/";
-  
+
     final File testDir = new File(subdir);
-  
+
     // first check if test already exists
     if (testDir.exists()) {
       AlertHelper.showMessage_TestAlreadyExists(file1, subdir);
       return false;
     }
-  
+
     // show dialog with warning about avoiding PII
     Optional<ButtonType> selVal = AlertHelper.showMessage_PII();
     if (selVal.isPresent() && selVal.get() == ButtonType.CANCEL) {
       return false;
     }
-  
+
     testDir.mkdirs();
-  
+
     try {
       Files.copy(new File(file1.file), new File(subdir + new File(file1.file).getName()));
     } catch (Exception e) {
@@ -117,7 +119,7 @@ public class ValidationTesting {
       deleteTestDirectory(subdir);
       return false;
     }
-  
+
     try {
       Files.copy(new File(file2.file), new File(subdir + new File(file2.file).getName()));
     } catch (Exception e) {
@@ -127,12 +129,12 @@ public class ValidationTesting {
       deleteTestDirectory(subdir);
       return false;
     }
-  
+
     File relDirFile = new File(reldir);
     if (!relDirFile.exists()) {
       relDirFile.mkdir();
     }
-  
+
     String relDnaSerFile = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
     String newRelFileName;
     String newRelDnaSerFile;
@@ -140,14 +142,14 @@ public class ValidationTesting {
       File file = new File(relDnaSerFile);
       String fileName = file.getName();
       String version = AntigenDictionary.getVersion(file.getAbsolutePath()).trim();
-  
+
       newRelFileName = version + "_" + fileName;
-  
+
       // make sure new filename is filename-safe
       newRelFileName = safeFilename(newRelFileName);
-  
+
       newRelDnaSerFile = reldir + newRelFileName;
-  
+
       // copy file to testDir
       File newRelFile = new File(newRelDnaSerFile);
       if (!newRelFile.exists()) {
@@ -161,23 +163,23 @@ public class ValidationTesting {
           return false;
         }
       }
-  
+
     } else {
       String fileName = AntigenDictionary.MASTER_MAP_RECORDS;
       String bundledVersion = AntigenDictionary.getBundledVersion();
-  
+
       newRelFileName = bundledVersion + "_" + fileName;
       // make sure new filename is platform-safe
       newRelFileName = safeFilename(newRelFileName);
-  
+
       newRelDnaSerFile = reldir + newRelFileName;
-  
+
       // Copy internal file to testDir
       File newRelFile = new File(reldir + newRelFileName);
       if (!newRelFile.exists()) {
         try (InputStream is = AntigenDictionary.class.getClassLoader()
             .getResourceAsStream(AntigenDictionary.MASTER_MAP_RECORDS)) {
-          java.nio.file.Files.copy(is, newRelFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+          java.nio.file.Files.copy(is, newRelFile.toPath());
         } catch (Exception e) {
           AlertHelper.showMessage_ErrorCopyingRelFile(newRelFileName);
           e.printStackTrace();
@@ -187,24 +189,24 @@ public class ValidationTesting {
         }
       }
     }
-  
+
     if (!file1.remappings.isEmpty() || !file2.remappings.isEmpty()) {
-  
+
       Document doc = Jsoup.parse("", "", Parser.xmlParser());
       // Set the output settings to XML syntax
       doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
-  
+
       // Create the root element <remappings>
       Element remappings = doc.appendElement("remappings");
-  
+
       if (!file1.remappings.isEmpty()) {
         addXMLInfo(remappings, file1);
       }
-  
+
       if (!file2.remappings.isEmpty()) {
         addXMLInfo(remappings, file2);
       }
-  
+
       // create remapping file
       try (FileWriter writer = new FileWriter(subdir + REMAP_XML)) {
         writer.write(doc.outerHtml());
@@ -216,7 +218,7 @@ public class ValidationTesting {
         return false;
       }
     }
-  
+
     // write test properties file containing CWD type and rel_dna_ser filename
     Properties props = new Properties();
     props.setProperty(CWD_PROP, CommonWellDocumented.loadPropertyCWDSource().name());
@@ -230,13 +232,13 @@ public class ValidationTesting {
       deleteTestDirectory(subdir);
       return false;
     }
-  
+
     return true;
   }
 
   public static void runTests(List<ValidationTestFileSet> tests) {
     List<ValidationTestFileSet> sorted = ValidationTesting.sortTests(tests);
-  
+
     Set<ValidationTestFileSet> successfulTests = Collections.synchronizedSet(new HashSet<>());
     Set<ValidationTestFileSet> failedTests = Collections.synchronizedSet(new HashSet<>());
     Map<ValidationTestFileSet, Exception> exceptionTests = new ConcurrentHashMap<>();
@@ -255,9 +257,9 @@ public class ValidationTesting {
         }
       }
     }).collect(Collectors.toList());
-  
+
     Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(tasks);
-  
+
     EventHandler<WorkerStateEvent> showResults = e -> {
       Alert alert1 = new Alert(AlertType.INFORMATION,
           "Test Results:\n\nPassing: " + successfulTests.size() + "\n\nFailing: "
@@ -268,10 +270,10 @@ public class ValidationTesting {
       alert1.setHeaderText("");
       alert1.showAndWait();
     };
-  
+
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, showResults);
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, showResults);
-  
+
     new Thread(runValidationTask).start();
   }
 
@@ -295,28 +297,51 @@ public class ValidationTesting {
         }
         props.getProperty(REL, relName);
       }
-  
-      entry.getKey().lastRunDate.set(entry.getValue().runTime);
-      props.setProperty(LAST_RUN_PROP, DATE_FORMAT.format(entry.getValue().runTime));
-  
-      entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
-      props.setProperty(LAST_RESULT_PROP, Boolean.toString(entry.getValue().result.isPassing));
-  
+
       try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
         props.store(fos, null);
       } catch (Exception e) {
         // TODO handle exceptions appropriately;
-        // notify user of inability to copy bundled rel_dna_ser file, and cleanup appropriately
+        // notify user of inability to write properties file, and cleanup appropriately
+        e.printStackTrace();
+      }
+
+      entry.getKey().lastRunDate.set(entry.getValue().runTime);
+      entry.getKey().lastTestResult.set(entry.getValue().result);
+      entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
+
+      String logStr =
+          DATE_FORMAT.format(entry.getValue().runTime) + "\t" + entry.getValue().result.isPassing
+              + "\t" + entry.getValue().result.name() + System.lineSeparator();
+
+      try {
+        java.nio.file.Files.writeString(Path.of(subdir, TEST_LOG), logStr,
+            StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+      } catch (IOException e) {
+        // TODO handle exceptions appropriately;
+        // notify user of inability to write properties file, and cleanup appropriately
         e.printStackTrace();
       }
     }
-  
+
   }
 
-  public static Table<SOURCE, String, List<ValidationTestFileSet>> loadValidationDirectory() {
+  public static class TestLoadingResults {
+    public final Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets;
+    public final List<String> invalidTests;
+
+    public TestLoadingResults(Table<SOURCE, String, List<ValidationTestFileSet>> testSets,
+        List<String> invalidTests) {
+      this.testSets = testSets;
+      this.invalidTests = invalidTests;
+    }
+
+  }
+
+  public static TestLoadingResults loadValidationDirectory() {
     Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets =
         HashBasedTable.create();
-  
+
     List<String> invalidTests = new ArrayList<>();
     File dir = new File(VALIDATION_DIRECTORY);
     if (dir.exists() && dir.isDirectory()) {
@@ -324,18 +349,19 @@ public class ValidationTesting {
       // Each individual should be tested individually
       for (File individualFile : dir.listFiles()) {
         if (individualFile.isDirectory()) {
-  
+
           ValidationTestFileSetBuilder builder = ValidationTestFileSet.builder();
           builder.id(individualFile.getName());
-  
+
           try {
             loadTestMetadata(individualFile, builder);
+            loadTestLastRunLog(individualFile, builder);
           } catch (IllegalStateException e) {
             // catch exceptions and handle them appropriately (skip loading test, but report)
             invalidTests.add(individualFile.getName());
             continue;
           }
-  
+
           String remapFile = null;
           Builder<String> inputFilesBuilder = ImmutableList.builder();
           for (File testFile : individualFile.listFiles()) {
@@ -343,45 +369,27 @@ public class ValidationTesting {
               remapFile = testFile.getAbsolutePath();
             } else if (testFile.getName().equals(TEST_PROPERTIES)) {
               // skip
+            } else if (testFile.getName().equals(TEST_LOG)) {
+              // skip
             } else {
               inputFilesBuilder.add(testFile.getAbsolutePath());
             }
           }
           builder.filePaths(inputFilesBuilder.build());
           builder.remapFile(remapFile);
-  
+
           // Tests can only be added from the validation results screen, which
           // means that we know the test set has exactly two files, and therefore
           // we don't have to check the number of files present
-  
+
           ValidationTestFileSet testSet = builder.build();
-  
+
           addTestSetToTable(testSets, testSet);
         }
       }
     }
-  
-    if (invalidTests.size() > 0) {
-      Alert alert1 = new Alert(AlertType.ERROR);
-      alert1.getButtonTypes().add(ButtonType.CLOSE);
-  
-      String content = "Please remove the listed tests manually from this directory: \n\n"
-          + VALIDATION_DIRECTORY + "\n";
-      for (String invalidTest : invalidTests) {
-        content += "\n" + invalidTest;
-      }
-      TextArea textArea = new TextArea(content);
-      textArea.setEditable(false);
-      textArea.setWrapText(true);
-  
-      alert1.setTitle("Error Loading Tests");
-      alert1.setHeaderText("Failed to Load " + invalidTests.size() + " Tests");
-      alert1.getDialogPane().setContent(textArea);
-      alert1.setResizable(true);
-      alert1.showAndWait();
-    }
-  
-    return testSets;
+
+    return new TestLoadingResults(testSets, invalidTests);
   }
 
   public static Map<ValidationTestFileSet, Boolean> deleteTests(
@@ -433,6 +441,10 @@ public class ValidationTesting {
   private static TEST_RESULT runTestInternal(ValidationTestFileSet test) {
     List<ValidationModelBuilder> modelBuilders = new ArrayList<>();
     XMLRemapProcessor remapProcessor = null;
+
+    if (test.filePaths.size() == 1) {
+      return TEST_RESULT.NOT_ENOUGH_TEST_FILES;
+    }
 
     for (String filePath : test.filePaths) {
       ValidationModelBuilder builder = new ValidationModelBuilder();
@@ -588,28 +600,37 @@ public class ValidationTesting {
 
     String relPath = REL_DIRECTORY + relStr;
     builder.relDnaSerFile(relPath);
+  }
 
-    // TODO currently saving only one run date & result
-    // TODO store results for multiple runs in a new file
-    String lastRunStr = props.getProperty(LAST_RUN_PROP);
-    String lastPassingStr = props.getProperty(LAST_RESULT_PROP);
+  private static void loadTestLastRunLog(File individualFile,
+      ValidationTestFileSetBuilder builder) {
+    File file = new File(individualFile, TEST_LOG);
+    if (!file.exists())
+      return;
+    try (ReversedLinesFileReader reader =
+        new ReversedLinesFileReader(file, Charset.defaultCharset())) {
+      String lastRunLog = reader.readLine();
+      String[] parts = lastRunLog.split("\t");
 
-    // load last run date
-    Date lastRunDate = null;
-    if (lastRunStr != null) {
+      Date lastRunDate = DATE_FORMAT.parse(parts[0]);
+      Boolean lastPassingState = Boolean.parseBoolean(parts[1]);
+      String lastPassingResultStr = parts[2];
+      TEST_RESULT lastPassingResult = null;
       try {
-        lastRunDate = DATE_FORMAT.parse(lastRunStr);
-      } catch (ParseException e) {
-        // not a valid date
-        throw new IllegalStateException("Invalid last run date property value: " + lastRunStr, e);
+        lastPassingResult = TEST_RESULT.valueOf(lastPassingResultStr);
+      } catch (Exception e) {
+        // ignore missing test result
       }
+
+      builder.lastRunDate(lastRunDate);
+      builder.lastPassingState(lastPassingState);
+      if (lastPassingResult != null) {
+        builder.lastPassingResult(lastPassingResult);
+      }
+
+    } catch (Exception e) {
+      throw new IllegalStateException("Invalid log: " + individualFile.getAbsolutePath(), e);
     }
-    builder.lastRunDate(lastRunDate);
-
-    // load last passing state
-    Boolean lastPassingState = lastPassingStr == null ? null : Boolean.parseBoolean(lastPassingStr);
-    builder.lastPassingState(lastPassingState);
-
   }
 
   private static boolean deleteTestDirectory(String dir) {

@@ -46,6 +46,7 @@ import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
+import org.pankratzlab.unet.validation.ValidationTesting.TestLoadingResults;
 import com.google.common.base.Strings;
 import com.google.common.collect.Table;
 import javafx.application.Platform;
@@ -61,6 +62,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -119,17 +121,28 @@ public class LandingController {
 
   @FXML
   void manageTestingFiles(ActionEvent event) {
-    Task<Table<SOURCE, String, List<ValidationTestFileSet>>> manageValidationTask =
-        JFXUtilHelper.createProgressTask(() -> {
-          // first, load the test data
-          return ValidationTesting.loadValidationDirectory();
-        });
+    Task<TestLoadingResults> manageValidationTask = JFXUtilHelper.createProgressTask(() -> {
+      // first, load the test data
+      try {
+        TestLoadingResults validationDirectory = ValidationTesting.loadValidationDirectory();
+
+        return validationDirectory;
+      } catch (Exception e1) {
+        e1.printStackTrace();
+        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
+            ButtonType.CLOSE);
+        alert1.setTitle("Error");
+        alert1.setHeaderText("");
+        alert1.showAndWait();
+        throw new IllegalStateException("Error loading test data: " + e1.getMessage());
+      }
+    });
 
     EventHandler<WorkerStateEvent> doValidation = e -> {
       Platform.runLater(() -> {
-        Table<SOURCE, String, List<ValidationTestFileSet>> testData;
+        TestLoadingResults testLoad;
         try {
-          testData = manageValidationTask.get();
+          testLoad = manageValidationTask.get();
         } catch (Exception e1) {
           e1.printStackTrace();
           Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
@@ -139,6 +152,29 @@ public class LandingController {
           alert1.showAndWait();
           return;
         }
+
+        if (testLoad.invalidTests.size() > 0) {
+          Alert alert1 = new Alert(AlertType.ERROR);
+          alert1.getButtonTypes().add(ButtonType.CLOSE);
+
+          String content = "Please remove the listed tests manually from this directory: \n\n"
+              + ValidationTesting.VALIDATION_DIRECTORY + "\n";
+          for (String invalidTest : testLoad.invalidTests) {
+            content += "\n" + invalidTest;
+          }
+          TextArea textArea = new TextArea(content);
+          textArea.setEditable(false);
+          textArea.setWrapText(true);
+
+          alert1.setTitle("Error Loading Tests");
+          alert1.setHeaderText("Failed to Load " + testLoad.invalidTests.size() + " Tests");
+          alert1.getDialogPane().setContent(textArea);
+          alert1.setResizable(true);
+          alert1.showAndWait();
+        }
+
+        Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
+
         ValidationTestMgmtController controller = new ValidationTestMgmtController();
 
         FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
@@ -175,13 +211,12 @@ public class LandingController {
   @FXML
   void runTesting(ActionEvent event) {
     Task<List<ValidationTestFileSet>> loadTestsTask = JFXUtilHelper.createProgressTask(() -> {
-      Table<SOURCE, String, List<ValidationTestFileSet>> tests =
-          ValidationTesting.loadValidationDirectory();
+      TestLoadingResults tests = ValidationTesting.loadValidationDirectory();
 
       List<ValidationTestFileSet> allTests = new ArrayList<>();
-      for (String relFile : tests.columnKeySet()) {
-        for (SOURCE cwd : tests.column(relFile).keySet()) {
-          allTests.addAll(tests.get(cwd, relFile));
+      for (String relFile : tests.testSets.columnKeySet()) {
+        for (SOURCE cwd : tests.testSets.column(relFile).keySet()) {
+          allTests.addAll(tests.testSets.get(cwd, relFile));
         }
       }
 

@@ -24,6 +24,7 @@ import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.validation.TEST_RESULT;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
 import org.pankratzlab.unet.validation.XMLRemapProcessor;
@@ -71,6 +72,9 @@ public class ValidationTestMgmtController {
 
   @FXML
   TableColumn<ValidationTestFileSet, Boolean> passingStatusColumn;
+
+  @FXML
+  TableColumn<ValidationTestFileSet, TEST_RESULT> lastRunResultColumn;
 
   @FXML
   TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> testFileTypesColumn;
@@ -149,6 +153,36 @@ public class ValidationTestMgmtController {
                 } else {
                   setText(value ? "Passing" : "Failing");
                   setStyle("-fx-background-color: " + (value ? "LimeGreen" : "OrangeRed"));
+                }
+              }
+            };
+          }
+        });
+
+    lastRunResultColumn.setCellValueFactory(
+        new Callback<CellDataFeatures<ValidationTestFileSet, TEST_RESULT>, ObservableValue<TEST_RESULT>>() {
+          public ObservableValue<TEST_RESULT> call(
+              CellDataFeatures<ValidationTestFileSet, TEST_RESULT> p) {
+            return p.getValue().lastTestResult;
+          }
+        });
+
+    lastRunResultColumn.setCellFactory(
+        new Callback<TableColumn<ValidationTestFileSet, TEST_RESULT>, TableCell<ValidationTestFileSet, TEST_RESULT>>() {
+
+          @Override
+          public TableCell<ValidationTestFileSet, TEST_RESULT> call(
+              TableColumn<ValidationTestFileSet, TEST_RESULT> param) {
+            return new TableCell<ValidationTestFileSet, TEST_RESULT>() {
+              @Override
+              protected void updateItem(TEST_RESULT value, boolean empty) {
+                super.updateItem(value, empty);
+                if (value == null) {
+                  setText(null);
+                } else {
+                  String v = value.name().replace('_', ' ').toLowerCase();
+                  v = v.substring(0, 1).toUpperCase() + v.substring(1);
+                  setText(v);
                 }
               }
             };
