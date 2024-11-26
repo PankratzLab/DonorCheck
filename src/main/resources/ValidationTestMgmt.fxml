@@ -31,19 +31,20 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="400.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+<VBox prefHeight="400.0" prefWidth="915.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
 	<children>
 		<ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
 			<content>
 				<TableView fx:id="testTable" prefHeight="200.0" prefWidth="200.0">
 					<columns>
-						<TableColumn id="testIdColumn" fx:id="testIDColumn" editable="false" minWidth="30.0" prefWidth="75.0" text="Test ID" />
-						<TableColumn id="lastRunColumn" fx:id="lastRunColumn" editable="false" minWidth="30.0" prefWidth="125.0" text="Last Run" />
+						<TableColumn id="testIdColumn" fx:id="testIDColumn" editable="true" minWidth="30.0" prefWidth="75.0" text="Test ID" />
+						<TableColumn id="testCommentColumn" fx:id="testCommentColumn" editable="true" minWidth="30.0" prefWidth="150.0" text="Comment" />
+						<TableColumn id="lastRunColumn" fx:id="lastRunColumn" editable="false" minWidth="30.0" prefWidth="185.0" text="Last Run" />
 						<TableColumn id="passingStatusColumn" fx:id="passingStatusColumn" editable="false" minWidth="30.0" prefWidth="65.0" text="Passed?" />
-						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="30.0" prefWidth="65.0" text="Result" />
-						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="150.0" text="Test File Types" />
-                  <TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" prefWidth="100.0" text="CIWD Version" />
-                  <TableColumn id="relDnaSerVersion" fx:id="relDnaSerVersion" prefWidth="125.0" text="Serotype Version" />
+						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="30.0" prefWidth="75.0" text="Result" />
+						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="140.0" text="Test File Types" />
+                  		<TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" prefWidth="100.0" text="CIWD Version" />
+                  		<TableColumn id="relDnaSerVersion" fx:id="relDnaSerVersion" prefWidth="125.0" text="Serotype Version" />
 					</columns>
 				</TableView>
 			</content>

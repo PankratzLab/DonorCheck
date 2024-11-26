@@ -7,6 +7,25 @@ import javafx.scene.control.ButtonType;
 
 public final class AlertHelper {
 
+  public static void showMessage_ErrorUpdatingTestProperties(ValidationTestFileSet rowValue,
+      Throwable cause) {
+    Alert alert1 = new Alert(AlertType.ERROR, "Error - unable to update test properties for test "
+        + rowValue.id.get() + ". An exception occurred:\n" + cause.getMessage(), ButtonType.CLOSE);
+    alert1.setTitle("Failed to Update Test");
+    alert1.setHeaderText("");
+    alert1.showAndWait();
+  }
+
+  public static void showMessage_ErrorUpdatingTestID(String id, String newId, Throwable cause) {
+    Alert alert1 = new Alert(AlertType.ERROR,
+        "Error - unable to rename test from " + id + " to " + newId
+            + ". An exception occurred when moving the directory:\n" + cause.getMessage(),
+        ButtonType.CLOSE);
+    alert1.setTitle("Failed to Rename Test");
+    alert1.setHeaderText("");
+    alert1.showAndWait();
+  }
+
   static Optional<ButtonType> showMessage_PII() {
     Alert alert = new Alert(AlertType.WARNING,
         "Caution - DonorCheck will retain a copy of the current input files here:\n"
@@ -64,7 +83,6 @@ public final class AlertHelper {
   }
 
   static void showMessage_ErrorCopyingInputFile(TestInfo file, String subdir) {
-    // notify user, show directory path and cancel operation
     Alert alert1 = new Alert(AlertType.ERROR,
         "Error - could not copy input file to validation testing directory.\n\nFile: " + file.file
             + "\n\nDirectory: " + subdir,

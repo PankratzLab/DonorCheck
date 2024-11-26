@@ -24,6 +24,7 @@ import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.validation.AlertHelper;
 import org.pankratzlab.unet.validation.TEST_RESULT;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
@@ -49,6 +50,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Callback;
@@ -66,6 +68,9 @@ public class ValidationTestMgmtController {
 
   @FXML
   TableColumn<ValidationTestFileSet, String> testIDColumn;
+
+  @FXML
+  TableColumn<ValidationTestFileSet, String> testCommentColumn;
 
   @FXML
   TableColumn<ValidationTestFileSet, Date> lastRunColumn;
@@ -115,6 +120,7 @@ public class ValidationTestMgmtController {
     assert runAllButton != null : "fx:id=\"runAllButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
 
     testTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+    testTable.setEditable(true);
 
     testIDColumn.setCellValueFactory(
         new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
@@ -122,6 +128,43 @@ public class ValidationTestMgmtController {
             return p.getValue().id;
           }
         });
+
+    testIDColumn.setOnEditCommit(ev -> {
+      String oldId = ev.getOldValue();
+      ValidationTestFileSet oldTest = ev.getRowValue();
+      ValidationTestFileSet newTest;
+      try {
+        oldTest.id.set(ev.getNewValue());
+        newTest = ValidationTesting.updateTestID(oldId, oldTest);
+        testTable.itemsProperty().get().set(testTable.itemsProperty().get().indexOf(oldTest),
+            newTest);
+        testTable.refresh();
+      } catch (IllegalStateException e) {
+        AlertHelper.showMessage_ErrorUpdatingTestID(ev.getNewValue(), oldId, e.getCause());
+        testTable.refresh();
+      }
+    });
+
+    testIDColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+
+    testCommentColumn.setCellValueFactory(
+        new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
+          public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
+            return p.getValue().comment;
+          }
+        });
+
+    testCommentColumn.setOnEditCommit(ev -> {
+      try {
+        ev.getRowValue().comment.set(ev.getNewValue());
+        ValidationTesting.updateTestProperties(ev.getRowValue());
+      } catch (IllegalStateException e) {
+        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
+        testTable.refresh();
+      }
+    });
+
+    testCommentColumn.setCellFactory(TextFieldTableCell.forTableColumn());
 
     lastRunColumn.setCellValueFactory(
         new Callback<CellDataFeatures<ValidationTestFileSet, Date>, ObservableValue<Date>>() {

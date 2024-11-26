@@ -16,12 +16,16 @@ import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 
 public class ValidationTestFileSet {
 
-  public final ReadOnlyStringProperty id;
+  public final StringProperty id;
+
+  public final StringProperty comment;
 
   public final ReadOnlyListProperty<String> filePaths;
 
@@ -42,6 +46,7 @@ public class ValidationTestFileSet {
 
   public static class ValidationTestFileSetBuilder {
     private String id;
+    private String comment;
     private List<String> filePaths;
     private String remapFile;
     private CommonWellDocumented.SOURCE cwdSource;
@@ -52,6 +57,11 @@ public class ValidationTestFileSet {
 
     public ValidationTestFileSetBuilder id(String id) {
       this.id = id;
+      return this;
+    }
+
+    public ValidationTestFileSetBuilder comment(String comment) {
+      this.comment = comment;
       return this;
     }
 
@@ -91,7 +101,7 @@ public class ValidationTestFileSet {
     }
 
     public ValidationTestFileSet build() {
-      return new ValidationTestFileSet(id, filePaths, remapFile, cwdSource, relDnaSerFile,
+      return new ValidationTestFileSet(id, comment, filePaths, remapFile, cwdSource, relDnaSerFile,
           lastRunDate, lastPassingState, lastPassingResult);
     }
 
@@ -101,10 +111,11 @@ public class ValidationTestFileSet {
     return new ValidationTestFileSetBuilder();
   }
 
-  private ValidationTestFileSet(String id, List<String> filePaths, String remapFile,
+  private ValidationTestFileSet(String id, String comment, List<String> filePaths, String remapFile,
       CommonWellDocumented.SOURCE cwdSource, String relDnaSerFile, Date lastRunDate,
       Boolean lastPassingState, TEST_RESULT lastTestResult) {
-    this.id = new ReadOnlyStringWrapper(id);
+    this.id = new SimpleStringProperty(id);
+    this.comment = new SimpleStringProperty(comment);
     this.filePaths = new ReadOnlyListWrapper<>(FXCollections.observableList(filePaths));
     final ObservableSet<SourceType> observableSet =
         FXCollections.observableSet(filePaths.stream().map(s -> {

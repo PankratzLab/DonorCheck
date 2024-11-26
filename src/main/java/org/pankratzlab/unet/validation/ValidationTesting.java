@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -67,8 +68,7 @@ public class ValidationTesting {
 
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
-  private static final String LAST_RUN_PROP = "last_run";
-  private static final String LAST_RESULT_PROP = "last_result";
+  private static final String COMMENT_PROP = "comment";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
@@ -223,6 +223,7 @@ public class ValidationTesting {
     Properties props = new Properties();
     props.setProperty(CWD_PROP, CommonWellDocumented.loadPropertyCWDSource().name());
     props.setProperty(REL, newRelFileName);
+    props.setProperty(COMMENT_PROP, "");
     try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
       props.store(fos, null);
     } catch (Exception e) {
@@ -253,6 +254,7 @@ public class ValidationTesting {
             failedTests.add(t);
           }
         } catch (Exception e) {
+          e.printStackTrace();
           exceptionTests.put(t, e);
         }
       }
@@ -260,12 +262,17 @@ public class ValidationTesting {
 
     Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(tasks);
 
+
     EventHandler<WorkerStateEvent> showResults = e -> {
-      Alert alert1 = new Alert(AlertType.INFORMATION,
-          "Test Results:\n\nPassing: " + successfulTests.size() + "\n\nFailing: "
-              + failedTests.size() + "\n\nExceptions: " + exceptionTests.size()
-              + "\n\n(Please report any exceptions to the developers.)",
-          ButtonType.CLOSE);
+      String contentText = "Test Results:\n\nPassing: " + successfulTests.size() + "\n\nFailing: "
+          + failedTests.size() + "\n\nExceptions: " + exceptionTests.size()
+          + "\n\n(Please report any exceptions to the developers)";
+      if (!exceptionTests.isEmpty()) {
+        for (Exception e1 : exceptionTests.values()) {
+          contentText += "\n\n" + e1.getClass().getSimpleName() + ": " + e1.getMessage();
+        }
+      }
+      Alert alert1 = new Alert(AlertType.INFORMATION, contentText, ButtonType.CLOSE);
       alert1.setTitle("Test Results");
       alert1.setHeaderText("");
       alert1.showAndWait();
@@ -280,31 +287,6 @@ public class ValidationTesting {
   public static void updateTestResults(Map<ValidationTestFileSet, TestRun> newResults) {
     for (Entry<ValidationTestFileSet, TestRun> entry : newResults.entrySet()) {
       String subdir = VALIDATION_DIRECTORY + safeFilename(entry.getKey().id.get()) + "/";
-      File testPropertiesFile = new File(subdir + TEST_PROPERTIES);
-      Properties props = new Properties();
-      if (testPropertiesFile.exists()) {
-        try (FileInputStream fis = new FileInputStream(testPropertiesFile)) {
-          props.load(fis);
-        } catch (Exception e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-      } else {
-        props.setProperty(CWD_PROP, entry.getKey().cwdSource.get().name());
-        String relName = entry.getKey().relDnaSerFile.get();
-        if (relName.startsWith(REL_DIRECTORY)) {
-          relName = relName.substring(REL_DIRECTORY.length());
-        }
-        props.getProperty(REL, relName);
-      }
-
-      try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
-        props.store(fos, null);
-      } catch (Exception e) {
-        // TODO handle exceptions appropriately;
-        // notify user of inability to write properties file, and cleanup appropriately
-        e.printStackTrace();
-      }
 
       entry.getKey().lastRunDate.set(entry.getValue().runTime);
       entry.getKey().lastTestResult.set(entry.getValue().result);
@@ -326,16 +308,46 @@ public class ValidationTesting {
 
   }
 
-  public static class TestLoadingResults {
-    public final Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets;
-    public final List<String> invalidTests;
+  /**
+   * Will create a test.properties file if it doesn't exist and set the CWD and REL
+   * properties.<br />
+   * <br />
+   * These properties are otherwise unchanged!<br />
+   * <br />
+   * The *only* property that this method currently modifies is the COMMENT property.
+   * 
+   * @param test
+   */
+  public static void updateTestProperties(ValidationTestFileSet test) {
+    String subdir = VALIDATION_DIRECTORY + safeFilename(test.id.get()) + "/";
+    File testPropertiesFile = new File(subdir + TEST_PROPERTIES);
+    Properties props = new Properties();
 
-    public TestLoadingResults(Table<SOURCE, String, List<ValidationTestFileSet>> testSets,
-        List<String> invalidTests) {
-      this.testSets = testSets;
-      this.invalidTests = invalidTests;
+    if (testPropertiesFile.exists()) {
+      try (FileInputStream fis = new FileInputStream(testPropertiesFile)) {
+        props.load(fis);
+      } catch (Exception e) {
+        e.printStackTrace();
+        throw new IllegalStateException("Failed to load properties from " + testPropertiesFile);
+      }
+    } else {
+      props.setProperty(CWD_PROP, test.cwdSource.get().name());
+      String relName = test.relDnaSerFile.get();
+      if (relName.startsWith(REL_DIRECTORY)) {
+        relName = relName.substring(REL_DIRECTORY.length());
+      }
+      props.setProperty(REL, relName);
     }
 
+    String prevComment = Objects.toString(props.setProperty(COMMENT_PROP, test.comment.get()), "");
+
+    try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
+      props.store(fos, null);
+    } catch (Exception e) {
+      test.comment.set(prevComment);
+      e.printStackTrace();
+      throw new IllegalStateException("Failed to save properties from " + testPropertiesFile);
+    }
   }
 
   public static TestLoadingResults loadValidationDirectory() {
@@ -350,39 +362,14 @@ public class ValidationTesting {
       for (File individualFile : dir.listFiles()) {
         if (individualFile.isDirectory()) {
 
-          ValidationTestFileSetBuilder builder = ValidationTestFileSet.builder();
-          builder.id(individualFile.getName());
-
+          ValidationTestFileSet testSet;
           try {
-            loadTestMetadata(individualFile, builder);
-            loadTestLastRunLog(individualFile, builder);
+            testSet = loadIndividualTest(individualFile);
           } catch (IllegalStateException e) {
-            // catch exceptions and handle them appropriately (skip loading test, but report)
+            // catch exceptions and skip loading test, but will report later
             invalidTests.add(individualFile.getName());
             continue;
           }
-
-          String remapFile = null;
-          Builder<String> inputFilesBuilder = ImmutableList.builder();
-          for (File testFile : individualFile.listFiles()) {
-            if (testFile.getName().equals(REMAP_XML)) {
-              remapFile = testFile.getAbsolutePath();
-            } else if (testFile.getName().equals(TEST_PROPERTIES)) {
-              // skip
-            } else if (testFile.getName().equals(TEST_LOG)) {
-              // skip
-            } else {
-              inputFilesBuilder.add(testFile.getAbsolutePath());
-            }
-          }
-          builder.filePaths(inputFilesBuilder.build());
-          builder.remapFile(remapFile);
-
-          // Tests can only be added from the validation results screen, which
-          // means that we know the test set has exactly two files, and therefore
-          // we don't have to check the number of files present
-
-          ValidationTestFileSet testSet = builder.build();
 
           addTestSetToTable(testSets, testSet);
         }
@@ -390,6 +377,37 @@ public class ValidationTesting {
     }
 
     return new TestLoadingResults(testSets, invalidTests);
+  }
+
+  private static ValidationTestFileSet loadIndividualTest(File individualFile) {
+    ValidationTestFileSetBuilder builder = ValidationTestFileSet.builder();
+    builder.id(individualFile.getName());
+
+    loadTestMetadata(individualFile, builder);
+    loadTestLastRunLog(individualFile, builder);
+
+
+    String remapFile = null;
+    Builder<String> inputFilesBuilder = ImmutableList.builder();
+    for (File testFile : individualFile.listFiles()) {
+      if (testFile.getName().equals(REMAP_XML)) {
+        remapFile = testFile.getAbsolutePath();
+      } else if (testFile.getName().equals(TEST_PROPERTIES)) {
+        // skip
+      } else if (testFile.getName().equals(TEST_LOG)) {
+        // skip
+      } else {
+        inputFilesBuilder.add(testFile.getAbsolutePath());
+      }
+    }
+    builder.filePaths(inputFilesBuilder.build());
+    builder.remapFile(remapFile);
+
+    // Tests can only be added from the validation results screen, which
+    // means that we know the test set has exactly two files, and therefore
+    // we don't have to check the number of files present
+
+    return builder.build();
   }
 
   public static Map<ValidationTestFileSet, Boolean> deleteTests(
@@ -588,6 +606,9 @@ public class ValidationTesting {
     }
     String cwdStr = props.getProperty(CWD_PROP);
     String relStr = props.getProperty(REL);
+    String commentStr = props.getProperty(COMMENT_PROP, "");
+
+    builder.comment(commentStr);
 
     CommonWellDocumented.SOURCE cwdSource = null;
     try {
@@ -645,6 +666,33 @@ public class ValidationTesting {
       }
     }
     return successDel;
+  }
+
+  public static ValidationTestFileSet updateTestID(String oldId, ValidationTestFileSet test) {
+    String oldSubdir = VALIDATION_DIRECTORY + safeFilename(oldId) + "/";
+    String newSubdir = VALIDATION_DIRECTORY + safeFilename(test.id.get()) + "/";
+
+    try {
+      java.nio.file.Files.move(Path.of(oldSubdir), Path.of(newSubdir));
+    } catch (IOException e) {
+      test.id.set(oldId);
+      throw new IllegalStateException(
+          "Unable to move test directory: " + oldSubdir + " -> " + newSubdir, e);
+    }
+
+    return loadIndividualTest(new File(newSubdir));
+  }
+
+  public static class TestLoadingResults {
+    public final Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets;
+    public final List<String> invalidTests;
+
+    public TestLoadingResults(Table<SOURCE, String, List<ValidationTestFileSet>> testSets,
+        List<String> invalidTests) {
+      this.testSets = testSets;
+      this.invalidTests = invalidTests;
+    }
+
   }
 
 }
