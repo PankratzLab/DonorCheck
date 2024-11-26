@@ -100,6 +100,7 @@ public class ValidationModelBuilder {
   }
 
   private String donorId;
+  private String filepath;
   private String source;
   private SourceType sourceType;
 
@@ -164,6 +165,12 @@ public class ValidationModelBuilder {
   /** @param donorId Unique identifying string for this donor */
   public ValidationModelBuilder donorId(String donorId) {
     this.donorId = donorId;
+    return this;
+  }
+
+  /** @param source Name for the source of this model */
+  public ValidationModelBuilder file(String filepath) {
+    this.filepath = filepath;
     return this;
   }
 
@@ -586,8 +593,8 @@ public class ValidationModelBuilder {
 
   }
 
-  public ValidationResult validate() {
-    return ensureValidity();
+  public ValidationResult validate(boolean showAlertIfInvalid) {
+    return ensureValidity(showAlertIfInvalid);
   }
 
   private boolean test(Set<SeroType> set) {
@@ -649,7 +656,7 @@ public class ValidationModelBuilder {
 
     frequencyTable.clear();
 
-    ValidationModel validationModel = new ValidationModel(donorId, source, sourceType,
+    ValidationModel validationModel = new ValidationModel(donorId, filepath, source, sourceType,
         getFinalTypes(HLALocus.A), getFinalTypes(HLALocus.B), getFinalTypes(HLALocus.C),
         getFinalTypes(HLALocus.DRB1), getFinalTypes(HLALocus.DQB1), getFinalTypes(HLALocus.DQA1),
         getFinalTypes(HLALocus.DPA1), getFinalDPBTypes(), bw4, bw6, dr51Locus, dr52Locus, dr53Locus,
@@ -1028,7 +1035,7 @@ public class ValidationModelBuilder {
    * @return Optional<String> Value is present if the model has not been fully populated, or
    *         populated incorrectly.
    */
-  private ValidationResult ensureValidity() {
+  private ValidationResult ensureValidity(boolean show) {
     // Ensure all fields have been set
     for (Object o : Lists.newArrayList(donorId, source, aLocusCWD, bLocusCWD, cLocusCWD, drbLocus,
         dqbLocus, dqaLocus, getFinalDPBTypes(), bw4, bw6)) {

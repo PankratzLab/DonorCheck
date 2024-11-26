@@ -50,6 +50,7 @@ import com.google.common.collect.Multimap;
 public class ValidationModel {
 
   private final String donorId;
+  private final String filepath;
   private final String source;
   private final SourceType sourceType;
   private final ImmutableSortedSet<SeroType> aLocus;
@@ -69,7 +70,7 @@ public class ValidationModel {
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
   private final ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping;
 
-  public ValidationModel(String donorId, String source, SourceType sourceType,
+  public ValidationModel(String donorId, String filepath, String source, SourceType sourceType,
       Collection<SeroType> a, Collection<SeroType> b, Collection<SeroType> c,
       Collection<SeroType> drb, Collection<SeroType> dqb, Collection<SeroType> dqa,
       Collection<SeroType> dpa, Collection<HLAType> dpb, boolean bw4, boolean bw6,
@@ -78,6 +79,7 @@ public class ValidationModel {
       Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes,
       Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping) {
     this.donorId = donorId;
+    this.filepath = filepath;
     this.source = source;
     this.sourceType = sourceType;
     aLocus = ImmutableSortedSet.copyOf(a);
@@ -107,6 +109,10 @@ public class ValidationModel {
 
   public String getDonorId() {
     return donorId;
+  }
+
+  public String getFile() {
+    return filepath;
   }
 
   public String getSource() {
@@ -419,14 +425,7 @@ public class ValidationModel {
     return remapping.containsKey(locus);
   }
 
-  public String[] getRemappings() {
-    return remapping.entrySet().stream().map(e -> {
-      final String collectFrom = e.getValue().getLeft().stream().sorted().map(TypePair::getHlaType)
-          .map((h) -> h.specString()).collect(Collectors.joining(" / "));
-      final String collectTo = e.getValue().getRight().stream().sorted().map(TypePair::getHlaType)
-          .map((h) -> h.specString()).collect(Collectors.joining(" / "));
-      return "HLA-" + e.getKey().name() + " was remapped from { " + collectFrom + " } to { "
-          + collectTo + " } in " + getSourceType();
-    }).sorted().distinct().toArray(String[]::new);
+  public ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> getRemappings() {
+    return remapping;
   }
 }

@@ -556,7 +556,7 @@ public class XmlScore6Parser {
       if (possibleAlleleRecordingMap.containsKey(locus)) {
         if (hlaLocus == null) {
           // TODO FIXME do something other than print to system out
-          System.out.println("Couldn't set alleles - no locus parsed from " + locus);
+          // System.out.println("Couldn't set alleles - no locus parsed from " + locus);
         } else {
           possibleAlleleRecordingMap.get(locus).accept(builder, hlaLocus, allPossibleAllelePairs);
           donorAlleleRecordingMap.get(locus).accept(builder, hlaLocus, donorAllelePairs);
@@ -1119,7 +1119,7 @@ public class XmlScore6Parser {
         Objects.requireNonNull(alleleCombination);
       } catch (NullPointerException e) {
         // TODO FIXME do something other than print to system out
-        System.out.println();
+        // System.out.println();
       }
       this.alleleCombination = alleleCombination;
       this.antigenCombination = antigenCombination;

@@ -193,6 +193,12 @@
                         <MenuItem mnemonicParsing="false" onAction="#tutorialHTMLDownload" text="HTML DonorNet Download" />
                     </items>
                   </Menu>
+                  <Menu mnemonicParsing="false" text="Testing">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#manageTestingFiles" text="Manage Test Files" />
+                      <MenuItem mnemonicParsing="false" onAction="#runTesting" text="Quick-Run Tests" />
+                    </items>
+                  </Menu>
                   <Menu mnemonicParsing="false" text="MAC Conversion">
                      <items>
                         <MenuItem mnemonicParsing="false" onAction="#macConversionScore6" text="Score6" />

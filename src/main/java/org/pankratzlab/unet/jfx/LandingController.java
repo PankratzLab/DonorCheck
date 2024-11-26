@@ -29,21 +29,26 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
-import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
+import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.macui.MACUIController;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.validation.ValidationTestFileSet;
+import org.pankratzlab.unet.validation.ValidationTesting;
+import org.pankratzlab.unet.validation.ValidationTesting.TestLoadingResults;
 import com.google.common.base.Strings;
+import com.google.common.collect.Table;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
@@ -57,21 +62,22 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
 public class LandingController {
 
+  static final String DONORCHECK_VERSION = "DONORCHECK_VERSION";
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String MACUI_ENTRY = "/MACUIConversionPanel.fxml";
-  private static final String XML_TUTORIAL = "/XMLDownloadTutorial.fxml";
-  private static final String HTML_TUTORIAL = "/HTMLDownloadTutorial.fxml";
-  private static final String NMDP_DOWNLOAD = "/NMDPDownloadPrompt.fxml";
-  private static final String REL_SER_DOWNLOAD = "/RelDnaSerDownloadPrompt.fxml";
 
   private static final String INPUT_STEP = "/FileInput.fxml";
-  private static final String RESULTS_STEP = "/ValidationResults.fxml";
+  static final String RESULTS_STEP = "/ValidationResults.fxml";
+  private static final String TESTING_MGMT = "/ValidationTestMgmt.fxml";
 
   @FXML
   private ResourceBundle resources;
@@ -94,24 +100,12 @@ public class LandingController {
 
   @FXML
   void chooseFreqTables(ActionEvent event) {
-    DownloadNMDPController dc = new DownloadNMDPController();
-    showTutorial(NMDP_DOWNLOAD, dc, "Set Frequency Directory");
-    if (dc.isDirty()) {
-      new Thread(JFXUtilHelper.createProgressTask(() -> {
-        HaplotypeFrequencies.doInitialization();
-      })).start();
-    }
+    TutorialHelper.chooseFreqTables(event);
   }
 
   @FXML
   void chooseRelSerLookupFile(ActionEvent event) {
-    SerotypeLookupFileController controller = new SerotypeLookupFileController();
-    showTutorial(REL_SER_DOWNLOAD, controller, "Set HLA Serotype Lookup File");
-    if (controller.isDirty()) {
-      new Thread(JFXUtilHelper.createProgressTask(() -> {
-        AntigenDictionary.clearCache();
-      })).start();
-    }
+    TutorialHelper.chooseRelSerLookupFile(event);
   }
 
   @FXML
@@ -122,12 +116,140 @@ public class LandingController {
 
   @FXML
   void tutorialHTMLDownload(ActionEvent event) {
-    showTutorial(HTML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
+    TutorialHelper.tutorialHTMLDownload(event);
+  }
+
+  @FXML
+  void manageTestingFiles(ActionEvent event) {
+    Task<TestLoadingResults> manageValidationTask = JFXUtilHelper.createProgressTask(() -> {
+      // first, load the test data
+      try {
+        TestLoadingResults validationDirectory = ValidationTesting.loadValidationDirectory();
+
+        return validationDirectory;
+      } catch (Exception e1) {
+        e1.printStackTrace();
+        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
+            ButtonType.CLOSE);
+        alert1.setTitle("Error");
+        alert1.setHeaderText("");
+        alert1.showAndWait();
+        throw new IllegalStateException("Error loading test data: " + e1.getMessage());
+      }
+    });
+
+    EventHandler<WorkerStateEvent> doValidation = e -> {
+      Platform.runLater(() -> {
+        TestLoadingResults testLoad;
+        try {
+          testLoad = manageValidationTask.get();
+        } catch (Exception e1) {
+          e1.printStackTrace();
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
+              ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
+          return;
+        }
+
+        if (testLoad.invalidTests.size() > 0) {
+          Alert alert1 = new Alert(AlertType.ERROR);
+          alert1.getButtonTypes().add(ButtonType.CLOSE);
+
+          String content = "Please remove the listed tests manually from this directory: \n\n"
+              + ValidationTesting.VALIDATION_DIRECTORY + "\n";
+          for (String invalidTest : testLoad.invalidTests) {
+            content += "\n" + invalidTest;
+          }
+          TextArea textArea = new TextArea(content);
+          textArea.setEditable(false);
+          textArea.setWrapText(true);
+
+          alert1.setTitle("Error Loading Tests");
+          alert1.setHeaderText("Failed to Load " + testLoad.invalidTests.size() + " Tests");
+          alert1.getDialogPane().setContent(textArea);
+          alert1.setResizable(true);
+          alert1.showAndWait();
+        }
+
+        Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
+
+        ValidationTestMgmtController controller = new ValidationTestMgmtController();
+
+        FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
+        loader.setController(controller);
+
+        Scene newScene;
+        try {
+          newScene = new Scene(loader.load());
+          Stage inputStage = new Stage();
+          inputStage.initOwner(rootPane.getScene().getWindow());
+          inputStage.initModality(Modality.APPLICATION_MODAL);
+          inputStage.setTitle("Manage Testing Files");
+          inputStage.setResizable(true);
+          inputStage.setScene(newScene);
+          controller.setTable(testData);
+          inputStage.showAndWait();
+        } catch (IOException e1) {
+          e1.printStackTrace();
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
+              ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
+        }
+      });
+    };
+
+    manageValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
+
+
+    new Thread(manageValidationTask).start();
+  }
+
+  @FXML
+  void runTesting(ActionEvent event) {
+    Task<List<ValidationTestFileSet>> loadTestsTask = JFXUtilHelper.createProgressTask(() -> {
+      TestLoadingResults tests = ValidationTesting.loadValidationDirectory();
+
+      List<ValidationTestFileSet> allTests = new ArrayList<>();
+      for (String relFile : tests.testSets.columnKeySet()) {
+        for (SOURCE cwd : tests.testSets.column(relFile).keySet()) {
+          allTests.addAll(tests.testSets.get(cwd, relFile));
+        }
+      }
+
+      allTests = ValidationTesting.sortTests(allTests);
+
+      return allTests;
+    });
+
+    EventHandler<WorkerStateEvent> doValidation = e -> {
+      List<ValidationTestFileSet> allTests;
+      try {
+        allTests = loadTestsTask.get();
+      } catch (InterruptedException | ExecutionException e1) {
+        e1.printStackTrace();
+        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
+            ButtonType.CLOSE);
+        alert1.setTitle("Error");
+        alert1.setHeaderText("");
+        alert1.showAndWait();
+        return;
+      }
+
+      ValidationTesting.runTests(allTests);
+    };
+
+    loadTestsTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
+
+    new Thread(loadTestsTask).start();
   }
 
   @FXML
   void tutorialXMLDownload(ActionEvent event) {
-    showTutorial(XML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
+    TutorialHelper.tutorialXMLDownload(event);
   }
 
   @FXML
@@ -167,7 +289,7 @@ public class LandingController {
       Platform.runLater(() -> {
         if (!HaplotypeFrequencies.successfullyInitialized()) {
           Alert alert = new Alert(AlertType.INFORMATION,
-              "Haplotype Frequency Tables are not found or valid - frequency data will not be used.\n"
+              "Haplotype Frequency Tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
                   + "Would you like to set these tables now?\n\n"
                   + "Note: you can adjust these tables any time from the 'Haplotype' menu",
               ButtonType.YES, ButtonType.NO);
@@ -217,26 +339,6 @@ public class LandingController {
     new Thread(runValidationTask).start();
   }
 
-  /** TODO */
-  private void showTutorial(String tutorialFxml, Object controller, String title) {
-    try (InputStream is = TypeValidationApp.class.getResourceAsStream(tutorialFxml)) {
-      FXMLLoader loader = new FXMLLoader();
-      loader.setController(controller);
-      // NB: reading the controller from FMXL can cause problems
-
-      Alert alert = new Alert(AlertType.NONE, "", ButtonType.OK);
-      alert.getDialogPane().setContent(loader.load(is));
-      alert.setTitle(title);
-      alert.setHeaderText("");
-      alert.showAndWait();
-    } catch (IOException e) {
-      e.printStackTrace();
-      Alert alert = new Alert(AlertType.ERROR, "");
-      alert.setHeaderText("Failed to read tutorial page definition: " + tutorialFxml);
-      alert.showAndWait();
-    }
-  }
-
   /**
    * @param pages List to populate
    * @param table Backing {@link ValidationTable} for this wizard
@@ -244,8 +346,8 @@ public class LandingController {
    * @param controller Controller instance to attach to this page
    * @throws IOException If errors during FXML reading
    */
-  private void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML,
-      Object controller) throws IOException {
+  public static void makePage(List<WizardPane> pages, @Nullable ValidationTable table,
+      String pageFXML, Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems
@@ -277,6 +379,7 @@ public class LandingController {
       e.printStackTrace();
     }
 
+    System.setProperty(DONORCHECK_VERSION, version);
     System.setProperty(CurrentDirectoryProvider.BASE_DIR_PROP_NAME, UNET_BASE_DIR_PROP);
   }
 }

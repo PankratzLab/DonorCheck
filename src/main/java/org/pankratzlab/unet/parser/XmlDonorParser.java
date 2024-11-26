@@ -81,6 +81,29 @@ public class XmlDonorParser extends AbstractDonorFileParser {
     return EXTENSION_NAME;
   }
 
+  public static SourceType getSourceType(File file) {
+    try (FileInputStream xmlStream = new FileInputStream(file)) {
+      Document parsed = Jsoup.parse(xmlStream, "UTF-8", "http://example.com");
+      if (FilenameUtils.isExtension(file.getName(), EXTENSION_NAME)) {
+        final String rootElement = parsed.getElementsByTag(BODY_TAG).get(0).child(0).tagName();
+
+        // Based on XML contents, pass to specific XML parser
+        if (XmlDonorNetParser.ROOT_ELEMENT.equals(rootElement)) {
+          return SourceType.DonorNet;
+        } else if (XmlScore6Parser.ROOT_ELEMENT.equals(rootElement)) {
+          return SourceType.Score6;
+        } else if (XmlSureTyperParser.ROOT_ELEMENT.equals(rootElement)) {
+          return SourceType.SureTyper;
+        }
+      } else {
+        throw new InvalidParameterException("Unknown File Type: " + file.getName());
+      }
+    } catch (Throwable e) {
+      throw new IllegalStateException("Invalid XML file: " + file, e);
+    }
+    return null; // Unknown or unsupported file type
+  }
+
   @Override
   protected void doParse(ValidationModelBuilder builder, File file) {
     try (FileInputStream xmlStream = new FileInputStream(file)) {

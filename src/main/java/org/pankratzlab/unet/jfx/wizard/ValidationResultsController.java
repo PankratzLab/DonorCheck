@@ -40,6 +40,8 @@ import org.pankratzlab.unet.model.DRDQHaplotypeRow;
 import org.pankratzlab.unet.model.HaplotypeRow;
 import org.pankratzlab.unet.model.ValidationRow;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.validation.TestInfo;
+import org.pankratzlab.unet.validation.ValidationTesting;
 import com.google.common.collect.ImmutableSet;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ObservableList;
@@ -72,6 +74,12 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private static final String UNKNOWN_HAPLOTYPE_CLASS = "unknown-haplotype";
   private static final Set<String> HAPLOTYPE_CLASSES =
       ImmutableSet.of(WD_ALLELE_CLASS, UK_ALLELE_CLASS, UNKNOWN_HAPLOTYPE_CLASS);
+  private final Label noHapPatientLabel1 = new Label("No haplotype data found for patient.");
+  private final Label noHapDataLabel1 = new Label(
+      " In order to review haplotype frequencies and flag rare haplotypes,\n download data from NMDP or another source.");
+  private final Label noHapPatientLabel2 = new Label("No haplotype data found for patient.");
+  private final Label noHapDataLabel2 = new Label(
+      " In order to review haplotype frequencies and flag rare haplotypes,\n download data from NMDP or another source.");
 
   @FXML
   private ResourceBundle resources;
@@ -90,6 +98,9 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
 
   @FXML
   private MenuItem printOption;
+
+  @FXML
+  MenuItem addToValidationOption;
 
   @FXML
   private TableView<ValidationRow<?>> resultsTable;
@@ -217,6 +228,24 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   }
 
   @FXML
+  void addInputsToValidationSet() {
+    TestInfo file1 = new TestInfo(getTable().getId(), getTable().firstColFile().get(),
+        getTable().getFirstRemappings(), getTable().firstColSourceType().get());
+    TestInfo file2 = new TestInfo(getTable().getId(), getTable().secondColFile().get(),
+        getTable().getSecondRemappings(), getTable().secondColSourceType().get());
+    boolean added = ValidationTesting.addToValidationSet(file1, file2);
+
+    if (added) {
+      Alert alert1 = new Alert(AlertType.INFORMATION,
+          "Successfully added " + getTable().getId() + " to validation testing set.",
+          ButtonType.CLOSE);
+      alert1.setTitle("Successfully Added.");
+      alert1.setHeaderText("");
+      alert1.showAndWait();
+    }
+  }
+
+  @FXML
   void initialize() {
     assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'ValidationResults.fxml'.";
     assert saveOption != null : "fx:id=\"saveOption\" was not injected: check your FXML file 'ValidationResults.fxml'.";
@@ -293,8 +322,18 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     firstSourceCol.textProperty().bind(table.firstColSource());
     secondSourceCol.textProperty().bind(table.secondColSource());
 
-    bcHaplotypeTable.setItems(table.getBCHaplotypeRows());
-    drdqHaplotypeTable.setItems(table.getDRDQHaplotypeRows());
+    bcHaplotypeTable.getItems().clear();
+    drdqHaplotypeTable.getItems().clear();
+
+    if (HaplotypeFrequencies.successfullyInitialized()) {
+      bcHaplotypeTable.setPlaceholder(noHapPatientLabel1);
+      drdqHaplotypeTable.setPlaceholder(noHapPatientLabel2);
+      bcHaplotypeTable.setItems(table.getBCHaplotypeRows());
+      drdqHaplotypeTable.setItems(table.getDRDQHaplotypeRows());
+    } else {
+      bcHaplotypeTable.setPlaceholder(noHapDataLabel1);
+      drdqHaplotypeTable.setPlaceholder(noHapDataLabel2);
+    }
   }
 
   /** Perform required actions when the page is being displayed */

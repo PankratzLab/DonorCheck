@@ -34,6 +34,9 @@
 									onAction="#savePNGResults" text="Save to Image" />
 								<MenuItem fx:id="saveCSVOption" mnemonicParsing="false"
 									onAction="#saveCSVResults" text="Save to CSV" />
+								<MenuItem fx:id="addToValidationOption"
+									mnemonicParsing="false" onAction="#addInputsToValidationSet"
+									text="Add Input Files to Testing Suite" />
 								<MenuItem fx:id="printOption" mnemonicParsing="false"
 									onAction="#printResults" text="Print..." />
 							</items>
@@ -48,28 +51,32 @@
 	</padding>
 	<content>
 		<GridPane hgap="10" GridPane.vgrow="ALWAYS"
-			GridPane.fillHeight="true" GridPane.valignment="TOP" >
+			GridPane.fillHeight="true" GridPane.valignment="TOP">
 			<columnConstraints>
 				<ColumnConstraints hgrow="ALWAYS" />
 				<ColumnConstraints halignment="RIGHT"
 					hgrow="NEVER" />
 			</columnConstraints>
 			<rowConstraints>
-				<RowConstraints vgrow="ALWAYS" fillHeight="true" valignment="TOP" />
+				<RowConstraints vgrow="ALWAYS" fillHeight="true"
+					valignment="TOP" />
 			</rowConstraints>
 			<children>
-				<GridPane GridPane.fillHeight="true" GridPane.vgrow="ALWAYS" VBox.vgrow="ALWAYS"
+				<GridPane GridPane.fillHeight="true"
+					GridPane.vgrow="ALWAYS" VBox.vgrow="ALWAYS"
 					GridPane.fillWidth="true" GridPane.columnIndex="0"
 					GridPane.rowIndex="0" alignment="TOP_RIGHT" hgap="10">
 					<columnConstraints>
 						<ColumnConstraints hgrow="ALWAYS" />
 					</columnConstraints>
 					<rowConstraints>
-						<RowConstraints vgrow="ALWAYS" fillHeight="true" valignment="TOP" />
+						<RowConstraints vgrow="ALWAYS" fillHeight="true"
+							valignment="TOP" />
 					</rowConstraints>
 					<children>
 						<TableView fx:id="resultsTable" fixedCellSize="30.0"
-							prefHeight="780.0" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.vgrow="ALWAYS">
+							prefHeight="780.0" GridPane.columnIndex="0" GridPane.rowIndex="0"
+							GridPane.vgrow="ALWAYS">
 							<columns>
 								<TableColumn fx:id="rowLabelCol" editable="false"
 									prefWidth="125.0" sortable="false" styleClass="row-labels" />
@@ -94,12 +101,12 @@
 								<Insets top="15.0" />
 							</VBox.margin>
 						</Label>
-						<Label fx:id="auditLog" minWidth="200"
-							wrapText="false" focusTraversable="false"
-							GridPane.columnIndex="0" GridPane.rowIndex="2"
-							GridPane.columnSpan="1" GridPane.halignment="CENTER" 
-							GridPane.valignment="TOP" GridPane.fillHeight="true"
-							GridPane.vgrow="ALWAYS" VBox.vgrow="ALWAYS" />
+						<Label fx:id="auditLog" minWidth="200" wrapText="false"
+							focusTraversable="false" GridPane.columnIndex="0"
+							GridPane.rowIndex="2" GridPane.columnSpan="1"
+							GridPane.halignment="CENTER" GridPane.valignment="TOP"
+							GridPane.fillHeight="true" GridPane.vgrow="ALWAYS"
+							VBox.vgrow="ALWAYS" />
 					</children>
 				</GridPane>
 				<GridPane GridPane.fillHeight="true"

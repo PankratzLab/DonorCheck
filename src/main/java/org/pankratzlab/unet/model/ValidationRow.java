@@ -22,9 +22,7 @@
 package org.pankratzlab.unet.model;
 
 import java.util.Objects;
-
 import javax.annotation.Nullable;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
