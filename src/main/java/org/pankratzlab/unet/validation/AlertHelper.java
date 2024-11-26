@@ -28,9 +28,10 @@ public final class AlertHelper {
 
   static Optional<ButtonType> showMessage_PII() {
     Alert alert = new Alert(AlertType.WARNING,
-        "Caution - DonorCheck will retain a copy of the current input files here:\n"
-            + ValidationTesting.VALIDATION_DIRECTORY
-            + "\n\nPlease ensure that input files do not contain Personally Identifiable Information (PII).",
+        "Caution - DonorCheck will retain a copy of the current input files here:\n\n"
+            + ValidationTesting.VALIDATION_DIRECTORY + "\n\nPlease ensure that:\n\n"
+            + "1) The given input files do not contain Personally Identifiable Information (PII), or\n\n"
+            + "2) If the input files do contain PII, that this location is safe to store PII.",
         ButtonType.OK, ButtonType.CANCEL);
     alert.setTitle("PII Warning");
     alert.setHeaderText("");

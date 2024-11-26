@@ -1,5 +1,6 @@
 package org.pankratzlab.unet.jfx;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -101,6 +102,9 @@ public class ValidationTestMgmtController {
 
   @FXML
   Button runAllButton;
+
+  @FXML
+  Button openDirectoryButton;
 
   @FXML
   Button openTestButton;
@@ -277,6 +281,7 @@ public class ValidationTestMgmtController {
           }
         });
 
+    // Any selection enable/disable
     removeSelectedButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
       return testTable.getSelectionModel().getSelectedIndices().isEmpty();
     }, testTable.getSelectionModel().selectedIndexProperty()));
@@ -285,9 +290,15 @@ public class ValidationTestMgmtController {
       return testTable.getSelectionModel().getSelectedIndices().isEmpty();
     }, testTable.getSelectionModel().selectedIndexProperty()));
 
+    // Table not empty enable/disable
     runAllButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
       return testTable.getItems().isEmpty();
     }, testTable.itemsProperty()));
+
+    // Single selection enable/disable
+    openDirectoryButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+      return testTable.getSelectionModel().getSelectedIndices().size() != 1;
+    }, testTable.getSelectionModel().selectedIndexProperty()));
 
     openTestButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
       return testTable.getSelectionModel().getSelectedIndices().size() != 1;
@@ -468,6 +479,20 @@ public class ValidationTestMgmtController {
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
     new Thread(runValidationTask).start();
+  }
+
+  @FXML
+  void openTestDirectory() {
+    ValidationTestFileSet selectedItem = testTable.getSelectionModel().getSelectedItem();
+    String dir = ValidationTesting.getTestDirectory(selectedItem);
+    try {
+      Desktop.getDesktop().open(new File(dir));
+    } catch (IOException e) {
+      e.printStackTrace();
+      Alert alert = new Alert(AlertType.ERROR,
+          "Error opening directory for test " + selectedItem.id.get() + ":\n" + e.getMessage(),
+          ButtonType.CLOSE);
+    }
   }
 
   private void runTasks(List<ValidationTestFileSet> tests) {

@@ -60,6 +60,7 @@
 				<Button fx:id="runSelectedButton" mnemonicParsing="false" onAction="#runSelected" prefWidth="150.0" text="Run Selected Tests" />
 				<Button fx:id="runAllButton" mnemonicParsing="false" onAction="#runAll" prefWidth="150.0" text="Run All Tests" />
             	<Region HBox.hgrow="ALWAYS" />
+            	<Button fx:id="openDirectoryButton" mnemonicParsing="false" onAction="#openTestDirectory" text="Open Directory" />
             	<Button fx:id="openTestButton" mnemonicParsing="false" onAction="#openSelectedTest" text="Open Test" />
 			</children>
 		</HBox>

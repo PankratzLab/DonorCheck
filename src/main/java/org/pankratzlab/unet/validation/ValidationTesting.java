@@ -64,7 +64,8 @@ public class ValidationTesting {
   private static final String TEST_LOG = "test.log";
 
   public static final String REL_DIRECTORY = Info.HLA_HOME + "rel_dna_ser_files/";
-  public static final String VALIDATION_DIRECTORY = Info.HLA_HOME + "validation/";
+  public static final String VALIDATION_DIRECTORY =
+      new File(Info.HLA_HOME + "validation/").getAbsolutePath() + File.separator;
 
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
@@ -92,7 +93,7 @@ public class ValidationTesting {
     }
 
     String reldir = REL_DIRECTORY;
-    String subdir = VALIDATION_DIRECTORY + safeFilename(file1.label) + "/";
+    String subdir = getTestDirectory(file1.label);
 
     final File testDir = new File(subdir);
 
@@ -286,7 +287,7 @@ public class ValidationTesting {
 
   public static void updateTestResults(Map<ValidationTestFileSet, TestRun> newResults) {
     for (Entry<ValidationTestFileSet, TestRun> entry : newResults.entrySet()) {
-      String subdir = VALIDATION_DIRECTORY + safeFilename(entry.getKey().id.get()) + "/";
+      String subdir = getTestDirectory(entry.getKey());
 
       entry.getKey().lastRunDate.set(entry.getValue().runTime);
       entry.getKey().lastTestResult.set(entry.getValue().result);
@@ -319,7 +320,7 @@ public class ValidationTesting {
    * @param test
    */
   public static void updateTestProperties(ValidationTestFileSet test) {
-    String subdir = VALIDATION_DIRECTORY + safeFilename(test.id.get()) + "/";
+    String subdir = getTestDirectory(test);
     File testPropertiesFile = new File(subdir + TEST_PROPERTIES);
     Properties props = new Properties();
 
@@ -350,6 +351,15 @@ public class ValidationTesting {
     }
   }
 
+  public static String getTestDirectory(ValidationTestFileSet test) {
+    final String testId = test.id.get();
+    return getTestDirectory(testId);
+  }
+
+  public static String getTestDirectory(final String testId) {
+    return VALIDATION_DIRECTORY + safeFilename(testId) + "/";
+  }
+
   public static TestLoadingResults loadValidationDirectory() {
     Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets =
         HashBasedTable.create();
@@ -365,7 +375,7 @@ public class ValidationTesting {
           ValidationTestFileSet testSet;
           try {
             testSet = loadIndividualTest(individualFile);
-          } catch (IllegalStateException e) {
+          } catch (Exception e) {
             // catch exceptions and skip loading test, but will report later
             invalidTests.add(individualFile.getName());
             continue;
@@ -414,7 +424,7 @@ public class ValidationTesting {
       List<ValidationTestFileSet> toRemove) {
     Map<ValidationTestFileSet, Boolean> success = new HashMap<>();
     for (ValidationTestFileSet testSet : toRemove) {
-      String dir = VALIDATION_DIRECTORY + safeFilename(testSet.id.get()) + "/";
+      String dir = getTestDirectory(testSet);
       boolean successDel = deleteTestDirectory(dir);
       success.put(testSet, successDel);
     }
@@ -669,8 +679,8 @@ public class ValidationTesting {
   }
 
   public static ValidationTestFileSet updateTestID(String oldId, ValidationTestFileSet test) {
-    String oldSubdir = VALIDATION_DIRECTORY + safeFilename(oldId) + "/";
-    String newSubdir = VALIDATION_DIRECTORY + safeFilename(test.id.get()) + "/";
+    String oldSubdir = getTestDirectory(oldId);
+    String newSubdir = getTestDirectory(test);
 
     try {
       java.nio.file.Files.move(Path.of(oldSubdir), Path.of(newSubdir));
