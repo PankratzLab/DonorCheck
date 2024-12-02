@@ -77,7 +77,7 @@
                         </TextFlow>
                         <TextFlow textAlignment="CENTER" GridPane.rowIndex="1">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="LinkSeq">
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="SureTyper (LinkSeq)">
                                  <font>
                                     <Font size="20.0" />
                                  </font></Text>
@@ -85,7 +85,7 @@
                         </TextFlow>
                         <TextFlow textAlignment="CENTER" GridPane.rowIndex="2">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="SCORE6">
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="SCORE 6 (QTYPE)">
                                  <font>
                                     <Font size="20.0" />
                                  </font></Text>
