@@ -25,6 +25,7 @@ import java.io.File;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.pankratzlab.BackgroundDataProcessor;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
@@ -32,6 +33,7 @@ import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
 import org.pankratzlab.unet.jfx.TutorialHelper;
+import org.pankratzlab.unet.jfx.TypeValidationApp;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
@@ -43,6 +45,7 @@ import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.UrlEscapers;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -51,17 +54,24 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 /**
  * Controller for adding donor data to the current {@link ValidationTable}
@@ -205,12 +215,7 @@ public class FileInputController extends AbstractValidatingWizardController {
                 }
               } catch (Throwable e) {
                 Platform.runLater(() -> {
-                  Alert alert = new Alert(AlertType.ERROR);
-                  alert.setHeaderText(donorParser.getErrorText()
-                      + "\nPlease notify the developers as this may indicate the data has changed."
-                      + "\nOffending file: " + selectedFile.getName());
-                  alert.showAndWait();
-                  e.printStackTrace();
+                  alertError(donorParser, selectedFile, e);
                 });
               }
             });
@@ -223,12 +228,7 @@ public class FileInputController extends AbstractValidatingWizardController {
 
         } catch (Throwable e) {
           Platform.runLater(() -> {
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText(donorParser.getErrorText()
-                + "\nPlease notify the developers as this may indicate the data has changed."
-                + "\nOffending file: " + selectedFile.getName());
-            alert.showAndWait();
-            e.printStackTrace();
+            alertError(donorParser, selectedFile, e);
           });
         }
 
@@ -239,14 +239,77 @@ public class FileInputController extends AbstractValidatingWizardController {
     }
   }
 
+  public void alertError(DonorFileParser donorParser, File selectedFile, Throwable e) {
+    Alert alert = new Alert(AlertType.ERROR);
+
+    Text errorText = new Text(
+        donorParser.getErrorText() + "\nOffending file: " + selectedFile.getName() + "\n\nPlease ");
+    Hyperlink emailLink = new Hyperlink("notify the developers");
+    emailLink.setOnAction(new EventHandler<ActionEvent>() {
+
+      @Override
+      public void handle(ActionEvent t) {
+        try {
+          final String mailtoLink = constructMailtoLink(donorParser, selectedFile, e);
+          System.out.println(mailtoLink);
+          TypeValidationApp.hostServices.showDocument(mailtoLink);
+        } catch (Throwable t1) {
+          t1.printStackTrace();
+        }
+      }
+    });
+    Text errorText2 = new Text(" as this may indicate the data has changed."
+        + "\nIf possible, please include the source file when notifying the developers."
+        + "\nException information:");
+
+    TextFlow headerFlow = new TextFlow(errorText, emailLink, errorText2);
+    headerFlow.setPadding(new Insets(10));
+
+    TextArea ta = new TextArea();
+    ta.setEditable(false);
+    String trace = getExceptionStackTraceString(e);
+    ta.setText(trace);
+    ScrollPane sp = new ScrollPane(ta);
+    sp.setFitToWidth(true);
+    alert.getDialogPane().setHeader(headerFlow);
+    alert.getDialogPane().setContent(sp);
+
+
+    alert.showAndWait();
+    e.printStackTrace();
+  }
+
+  public String getExceptionStackTraceString(Throwable e) {
+    Throwable rootCause = ExceptionUtils.getRootCause(e);
+    if (rootCause == null) {
+      rootCause = e;
+      while (rootCause.getCause() != null) {
+        rootCause = rootCause.getCause();
+      }
+    }
+    String trace = ExceptionUtils.getStackTrace(rootCause);
+    return trace;
+  }
+
+  protected String constructMailtoLink(DonorFileParser donorParser, File selectedFile,
+      Throwable e) {
+    StringBuilder sb = new StringBuilder("mailto:donor_check@umn.edu?subject=Error%20Report&body=");
+    StringBuilder sb1 = new StringBuilder();
+    sb1.append("[[[ PLEASE ATTACH SOURCE FILE IF POSSIBLE ]]]\n\n");
+    sb1.append("Exception information:\n");
+    sb1.append(getExceptionStackTraceString(e));
+    sb.append(UrlEscapers.urlFragmentEscaper().escape(sb1.toString()));
+    return sb.toString();
+  }
+
   private void alertInvalid(DonorFileParser donorParser, File selectedFile,
       ValidationResult validationResult) {
     if (validationResult.validationMessage.isPresent()) {
       Platform.runLater(() -> {
         Alert alert = new Alert(AlertType.ERROR);
-        alert.setHeaderText(donorParser.getErrorText()
-            + "\nPlease notify the developers as this may indicate the data has changed."
-            + "\nOffending file: " + selectedFile.getName());
+        alert.setHeaderText(
+            donorParser.getErrorText() + "\nOffending file: " + selectedFile.getName()
+                + "\nValidation message: " + validationResult.validationMessage.get());
         alert.showAndWait();
       });
     }
