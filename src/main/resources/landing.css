@@ -1,0 +1,21 @@
+.custom-menu-lbl.context-menu {
+    -fx-background-color: white;
+}
+
+.custom-menu-lbl.context-menu:focused {
+    -fx-background-color: white;
+   
+}
+
+.custom-menu-lbl.custom-menu-item {
+    -fx-background-color: white;
+}
+
+
+.custom-menu-lbl.custom-menu-item:focused {
+    -fx-background-color: white;
+}
+
+.custom-menu-item .label{
+    -fx-text-fill: grey;
+}

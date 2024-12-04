@@ -61,7 +61,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
@@ -71,6 +74,10 @@ import javafx.stage.Window;
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
 public class LandingController {
 
+  private static final String WEBSITE_DONORCHECK_GITHUB =
+      "https://github.com/PankratzLab/DonorCheck";
+  private static final String WEBSITE_COMP_PATH =
+      "https://med.umn.edu/pathology/research/computational-pathology";
   static final String DONORCHECK_VERSION = "DONORCHECK_VERSION";
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String MACUI_ENTRY = "/MACUIConversionPanel.fxml";
@@ -91,7 +98,14 @@ public class LandingController {
   @FXML
   private Label versionLabel;
 
+  @FXML
+  private Label menuVersionLabel;
+
   private String version;
+
+  SeparatorMenuItem i;
+  CustomMenuItem v;
+  MenuItem v1;
 
   @FXML
   void fileQuitAction(ActionEvent event) {
@@ -273,6 +287,16 @@ public class LandingController {
   }
 
   @FXML
+  void openWebsiteCompPath(ActionEvent event) {
+    TypeValidationApp.hostServices.showDocument(WEBSITE_COMP_PATH);
+  }
+
+  @FXML
+  void openWebsiteGitHub(ActionEvent event) {
+    TypeValidationApp.hostServices.showDocument(WEBSITE_DONORCHECK_GITHUB);
+  }
+
+  @FXML
   void runValidation(ActionEvent event) throws IOException {
     // The way DonorCheck is set up, "validation" is run in two parts
 
@@ -373,7 +397,9 @@ public class LandingController {
     try {
       properties
           .load(LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
-      versionLabel.setText("Version: " + (version = properties.getProperty("version")) + " ");
+      final String value = "Version: " + (version = properties.getProperty("version")) + " ";
+      versionLabel.setText(value);
+      menuVersionLabel.setText("DonorCheck " + value);
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
