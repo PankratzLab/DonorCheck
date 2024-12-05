@@ -268,6 +268,8 @@ public class LandingController {
 
   @FXML
   void macConversionScore6(ActionEvent event) {
+    CommonWellDocumented.initFromProperty();
+
     MACUIController controller = new MACUIController();
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(MACUI_ENTRY)) {
       FXMLLoader loader = new FXMLLoader();

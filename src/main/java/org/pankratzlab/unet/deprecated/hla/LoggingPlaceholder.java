@@ -21,15 +21,25 @@
  */
 package org.pankratzlab.unet.deprecated.hla;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.stream.Collectors;
-
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
-
+import org.pankratzlab.unet.jfx.TypeValidationApp;
+import org.pankratzlab.unet.parser.DonorFileParser;
+import com.google.common.net.UrlEscapers;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 /**
  * Utility class for any logging actions. NB: this currently conflates "logging" with "messaging" or
@@ -90,5 +100,69 @@ public final class LoggingPlaceholder {
       errorText.setWrapText(true);
       JFXUtilHelper.makeContentOnlyAlert(AlertType.ERROR, title, errorText).showAndWait();
     });
+  }
+
+  public static void alertError(DonorFileParser donorParser, File selectedFile, Throwable e) {
+    Alert alert = new Alert(AlertType.ERROR);
+  
+    Text errorText = new Text(
+        donorParser.getErrorText() + "\nOffending file: " + selectedFile.getName() + "\n\nPlease ");
+    Hyperlink emailLink = new Hyperlink("notify the developers");
+    emailLink.setOnAction(new EventHandler<ActionEvent>() {
+  
+      @Override
+      public void handle(ActionEvent t) {
+        try {
+          final String mailtoLink = constructMailtoLink(donorParser, selectedFile, e);
+          System.out.println(mailtoLink);
+          TypeValidationApp.hostServices.showDocument(mailtoLink);
+        } catch (Throwable t1) {
+          t1.printStackTrace();
+        }
+      }
+    });
+  
+    Text errorText2 = new Text(" as this may indicate the data has changed."
+        + "\nIf possible, please include the source file when notifying the developers."
+        + "\nException information:");
+  
+    TextFlow headerFlow = new TextFlow(errorText, emailLink, errorText2);
+    headerFlow.setPadding(new Insets(10));
+  
+    TextArea ta = new TextArea();
+    ta.setEditable(false);
+    String trace = getExceptionStackTraceString(e);
+    ta.setText(trace);
+    ScrollPane sp = new ScrollPane(ta);
+    sp.setFitToWidth(true);
+    alert.getDialogPane().setHeader(headerFlow);
+    alert.getDialogPane().setContent(sp);
+  
+  
+    alert.showAndWait();
+    e.printStackTrace();
+  }
+
+  public static String getExceptionStackTraceString(Throwable e) {
+    Throwable rootCause = ExceptionUtils.getRootCause(e);
+    if (rootCause == null) {
+      rootCause = e;
+      while (rootCause.getCause() != null) {
+        rootCause = rootCause.getCause();
+      }
+    }
+    String trace = ExceptionUtils.getStackTrace(rootCause);
+    return trace;
+  }
+
+  public static String constructMailtoLink(DonorFileParser donorParser, File selectedFile,
+      Throwable e) {
+    StringBuilder sb = new StringBuilder("mailto:donor_check@umn.edu?subject=Error%20Report&body=");
+    StringBuilder sb1 = new StringBuilder();
+    sb1.append("[[[ PLEASE ATTACH SOURCE FILE IF POSSIBLE ]]]\n\n");
+    sb1.append("Exception information:\n");
+    sb1.append(getExceptionStackTraceString(e));
+    sb.append(UrlEscapers.urlFragmentEscaper().escape(sb1.toString()));
+    return sb.toString();
   }
 }
