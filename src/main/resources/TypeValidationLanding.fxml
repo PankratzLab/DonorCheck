@@ -7,6 +7,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.CustomMenuItem?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -18,7 +19,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane stylesheets="landing.css" fx:id="rootPane" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
     <center>
       <AnchorPane>
          <children>
@@ -202,6 +203,17 @@
                   <Menu mnemonicParsing="false" text="MAC Conversion">
                      <items>
                         <MenuItem mnemonicParsing="false" onAction="#macConversionScore6" text="Score6" />
+                     </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" text="About" >
+                     <items>
+                     	<CustomMenuItem hideOnClick="false" styleClass="custom-menu-lbl" >
+						    <content>
+						        <Label fx:id="menuVersionLabel" text="Version: "   />
+						    </content>
+						</CustomMenuItem>
+                        <MenuItem mnemonicParsing="false" onAction="#openWebsiteCompPath" text="Open UMN Computational Pathology Website" />
+                        <MenuItem mnemonicParsing="false" onAction="#openWebsiteGitHub" text="Open DonorCheck GitHub" />
                      </items>
                   </Menu>
               </menus>

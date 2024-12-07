@@ -28,6 +28,7 @@ import java.util.function.BiConsumer;
 import org.pankratzlab.BackgroundDataProcessor;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
+import org.pankratzlab.unet.deprecated.hla.LoggingPlaceholder;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
@@ -205,12 +206,7 @@ public class FileInputController extends AbstractValidatingWizardController {
                 }
               } catch (Throwable e) {
                 Platform.runLater(() -> {
-                  Alert alert = new Alert(AlertType.ERROR);
-                  alert.setHeaderText(donorParser.getErrorText()
-                      + "\nPlease notify the developers as this may indicate the data has changed."
-                      + "\nOffending file: " + selectedFile.getName());
-                  alert.showAndWait();
-                  e.printStackTrace();
+                  LoggingPlaceholder.alertError(donorParser, selectedFile, e);
                 });
               }
             });
@@ -223,12 +219,7 @@ public class FileInputController extends AbstractValidatingWizardController {
 
         } catch (Throwable e) {
           Platform.runLater(() -> {
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText(donorParser.getErrorText()
-                + "\nPlease notify the developers as this may indicate the data has changed."
-                + "\nOffending file: " + selectedFile.getName());
-            alert.showAndWait();
-            e.printStackTrace();
+            LoggingPlaceholder.alertError(donorParser, selectedFile, e);
           });
         }
 
@@ -244,9 +235,9 @@ public class FileInputController extends AbstractValidatingWizardController {
     if (validationResult.validationMessage.isPresent()) {
       Platform.runLater(() -> {
         Alert alert = new Alert(AlertType.ERROR);
-        alert.setHeaderText(donorParser.getErrorText()
-            + "\nPlease notify the developers as this may indicate the data has changed."
-            + "\nOffending file: " + selectedFile.getName());
+        alert.setHeaderText(
+            donorParser.getErrorText() + "\nOffending file: " + selectedFile.getName()
+                + "\nValidation message: " + validationResult.validationMessage.get());
         alert.showAndWait();
       });
     }

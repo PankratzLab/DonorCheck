@@ -5,11 +5,11 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
-
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.LabelledType;
+import org.pankratzlab.unet.deprecated.hla.LoggingPlaceholder;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.jfx.DonorNetUtils;
@@ -17,17 +17,13 @@ import org.pankratzlab.unet.model.Strand;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.parser.DonorFileParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
-
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMultimap;
-
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 
@@ -77,12 +73,7 @@ public class MACUIController {
               .setText(makeCALString(HLALocus.DPB1, dpbHaplotypes.get(Strand.SECOND)));
         } catch (Exception e) {
           Platform.runLater(() -> {
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText(donorParser.getErrorText()
-                + "\nPlease notify the developers as this may indicate the data has changed."
-                + "\nOffending file: " + selectedFile.getName());
-            alert.showAndWait();
-            e.printStackTrace();
+            LoggingPlaceholder.alertError(donorParser, selectedFile, e);
           });
         }
 
