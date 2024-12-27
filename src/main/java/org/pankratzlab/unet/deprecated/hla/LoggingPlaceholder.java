@@ -104,12 +104,12 @@ public final class LoggingPlaceholder {
 
   public static void alertError(DonorFileParser donorParser, File selectedFile, Throwable e) {
     Alert alert = new Alert(AlertType.ERROR);
-  
+
     Text errorText = new Text(
         donorParser.getErrorText() + "\nOffending file: " + selectedFile.getName() + "\n\nPlease ");
     Hyperlink emailLink = new Hyperlink("notify the developers");
     emailLink.setOnAction(new EventHandler<ActionEvent>() {
-  
+
       @Override
       public void handle(ActionEvent t) {
         try {
@@ -121,14 +121,14 @@ public final class LoggingPlaceholder {
         }
       }
     });
-  
+
     Text errorText2 = new Text(" as this may indicate the data has changed."
-        + "\nIf possible, please include the source file when notifying the developers."
-        + "\nException information:");
-  
+        + "\nIf possible, please include the source file when notifying the developers and the"
+        + "\nexception information below:");
+
     TextFlow headerFlow = new TextFlow(errorText, emailLink, errorText2);
     headerFlow.setPadding(new Insets(10));
-  
+
     TextArea ta = new TextArea();
     ta.setEditable(false);
     String trace = getExceptionStackTraceString(e);
@@ -137,8 +137,8 @@ public final class LoggingPlaceholder {
     sp.setFitToWidth(true);
     alert.getDialogPane().setHeader(headerFlow);
     alert.getDialogPane().setContent(sp);
-  
-  
+
+
     alert.showAndWait();
     e.printStackTrace();
   }

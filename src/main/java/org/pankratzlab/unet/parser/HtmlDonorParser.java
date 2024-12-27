@@ -41,6 +41,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   private static final String SELECTED_VALUE = "selected";
   private static final String SELECTED_ATTRIBUTE = SELECTED_VALUE;
   private static final String DONOR_ATTRIBUTE = "hdonid";
+  private static final String DONOR_HIDDEN_ATTRIBUTE = "hidDonId";
   private static final String HTML_TYPE_ATTR = "id";
   private static final String HTML_SUFFIX = "_label";
   private static final String HTML_PREFIX = "ddl";
@@ -111,7 +112,11 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   private void buildModelFromHTML(ValidationModelBuilder builder, Document parsed,
       BiFunction<Document, String, Optional<String>> typeParser) {
 
-    Element idElement = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, DONOR_ATTRIBUTE).get(0);
+    Elements idElems = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, DONOR_ATTRIBUTE);
+    if (idElems.isEmpty()) {
+      idElems = parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, DONOR_HIDDEN_ATTRIBUTE);
+    }
+    Element idElement = idElems.get(0);
     builder.donorId(idElement.val());
 
     // TODO these could be stored in a map of String to Consumer<String> and done in a general way
