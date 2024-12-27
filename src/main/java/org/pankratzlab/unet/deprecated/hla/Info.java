@@ -22,6 +22,9 @@
 package org.pankratzlab.unet.deprecated.hla;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Properties;
+import org.pankratzlab.unet.jfx.LandingController;
 
 /**
  * Container class for information that needs to be available to both the HLA application and
@@ -41,4 +44,15 @@ public class Info {
   public static final String REMOTE_VERSION_FILE = REMOTE_URL + "hla_releases.txt";
 
   public static final String LOCAL_VERSIONS_DIR = HLA_HOME + ".hlaversions" + File.separator;
+
+  public static String getVersion() {
+    try {
+      final Properties properties = new Properties();
+      properties
+          .load(LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
+      return properties.getProperty("version");
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

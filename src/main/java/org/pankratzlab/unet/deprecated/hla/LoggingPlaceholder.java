@@ -124,7 +124,7 @@ public final class LoggingPlaceholder {
 
     Text errorText2 = new Text(" as this may indicate the data has changed."
         + "\nIf possible, please include the source file when notifying the developers and the"
-        + "\nexception information below:");
+        + "\nprogram version and exception information below:");
 
     TextFlow headerFlow = new TextFlow(errorText, emailLink, errorText2);
     headerFlow.setPadding(new Insets(10));
@@ -132,7 +132,9 @@ public final class LoggingPlaceholder {
     TextArea ta = new TextArea();
     ta.setEditable(false);
     String trace = getExceptionStackTraceString(e);
-    ta.setText(trace);
+    String version = Info.getVersion();
+    String text = "DonorCheck Version: " + version + "\n\n" + trace;
+    ta.setText(text);
     ScrollPane sp = new ScrollPane(ta);
     sp.setFitToWidth(true);
     alert.getDialogPane().setHeader(headerFlow);
@@ -160,6 +162,7 @@ public final class LoggingPlaceholder {
     StringBuilder sb = new StringBuilder("mailto:donor_check@umn.edu?subject=Error%20Report&body=");
     StringBuilder sb1 = new StringBuilder();
     sb1.append("[[[ PLEASE ATTACH SOURCE FILE IF POSSIBLE ]]]\n\n");
+    sb1.append("DonorCheck Version: ").append(Info.getVersion()).append("\n\n");
     sb1.append("Exception information:\n");
     sb1.append(getExceptionStackTraceString(e));
     sb.append(UrlEscapers.urlFragmentEscaper().escape(sb1.toString()));

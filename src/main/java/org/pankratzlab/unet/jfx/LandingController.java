@@ -27,7 +27,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
@@ -35,6 +34,7 @@ import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
+import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
@@ -61,10 +61,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
@@ -102,10 +99,6 @@ public class LandingController {
   private Label menuVersionLabel;
 
   private String version;
-
-  SeparatorMenuItem i;
-  CustomMenuItem v;
-  MenuItem v1;
 
   @FXML
   void fileQuitAction(ActionEvent event) {
@@ -395,17 +388,10 @@ public class LandingController {
   void initialize() {
     assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
 
-    final Properties properties = new Properties();
-    try {
-      properties
-          .load(LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
-      final String value = "Version: " + (version = properties.getProperty("version")) + " ";
-      versionLabel.setText(value);
-      menuVersionLabel.setText("DonorCheck " + value);
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    version = Info.getVersion();
+    String value = "Version: " + version + " ";
+    versionLabel.setText(value);
+    menuVersionLabel.setText("DonorCheck " + value);
 
     System.setProperty(DONORCHECK_VERSION, version);
     System.setProperty(CurrentDirectoryProvider.BASE_DIR_PROP_NAME, UNET_BASE_DIR_PROP);
