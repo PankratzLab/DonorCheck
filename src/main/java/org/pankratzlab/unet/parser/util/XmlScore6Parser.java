@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
@@ -80,6 +81,7 @@ public class XmlScore6Parser {
   // -- XML Tags required for parsing --
   public static final String ROOT_ELEMENT = "batchsubmission";
   private static final String PATIENT_ID_TAG = "patientId";
+  private static final String ALLELE_CALL_TAG = "alleleCall";
   private static final String ALLELE_RESULTS_TAG = "alleleResults";
   private static final String RESULT_COMBINATION_TAG = "resultCombination";
   private static final String SERO_COMBINATION_TAG = "serologicalCombination";
@@ -296,6 +298,20 @@ public class XmlScore6Parser {
       String locus = tag.get();
       if (!metadataMap.containsKey(locus)) {
         return;
+      }
+
+      String alleleCall1 = null;
+      String alleleCall2 = null;
+      Elements alleleCalls = typedLocus.getElementsByTag(ALLELE_CALL_TAG);
+      if (alleleCalls.size() >= 2) {
+        Element a1 = alleleCalls.get(0);
+        Element a2 = alleleCalls.get(1);
+        if (a1.childNodeSize() > 0 && a2.childNodeSize() > 0) {
+          TextNode e1 = (TextNode) a1.childNode(0);
+          TextNode e2 = (TextNode) a2.childNode(0);
+          alleleCall1 = e1.text();
+          alleleCall2 = e2.text();
+        }
       }
 
       // Each locus has one allele results block which contains potential allele pairs
@@ -515,6 +531,20 @@ public class XmlScore6Parser {
       } else if (DPB_HEADER.equals(locus)) {
         addHaplotypes(builder, resultCombinations.get(selectedResultIndex),
             identityLocusMap(HLALocus.DPB1), ValidationModelBuilder::dpHaplotype);
+      }
+
+      // if alleleCall values are present, short-circuit the rest of the processing and just use
+      // those
+      if (alleleCall1 != null && alleleCall2 != null) {
+        if (alleleCall1.startsWith(hlaLocus.name() + "*")) {
+          alleleCall1 = alleleCall1.substring(hlaLocus.name().length() + 1);
+        }
+        if (alleleCall2.startsWith(hlaLocus.name() + "*")) {
+          alleleCall2 = alleleCall2.substring(hlaLocus.name().length() + 1);
+        }
+        metadataTypeMap.get(locus).accept(builder, new HLAType(hlaLocus, alleleCall1));
+        metadataTypeMap.get(locus).accept(builder, new HLAType(hlaLocus, alleleCall2));
+        return;
       }
 
       // Finally, add the types to the model builder
