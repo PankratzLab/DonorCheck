@@ -181,9 +181,9 @@ public final class SerotypeEquivalence {
     put(builder, "18", HLALocus.DRB1, "03:02", "03:03");
 
     // -- DQ Locus --
-    put(builder, "7", HLALocus.DQB1, "03:01", "03:04", "03:13", "03:19");
+    put(builder, "7", HLALocus.DQB1, /* "03:01", */ "03:04", "03:13", "03:19");
     put(builder, "8", HLALocus.DQB1, "03:02", "03:05");
-    put(builder, "9", HLALocus.DQB1, "03:03");
+    put(builder, "9", HLALocus.DQB1, "03:01", "03:03");
 
     return builder.build();
   }
@@ -208,6 +208,9 @@ public final class SerotypeEquivalence {
     if (allele.spec().size() > 2) {
       // All the manual equivalencies are based on 2-field alleles
       manualAllele = new HLAType(allele.locus(), allele.spec().subList(0, 2));
+    }
+    if (allele.resolution() == 1) {
+      manualAllele = HLAType.growSpec(allele);
     }
     if (manualEquivalencies.containsKey(manualAllele)) {
       return manualEquivalencies.get(manualAllele);

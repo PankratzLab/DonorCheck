@@ -114,6 +114,8 @@ public class XmlScore6Parser {
 
   // Map of Locus values to setter + type prefix
   private static ImmutableMap<String, Function<ResultCombination, String>> specStringGeneratorMap;
+  private static ImmutableMap<String, Function<HLAType, String>> specStringGeneratorMap1;
+  private static ImmutableMap<String, BiFunction<SeroType, HLAType, String>> specStringGeneratorMap2;
 
   private static void init() {
     // -- Build mapping between loci sections, serotype prefixes and validation model setters --
@@ -239,17 +241,30 @@ public class XmlScore6Parser {
     // -- Build mapping between loci and serological/allele parsing
     Builder<String, Function<ResultCombination, String>> specGeneratorBuilder =
         ImmutableMap.builder();
+    Builder<String, Function<HLAType, String>> specGenerator1Builder = ImmutableMap.builder();
+    Builder<String, BiFunction<SeroType, HLAType, String>> specGenerator2Builder =
+        ImmutableMap.builder();
     specGeneratorBuilder.put(A_HEADER, XmlScore6Parser::getAlleleSpec);
+    specGenerator1Builder.put(A_HEADER, XmlScore6Parser::getAlleleSpec);
     specGeneratorBuilder.put(B_HEADER, XmlScore6Parser::getAlleleLookup);
+    specGenerator2Builder.put(B_HEADER, XmlScore6Parser::getAlleleLookup);
     specGeneratorBuilder.put(C_HEADER, XmlScore6Parser::getAlleleLookup);
+    specGenerator2Builder.put(C_HEADER, XmlScore6Parser::getAlleleLookup);
     specGeneratorBuilder.put(DRB_HEADER, XmlScore6Parser::getAlleleLookup);
+    specGenerator2Builder.put(DRB_HEADER, XmlScore6Parser::getAlleleLookup);
     specGeneratorBuilder.put(DQB_HEADER, XmlScore6Parser::getAlleleLookup);
+    specGenerator2Builder.put(DQB_HEADER, XmlScore6Parser::getAlleleLookup);
     specGeneratorBuilder.put(DPB_HEADER, XmlScore6Parser::getAlleleSpec);
+    specGenerator1Builder.put(DPB_HEADER, XmlScore6Parser::getAlleleSpec);
     specGeneratorBuilder.put(DQA_HEADER, XmlScore6Parser::getAlleleSpec);
+    specGenerator1Builder.put(DQA_HEADER, XmlScore6Parser::getAlleleSpec);
     specGeneratorBuilder.put(DPA_HEADER, XmlScore6Parser::getAlleleSpec);
+    specGenerator1Builder.put(DPA_HEADER, XmlScore6Parser::getAlleleSpec);
 
     // DR52/53/54 appears as a serological combination
     specStringGeneratorMap = specGeneratorBuilder.build();
+    specStringGeneratorMap1 = specGenerator1Builder.build();
+    specStringGeneratorMap2 = specGenerator2Builder.build();
   }
 
   public static void buildModelFromXML(ValidationModelBuilder builder, Document doc) {
@@ -522,8 +537,26 @@ public class XmlScore6Parser {
         if (alleleCall2.startsWith(hlaLocus.name() + "*")) {
           alleleCall2 = alleleCall2.substring(hlaLocus.name().length() + 1);
         }
-        metadataTypeMap.get(locus).accept(builder, new HLAType(hlaLocus, alleleCall1));
-        metadataTypeMap.get(locus).accept(builder, new HLAType(hlaLocus, alleleCall2));
+        HLAType h1 = new HLAType(hlaLocus, alleleCall1);
+        HLAType h2 = new HLAType(hlaLocus, alleleCall2);
+        String sero1 = null;
+        String sero2 = null;
+        if (specStringGeneratorMap1.containsKey(locus)) {
+          sero1 = specStringGeneratorMap1.get(locus).apply(h1);
+          sero2 = specStringGeneratorMap1.get(locus).apply(h2);
+        } else if (specStringGeneratorMap2.containsKey(locus)) {
+          sero1 = specStringGeneratorMap2.get(locus).apply(SerotypeEquivalence.get(h1), h1);
+          sero2 = specStringGeneratorMap2.get(locus).apply(SerotypeEquivalence.get(h2), h2);
+        } else {
+          sero1 = h1.equivSafe().specString();
+          sero2 = h2.equivSafe().specString();
+        }
+        metadataMap.get(locus).accept(builder, sero1);
+        metadataMap.get(locus).accept(builder, sero2);
+        if (metadataTypeMap.containsKey(locus)) {
+          metadataTypeMap.get(locus).accept(builder, h1);
+          metadataTypeMap.get(locus).accept(builder, h2);
+        }
         return;
       }
 
@@ -1092,29 +1125,32 @@ public class XmlScore6Parser {
 
   /** @return The specificity of alleles with special lookup rules */
   private static String getAlleleLookup(ResultCombination combination) {
-
     SeroType st = SerotypeEquivalence.get(combination.getAlleleCombination());
+    return getAlleleLookup(st, combination.alleleCombination);
+  }
+
+  /** @return The specificity of alleles with special lookup rules */
+  private static String getAlleleLookup(SeroType st, HLAType allele) {
     if (st != null) {
-      SeroType st1 = combination.getAlleleCombination().equivSafe();
-      SeroType st2 = combination.getAntigenCombination();
-
-      if (st.compareTo(st1) != 0 || st.compareTo(st2) != 0 || st1.compareTo(st2) != 0) {
-        System.err.println(
-            "Discrepant lookup (score6 | equivSafe | file):\t" + st + "\t" + st1 + "\t" + st2);
-      }
-
       return st.specString();
     }
 
     // TODO why not return combination.antigenCombination?
     // Not a special case allele - use standard rules
-    return combination.alleleCombination.equivSafe().specString();
+    return allele.equivSafe().specString();
   }
 
   /** @return The {@link HLAType} specificity of an allele + antigen pairing */
   private static String getAlleleSpec(ResultCombination combination) {
     // Standard operating procedure is to just report the first field of the allele
     HLAType hlaType = combination.getAlleleCombination();
+
+    return getAlleleSpec(hlaType);
+  }
+
+  /** @return The {@link HLAType} specificity of an allele + antigen pairing */
+  private static String getAlleleSpec(HLAType hlaType) {
+    // Standard operating procedure is to just report the first field of the allele
 
     if (hlaType.locus() == HLALocus.DPA1 || hlaType.locus() == HLALocus.DPB1) {
       StringJoiner sj = new StringJoiner(":");
@@ -1123,7 +1159,11 @@ public class XmlScore6Parser {
       if (Objects.equals(HLALocus.DPA1, hlaType.locus())
           || Objects.equals(HLALocus.DPB1, hlaType.locus())) {
         // DPA and DPB report two fields
-        sj.add(String.valueOf(hlaType.spec().get(1)));
+        HLAType t = hlaType;
+        if (hlaType.resolution() == 1) {
+          t = HLAType.growSpec(t);
+        }
+        sj.add(String.valueOf(t.spec().get(1)));
       }
 
       return sj.toString();
