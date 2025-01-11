@@ -181,9 +181,9 @@ public final class SerotypeEquivalence {
     put(builder, "18", HLALocus.DRB1, "03:02", "03:03");
 
     // -- DQ Locus --
-    put(builder, "7", HLALocus.DQB1, "03:01", "03:04", "03:13", "03:19");
+    put(builder, "7", HLALocus.DQB1, /* "03:01", */ "03:04", "03:13", "03:19");
     put(builder, "8", HLALocus.DQB1, "03:02", "03:05");
-    put(builder, "9", HLALocus.DQB1, "03:03");
+    put(builder, "9", HLALocus.DQB1, "03:01", "03:03");
 
     return builder.build();
   }
