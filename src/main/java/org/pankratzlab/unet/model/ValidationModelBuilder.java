@@ -435,6 +435,18 @@ public class ValidationModelBuilder {
     return this;
   }
 
+  public ValidationModelBuilder dpb(String dpbType) {
+    dpbLocusAlleles = makeIfNull(dpbLocusAlleles);
+    if (test2(dpbType)) {
+      return null;
+    }
+    if (!Strings.isNullOrEmpty(dpbType)) {
+      HLAType tmpDPB1 = new HLAType(HLALocus.DPB1, dpbType);
+      addToLocus(dpbLocusAlleles, HLALocus.DPB1, tmpDPB1);
+    }
+    return this;
+  }
+
   public ValidationModelBuilder dpb(HLAType dpbType) {
     dpbLocusAlleles = makeIfNull(dpbLocusAlleles);
     dpbLocusAlleles.add(dpbType);

@@ -138,8 +138,8 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
     if (parsed.getElementsByAttributeValue(HTML_TYPE_ATTR, HTML_PREFIX + "DPA2").size() != 0) {
       typeParser.apply(parsed, "DPA2").ifPresent(builder::dpaSerotype);
     }
-    typeParser.apply(parsed, "DPB1").ifPresent(builder::dpbSerotype);
-    typeParser.apply(parsed, "DPB2").ifPresent(builder::dpbSerotype);
+    typeParser.apply(parsed, "DPB1").ifPresent(builder::dpb);
+    typeParser.apply(parsed, "DPB2").ifPresent(builder::dpb);
 
     typeParser.apply(parsed, "BW4").ifPresent(s -> builder.bw4(decodeHTMLBoolean(s)));
     typeParser.apply(parsed, "BW6").ifPresent(s -> builder.bw6(decodeHTMLBoolean(s)));
