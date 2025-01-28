@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
@@ -296,9 +297,13 @@ public class ValidationTesting {
       entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
       entry.getKey().donorCheckVersion.set(Info.getVersion());
 
-      String logStr =
-          DATE_FORMAT.format(entry.getValue().runTime) + "\t" + entry.getValue().result.isPassing
-              + "\t" + entry.getValue().result.name() + System.lineSeparator();
+      StringJoiner sj = new StringJoiner("\t");
+      sj.add(DATE_FORMAT.format(entry.getValue().runTime));
+      sj.add(Boolean.toString(entry.getValue().result.isPassing));
+      sj.add(entry.getValue().result.name());
+      sj.add(Info.getVersion());
+
+      String logStr = sj.toString() + System.lineSeparator();
 
       try {
         java.nio.file.Files.writeString(Path.of(subdir, TEST_LOG), logStr,
@@ -592,7 +597,7 @@ public class ValidationTesting {
       });
 
       // Add multiple <toAllele> elements under <remapLocus>
-      e.getValue().getLeft().stream().forEach(allele -> {
+      e.getValue().getRight().stream().forEach(allele -> {
         remapLocus.appendElement("toAllele").text(allele.getHlaType().specString());
       });
     });
@@ -622,10 +627,8 @@ public class ValidationTesting {
     String cwdStr = props.getProperty(CWD_PROP);
     String relStr = props.getProperty(REL);
     String commentStr = props.getProperty(COMMENT_PROP, "");
-    String donorCheckVersionStr = props.getProperty(DC_VER_PROP, "");
 
     builder.comment(commentStr);
-    builder.donorCheckVersion(donorCheckVersionStr);
 
     CommonWellDocumented.SOURCE cwdSource = null;
     try {
@@ -653,6 +656,7 @@ public class ValidationTesting {
       Date lastRunDate = DATE_FORMAT.parse(parts[0]);
       Boolean lastPassingState = Boolean.parseBoolean(parts[1]);
       String lastPassingResultStr = parts[2];
+      String lastRunDonorCheckVersionStr = (parts.length >= 4) ? parts[3] : "<unknown>";
       TEST_RESULT lastPassingResult = null;
       try {
         lastPassingResult = TEST_RESULT.valueOf(lastPassingResultStr);
@@ -662,9 +666,12 @@ public class ValidationTesting {
 
       builder.lastRunDate(lastRunDate);
       builder.lastPassingState(lastPassingState);
+
       if (lastPassingResult != null) {
         builder.lastPassingResult(lastPassingResult);
       }
+
+      builder.donorCheckVersion(lastRunDonorCheckVersionStr);
 
     } catch (Exception e) {
       throw new IllegalStateException("Invalid log: " + individualFile.getAbsolutePath(), e);

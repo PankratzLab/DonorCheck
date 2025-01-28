@@ -35,6 +35,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Table;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -85,6 +87,9 @@ public class ValidationTestMgmtController {
 
   @FXML
   TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> testFileTypesColumn;
+
+  @FXML
+  TableColumn<ValidationTestFileSet, Boolean> hasRemappingsColumn;
 
   @FXML
   TableColumn<ValidationTestFileSet, CommonWellDocumented.SOURCE> ciwdVersionColumn;
@@ -266,6 +271,35 @@ public class ValidationTestMgmtController {
                 } else {
                   setText(value.stream().sorted().map(SourceType::name)
                       .collect(Collectors.joining(", ")));
+                }
+              }
+            };
+          }
+        });
+
+    hasRemappingsColumn.setCellValueFactory(
+        new Callback<CellDataFeatures<ValidationTestFileSet, Boolean>, ObservableValue<Boolean>>() {
+          public ObservableValue<Boolean> call(CellDataFeatures<ValidationTestFileSet, Boolean> p) {
+            ReadOnlyStringProperty valueSafe = p.getValue().remapFile;
+            return new SimpleObjectProperty<>(valueSafe != null && valueSafe.get() != null
+                && !valueSafe.get().isBlank() && new File(valueSafe.get()).exists());
+          }
+        });
+
+    hasRemappingsColumn.setCellFactory(
+        new Callback<TableColumn<ValidationTestFileSet, Boolean>, TableCell<ValidationTestFileSet, Boolean>>() {
+
+          @Override
+          public TableCell<ValidationTestFileSet, Boolean> call(
+              TableColumn<ValidationTestFileSet, Boolean> param) {
+            return new TableCell<ValidationTestFileSet, Boolean>() {
+              @Override
+              protected void updateItem(Boolean value, boolean empty) {
+                super.updateItem(value, empty);
+                if (value == null) {
+                  setText(null);
+                } else {
+                  setText(value ? "Yes" : "");
                 }
               }
             };

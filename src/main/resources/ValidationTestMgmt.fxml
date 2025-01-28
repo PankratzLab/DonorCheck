@@ -43,6 +43,7 @@
 						<TableColumn id="passingStatusColumn" fx:id="passingStatusColumn" editable="false" minWidth="30.0" prefWidth="65.0" text="Passed?" />
 						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="30.0" prefWidth="75.0" text="Result" />
 						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="140.0" text="Test File Types" />
+						<TableColumn id="hasRemappingsColumn" fx:id="hasRemappingsColumn" editable="false" minWidth="30.0" prefWidth="140.0" text="Has Remappings?" />
                   		<TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" editable="false" prefWidth="100.0" text="CIWD Version" />
                   		<TableColumn id="relDnaSerVersion" fx:id="relDnaSerVersion" editable="false" prefWidth="125.0" text="Serotype Version" />
                   		<TableColumn id="donorCheckVersion" fx:id="donorCheckVersion" editable="false" prefWidth="125.0" text="DonorCheck Version" />
