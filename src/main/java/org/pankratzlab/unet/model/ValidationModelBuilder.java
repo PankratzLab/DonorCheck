@@ -85,6 +85,9 @@ import com.google.common.collect.Table;
  */
 public class ValidationModelBuilder {
 
+  public static final Set<HLALocus> REPORT_SERO = Set.of(HLALocus.A, HLALocus.B, HLALocus.C,
+      HLALocus.DRB1, HLALocus.DQB1, HLALocus.DQA1, HLALocus.DPA1);
+
   private static final Map<RaceGroup, EthnicityHaplotypeComp> comparators =
       new EnumMap<>(RaceGroup.class);
   private static final Table<Haplotype, RaceGroup, BigDecimal> frequencyTable =

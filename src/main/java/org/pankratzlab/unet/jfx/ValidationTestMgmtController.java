@@ -17,6 +17,7 @@ import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
@@ -92,6 +93,9 @@ public class ValidationTestMgmtController {
   TableColumn<ValidationTestFileSet, String> relDnaSerVersion;
 
   @FXML
+  TableColumn<ValidationTestFileSet, String> donorCheckVersion;
+
+  @FXML
   Button closeButton;
 
   @FXML
@@ -118,6 +122,7 @@ public class ValidationTestMgmtController {
     assert testFileTypesColumn != null : "fx:id=\"testFileTypesColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert ciwdVersionColumn != null : "fx:id=\"ciwdVersionColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert relDnaSerVersion != null : "fx:id=\"relDnaSerVersion\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert donorCheckVersion != null : "fx:id=\"donorCheckVersion\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert closeButton != null : "fx:id=\"closeButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert removeSelectedButton != null : "fx:id=\"removeSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert runSelectedButton != null : "fx:id=\"runSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
@@ -162,6 +167,7 @@ public class ValidationTestMgmtController {
       try {
         ev.getRowValue().comment.set(ev.getNewValue());
         ValidationTesting.updateTestProperties(ev.getRowValue());
+        testTable.refresh();
       } catch (IllegalStateException e) {
         AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
         testTable.refresh();
@@ -278,6 +284,13 @@ public class ValidationTestMgmtController {
         new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
           public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
             return p.getValue().relDnaSerFile.map(AntigenDictionary::getVersion).orElse("");
+          }
+        });
+
+    donorCheckVersion.setCellValueFactory(
+        new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
+          public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
+            return p.getValue().donorCheckVersion;
           }
         });
 
@@ -449,7 +462,7 @@ public class ValidationTestMgmtController {
           Stage stage = new Stage();
           final Window window = stage.getOwner();
           Wizard validationWizard = new Wizard(window);
-          final String string = System.getProperty(LandingController.DONORCHECK_VERSION, "");
+          final String string = Info.getVersion();
           validationWizard.setTitle("DonorCheck " + string);
           validationWizard.setFlow(pageFlow);
 
@@ -489,9 +502,9 @@ public class ValidationTestMgmtController {
       Desktop.getDesktop().open(new File(dir));
     } catch (IOException e) {
       e.printStackTrace();
-      Alert alert = new Alert(AlertType.ERROR,
+      new Alert(AlertType.ERROR,
           "Error opening directory for test " + selectedItem.id.get() + ":\n" + e.getMessage(),
-          ButtonType.CLOSE);
+          ButtonType.CLOSE).showAndWait();
     }
   }
 

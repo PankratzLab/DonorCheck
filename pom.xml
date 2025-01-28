@@ -447,7 +447,7 @@
 									<!--<winconsole>true</winconsole>-->
 
 									<!-- Start menu group this application is placed in. -->
-									<winmenugroup>HLA-Suite</winmenugroup>
+									<winmenugroup>HLA-Tool-Suite</winmenugroup>
 
 									<!-- location of files to be included in the EXE/installer -->
 									<input>target/package/</input>

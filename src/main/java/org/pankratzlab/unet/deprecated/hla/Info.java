@@ -45,14 +45,19 @@ public class Info {
 
   public static final String LOCAL_VERSIONS_DIR = HLA_HOME + ".hlaversions" + File.separator;
 
+  private static String version = null;
+
   public static String getVersion() {
-    try {
-      final Properties properties = new Properties();
-      properties
-          .load(LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
-      return properties.getProperty("version");
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    if (version == null) {
+      try {
+        final Properties properties = new Properties();
+        properties.load(
+            LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
+        version = properties.getProperty("version");
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
+    return version;
   }
 }

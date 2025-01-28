@@ -70,6 +70,7 @@ public class ValidationTesting {
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
   private static final String COMMENT_PROP = "comment";
+  private static final String DC_VER_PROP = "version";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
@@ -225,6 +226,7 @@ public class ValidationTesting {
     props.setProperty(CWD_PROP, CommonWellDocumented.loadPropertyCWDSource().name());
     props.setProperty(REL, newRelFileName);
     props.setProperty(COMMENT_PROP, "");
+    props.setProperty(DC_VER_PROP, Info.getVersion());
     try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
       props.store(fos, null);
     } catch (Exception e) {
@@ -292,6 +294,7 @@ public class ValidationTesting {
       entry.getKey().lastRunDate.set(entry.getValue().runTime);
       entry.getKey().lastTestResult.set(entry.getValue().result);
       entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
+      entry.getKey().donorCheckVersion.set(Info.getVersion());
 
       String logStr =
           DATE_FORMAT.format(entry.getValue().runTime) + "\t" + entry.getValue().result.isPassing
@@ -341,11 +344,14 @@ public class ValidationTesting {
     }
 
     String prevComment = Objects.toString(props.setProperty(COMMENT_PROP, test.comment.get()), "");
+    String prevVersion =
+        Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
 
     try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
       props.store(fos, null);
     } catch (Exception e) {
       test.comment.set(prevComment);
+      test.donorCheckVersion.setValue(prevVersion);
       e.printStackTrace();
       throw new IllegalStateException("Failed to save properties from " + testPropertiesFile);
     }
@@ -395,7 +401,6 @@ public class ValidationTesting {
 
     loadTestMetadata(individualFile, builder);
     loadTestLastRunLog(individualFile, builder);
-
 
     String remapFile = null;
     Builder<String> inputFilesBuilder = ImmutableList.builder();
@@ -617,8 +622,10 @@ public class ValidationTesting {
     String cwdStr = props.getProperty(CWD_PROP);
     String relStr = props.getProperty(REL);
     String commentStr = props.getProperty(COMMENT_PROP, "");
+    String donorCheckVersionStr = props.getProperty(DC_VER_PROP, "");
 
     builder.comment(commentStr);
+    builder.donorCheckVersion(donorCheckVersionStr);
 
     CommonWellDocumented.SOURCE cwdSource = null;
     try {
