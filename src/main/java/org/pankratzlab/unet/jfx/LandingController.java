@@ -75,7 +75,6 @@ public class LandingController {
       "https://github.com/PankratzLab/DonorCheck";
   private static final String WEBSITE_COMP_PATH =
       "https://med.umn.edu/pathology/research/computational-pathology";
-  static final String DONORCHECK_VERSION = "DONORCHECK_VERSION";
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String MACUI_ENTRY = "/MACUIConversionPanel.fxml";
 
@@ -393,7 +392,6 @@ public class LandingController {
     versionLabel.setText(value);
     menuVersionLabel.setText("DonorCheck " + value);
 
-    System.setProperty(DONORCHECK_VERSION, version);
     System.setProperty(CurrentDirectoryProvider.BASE_DIR_PROP_NAME, UNET_BASE_DIR_PROP);
   }
 }

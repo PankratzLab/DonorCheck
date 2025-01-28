@@ -85,6 +85,9 @@ import com.google.common.collect.Table;
  */
 public class ValidationModelBuilder {
 
+  public static final Set<HLALocus> REPORT_SERO = Set.of(HLALocus.A, HLALocus.B, HLALocus.C,
+      HLALocus.DRB1, HLALocus.DQB1, HLALocus.DQA1, HLALocus.DPA1);
+
   private static final Map<RaceGroup, EthnicityHaplotypeComp> comparators =
       new EnumMap<>(RaceGroup.class);
   private static final Table<Haplotype, RaceGroup, BigDecimal> frequencyTable =
@@ -432,6 +435,18 @@ public class ValidationModelBuilder {
     }
     dpaLocus = makeIfNull(dpaLocus);
     addToLocus(dpaLocus, SeroLocus.DPA, dpaType);
+    return this;
+  }
+
+  public ValidationModelBuilder dpb(String dpbType) {
+    dpbLocusAlleles = makeIfNull(dpbLocusAlleles);
+    if (test2(dpbType)) {
+      return null;
+    }
+    if (!Strings.isNullOrEmpty(dpbType)) {
+      HLAType tmpDPB1 = new HLAType(HLALocus.DPB1, dpbType);
+      addToLocus(dpbLocusAlleles, HLALocus.DPB1, tmpDPB1);
+    }
     return this;
   }
 

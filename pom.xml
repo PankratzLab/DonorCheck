@@ -7,7 +7,7 @@
 	<groupId>org.pankratzlab</groupId>
 	<artifactId>donorcheck</artifactId>
 	<!-- if version number changes, be sure to update in project.properties file also -->
-	<version>1.2.3</version>
+	<version>1.2.4</version>
 	<packaging>jar</packaging>
 
 	<description>A stand-alone tool for validating DonorNet typing entries.</description>
@@ -447,7 +447,7 @@
 									<!--<winconsole>true</winconsole>-->
 
 									<!-- Start menu group this application is placed in. -->
-									<winmenugroup>HLA-Suite</winmenugroup>
+									<winmenugroup>HLA-Tool-Suite</winmenugroup>
 
 									<!-- location of files to be included in the EXE/installer -->
 									<input>target/package/</input>

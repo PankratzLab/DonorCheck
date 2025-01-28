@@ -38,6 +38,8 @@ public class ValidationTestFileSet {
   public final ReadOnlyStringProperty relDnaSerFile;
 
   // Last Run Date and Passing State are not read-only as they may change
+  public final StringProperty donorCheckVersion;
+
   public final ObjectProperty<Date> lastRunDate;
 
   public final ObjectProperty<Boolean> lastPassingState;
@@ -51,6 +53,7 @@ public class ValidationTestFileSet {
     private String remapFile;
     private CommonWellDocumented.SOURCE cwdSource;
     private String relDnaSerFile;
+    private String donorCheckVersion;
     private Date lastRunDate;
     private Boolean lastPassingState;
     private TEST_RESULT lastPassingResult;
@@ -85,6 +88,11 @@ public class ValidationTestFileSet {
       return this;
     }
 
+    public ValidationTestFileSetBuilder donorCheckVersion(String donorCheckVersion) {
+      this.donorCheckVersion = donorCheckVersion;
+      return this;
+    }
+
     public ValidationTestFileSetBuilder lastRunDate(Date lastRunDate) {
       this.lastRunDate = lastRunDate;
       return this;
@@ -102,7 +110,7 @@ public class ValidationTestFileSet {
 
     public ValidationTestFileSet build() {
       return new ValidationTestFileSet(id, comment, filePaths, remapFile, cwdSource, relDnaSerFile,
-          lastRunDate, lastPassingState, lastPassingResult);
+          donorCheckVersion, lastRunDate, lastPassingState, lastPassingResult);
     }
 
   }
@@ -112,8 +120,8 @@ public class ValidationTestFileSet {
   }
 
   private ValidationTestFileSet(String id, String comment, List<String> filePaths, String remapFile,
-      CommonWellDocumented.SOURCE cwdSource, String relDnaSerFile, Date lastRunDate,
-      Boolean lastPassingState, TEST_RESULT lastTestResult) {
+      CommonWellDocumented.SOURCE cwdSource, String relDnaSerFile, String donorCheckVersion,
+      Date lastRunDate, Boolean lastPassingState, TEST_RESULT lastTestResult) {
     this.id = new SimpleStringProperty(id);
     this.comment = new SimpleStringProperty(comment);
     this.filePaths = new ReadOnlyListWrapper<>(FXCollections.observableList(filePaths));
@@ -130,6 +138,7 @@ public class ValidationTestFileSet {
     this.remapFile = new ReadOnlyStringWrapper(remapFile);
     this.cwdSource = new ReadOnlyObjectWrapper<>(cwdSource);
     this.relDnaSerFile = new ReadOnlyStringWrapper(relDnaSerFile);
+    this.donorCheckVersion = new SimpleStringProperty(donorCheckVersion);
     this.lastRunDate = new SimpleObjectProperty<>(lastRunDate);
     this.lastPassingState = new SimpleObjectProperty<>(lastPassingState);
     this.lastTestResult = new SimpleObjectProperty<>(lastTestResult);

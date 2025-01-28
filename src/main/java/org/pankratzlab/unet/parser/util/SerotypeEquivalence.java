@@ -209,6 +209,9 @@ public final class SerotypeEquivalence {
       // All the manual equivalencies are based on 2-field alleles
       manualAllele = new HLAType(allele.locus(), allele.spec().subList(0, 2));
     }
+    if (allele.resolution() == 1) {
+      manualAllele = HLAType.growSpec(allele);
+    }
     if (manualEquivalencies.containsKey(manualAllele)) {
       return manualEquivalencies.get(manualAllele);
     }

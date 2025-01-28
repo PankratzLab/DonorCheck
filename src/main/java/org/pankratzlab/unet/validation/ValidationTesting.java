@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
@@ -70,6 +71,7 @@ public class ValidationTesting {
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
   private static final String COMMENT_PROP = "comment";
+  private static final String DC_VER_PROP = "version";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
@@ -225,6 +227,7 @@ public class ValidationTesting {
     props.setProperty(CWD_PROP, CommonWellDocumented.loadPropertyCWDSource().name());
     props.setProperty(REL, newRelFileName);
     props.setProperty(COMMENT_PROP, "");
+    props.setProperty(DC_VER_PROP, Info.getVersion());
     try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
       props.store(fos, null);
     } catch (Exception e) {
@@ -292,10 +295,15 @@ public class ValidationTesting {
       entry.getKey().lastRunDate.set(entry.getValue().runTime);
       entry.getKey().lastTestResult.set(entry.getValue().result);
       entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
+      entry.getKey().donorCheckVersion.set(Info.getVersion());
 
-      String logStr =
-          DATE_FORMAT.format(entry.getValue().runTime) + "\t" + entry.getValue().result.isPassing
-              + "\t" + entry.getValue().result.name() + System.lineSeparator();
+      StringJoiner sj = new StringJoiner("\t");
+      sj.add(DATE_FORMAT.format(entry.getValue().runTime));
+      sj.add(Boolean.toString(entry.getValue().result.isPassing));
+      sj.add(entry.getValue().result.name());
+      sj.add(Info.getVersion());
+
+      String logStr = sj.toString() + System.lineSeparator();
 
       try {
         java.nio.file.Files.writeString(Path.of(subdir, TEST_LOG), logStr,
@@ -341,11 +349,14 @@ public class ValidationTesting {
     }
 
     String prevComment = Objects.toString(props.setProperty(COMMENT_PROP, test.comment.get()), "");
+    String prevVersion =
+        Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
 
     try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
       props.store(fos, null);
     } catch (Exception e) {
       test.comment.set(prevComment);
+      test.donorCheckVersion.setValue(prevVersion);
       e.printStackTrace();
       throw new IllegalStateException("Failed to save properties from " + testPropertiesFile);
     }
@@ -395,7 +406,6 @@ public class ValidationTesting {
 
     loadTestMetadata(individualFile, builder);
     loadTestLastRunLog(individualFile, builder);
-
 
     String remapFile = null;
     Builder<String> inputFilesBuilder = ImmutableList.builder();
@@ -587,7 +597,7 @@ public class ValidationTesting {
       });
 
       // Add multiple <toAllele> elements under <remapLocus>
-      e.getValue().getLeft().stream().forEach(allele -> {
+      e.getValue().getRight().stream().forEach(allele -> {
         remapLocus.appendElement("toAllele").text(allele.getHlaType().specString());
       });
     });
@@ -646,6 +656,7 @@ public class ValidationTesting {
       Date lastRunDate = DATE_FORMAT.parse(parts[0]);
       Boolean lastPassingState = Boolean.parseBoolean(parts[1]);
       String lastPassingResultStr = parts[2];
+      String lastRunDonorCheckVersionStr = (parts.length >= 4) ? parts[3] : "<unknown>";
       TEST_RESULT lastPassingResult = null;
       try {
         lastPassingResult = TEST_RESULT.valueOf(lastPassingResultStr);
@@ -655,9 +666,12 @@ public class ValidationTesting {
 
       builder.lastRunDate(lastRunDate);
       builder.lastPassingState(lastPassingState);
+
       if (lastPassingResult != null) {
         builder.lastPassingResult(lastPassingResult);
       }
+
+      builder.donorCheckVersion(lastRunDonorCheckVersionStr);
 
     } catch (Exception e) {
       throw new IllegalStateException("Invalid log: " + individualFile.getAbsolutePath(), e);

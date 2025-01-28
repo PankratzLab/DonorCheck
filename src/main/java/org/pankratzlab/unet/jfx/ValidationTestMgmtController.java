@@ -17,6 +17,7 @@ import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
@@ -34,6 +35,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Table;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -86,10 +89,16 @@ public class ValidationTestMgmtController {
   TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> testFileTypesColumn;
 
   @FXML
+  TableColumn<ValidationTestFileSet, Boolean> hasRemappingsColumn;
+
+  @FXML
   TableColumn<ValidationTestFileSet, CommonWellDocumented.SOURCE> ciwdVersionColumn;
 
   @FXML
   TableColumn<ValidationTestFileSet, String> relDnaSerVersion;
+
+  @FXML
+  TableColumn<ValidationTestFileSet, String> donorCheckVersion;
 
   @FXML
   Button closeButton;
@@ -118,6 +127,7 @@ public class ValidationTestMgmtController {
     assert testFileTypesColumn != null : "fx:id=\"testFileTypesColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert ciwdVersionColumn != null : "fx:id=\"ciwdVersionColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert relDnaSerVersion != null : "fx:id=\"relDnaSerVersion\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert donorCheckVersion != null : "fx:id=\"donorCheckVersion\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert closeButton != null : "fx:id=\"closeButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert removeSelectedButton != null : "fx:id=\"removeSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert runSelectedButton != null : "fx:id=\"runSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
@@ -162,6 +172,7 @@ public class ValidationTestMgmtController {
       try {
         ev.getRowValue().comment.set(ev.getNewValue());
         ValidationTesting.updateTestProperties(ev.getRowValue());
+        testTable.refresh();
       } catch (IllegalStateException e) {
         AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
         testTable.refresh();
@@ -266,6 +277,35 @@ public class ValidationTestMgmtController {
           }
         });
 
+    hasRemappingsColumn.setCellValueFactory(
+        new Callback<CellDataFeatures<ValidationTestFileSet, Boolean>, ObservableValue<Boolean>>() {
+          public ObservableValue<Boolean> call(CellDataFeatures<ValidationTestFileSet, Boolean> p) {
+            ReadOnlyStringProperty valueSafe = p.getValue().remapFile;
+            return new SimpleObjectProperty<>(valueSafe != null && valueSafe.get() != null
+                && !valueSafe.get().isBlank() && new File(valueSafe.get()).exists());
+          }
+        });
+
+    hasRemappingsColumn.setCellFactory(
+        new Callback<TableColumn<ValidationTestFileSet, Boolean>, TableCell<ValidationTestFileSet, Boolean>>() {
+
+          @Override
+          public TableCell<ValidationTestFileSet, Boolean> call(
+              TableColumn<ValidationTestFileSet, Boolean> param) {
+            return new TableCell<ValidationTestFileSet, Boolean>() {
+              @Override
+              protected void updateItem(Boolean value, boolean empty) {
+                super.updateItem(value, empty);
+                if (value == null) {
+                  setText(null);
+                } else {
+                  setText(value ? "Yes" : "");
+                }
+              }
+            };
+          }
+        });
+
     ciwdVersionColumn.setCellValueFactory(
         new Callback<CellDataFeatures<ValidationTestFileSet, CommonWellDocumented.SOURCE>, ObservableValue<CommonWellDocumented.SOURCE>>() {
           public ObservableValue<CommonWellDocumented.SOURCE> call(
@@ -278,6 +318,13 @@ public class ValidationTestMgmtController {
         new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
           public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
             return p.getValue().relDnaSerFile.map(AntigenDictionary::getVersion).orElse("");
+          }
+        });
+
+    donorCheckVersion.setCellValueFactory(
+        new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
+          public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
+            return p.getValue().donorCheckVersion;
           }
         });
 
@@ -449,7 +496,7 @@ public class ValidationTestMgmtController {
           Stage stage = new Stage();
           final Window window = stage.getOwner();
           Wizard validationWizard = new Wizard(window);
-          final String string = System.getProperty(LandingController.DONORCHECK_VERSION, "");
+          final String string = Info.getVersion();
           validationWizard.setTitle("DonorCheck " + string);
           validationWizard.setFlow(pageFlow);
 
@@ -489,9 +536,9 @@ public class ValidationTestMgmtController {
       Desktop.getDesktop().open(new File(dir));
     } catch (IOException e) {
       e.printStackTrace();
-      Alert alert = new Alert(AlertType.ERROR,
+      new Alert(AlertType.ERROR,
           "Error opening directory for test " + selectedItem.id.get() + ":\n" + e.getMessage(),
-          ButtonType.CLOSE);
+          ButtonType.CLOSE).showAndWait();
     }
   }
 
