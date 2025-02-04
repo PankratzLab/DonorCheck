@@ -50,7 +50,7 @@ public abstract class ValidationRow<T> {
   public static final String FIRST_COL_PROP = "firstCol";
   public static final String ID_PROP = "id";
 
-  private final ReadOnlyStringWrapper rowLabelWRapper;
+  private final ReadOnlyStringWrapper rowLabelWrapper;
   private final ReadOnlyObjectWrapper<T> firstColWrapper;
   private final ReadOnlyObjectWrapper<T> secondColWrapper;
   private final ReadOnlyStringWrapper firstColStringWrapper;
@@ -61,7 +61,7 @@ public abstract class ValidationRow<T> {
 
   public ValidationRow(String rowLabel, T firstCol, T secondCol, boolean wasRemappedFirst,
       boolean wasRemappedSecond) {
-    this.rowLabelWRapper = new ReadOnlyStringWrapper(rowLabel);
+    this.rowLabelWrapper = new ReadOnlyStringWrapper(rowLabel);
     firstColWrapper = new ReadOnlyObjectWrapper<>(firstCol);
     secondColWrapper = new ReadOnlyObjectWrapper<>(secondCol);
     firstColStringWrapper = new ReadOnlyStringWrapper();
@@ -87,7 +87,7 @@ public abstract class ValidationRow<T> {
 
   /** @return {@link StringProperty} for the identifying name of this row */
   public ReadOnlyStringProperty idProperty() {
-    return rowLabelWRapper.getReadOnlyProperty();
+    return rowLabelWrapper.getReadOnlyProperty();
   }
 
   /** @return {@link StringProperty} for the XML value of this row */

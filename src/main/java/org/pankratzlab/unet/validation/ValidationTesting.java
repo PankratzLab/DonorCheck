@@ -71,6 +71,7 @@ public class ValidationTesting {
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
   private static final String COMMENT_PROP = "comment";
+  private static final String EXPECTED_PROP = "expected";
   private static final String DC_VER_PROP = "version";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -294,7 +295,6 @@ public class ValidationTesting {
 
       entry.getKey().lastRunDate.set(entry.getValue().runTime);
       entry.getKey().lastTestResult.set(entry.getValue().result);
-      entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
       entry.getKey().donorCheckVersion.set(Info.getVersion());
 
       StringJoiner sj = new StringJoiner("\t");
@@ -352,11 +352,24 @@ public class ValidationTesting {
     String prevVersion =
         Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
 
+    String prevExpectStr =
+        Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.getName()));
+
+    TEST_EXPECTATION prevExpect = TEST_EXPECTATION.PASS;
+    if (prevExpectStr != null && !prevExpectStr.isEmpty()) {
+      try {
+        prevExpect = TEST_EXPECTATION.valueOf(prevExpectStr);
+      } catch (IllegalArgumentException e) {
+        // ignore
+      }
+    }
+
     try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
       props.store(fos, null);
     } catch (Exception e) {
       test.comment.set(prevComment);
       test.donorCheckVersion.setValue(prevVersion);
+      test.expectedResult.setValue(prevExpect);
       e.printStackTrace();
       throw new IllegalStateException("Failed to save properties from " + testPropertiesFile);
     }
@@ -627,8 +640,19 @@ public class ValidationTesting {
     String cwdStr = props.getProperty(CWD_PROP);
     String relStr = props.getProperty(REL);
     String commentStr = props.getProperty(COMMENT_PROP, "");
+    String expectationStr = props.getProperty(EXPECTED_PROP, "");
 
     builder.comment(commentStr);
+
+    TEST_EXPECTATION expectation = TEST_EXPECTATION.PASS;
+    if (expectationStr != null && !expectationStr.isEmpty()) {
+      try {
+        expectation = TEST_EXPECTATION.valueOf(expectationStr);
+      } catch (Exception e) {
+        //
+      }
+    }
+    builder.expectedResult(expectation);
 
     CommonWellDocumented.SOURCE cwdSource = null;
     try {
@@ -665,7 +689,6 @@ public class ValidationTesting {
       }
 
       builder.lastRunDate(lastRunDate);
-      builder.lastPassingState(lastPassingState);
 
       if (lastPassingResult != null) {
         builder.lastPassingResult(lastPassingResult);

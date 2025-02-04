@@ -175,7 +175,7 @@
                 </Menu>
                   <Menu mnemonicParsing="false" text="Haplotypes">
                     <items>
-                      <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set Frequency Tables..." />
+                      <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set Allele Frequency Tables..." />
                     </items>
                   </Menu>
                   <Menu mnemonicParsing="false" text="Serotypes">
@@ -194,7 +194,7 @@
                         <MenuItem mnemonicParsing="false" onAction="#tutorialHTMLDownload" text="HTML DonorNet Download" />
                     </items>
                   </Menu>
-                  <Menu mnemonicParsing="false" text="Testing">
+                  <Menu mnemonicParsing="false" text="Batch Validation">
                     <items>
                       <MenuItem mnemonicParsing="false" onAction="#manageTestingFiles" text="Manage Test Files" />
                       <MenuItem mnemonicParsing="false" onAction="#runTesting" text="Quick-Run Tests" />
@@ -202,7 +202,7 @@
                   </Menu>
                   <Menu mnemonicParsing="false" text="MAC Conversion">
                      <items>
-                        <MenuItem mnemonicParsing="false" onAction="#macConversionScore6" text="Score6" />
+                        <MenuItem mnemonicParsing="false" onAction="#macConversionScore6" text="SCORE 6" />
                      </items>
                   </Menu>
                   <Menu mnemonicParsing="false" text="About" >

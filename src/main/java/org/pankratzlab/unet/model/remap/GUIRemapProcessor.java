@@ -106,7 +106,7 @@ public class GUIRemapProcessor implements RemapProcessor {
     HBox assignedPane = new HBox(10);
     assignedPane.setMaxWidth(Double.MAX_VALUE);
     assignedPane.setAlignment(Pos.CENTER_LEFT);
-    Label assignedHeader = new Label("Assigned allele pair: ");
+    Label assignedHeader = new Label("First allele pair: ");
     TextFlow assignedTextFlow = new TextFlow();
     CIWDAlleleStringPresentationUtils.addTextNodes(assignedTextFlow, hlaType1_First.toString(),
         true);
@@ -123,7 +123,7 @@ public class GUIRemapProcessor implements RemapProcessor {
     HBox ciwdPane = new HBox(10);
     ciwdPane.setMaxWidth(Double.MAX_VALUE);
     ciwdPane.setAlignment(Pos.CENTER_LEFT);
-    Label ciwdHeader = new Label("Common / Well-Documented allele pair: ");
+    Label ciwdHeader = new Label("First Common / Well-Documented allele pair: ");
     TextFlow ciwdTextFlow = new TextFlow();
     CIWDAlleleStringPresentationUtils.addTextNodes(ciwdTextFlow, hlaType1_CIWD.toString(), true);
     ciwdTextFlow.getChildren().add(new Text(" | "));

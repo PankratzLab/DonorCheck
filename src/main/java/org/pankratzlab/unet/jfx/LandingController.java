@@ -172,7 +172,7 @@ public class LandingController {
           textArea.setEditable(false);
           textArea.setWrapText(true);
 
-          alert1.setTitle("Error Loading Tests");
+          alert1.setTitle("Error loading tests");
           alert1.setHeaderText("Failed to Load " + testLoad.invalidTests.size() + " Tests");
           alert1.getDialogPane().setContent(textArea);
           alert1.setResizable(true);
@@ -181,7 +181,7 @@ public class LandingController {
 
         Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
 
-        ValidationTestMgmtController controller = new ValidationTestMgmtController();
+        BatchTestMgmtController controller = new BatchTestMgmtController();
 
         FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
         loader.setController(controller);
@@ -192,7 +192,8 @@ public class LandingController {
           Stage inputStage = new Stage();
           inputStage.initOwner(rootPane.getScene().getWindow());
           inputStage.initModality(Modality.APPLICATION_MODAL);
-          inputStage.setTitle("Manage Testing Files");
+          inputStage
+              .setTitle("DonorCheck " + (version.isEmpty() ? "" : version) + ": batch validation");
           inputStage.setResizable(true);
           inputStage.setScene(newScene);
           controller.setTable(testData);
@@ -269,7 +270,7 @@ public class LandingController {
 
       Alert alert = new Alert(AlertType.NONE, "", ButtonType.OK);
       alert.getDialogPane().setContent(loader.load(is));
-      alert.setTitle("Select Donor Score6 analysis file");
+      alert.setTitle("Select donor SCORE 6 analysis file");
       alert.setHeaderText("");
       alert.showAndWait();
     } catch (IOException e) {
@@ -318,7 +319,7 @@ public class LandingController {
         } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
           Alert alert =
               new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
-          alert.setTitle("Missing Haplotype Table(s)");
+          alert.setTitle("Missing haplotype table(s)");
           alert.setHeaderText("");
           alert.showAndWait();
         }
