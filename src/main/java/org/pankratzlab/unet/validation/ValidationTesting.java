@@ -353,7 +353,7 @@ public class ValidationTesting {
         Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
 
     String prevExpectStr =
-        Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.getName()));
+        Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.get().name()));
 
     TEST_EXPECTATION prevExpect = TEST_EXPECTATION.PASS;
     if (prevExpectStr != null && !prevExpectStr.isEmpty()) {

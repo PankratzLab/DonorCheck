@@ -17,6 +17,7 @@ import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
@@ -38,7 +39,6 @@ import com.google.common.collect.Table;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleSetProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -90,7 +90,7 @@ public class BatchTestMgmtController {
   TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> testFileTypesColumn;
 
   @FXML
-  TableColumn<ValidationTestFileSet, Boolean> manualEditsColumn;
+  TableColumn<ValidationTestFileSet, String> manualEditsColumn;
 
   @FXML
   TableColumn<ValidationTestFileSet, CommonWellDocumented.SOURCE> ciwdVersionColumn;
@@ -215,7 +215,7 @@ public class BatchTestMgmtController {
         ev.getRowValue().expectedResult.set(ev.getNewValue());
         ValidationTesting.updateTestProperties(ev.getRowValue());
         testTable.refresh();
-      } catch (IllegalStateException e) {
+      } catch (Throwable e) {
         AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
         testTable.refresh();
       }
@@ -315,7 +315,6 @@ public class BatchTestMgmtController {
       return p.getValue().sourceTypes;
     });
 
-
     testFileTypesColumn.setCellFactory(param -> {
       return configureTableCell(new TableCell<ValidationTestFileSet, ObservableSet<SourceType>>() {
         @Override
@@ -333,20 +332,21 @@ public class BatchTestMgmtController {
 
     manualEditsColumn.setCellValueFactory(p -> {
       ReadOnlyStringProperty valueSafe = p.getValue().remapFile;
-      return new SimpleObjectProperty<>(valueSafe != null && valueSafe.get() != null
-          && !valueSafe.get().isBlank() && new File(valueSafe.get()).exists());
+      if (valueSafe != null && valueSafe.get() != null && !valueSafe.get().isBlank()
+          && new File(valueSafe.get()).exists()) {
+        return new SimpleStringProperty(p.getValue().remappedLoci.get().stream().map(HLALocus::name)
+            .collect(Collectors.joining(", ")));
+      } else {
+        return new SimpleStringProperty("");
+      }
     });
 
-    manualEditsColumn.setCellFactory(
-        param -> configureTableCell(new TableCell<ValidationTestFileSet, Boolean>() {
+    manualEditsColumn
+        .setCellFactory(param -> configureTableCell(new TableCell<ValidationTestFileSet, String>() {
           @Override
-          protected void updateItem(Boolean value, boolean empty) {
+          protected void updateItem(String value, boolean empty) {
             super.updateItem(value, empty);
-            if (value == null) {
-              setText(null);
-            } else {
-              setText(value ? "Yes" : "");
-            }
+            setText(value);
           }
         }));
 

@@ -2,8 +2,11 @@ package org.pankratzlab.unet.validation;
 
 import java.io.File;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import javafx.beans.property.ObjectProperty;
@@ -35,6 +38,8 @@ public class ValidationTestFileSet {
 
   public final ReadOnlyStringProperty remapFile;
 
+  public final ReadOnlySetProperty<HLALocus> remappedLoci;
+
   public final ReadOnlyObjectProperty<CommonWellDocumented.SOURCE> cwdSource;
 
   public final ReadOnlyStringProperty relDnaSerFile;
@@ -52,6 +57,7 @@ public class ValidationTestFileSet {
     private TEST_EXPECTATION expectedResult;
     private List<String> filePaths;
     private String remapFile;
+    private Set<HLALocus> remappedLoci;
     private CommonWellDocumented.SOURCE cwdSource;
     private String relDnaSerFile;
     private String donorCheckVersion;
@@ -80,6 +86,14 @@ public class ValidationTestFileSet {
 
     public ValidationTestFileSetBuilder remapFile(String remapFile) {
       this.remapFile = remapFile;
+
+      if (remapFile != null && !remapFile.isBlank() && new File(remapFile).exists()) {
+        XMLRemapProcessor processor = new XMLRemapProcessor(remapFile);
+        this.remappedLoci = processor.getAllRemappedLoci();
+      } else {
+        this.remappedLoci = new HashSet<>();
+      }
+
       return this;
     }
 
@@ -109,8 +123,9 @@ public class ValidationTestFileSet {
     }
 
     public ValidationTestFileSet build() {
-      return new ValidationTestFileSet(id, comment, expectedResult, filePaths, remapFile, cwdSource,
-          relDnaSerFile, donorCheckVersion, lastRunDate, lastPassingResult);
+      return new ValidationTestFileSet(id, comment, expectedResult, filePaths, remapFile,
+          remappedLoci, cwdSource, relDnaSerFile, donorCheckVersion, lastRunDate,
+          lastPassingResult);
     }
 
   }
@@ -120,9 +135,9 @@ public class ValidationTestFileSet {
   }
 
   private ValidationTestFileSet(String id, String comment, TEST_EXPECTATION expectedResult,
-      List<String> filePaths, String remapFile, CommonWellDocumented.SOURCE cwdSource,
-      String relDnaSerFile, String donorCheckVersion, Date lastRunDate,
-      TEST_RESULT lastTestResult) {
+      List<String> filePaths, String remapFile, Set<HLALocus> remappedLoci,
+      CommonWellDocumented.SOURCE cwdSource, String relDnaSerFile, String donorCheckVersion,
+      Date lastRunDate, TEST_RESULT lastTestResult) {
     this.id = new SimpleStringProperty(id);
     this.comment = new SimpleStringProperty(comment);
     this.expectedResult = new SimpleObjectProperty<>(expectedResult);
@@ -138,6 +153,7 @@ public class ValidationTestFileSet {
         }).collect(Collectors.toSet()));
     this.sourceTypes = new ReadOnlySetWrapper<>(observableSet);
     this.remapFile = new ReadOnlyStringWrapper(remapFile);
+    this.remappedLoci = new ReadOnlySetWrapper<>(FXCollections.observableSet(remappedLoci));
     this.cwdSource = new ReadOnlyObjectWrapper<>(cwdSource);
     this.relDnaSerFile = new ReadOnlyStringWrapper(relDnaSerFile);
     this.donorCheckVersion = new SimpleStringProperty(donorCheckVersion);
