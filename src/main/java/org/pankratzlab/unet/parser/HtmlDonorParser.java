@@ -46,7 +46,7 @@ public class HtmlDonorParser extends AbstractDonorFileParser {
   private static final String HTML_SUFFIX = "_label";
   private static final String HTML_PREFIX = "ddl";
   private static final String DISPLAY_STRING = "HTML";
-  private static final String FILE_CHOOSER_HEADER = "Select Donor Typing HTML";
+  private static final String FILE_CHOOSER_HEADER = "Select donor typing HTML";
   private static final String INITIAL_NAME = "DonorEdit";
   private static final String EXTENSION_DESC = "DonorNet";
   private static final String EXTENSION_NAME = "html";

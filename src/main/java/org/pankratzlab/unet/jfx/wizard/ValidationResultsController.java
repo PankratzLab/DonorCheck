@@ -162,7 +162,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   /** Write the given {@link ValidationTable#getValidationImage()} to disk */
   @FXML
   void savePNGResults(ActionEvent event) {
-    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
+    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save validation results",
         getTable().getId() + "_donor_valid", "PNG", ".png", false);
 
     if (destination.isPresent()) {
@@ -184,7 +184,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   @FXML
   private void saveCSVResults(ActionEvent event) {
     ValidationTable vt = getTable();
-    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save Validation Results",
+    Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save validation results",
         vt.getId() + "_results_csv", "CSV", ".csv", false);
 
     if (destination.isPresent()) {
@@ -209,7 +209,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
         new ChoiceDialog<>(Printer.getDefaultPrinter(), Printer.getAllPrinters());
     dialog.setHeaderText("Select a printer");
     dialog.setContentText("Choose a printer from available printers");
-    dialog.setTitle("Printer Choice");
+    dialog.setTitle("Printer choice");
     Optional<Printer> opt = dialog.showAndWait();
     if (opt.isPresent()) {
       Printer printer = opt.get();
@@ -239,7 +239,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
       Alert alert1 = new Alert(AlertType.INFORMATION,
           "Successfully added " + getTable().getId() + " to validation testing set.",
           ButtonType.CLOSE);
-      alert1.setTitle("Successfully Added.");
+      alert1.setTitle("Successfully added.");
       alert1.setHeaderText("");
       alert1.showAndWait();
     }

@@ -278,7 +278,7 @@ public class ValidationTesting {
         }
       }
       Alert alert1 = new Alert(AlertType.INFORMATION, contentText, ButtonType.CLOSE);
-      alert1.setTitle("Test Results");
+      alert1.setTitle("Test results");
       alert1.setHeaderText("");
       alert1.showAndWait();
     };

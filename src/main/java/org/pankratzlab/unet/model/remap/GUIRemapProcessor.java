@@ -166,7 +166,7 @@ public class GUIRemapProcessor implements RemapProcessor {
     StyleableContingentChoiceDialog<Supplier<TextFlow>> cd = new StyleableContingentChoiceDialog<>(
         null, allChoices, Lists.newArrayList(), choices.getAllSecondChoices(), choices.dataMap,
         filterName, filter/* , textEntryMatcher */, opt1, opt2, manualChoice);
-    cd.setTitle("Select HLA-" + locus.name() + " Alleles");
+    cd.setTitle("Select HLA-" + locus.name() + " alleles");
 
     cd.setHeaderText(
         "Assigned allele pair for HLA-" + locus.name() + " locus is not Common / Well-Documented.");

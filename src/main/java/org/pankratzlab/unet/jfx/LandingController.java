@@ -389,9 +389,8 @@ public class LandingController {
     assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
 
     version = Info.getVersion();
-    String value = "Version: " + version + " ";
-    versionLabel.setText(value);
-    menuVersionLabel.setText("DonorCheck " + value);
+    versionLabel.setText("Version: " + version + " ");
+    menuVersionLabel.setText("DonorCheck version: " + version + " ");
 
     System.setProperty(CurrentDirectoryProvider.BASE_DIR_PROP_NAME, UNET_BASE_DIR_PROP);
   }

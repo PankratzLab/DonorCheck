@@ -39,11 +39,11 @@ public final class TutorialHelper {
   }
 
   public static void tutorialHTMLDownload(ActionEvent event) {
-    showTutorial(HTML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
+    showTutorial(HTML_TUTORIAL, new DownloadTutorialController(), "Donor download instructions");
   }
 
   public static void tutorialXMLDownload(ActionEvent event) {
-    showTutorial(XML_TUTORIAL, new DownloadTutorialController(), "Donor Download Instructions");
+    showTutorial(XML_TUTORIAL, new DownloadTutorialController(), "Donor download instructions");
   }
 
   /** TODO */

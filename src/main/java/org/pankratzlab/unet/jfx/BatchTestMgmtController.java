@@ -403,7 +403,7 @@ public class BatchTestMgmtController {
     Alert alert =
         new Alert(AlertType.CONFIRMATION, "Are you sure you'd like to remove " + toRemove.size()
             + " test" + (toRemove.size() > 1 ? "s" : "") + "?", ButtonType.OK, ButtonType.CANCEL);
-    alert.setTitle("Remove Tests");
+    alert.setTitle("Remove tests");
     alert.setHeaderText("");
     Optional<ButtonType> selVal = alert.showAndWait();
 
@@ -419,7 +419,7 @@ public class BatchTestMgmtController {
         Alert alert1 = new Alert(AlertType.INFORMATION,
             "Successfully removed " + toRemove.size() + " test" + (toRemove.size() > 1 ? "s" : ""),
             ButtonType.CLOSE);
-        alert1.setTitle("Successfully Removed Tests");
+        alert1.setTitle("Successfully removed tests");
         alert1.setHeaderText("");
         alert1.showAndWait();
       } else {
@@ -428,7 +428,7 @@ public class BatchTestMgmtController {
                 + "\n\nSuccessfully removed " + removed.size() + " test"
                 + (removed.size() > 1 ? "s" : ""),
             ButtonType.CLOSE);
-        alert1.setTitle("Failed to Remove Tests");
+        alert1.setTitle("Failed to remove tests");
         alert1.setHeaderText("");
         alert1.showAndWait();
       }
@@ -471,7 +471,7 @@ public class BatchTestMgmtController {
         } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
           Alert alert =
               new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
-          alert.setTitle("Missing Haplotype Table(s)");
+          alert.setTitle("Missing haplotype frequency table(s)");
           alert.setHeaderText("");
           alert.showAndWait();
         }

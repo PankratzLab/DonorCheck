@@ -143,7 +143,7 @@ public final class CommonWellDocumented {
     SOURCE def = loadPropertyCWDSource();
 
     ChoiceDialog<SOURCE> cd = new ChoiceDialog<>(def, SOURCE.values());
-    cd.setTitle("Select CWD/CIWD Database");
+    cd.setTitle("Select CWD/CIWD database");
     cd.setHeaderText("Select a Database from which to load CWD/CIWD data.");
     cd.setContentText("You may change this selection from the DonorCheck menu bar.");
     Optional<SOURCE> result = cd.showAndWait();
