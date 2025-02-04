@@ -37,14 +37,14 @@
 				<TableView fx:id="testTable" prefHeight="200.0" prefWidth="200.0">
 					<columns>
 						<TableColumn id="testIdColumn" fx:id="testIDColumn" editable="true" minWidth="30.0" prefWidth="75.0" text="Test ID" />
-						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="124.0" text="Test File Types" />
-						<TableColumn id="manualEditsColumn" fx:id="manualEditsColumn" editable="false" minWidth="30.0" prefWidth="120.0" text="Manual Edits" />
-                  		<TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" editable="false" prefWidth="105.0" text="CIWD Version" />
-                  		<TableColumn id="relDnaSerVersion" fx:id="relDnaSerVersion" editable="false" prefWidth="119.0" text="Serotype Version" />
-						<TableColumn id="expectingPassFailColumn" fx:id="expectingPassFailColumn" editable="true" minWidth="30.0" prefWidth="100.0" text="Expected Result" />
-						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="25.0" prefWidth="148.0" text="Most Recent Run Result" />
+						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="124.0" text="Test file types" />
+						<TableColumn id="manualEditsColumn" fx:id="manualEditsColumn" editable="false" minWidth="30.0" prefWidth="120.0" text="Manual edits" />
+                  		<TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" editable="false" prefWidth="105.0" text="CIWD version" />
+                  		<TableColumn id="relDnaSerVersion" fx:id="relDnaSerVersion" editable="false" prefWidth="119.0" text="Serotype version" />
+						<TableColumn id="expectingPassFailColumn" fx:id="expectingPassFailColumn" editable="true" minWidth="30.0" prefWidth="100.0" text="Expected result" />
+						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="25.0" prefWidth="148.0" text="Most recent run result" />
 						<TableColumn id="testCommentColumn" fx:id="testCommentColumn" editable="true" minWidth="30.0" prefWidth="226.0" text="Comment" />
-						<TableColumn id="lastRunDetailsColumn" fx:id="lastRunDetailsColumn" editable="false" minWidth="30.0" prefWidth="175.0" text="Details of Most Recent Run" />
+						<TableColumn id="lastRunDetailsColumn" fx:id="lastRunDetailsColumn" editable="false" minWidth="30.0" prefWidth="175.0" text="Details of most recent run" />
 					</columns>
 				</TableView>
 			</content>
@@ -54,11 +54,11 @@
 				<Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
 			</VBox.margin>
 			<children>
-            	<Button fx:id="openDirectoryButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#openTestDirectory" prefWidth="150.0" text="Open Directory" />
-            	<Button fx:id="openTestButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#openSelectedTest" prefWidth="150.0" text="Open Test" />
-           		<Button fx:id="removeSelectedButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#removeSelected" prefWidth="150.0" text="Remove Selected Test(s)" />
-				<Button fx:id="runSelectedButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#runSelected" prefWidth="150.0" text="Run Selected Test(s)" />
-				<Button fx:id="runAllButton" defaultButton="true" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#runAll" prefWidth="150.0" text="Run All Tests" />
+            	<Button fx:id="openDirectoryButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#openTestDirectory" prefWidth="150.0" text="Open directory" />
+            	<Button fx:id="openTestButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#openSelectedTest" prefWidth="150.0" text="Open test" />
+           		<Button fx:id="removeSelectedButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#removeSelected" prefWidth="150.0" text="Remove selected test(s)" />
+				<Button fx:id="runSelectedButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#runSelected" prefWidth="150.0" text="Run selected test(s)" />
+				<Button fx:id="runAllButton" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#runAll" prefWidth="150.0" text="Run all tests" />
 			</children>
 		</HBox>
 	</children>

@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.ResourceBundle;
@@ -67,12 +68,11 @@ import javafx.util.converter.DefaultStringConverter;
 public class BatchTestMgmtController {
 
   private static final String PASS = "Pass";
-  private static final String EXPECTED_FAILURE = "Expected Failure";
-  private static final String UNEXPECTED_PASS = "Unexpected Pass";
-  private static final String UNEXPECTED_FAILURE = "Unexpected Failure";
-  private static final String UNEXPECTED_ERROR = "Unexpected Error";
-  private static final String UNEXPECTED_OUTCOME = "Unexpected Outcome";
-  private static final String EXPECTED_ERROR = "Expected Error";
+  private static final String EXPECTED_FAILURE = "Expected failure";
+  private static final String UNEXPECTED_PASS = "Unexpected pass";
+  private static final String UNEXPECTED_FAILURE = "Unexpected failure";
+  private static final String UNEXPECTED_ERROR = "Unexpected error";
+  private static final String EXPECTED_ERROR = "Expected rrror";
 
   @FXML
   private ResourceBundle resources;
@@ -221,6 +221,8 @@ public class BatchTestMgmtController {
       }
     });
 
+    lastRunDetailsColumn.setCellFactory(getDefaultTextTableCellFactory());
+
     lastRunDetailsColumn.setCellValueFactory(p -> {
       ValidationTestFileSet value = p.getValue();
       return Bindings.createStringBinding(() -> {
@@ -236,17 +238,22 @@ public class BatchTestMgmtController {
 
         String v = "";
         switch (p.getValue().expectedResult.get()) {
-          case ERROR:
+          case Error:
             // expecting an error
             if (testResult != TEST_RESULT.TEST_SUCCESS && testResult != TEST_RESULT.TEST_FAILURE) {
               // got an error
               v = EXPECTED_ERROR;
             } else {
-              // didn't get an error
-              v = UNEXPECTED_OUTCOME;
+              if (testResult == TEST_RESULT.TEST_SUCCESS) {
+                // didn't get an error
+                v = UNEXPECTED_PASS;
+              } else if (testResult == TEST_RESULT.TEST_FAILURE) {
+                // didn't get an error
+                v = UNEXPECTED_FAILURE;
+              }
             }
             break;
-          case PASS:
+          case Pass:
             if (testResult == TEST_RESULT.TEST_SUCCESS) {
               v = PASS;
             } else if (testResult == TEST_RESULT.TEST_FAILURE) {
@@ -255,7 +262,7 @@ public class BatchTestMgmtController {
               v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
             }
             break;
-          case FAIL:
+          case Fail:
             if (testResult == TEST_RESULT.TEST_SUCCESS) {
               v = UNEXPECTED_PASS;
             } else if (testResult == TEST_RESULT.TEST_FAILURE) {
@@ -279,22 +286,15 @@ public class BatchTestMgmtController {
             setStyle("");
           } else {
             String color = null;
-            switch (value) {
-              case PASS:
-              case EXPECTED_FAILURE:
-              case EXPECTED_ERROR:
-                color = "LimeGreen";
-                break;
-              case UNEXPECTED_FAILURE:
-                color = "OrangeRed";
-                break;
-              case UNEXPECTED_PASS:
-              case UNEXPECTED_OUTCOME:
-                color = "Lime";
-                break;
-              case UNEXPECTED_ERROR:
-                color = "Orange";
-                break;
+            if (value.startsWith(PASS) || value.startsWith(EXPECTED_FAILURE)
+                || value.startsWith(EXPECTED_ERROR)) {
+              color = "LimeGreen";
+            } else if (value.startsWith(UNEXPECTED_FAILURE)) {
+              color = "Orange";
+            } else if (value.startsWith(UNEXPECTED_PASS)) {
+              color = "Lime";
+            } else if (value.startsWith(UNEXPECTED_ERROR)) {
+              color = "OrangeRed";
             }
             if (color != null) {
               setStyle("-fx-background-color: " + color + "; -fx-text-fill: black");
@@ -341,22 +341,26 @@ public class BatchTestMgmtController {
       }
     });
 
-    manualEditsColumn
-        .setCellFactory(param -> configureTableCell(new TableCell<ValidationTestFileSet, String>() {
-          @Override
-          protected void updateItem(String value, boolean empty) {
-            super.updateItem(value, empty);
-            setText(value);
-          }
-        }));
+    manualEditsColumn.setCellFactory(getDefaultTextTableCellFactory());
 
     ciwdVersionColumn.setCellValueFactory(p -> {
       return p.getValue().cwdSource;
     });
 
+    ciwdVersionColumn
+        .setCellFactory(param -> configureTableCell(new TableCell<ValidationTestFileSet, SOURCE>() {
+          @Override
+          protected void updateItem(SOURCE value, boolean empty) {
+            super.updateItem(value, empty);
+            setText(value == null ? "" : value.getVersion());
+          }
+        }));
+
     relDnaSerVersion.setCellValueFactory(p -> {
       return p.getValue().relDnaSerFile.map(AntigenDictionary::getVersion).orElse("");
     });
+
+    relDnaSerVersion.setCellFactory(getDefaultTextTableCellFactory());
 
     // Any selection enable/disable
     removeSelectedButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
@@ -381,6 +385,16 @@ public class BatchTestMgmtController {
       return testTable.getSelectionModel().getSelectedIndices().size() != 1;
     }, testTable.getSelectionModel().selectedIndexProperty()));
 
+  }
+
+  public <T> Callback<TableColumn<ValidationTestFileSet, T>, TableCell<ValidationTestFileSet, T>> getDefaultTextTableCellFactory() {
+    return param -> configureTableCell(new TableCell<ValidationTestFileSet, T>() {
+      @Override
+      protected void updateItem(T value, boolean empty) {
+        super.updateItem(value, empty);
+        setText(Objects.toString(value).trim());
+      }
+    });
   }
 
   private String convert(String s) {

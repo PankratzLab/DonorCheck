@@ -44,6 +44,8 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.model.remap.RemapProcessor;
+import org.pankratzlab.unet.validation.TestExceptions.SourceFileParsingException;
+import org.pankratzlab.unet.validation.TestExceptions.XMLRemapFileException;
 import org.pankratzlab.unet.validation.ValidationTestFileSet.ValidationTestFileSetBuilder;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
@@ -253,10 +255,14 @@ public class ValidationTesting {
       public void run() {
         try {
           TestRun result = ValidationTesting.runTest(t);
-          if (result.result.isPassing) {
-            successfulTests.add(t);
+          if (result.error.isPresent()) {
+            exceptionTests.put(t, result.error.get());
           } else {
-            failedTests.add(t);
+            if (result.result.isPassing) {
+              successfulTests.add(t);
+            } else {
+              failedTests.add(t);
+            }
           }
         } catch (Exception e) {
           e.printStackTrace();
@@ -355,7 +361,7 @@ public class ValidationTesting {
     String prevExpectStr =
         Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.get().name()));
 
-    TEST_EXPECTATION prevExpect = TEST_EXPECTATION.PASS;
+    TEST_EXPECTATION prevExpect = TEST_EXPECTATION.Pass;
     if (prevExpectStr != null && !prevExpectStr.isEmpty()) {
       try {
         prevExpect = TEST_EXPECTATION.valueOf(prevExpectStr);
@@ -473,8 +479,15 @@ public class ValidationTesting {
       changedRel = true;
     }
 
-    TEST_RESULT result = runTestInternal(test);
-    TestRun returnVal = new TestRun(test, result, new Date());
+    TestRun returnVal;
+    try {
+      TEST_RESULT result = runTestInternal(test);
+      returnVal = new TestRun(test, result, new Date(), Optional.empty());
+    } catch (XMLRemapFileException e) {
+      returnVal = new TestRun(test, TEST_RESULT.INVALID_REMAP_FILE, new Date(), Optional.of(e));
+    } catch (SourceFileParsingException e) {
+      returnVal = new TestRun(test, TEST_RESULT.INVALID_TEST_FILE, new Date(), Optional.of(e));
+    }
 
     if (changedCWID) {
       CommonWellDocumented.loadCIWDVersion(current);
@@ -644,7 +657,7 @@ public class ValidationTesting {
 
     builder.comment(commentStr);
 
-    TEST_EXPECTATION expectation = TEST_EXPECTATION.PASS;
+    TEST_EXPECTATION expectation = TEST_EXPECTATION.Pass;
     if (expectationStr != null && !expectationStr.isEmpty()) {
       try {
         expectation = TEST_EXPECTATION.valueOf(expectationStr);

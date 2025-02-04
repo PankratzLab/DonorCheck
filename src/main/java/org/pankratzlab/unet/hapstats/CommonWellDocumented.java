@@ -83,28 +83,34 @@ public final class CommonWellDocumented {
   }
 
   public static enum SOURCE {
-    CWD_200("CWD 2.0.0") {
+    CWD_200("CWD", "2.0.0") {
       @Override
       public void load() {
         loadCWD200();
       }
     },
-    CIWD_300("CIWD 3.0.0") {
+    CIWD_300("CIWD", "3.0.0") {
       @Override
       public void load() {
         loadCIWD300();
       }
     };
 
-    SOURCE(String d) {
-      displayName = d;
+    SOURCE(String d, String v) {
+      displayName = d + " " + v;
+      versionString = v;
     }
 
     private final String displayName;
+    private final String versionString;
 
     @Override
     public String toString() {
       return displayName;
+    }
+
+    public String getVersion() {
+      return versionString;
     }
 
     public abstract void load();
