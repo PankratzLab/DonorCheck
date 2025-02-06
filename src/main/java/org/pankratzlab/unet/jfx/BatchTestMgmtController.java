@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,7 +39,6 @@ import com.google.common.collect.Table;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.beans.property.SimpleSetProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -166,7 +164,7 @@ public class BatchTestMgmtController {
     testTable.setEditable(true);
 
     testIDColumn.setCellValueFactory(p -> {
-      return /* p.getValue().id */ new SimpleStringProperty("******");
+      return p.getValue().id;
     });
 
     testIDColumn.setOnEditCommit(ev -> {
@@ -308,10 +306,6 @@ public class BatchTestMgmtController {
     });
 
     testFileTypesColumn.setCellValueFactory(p -> {
-      if ((new Random()).nextInt(100) < 10) {
-        return new SimpleSetProperty<>(
-            FXCollections.observableSet(SourceType.DonorNet, SourceType.SureTyper));
-      }
       return p.getValue().sourceTypes;
     });
 
