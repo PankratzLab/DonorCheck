@@ -237,9 +237,9 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
       String val;
       try {
         val = matcher.group(1);
-      } catch (IllegalArgumentException e) {
+      } catch (IllegalStateException e) {
         // throw an exception with useful information
-        throw new IllegalArgumentException("Invalid antigen name format: " + spec, e);
+        throw new IllegalStateException("Invalid antigen name format: " + spec, e);
       }
 
       if (val.contains(SPEC_DELIM)) {
