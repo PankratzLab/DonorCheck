@@ -57,7 +57,7 @@ public class XmlSureTyperParser {
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQB1).text()
         .replaceAll("DQ", "").split("\\s")).forEach(builder::dqbSerotype);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQA1).text()
-        .replaceAll("DQA1\\*", "").split("\\s")).forEach(builder::dqaSerotype);
+        .replaceAll("DQA1?\\*?", "").split("\\s")).forEach(builder::dqaSerotype);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPA1).text()
         .replaceAll("DPA1\\*", "").split("\\s")).forEach(builder::dpaSerotype);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPB1).text()
@@ -127,8 +127,19 @@ public class XmlSureTyperParser {
         }
       }
       if (flag == false) {
+        for (Element e : haplotypeXmlSection.getElementsByTag("hlaTestCall")) {
+          if (e.getElementsByTag("footnoteList").text().contains("AUTOMATICALLY chosen")) {
+            String alleles = e.getElementsByTag("alleles").text();
+            String[] loci = e.getElementsByTag("hlaTestCall").attr("callName").split("\\s+");
+            parseAlleles(alleles, builder, strandMap, loci);
+            flag = true;
+          }
+        }
+      }
+      if (flag == false) {
         System.err.println(
-            "Error: Could not find manually selected haplotype for: " + haplotypeXmlSection);
+            "Error: Could not find either manually or automatically selected haplotype for: "
+                + haplotypeXmlSection);
       }
     } else {
       System.err.println("Error: can not find haplotype section for: " + haplotypeXmlSection);
@@ -151,7 +162,7 @@ public class XmlSureTyperParser {
     // flag for being on a new strand.
     boolean newStrand = true;
     int strandIndex = 0;
-    String locus = loci[0].split("\\*")[0];
+    String locus = sanitizeLocus(loci[0].split("\\*")[0]);
     for (int tokenIndex = 2; tokenIndex < tokens.length; tokenIndex++) {
       String token = tokens[tokenIndex].trim();
       if (!token.contains(":")) {
@@ -159,10 +170,10 @@ public class XmlSureTyperParser {
         continue;
       }
       // Check to see if on second strand
-      if (loci.length > 1 && token.contains(loci[1]) && !token.contains(loci[0])
-          && strandIndex == 0) {
+      if (loci.length > 1 && token.contains(sanitizeLocus(loci[1]))
+          && !token.contains(sanitizeLocus(loci[0])) && strandIndex == 0) {
         strandIndex = 1;
-        locus = loci[1].split("\\*")[0];
+        locus = sanitizeLocus(loci[1].split("\\*")[0]);
         newStrand = true;
       }
       if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
@@ -177,6 +188,8 @@ public class XmlSureTyperParser {
         }
         newStrand = false;
       }
+
+
 
       // double checking that locus is correct.
       if (!token.contains(locus)) {
@@ -195,4 +208,18 @@ public class XmlSureTyperParser {
       HaplotypeUtils.parseAllelesToStrandMap(token, locus, strandIndex, strandMap);
     }
   }
+
+
+  private static String sanitizeLocus(String locus) {
+    String l = locus;
+    if (locus.equals("DR52")) {
+      l = "DRB3";
+    } else if (locus.equals("DR53")) {
+      l = "DRB4";
+    } else if (locus.equals("DR51")) {
+      l = "DRB4";
+    }
+    return l;
+  }
+
 }
