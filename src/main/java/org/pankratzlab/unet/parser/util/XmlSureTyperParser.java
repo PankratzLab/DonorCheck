@@ -217,7 +217,7 @@ public class XmlSureTyperParser {
     } else if (locus.equals("DR53")) {
       l = "DRB4";
     } else if (locus.equals("DR51")) {
-      l = "DRB4";
+      l = "DRB5";
     }
     return l;
   }
