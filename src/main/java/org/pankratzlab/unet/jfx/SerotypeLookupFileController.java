@@ -65,7 +65,7 @@ public class SerotypeLookupFileController {
         copyLink.setVisited(true);
       });
       JFXUtilHelper.makeContentOnlyAlert(AlertType.INFORMATION,
-          "Please visit this URL to download the HLA Serotype Lookup file", copyLink, ButtonType.OK)
+          "Please visit this URL to download the HLA serotype lookup file", copyLink, ButtonType.OK)
           .showAndWait();
     }
   }
@@ -73,7 +73,7 @@ public class SerotypeLookupFileController {
   @FXML
   void selectFile(ActionEvent event) {
     FileChooser fc = CurrentDirectoryProvider.getFileChooser();
-    fc.setTitle("Select HLA Serotype Lookup file");
+    fc.setTitle("Select HLA serotype lookup file");
     fc.getExtensionFilters().setAll(new ExtensionFilter("Text", "*.txt"));
     File relSerFile = fc.showOpenDialog(rootPane.getScene().getWindow());
     if (Objects.nonNull(relSerFile) && relSerFile.exists()) {

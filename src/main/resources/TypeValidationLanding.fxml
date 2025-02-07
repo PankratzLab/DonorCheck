@@ -63,7 +63,7 @@
                         </TextFlow>
                         <TextFlow style="-fx-background-color: lightgray; -fx-border-color: black; -fx-border-width: 0 0 1 0;" textAlignment="CENTER" GridPane.columnIndex="1">
                            <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="File Type(s)">
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="File type(s)">
                                  <font>
                                     <Font size="24.0" />
                                  </font>
@@ -152,7 +152,7 @@
    <bottom>
       <ButtonBar buttonOrder="L_HEU+FBIX_NCYOA_R" BorderPane.alignment="CENTER_RIGHT">
         <buttons>
-          <Button defaultButton="true" mnemonicParsing="false" onAction="#runValidation" prefHeight="80.0" style="-fx-background-color: #FFCC00;" text="Start Validation">
+          <Button defaultButton="true" mnemonicParsing="false" onAction="#runValidation" prefHeight="80.0" style="-fx-background-color: #FFCC00;" text="Start validation">
                <font>
                   <Font size="24.0" />
                </font>
@@ -175,34 +175,34 @@
                 </Menu>
                   <Menu mnemonicParsing="false" text="Haplotypes">
                     <items>
-                      <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set Frequency Tables..." />
+                      <MenuItem mnemonicParsing="false" onAction="#chooseFreqTables" text="Set allele frequency tables..." />
                     </items>
                   </Menu>
                   <Menu mnemonicParsing="false" text="Serotypes">
                     <items>
-                      <MenuItem mnemonicParsing="false" onAction="#chooseRelSerLookupFile" text="Set Serotype Lookup File..." />
+                      <MenuItem mnemonicParsing="false" onAction="#chooseRelSerLookupFile" text="Set serotype lookup file..." />
                     </items>
                   </Menu>
                   <Menu mnemonicParsing="false" text="CIWD">
                     <items>
-                      <MenuItem mnemonicParsing="false" onAction="#chooseCIWDSource" text="Set Common / Well-Documented Allele Source..." />
+                      <MenuItem mnemonicParsing="false" onAction="#chooseCIWDSource" text="Set Common / Well-Documented allele source..." />
                     </items>
                   </Menu>
                   <Menu mnemonicParsing="false" text="Tutorials">
                     <items>
-                      <MenuItem mnemonicParsing="false" onAction="#tutorialXMLDownload" text="XML DonorNet Download" />
-                        <MenuItem mnemonicParsing="false" onAction="#tutorialHTMLDownload" text="HTML DonorNet Download" />
+                      <MenuItem mnemonicParsing="false" onAction="#tutorialXMLDownload" text="XML DonorNet download" />
+                        <MenuItem mnemonicParsing="false" onAction="#tutorialHTMLDownload" text="HTML DonorNet download" />
                     </items>
                   </Menu>
-                  <Menu mnemonicParsing="false" text="Testing">
+                  <Menu mnemonicParsing="false" text="Batch validation">
                     <items>
-                      <MenuItem mnemonicParsing="false" onAction="#manageTestingFiles" text="Manage Test Files" />
-                      <MenuItem mnemonicParsing="false" onAction="#runTesting" text="Quick-Run Tests" />
+                      <MenuItem mnemonicParsing="false" onAction="#manageTestingFiles" text="Manage test files" />
+                      <MenuItem mnemonicParsing="false" onAction="#runTesting" text="Quick-run tests" />
                     </items>
                   </Menu>
-                  <Menu mnemonicParsing="false" text="MAC Conversion">
+                  <Menu mnemonicParsing="false" text="MAC conversion">
                      <items>
-                        <MenuItem mnemonicParsing="false" onAction="#macConversionScore6" text="Score6" />
+                        <MenuItem mnemonicParsing="false" onAction="#macConversionScore6" text="SCORE 6" />
                      </items>
                   </Menu>
                   <Menu mnemonicParsing="false" text="About" >
@@ -212,7 +212,7 @@
 						        <Label fx:id="menuVersionLabel" text="Version: "   />
 						    </content>
 						</CustomMenuItem>
-                        <MenuItem mnemonicParsing="false" onAction="#openWebsiteCompPath" text="Open UMN Computational Pathology Website" />
+                        <MenuItem mnemonicParsing="false" onAction="#openWebsiteCompPath" text="Open UMN Computational Pathology website" />
                         <MenuItem mnemonicParsing="false" onAction="#openWebsiteGitHub" text="Open DonorCheck GitHub" />
                      </items>
                   </Menu>

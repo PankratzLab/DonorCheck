@@ -44,6 +44,8 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.model.remap.RemapProcessor;
+import org.pankratzlab.unet.validation.TestExceptions.SourceFileParsingException;
+import org.pankratzlab.unet.validation.TestExceptions.XMLRemapFileException;
 import org.pankratzlab.unet.validation.ValidationTestFileSet.ValidationTestFileSetBuilder;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
@@ -71,6 +73,7 @@ public class ValidationTesting {
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
   private static final String COMMENT_PROP = "comment";
+  private static final String EXPECTED_PROP = "expected";
   private static final String DC_VER_PROP = "version";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -252,10 +255,14 @@ public class ValidationTesting {
       public void run() {
         try {
           TestRun result = ValidationTesting.runTest(t);
-          if (result.result.isPassing) {
-            successfulTests.add(t);
+          if (result.error.isPresent()) {
+            exceptionTests.put(t, result.error.get());
           } else {
-            failedTests.add(t);
+            if (result.result.isPassing) {
+              successfulTests.add(t);
+            } else {
+              failedTests.add(t);
+            }
           }
         } catch (Exception e) {
           e.printStackTrace();
@@ -277,7 +284,7 @@ public class ValidationTesting {
         }
       }
       Alert alert1 = new Alert(AlertType.INFORMATION, contentText, ButtonType.CLOSE);
-      alert1.setTitle("Test Results");
+      alert1.setTitle("Test results");
       alert1.setHeaderText("");
       alert1.showAndWait();
     };
@@ -294,7 +301,6 @@ public class ValidationTesting {
 
       entry.getKey().lastRunDate.set(entry.getValue().runTime);
       entry.getKey().lastTestResult.set(entry.getValue().result);
-      entry.getKey().lastPassingState.set(entry.getValue().result.isPassing);
       entry.getKey().donorCheckVersion.set(Info.getVersion());
 
       StringJoiner sj = new StringJoiner("\t");
@@ -352,11 +358,24 @@ public class ValidationTesting {
     String prevVersion =
         Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
 
+    String prevExpectStr =
+        Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.get().name()));
+
+    TEST_EXPECTATION prevExpect = TEST_EXPECTATION.Pass;
+    if (prevExpectStr != null && !prevExpectStr.isEmpty()) {
+      try {
+        prevExpect = TEST_EXPECTATION.valueOf(prevExpectStr);
+      } catch (IllegalArgumentException e) {
+        // ignore
+      }
+    }
+
     try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
       props.store(fos, null);
     } catch (Exception e) {
       test.comment.set(prevComment);
       test.donorCheckVersion.setValue(prevVersion);
+      test.expectedResult.setValue(prevExpect);
       e.printStackTrace();
       throw new IllegalStateException("Failed to save properties from " + testPropertiesFile);
     }
@@ -460,8 +479,15 @@ public class ValidationTesting {
       changedRel = true;
     }
 
-    TEST_RESULT result = runTestInternal(test);
-    TestRun returnVal = new TestRun(test, result, new Date());
+    TestRun returnVal;
+    try {
+      TEST_RESULT result = runTestInternal(test);
+      returnVal = new TestRun(test, result, new Date(), Optional.empty());
+    } catch (XMLRemapFileException e) {
+      returnVal = new TestRun(test, TEST_RESULT.INVALID_REMAP_FILE, new Date(), Optional.of(e));
+    } catch (SourceFileParsingException e) {
+      returnVal = new TestRun(test, TEST_RESULT.INVALID_TEST_FILE, new Date(), Optional.of(e));
+    }
 
     if (changedCWID) {
       CommonWellDocumented.loadCIWDVersion(current);
@@ -627,8 +653,19 @@ public class ValidationTesting {
     String cwdStr = props.getProperty(CWD_PROP);
     String relStr = props.getProperty(REL);
     String commentStr = props.getProperty(COMMENT_PROP, "");
+    String expectationStr = props.getProperty(EXPECTED_PROP, "");
 
     builder.comment(commentStr);
+
+    TEST_EXPECTATION expectation = TEST_EXPECTATION.Pass;
+    if (expectationStr != null && !expectationStr.isEmpty()) {
+      try {
+        expectation = TEST_EXPECTATION.valueOf(expectationStr);
+      } catch (Exception e) {
+        //
+      }
+    }
+    builder.expectedResult(expectation);
 
     CommonWellDocumented.SOURCE cwdSource = null;
     try {
@@ -665,7 +702,6 @@ public class ValidationTesting {
       }
 
       builder.lastRunDate(lastRunDate);
-      builder.lastPassingState(lastPassingState);
 
       if (lastPassingResult != null) {
         builder.lastPassingResult(lastPassingResult);

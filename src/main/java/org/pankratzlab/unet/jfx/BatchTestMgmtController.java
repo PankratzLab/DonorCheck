@@ -4,10 +4,11 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -16,6 +17,7 @@ import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
+import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
@@ -27,6 +29,7 @@ import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.AlertHelper;
+import org.pankratzlab.unet.validation.TEST_EXPECTATION;
 import org.pankratzlab.unet.validation.TEST_RESULT;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
@@ -36,8 +39,7 @@ import com.google.common.collect.Table;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ObservableValue;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
@@ -45,6 +47,7 @@ import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -52,14 +55,22 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Callback;
+import javafx.util.converter.DefaultStringConverter;
 
-public class ValidationTestMgmtController {
+public class BatchTestMgmtController {
+
+  private static final String PASS = "Pass";
+  private static final String EXPECTED_FAILURE = "Expected failure";
+  private static final String UNEXPECTED_PASS = "Unexpected pass";
+  private static final String UNEXPECTED_FAILURE = "Unexpected failure";
+  private static final String UNEXPECTED_ERROR = "Unexpected error";
+  private static final String EXPECTED_ERROR = "Expected rrror";
 
   @FXML
   private ResourceBundle resources;
@@ -74,22 +85,10 @@ public class ValidationTestMgmtController {
   TableColumn<ValidationTestFileSet, String> testIDColumn;
 
   @FXML
-  TableColumn<ValidationTestFileSet, String> testCommentColumn;
-
-  @FXML
-  TableColumn<ValidationTestFileSet, Date> lastRunColumn;
-
-  @FXML
-  TableColumn<ValidationTestFileSet, Boolean> passingStatusColumn;
-
-  @FXML
-  TableColumn<ValidationTestFileSet, TEST_RESULT> lastRunResultColumn;
-
-  @FXML
   TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> testFileTypesColumn;
 
   @FXML
-  TableColumn<ValidationTestFileSet, Boolean> hasRemappingsColumn;
+  TableColumn<ValidationTestFileSet, String> manualEditsColumn;
 
   @FXML
   TableColumn<ValidationTestFileSet, CommonWellDocumented.SOURCE> ciwdVersionColumn;
@@ -98,10 +97,22 @@ public class ValidationTestMgmtController {
   TableColumn<ValidationTestFileSet, String> relDnaSerVersion;
 
   @FXML
-  TableColumn<ValidationTestFileSet, String> donorCheckVersion;
+  TableColumn<ValidationTestFileSet, TEST_EXPECTATION> expectingPassFailColumn;
 
   @FXML
-  Button closeButton;
+  TableColumn<ValidationTestFileSet, String> lastRunResultColumn;
+
+  @FXML
+  TableColumn<ValidationTestFileSet, String> testCommentColumn;
+
+  @FXML
+  TableColumn<ValidationTestFileSet, String> lastRunDetailsColumn; // date and version of last run
+
+  @FXML
+  Button openDirectoryButton;
+
+  @FXML
+  Button openTestButton;
 
   @FXML
   Button removeSelectedButton;
@@ -112,36 +123,49 @@ public class ValidationTestMgmtController {
   @FXML
   Button runAllButton;
 
-  @FXML
-  Button openDirectoryButton;
+  private <K, V> TableCell<K, V> configureTableCell(TableCell<K, V> cell) {
+    cell.setAlignment(Pos.CENTER);
+    return cell;
+  }
 
-  @FXML
-  Button openTestButton;
+  private <V> Callback<TableColumn<ValidationTestFileSet, String>, TableCell<ValidationTestFileSet, String>> getEditableCellFactory() {
+    Callback<TableColumn<ValidationTestFileSet, String>, TableCell<ValidationTestFileSet, String>> c1 =
+        list -> configureTableCell(
+            new TextFieldTableCell<ValidationTestFileSet, String>(new DefaultStringConverter()));
+    return c1;
+  }
+
+  private <T> Callback<TableColumn<ValidationTestFileSet, T>, TableCell<ValidationTestFileSet, T>> getComboBoxCellFactory(
+      @SuppressWarnings("unchecked") T... values) {
+    return list -> configureTableCell(new ComboBoxTableCell<>(values));
+  }
+
+  private final SimpleDateFormat format = new SimpleDateFormat("ddMMMyyyy HH:mm:ss");
 
   @FXML
   void initialize() {
-    assert testTable != null : "fx:id=\"testTable\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert testIDColumn != null : "fx:id=\"testIDColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert lastRunColumn != null : "fx:id=\"lastRunColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert passingStatusColumn != null : "fx:id=\"passingStatusColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert testFileTypesColumn != null : "fx:id=\"testFileTypesColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert ciwdVersionColumn != null : "fx:id=\"ciwdVersionColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert expectingPassFailColumn != null : "fx:id=\"expectingPassFailColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert lastRunDetailsColumn != null : "fx:id=\"lastRunDetailsColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert lastRunResultColumn != null : "fx:id=\"lastRunResultColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert manualEditsColumn != null : "fx:id=\"manualEditsColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert openDirectoryButton != null : "fx:id=\"openDirectoryButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert openTestButton != null : "fx:id=\"openTestButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert relDnaSerVersion != null : "fx:id=\"relDnaSerVersion\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert donorCheckVersion != null : "fx:id=\"donorCheckVersion\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert closeButton != null : "fx:id=\"closeButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert removeSelectedButton != null : "fx:id=\"removeSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert runSelectedButton != null : "fx:id=\"runSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert runAllButton != null : "fx:id=\"runAllButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert runSelectedButton != null : "fx:id=\"runSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert testCommentColumn != null : "fx:id=\"testCommentColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert testFileTypesColumn != null : "fx:id=\"testFileTypesColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert testIDColumn != null : "fx:id=\"testIDColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert testTable != null : "fx:id=\"testTable\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
 
     testTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     testTable.setEditable(true);
 
-    testIDColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
-          public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
-            return p.getValue().id;
-          }
-        });
+    testIDColumn.setCellValueFactory(p -> {
+      return p.getValue().id;
+    });
 
     testIDColumn.setOnEditCommit(ev -> {
       String oldId = ev.getOldValue();
@@ -159,14 +183,11 @@ public class ValidationTestMgmtController {
       }
     });
 
-    testIDColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+    testIDColumn.setCellFactory(getEditableCellFactory());
 
-    testCommentColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
-          public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
-            return p.getValue().comment;
-          }
-        });
+    testCommentColumn.setCellValueFactory(cdf -> {
+      return cdf.getValue().comment;
+    });
 
     testCommentColumn.setOnEditCommit(ev -> {
       try {
@@ -179,154 +200,161 @@ public class ValidationTestMgmtController {
       }
     });
 
-    testCommentColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+    testCommentColumn.setCellFactory(getEditableCellFactory());
 
-    lastRunColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, Date>, ObservableValue<Date>>() {
-          public ObservableValue<Date> call(CellDataFeatures<ValidationTestFileSet, Date> p) {
-            return p.getValue().lastRunDate;
-          }
-        });
+    expectingPassFailColumn.setCellFactory(getComboBoxCellFactory(TEST_EXPECTATION.values()));
 
-    passingStatusColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, Boolean>, ObservableValue<Boolean>>() {
-          public ObservableValue<Boolean> call(CellDataFeatures<ValidationTestFileSet, Boolean> p) {
-            return p.getValue().lastPassingState;
-          }
-        });
+    expectingPassFailColumn.setCellValueFactory(p -> {
+      return p.getValue().expectedResult;
+    });
 
-    passingStatusColumn.setCellFactory(
-        new Callback<TableColumn<ValidationTestFileSet, Boolean>, TableCell<ValidationTestFileSet, Boolean>>() {
+    expectingPassFailColumn.setOnEditCommit(ev -> {
+      try {
+        ev.getRowValue().expectedResult.set(ev.getNewValue());
+        ValidationTesting.updateTestProperties(ev.getRowValue());
+        testTable.refresh();
+      } catch (Throwable e) {
+        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
+        testTable.refresh();
+      }
+    });
 
-          @Override
-          public TableCell<ValidationTestFileSet, Boolean> call(
-              TableColumn<ValidationTestFileSet, Boolean> param) {
-            return new TableCell<ValidationTestFileSet, Boolean>() {
-              @Override
-              protected void updateItem(Boolean value, boolean empty) {
-                super.updateItem(value, empty);
-                if (value == null) {
-                  setText(null);
-                  setStyle("");
-                } else {
-                  setText(value ? "Passing" : "Failing");
-                  setStyle("-fx-background-color: " + (value ? "LimeGreen" : "OrangeRed"));
-                }
+    lastRunDetailsColumn.setCellFactory(getDefaultTextTableCellFactory());
+
+    lastRunDetailsColumn.setCellValueFactory(p -> {
+      ValidationTestFileSet value = p.getValue();
+      return Bindings.createStringBinding(() -> {
+        String ver = value.donorCheckVersion.getValueSafe();
+        String date = format.format(value.lastRunDate.getValue());
+        return date + (ver.isBlank() ? "" : " (" + ver + ")");
+      }, value.donorCheckVersion, value.lastRunDate);
+    });
+
+    lastRunResultColumn.setCellValueFactory(p -> {
+      return Bindings.createStringBinding(() -> {
+        TEST_RESULT testResult = p.getValue().lastTestResult.get();
+
+        String v = "";
+        switch (p.getValue().expectedResult.get()) {
+          case Error:
+            // expecting an error
+            if (testResult != TEST_RESULT.TEST_SUCCESS && testResult != TEST_RESULT.TEST_FAILURE) {
+              // got an error
+              v = EXPECTED_ERROR;
+            } else {
+              if (testResult == TEST_RESULT.TEST_SUCCESS) {
+                // didn't get an error
+                v = UNEXPECTED_PASS;
+              } else if (testResult == TEST_RESULT.TEST_FAILURE) {
+                // didn't get an error
+                v = UNEXPECTED_FAILURE;
               }
-            };
+            }
+            break;
+          case Pass:
+            if (testResult == TEST_RESULT.TEST_SUCCESS) {
+              v = PASS;
+            } else if (testResult == TEST_RESULT.TEST_FAILURE) {
+              v = UNEXPECTED_FAILURE;
+            } else {
+              v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
+            }
+            break;
+          case Fail:
+            if (testResult == TEST_RESULT.TEST_SUCCESS) {
+              v = UNEXPECTED_PASS;
+            } else if (testResult == TEST_RESULT.TEST_FAILURE) {
+              v = EXPECTED_FAILURE;
+            } else {
+              v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
+            }
+            break;
+        };
+        return v;
+      }, p.getValue().expectedResult, p.getValue().lastTestResult);
+    });
+
+    lastRunResultColumn.setCellFactory(param -> {
+      return configureTableCell(new TableCell<ValidationTestFileSet, String>() {
+        @Override
+        protected void updateItem(String value, boolean empty) {
+          super.updateItem(value, empty);
+          if (value == null) {
+            setText(null);
+            setStyle("");
+          } else {
+            String color = null;
+            if (value.startsWith(PASS) || value.startsWith(EXPECTED_FAILURE)
+                || value.startsWith(EXPECTED_ERROR)) {
+              color = "LimeGreen";
+            } else if (value.startsWith(UNEXPECTED_FAILURE)) {
+              color = "Orange";
+            } else if (value.startsWith(UNEXPECTED_PASS)) {
+              color = "Lime";
+            } else if (value.startsWith(UNEXPECTED_ERROR)) {
+              color = "OrangeRed";
+            }
+            if (color != null) {
+              setStyle("-fx-background-color: " + color + "; -fx-text-fill: black");
+            } else {
+              setStyle("");
+            }
+            setText(value);
           }
-        });
+        }
+      });
+    });
 
-    lastRunResultColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, TEST_RESULT>, ObservableValue<TEST_RESULT>>() {
-          public ObservableValue<TEST_RESULT> call(
-              CellDataFeatures<ValidationTestFileSet, TEST_RESULT> p) {
-            return p.getValue().lastTestResult;
+    testFileTypesColumn.setCellValueFactory(p -> {
+      return p.getValue().sourceTypes;
+    });
+
+    testFileTypesColumn.setCellFactory(param -> {
+      return configureTableCell(new TableCell<ValidationTestFileSet, ObservableSet<SourceType>>() {
+        @Override
+        protected void updateItem(ObservableSet<SourceType> value, boolean empty) {
+          super.updateItem(value, empty);
+          if (value == null) {
+            setText(null);
+          } else {
+            setText(value.stream().sorted().map(SourceType::getDisplayName)
+                .collect(Collectors.joining(", ")));
           }
-        });
+        }
+      });
+    });
 
-    lastRunResultColumn.setCellFactory(
-        new Callback<TableColumn<ValidationTestFileSet, TEST_RESULT>, TableCell<ValidationTestFileSet, TEST_RESULT>>() {
+    manualEditsColumn.setCellValueFactory(p -> {
+      ReadOnlyStringProperty valueSafe = p.getValue().remapFile;
+      if (valueSafe != null && valueSafe.get() != null && !valueSafe.get().isBlank()
+          && new File(valueSafe.get()).exists()) {
+        return new SimpleStringProperty(p.getValue().remappedLoci.get().stream().map(HLALocus::name)
+            .collect(Collectors.joining(", ")));
+      } else {
+        return new SimpleStringProperty("");
+      }
+    });
 
+    manualEditsColumn.setCellFactory(getDefaultTextTableCellFactory());
+
+    ciwdVersionColumn.setCellValueFactory(p -> {
+      return p.getValue().cwdSource;
+    });
+
+    ciwdVersionColumn
+        .setCellFactory(param -> configureTableCell(new TableCell<ValidationTestFileSet, SOURCE>() {
           @Override
-          public TableCell<ValidationTestFileSet, TEST_RESULT> call(
-              TableColumn<ValidationTestFileSet, TEST_RESULT> param) {
-            return new TableCell<ValidationTestFileSet, TEST_RESULT>() {
-              @Override
-              protected void updateItem(TEST_RESULT value, boolean empty) {
-                super.updateItem(value, empty);
-                if (value == null) {
-                  setText(null);
-                } else {
-                  String v = value.name().replace('_', ' ').toLowerCase();
-                  v = v.substring(0, 1).toUpperCase() + v.substring(1);
-                  setText(v);
-                }
-              }
-            };
+          protected void updateItem(SOURCE value, boolean empty) {
+            super.updateItem(value, empty);
+            setText(value == null ? "" : value.getVersion());
           }
-        });
+        }));
 
-    testFileTypesColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, ObservableSet<SourceType>>, ObservableValue<ObservableSet<SourceType>>>() {
-          public ObservableValue<ObservableSet<SourceType>> call(
-              CellDataFeatures<ValidationTestFileSet, ObservableSet<SourceType>> p) {
-            return p.getValue().sourceTypes;
-          }
-        });
+    relDnaSerVersion.setCellValueFactory(p -> {
+      return p.getValue().relDnaSerFile.map(AntigenDictionary::getVersion).orElse("");
+    });
 
-
-    testFileTypesColumn.setCellFactory(
-        new Callback<TableColumn<ValidationTestFileSet, ObservableSet<SourceType>>, TableCell<ValidationTestFileSet, ObservableSet<SourceType>>>() {
-
-          @Override
-          public TableCell<ValidationTestFileSet, ObservableSet<SourceType>> call(
-              TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> param) {
-            return new TableCell<ValidationTestFileSet, ObservableSet<SourceType>>() {
-              @Override
-              protected void updateItem(ObservableSet<SourceType> value, boolean empty) {
-                super.updateItem(value, empty);
-                if (value == null) {
-                  setText(null);
-                } else {
-                  setText(value.stream().sorted().map(SourceType::name)
-                      .collect(Collectors.joining(", ")));
-                }
-              }
-            };
-          }
-        });
-
-    hasRemappingsColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, Boolean>, ObservableValue<Boolean>>() {
-          public ObservableValue<Boolean> call(CellDataFeatures<ValidationTestFileSet, Boolean> p) {
-            ReadOnlyStringProperty valueSafe = p.getValue().remapFile;
-            return new SimpleObjectProperty<>(valueSafe != null && valueSafe.get() != null
-                && !valueSafe.get().isBlank() && new File(valueSafe.get()).exists());
-          }
-        });
-
-    hasRemappingsColumn.setCellFactory(
-        new Callback<TableColumn<ValidationTestFileSet, Boolean>, TableCell<ValidationTestFileSet, Boolean>>() {
-
-          @Override
-          public TableCell<ValidationTestFileSet, Boolean> call(
-              TableColumn<ValidationTestFileSet, Boolean> param) {
-            return new TableCell<ValidationTestFileSet, Boolean>() {
-              @Override
-              protected void updateItem(Boolean value, boolean empty) {
-                super.updateItem(value, empty);
-                if (value == null) {
-                  setText(null);
-                } else {
-                  setText(value ? "Yes" : "");
-                }
-              }
-            };
-          }
-        });
-
-    ciwdVersionColumn.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, CommonWellDocumented.SOURCE>, ObservableValue<CommonWellDocumented.SOURCE>>() {
-          public ObservableValue<CommonWellDocumented.SOURCE> call(
-              CellDataFeatures<ValidationTestFileSet, CommonWellDocumented.SOURCE> p) {
-            return p.getValue().cwdSource;
-          }
-        });
-
-    relDnaSerVersion.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
-          public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
-            return p.getValue().relDnaSerFile.map(AntigenDictionary::getVersion).orElse("");
-          }
-        });
-
-    donorCheckVersion.setCellValueFactory(
-        new Callback<CellDataFeatures<ValidationTestFileSet, String>, ObservableValue<String>>() {
-          public ObservableValue<String> call(CellDataFeatures<ValidationTestFileSet, String> p) {
-            return p.getValue().donorCheckVersion;
-          }
-        });
+    relDnaSerVersion.setCellFactory(getDefaultTextTableCellFactory());
 
     // Any selection enable/disable
     removeSelectedButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
@@ -353,15 +381,26 @@ public class ValidationTestMgmtController {
 
   }
 
+  public <T> Callback<TableColumn<ValidationTestFileSet, T>, TableCell<ValidationTestFileSet, T>> getDefaultTextTableCellFactory() {
+    return param -> configureTableCell(new TableCell<ValidationTestFileSet, T>() {
+      @Override
+      protected void updateItem(T value, boolean empty) {
+        super.updateItem(value, empty);
+        setText(Objects.toString(value).trim());
+      }
+    });
+  }
+
+  private String convert(String s) {
+    String v = s.replace('_', ' ').toLowerCase();
+    v = v.substring(0, 1).toUpperCase() + v.substring(1);
+    return v;
+  }
+
   public void setTable(Table<SOURCE, String, List<ValidationTestFileSet>> testData) {
     ObservableList<ValidationTestFileSet> testList = FXCollections.observableArrayList(
         testData.values().stream().flatMap(List::stream).collect(Collectors.toList()));
     testTable.setItems(testList);
-  }
-
-  @FXML
-  void close() {
-    ((Stage) closeButton.getScene().getWindow()).close();
   }
 
   @FXML
@@ -372,7 +411,7 @@ public class ValidationTestMgmtController {
     Alert alert =
         new Alert(AlertType.CONFIRMATION, "Are you sure you'd like to remove " + toRemove.size()
             + " test" + (toRemove.size() > 1 ? "s" : "") + "?", ButtonType.OK, ButtonType.CANCEL);
-    alert.setTitle("Remove Tests");
+    alert.setTitle("Remove tests");
     alert.setHeaderText("");
     Optional<ButtonType> selVal = alert.showAndWait();
 
@@ -388,7 +427,7 @@ public class ValidationTestMgmtController {
         Alert alert1 = new Alert(AlertType.INFORMATION,
             "Successfully removed " + toRemove.size() + " test" + (toRemove.size() > 1 ? "s" : ""),
             ButtonType.CLOSE);
-        alert1.setTitle("Successfully Removed Tests");
+        alert1.setTitle("Successfully removed tests");
         alert1.setHeaderText("");
         alert1.showAndWait();
       } else {
@@ -397,7 +436,7 @@ public class ValidationTestMgmtController {
                 + "\n\nSuccessfully removed " + removed.size() + " test"
                 + (removed.size() > 1 ? "s" : ""),
             ButtonType.CLOSE);
-        alert1.setTitle("Failed to Remove Tests");
+        alert1.setTitle("Failed to remove tests");
         alert1.setHeaderText("");
         alert1.showAndWait();
       }
@@ -440,7 +479,7 @@ public class ValidationTestMgmtController {
         } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
           Alert alert =
               new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
-          alert.setTitle("Missing Haplotype Table(s)");
+          alert.setTitle("Missing haplotype frequency table(s)");
           alert.setHeaderText("");
           alert.showAndWait();
         }

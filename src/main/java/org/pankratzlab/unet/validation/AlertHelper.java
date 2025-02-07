@@ -11,7 +11,7 @@ public final class AlertHelper {
       Throwable cause) {
     Alert alert1 = new Alert(AlertType.ERROR, "Error - unable to update test properties for test "
         + rowValue.id.get() + ". An exception occurred:\n" + cause.getMessage(), ButtonType.CLOSE);
-    alert1.setTitle("Failed to Update Test");
+    alert1.setTitle("Failed to update test");
     alert1.setHeaderText("");
     alert1.showAndWait();
   }
@@ -21,7 +21,7 @@ public final class AlertHelper {
         "Error - unable to rename test from " + id + " to " + newId
             + ". An exception occurred when moving the directory:\n" + cause.getMessage(),
         ButtonType.CLOSE);
-    alert1.setTitle("Failed to Rename Test");
+    alert1.setTitle("Failed to rename test");
     alert1.setHeaderText("");
     alert1.showAndWait();
   }
@@ -33,7 +33,7 @@ public final class AlertHelper {
             + "1) The given input files do not contain Personally Identifiable Information (PII), or\n\n"
             + "2) If the input files do contain PII, that this location is safe to store PII.",
         ButtonType.OK, ButtonType.CANCEL);
-    alert.setTitle("PII Warning");
+    alert.setTitle("PII warning");
     alert.setHeaderText("");
     Optional<ButtonType> selVal = alert.showAndWait();
     return selVal;
@@ -45,7 +45,7 @@ public final class AlertHelper {
         + file1.label
         + ") already exists.\n\nIf this is an error, please remove the test in the DonorCheck Testing Management tool.\n\nOr remove the test manually by deleting this directory:\n\n"
         + subdir, ButtonType.CLOSE);
-    alert1.setTitle("Failed to Add Test");
+    alert1.setTitle("Failed to add test");
     alert1.setHeaderText("");
     alert1.showAndWait();
   }
@@ -56,7 +56,7 @@ public final class AlertHelper {
         "Error - could not copy serotype lookup file to validation testing directory.\n\nFile: "
             + relFile,
         ButtonType.CLOSE);
-    alert1.setTitle("Failed to Add Test");
+    alert1.setTitle("Failed to add test");
     alert1.setHeaderText("");
     alert1.showAndWait();
   }
@@ -67,7 +67,7 @@ public final class AlertHelper {
         "Error - could not write locus remappings file to validation testing directory.\n\nFile: "
             + remapFile,
         ButtonType.CLOSE);
-    alert1.setTitle("Failed to Add Test");
+    alert1.setTitle("Failed to add test");
     alert1.setHeaderText("");
     alert1.showAndWait();
   }
@@ -78,7 +78,7 @@ public final class AlertHelper {
         "Error - could not write test properties file to validation testing directory.\n\nFile: "
             + propsFile,
         ButtonType.CLOSE);
-    alert1.setTitle("Failed to Add Test");
+    alert1.setTitle("Failed to add test");
     alert1.setHeaderText("");
     alert1.showAndWait();
   }
@@ -88,7 +88,7 @@ public final class AlertHelper {
         "Error - could not copy input file to validation testing directory.\n\nFile: " + file.file
             + "\n\nDirectory: " + subdir,
         ButtonType.CLOSE);
-    alert1.setTitle("Failed to Add Test");
+    alert1.setTitle("Failed to add test");
     alert1.setHeaderText("");
     alert1.showAndWait();
   }

@@ -33,7 +33,7 @@ import org.pankratzlab.unet.parser.util.PdfSureTyperParser;
 /** {@link DonorFileParser} entry point for PDF files. */
 public class PdfDonorParser extends AbstractDonorFileParser {
   private static final String DISPLAY_STRING = "PDF";
-  private static final String FILE_CHOOSER_HEADER = "Select Donor Typing PDF";
+  private static final String FILE_CHOOSER_HEADER = "Select donor typing PDF";
   private static final String INITIAL_NAME = "";
   private static final String EXTENSION_DESC = "LinkSeq";
   private static final String EXTENSION_NAME = "pdf";

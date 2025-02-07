@@ -234,7 +234,13 @@ public abstract class Antigen<L extends Locus<L>, A extends Antigen<L, A>>
 
       // Extracts value outside of parentheses if they were present (changed from returning value
       // inside parens, 5/24 - @rcoleb)
-      String val = matcher.group(1);
+      String val;
+      try {
+        val = matcher.group(1);
+      } catch (IllegalStateException e) {
+        // throw an exception with useful information
+        throw new IllegalStateException("Invalid antigen name format: " + spec, e);
+      }
 
       if (val.contains(SPEC_DELIM)) {
         // Was passed XX:YY

@@ -147,7 +147,7 @@ public class FileInputController extends AbstractValidatingWizardController {
 
     hbox.getChildren().add(fileDisplay);
 
-    Button chooseFileButton = new Button("Choose File");
+    Button chooseFileButton = new Button("Choose file");
     chooseFileButton.setFont(Font.font(16.0));
     chooseFileButton.setOnAction(e -> selectDonorFile(e,
         comboBox.getSelectionModel().getSelectedItem(), setter, linkedFile));

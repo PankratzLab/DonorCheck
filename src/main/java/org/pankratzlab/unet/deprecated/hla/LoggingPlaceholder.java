@@ -58,7 +58,7 @@ public final class LoggingPlaceholder {
    * @see #reportError(Exception, String)
    */
   public static void reportError(Exception exc) {
-    reportError(exc, "Unexpected Error");
+    reportError(exc, "Unexpected error");
   }
 
   /**

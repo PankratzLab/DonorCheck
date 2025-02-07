@@ -2,6 +2,7 @@ package org.pankratzlab.unet.validation;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Collections;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
@@ -77,6 +78,10 @@ public class XMLRemapProcessor implements RemapProcessor {
     } catch (Throwable e) {
       throw new IllegalStateException("Invalid XML file: " + file, e);
     }
+  }
+
+  public Set<HLALocus> getAllRemappedLoci() {
+    return Collections.unmodifiableSet(remappings.columnKeySet());
   }
 
   @Override
