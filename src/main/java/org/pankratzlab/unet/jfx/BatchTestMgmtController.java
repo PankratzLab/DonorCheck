@@ -70,7 +70,7 @@ public class BatchTestMgmtController {
   private static final String UNEXPECTED_PASS = "Unexpected pass";
   private static final String UNEXPECTED_FAILURE = "Unexpected failure";
   private static final String UNEXPECTED_ERROR = "Unexpected error";
-  private static final String EXPECTED_ERROR = "Expected rrror";
+  private static final String EXPECTED_ERROR = "Expected error";
 
   @FXML
   private ResourceBundle resources;
