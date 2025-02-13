@@ -40,6 +40,7 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.macui.MACUIController;
+import org.pankratzlab.unet.jfx.prop.DCProperty;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
@@ -47,6 +48,7 @@ import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
 import org.pankratzlab.unet.validation.ValidationTesting.TestLoadingResults;
+import com.dlsc.preferencesfx.PreferencesFx;
 import com.google.common.base.Strings;
 import com.google.common.collect.Table;
 import javafx.application.Platform;
@@ -98,6 +100,12 @@ public class LandingController {
   private Label menuVersionLabel;
 
   private String version;
+
+  @FXML
+  void editPreferences() {
+    PreferencesFx.of(new DCProperty.PropertiesStorageHandler(), DCProperty.getTopLevelCategories())
+        .show(true);
+  }
 
   @FXML
   void fileQuitAction(ActionEvent event) {

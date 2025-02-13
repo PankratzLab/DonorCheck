@@ -31,12 +31,12 @@
 						<Menu mnemonicParsing="false" text="File">
 							<items>
 								<MenuItem fx:id="saveOption" mnemonicParsing="false"
-									onAction="#savePNGResults" text="Save to Image" />
+									onAction="#savePNGResults" text="Save to image" />
 								<MenuItem fx:id="saveCSVOption" mnemonicParsing="false"
 									onAction="#saveCSVResults" text="Save to CSV" />
 								<MenuItem fx:id="addToValidationOption"
 									mnemonicParsing="false" onAction="#addInputsToValidationSet"
-									text="Add Input Files to Testing Suite" />
+									text="Add input files to testing suite" />
 								<MenuItem fx:id="printOption" mnemonicParsing="false"
 									onAction="#printResults" text="Print..." />
 							</items>

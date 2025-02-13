@@ -35,6 +35,11 @@ import java.util.Properties;
  */
 public final class DonorCheckProperties {
   private static final String PROP_FILE = Info.DONOR_CHECK_HOME + "hla.properties";
+
+  public static final String FIRST_TYPE = "FIRST_TYPE";
+  public static final String SECOND_TYPE = "SECOND_TYPE";
+  public static final String USE_ALLELE_CALL = "USE_ALLELE_CALL";
+
   private static Properties hlaProps;
 
   public static Properties get() {

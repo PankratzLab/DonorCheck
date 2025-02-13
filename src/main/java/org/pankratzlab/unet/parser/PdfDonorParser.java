@@ -70,6 +70,10 @@ public class PdfDonorParser extends AbstractDonorFileParser {
     return "Could not read donor data from PDF.";
   }
 
+  public static String getTypeString() {
+    return DISPLAY_STRING;
+  }
+
   @Override
   protected void doParse(ValidationModelBuilder builder, File file) {
     try (PDDocument pdf = PDDocument.load(file)) {
