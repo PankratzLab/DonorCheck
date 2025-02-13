@@ -33,7 +33,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.parser.XmlDonorParser;
 import com.google.common.cache.CacheBuilder;
@@ -120,8 +120,8 @@ public final class CommonWellDocumented {
 
   public static void initFromProperty() {
     boolean valid = false;
-    if (HLAProperties.get().containsKey(CWD_PROP)) {
-      String propVal = HLAProperties.get().getProperty(CWD_PROP);
+    if (DonorCheckProperties.get().containsKey(CWD_PROP)) {
+      String propVal = DonorCheckProperties.get().getProperty(CWD_PROP);
       try {
         SOURCE src = SOURCE.valueOf(propVal);
         switch (src) {
@@ -171,8 +171,8 @@ public final class CommonWellDocumented {
   public static SOURCE loadPropertyCWDSource() {
     SOURCE def = SOURCE.CIWD_300;
 
-    if (HLAProperties.get().containsKey(CWD_PROP)) {
-      String propVal = HLAProperties.get().getProperty(CWD_PROP);
+    if (DonorCheckProperties.get().containsKey(CWD_PROP)) {
+      String propVal = DonorCheckProperties.get().getProperty(CWD_PROP);
       try {
         def = SOURCE.valueOf(propVal);
       } catch (IllegalArgumentException e) {
@@ -188,7 +188,7 @@ public final class CommonWellDocumented {
       r.load();
 
       // save the selected value
-      HLAProperties.get().setProperty(CWD_PROP, r.name());
+      DonorCheckProperties.get().setProperty(CWD_PROP, r.name());
 
     } catch (Exception e) {
       e.printStackTrace();

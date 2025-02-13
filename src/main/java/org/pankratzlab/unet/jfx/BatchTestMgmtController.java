@@ -18,7 +18,7 @@ import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
-import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
@@ -317,6 +317,7 @@ public class BatchTestMgmtController {
           if (value == null) {
             setText(null);
           } else {
+
             setText(value.stream().sorted().map(SourceType::getDisplayName)
                 .collect(Collectors.joining(", ")));
           }
@@ -485,7 +486,7 @@ public class BatchTestMgmtController {
         }
 
         SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
-        String currentRel = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+        String currentRel = DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
 
         SOURCE source = selectedItem.cwdSource.get();
         String rel = selectedItem.relDnaSerFile.get();
@@ -497,7 +498,7 @@ public class BatchTestMgmtController {
           changedCWID = true;
         }
         if (!new File(currentRel).equals(new File(rel))) {
-          HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
+          DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
           AntigenDictionary.clearCache();
           changedRel = true;
         }
@@ -549,7 +550,7 @@ public class BatchTestMgmtController {
             CommonWellDocumented.loadCIWDVersion(current);
           }
           if (changedRel) {
-            HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
+            DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
             AntigenDictionary.clearCache();
           }
         } catch (IOException e) {

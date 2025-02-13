@@ -185,7 +185,7 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
   private void saveCSVResults(ActionEvent event) {
     ValidationTable vt = getTable();
     Optional<File> destination = DonorNetUtils.getFile(rootPane, "Save validation results",
-        vt.getId() + "_results_csv", "CSV", ".csv", false);
+        vt.getId() + "_results", "CSV", ".csv", false);
 
     if (destination.isPresent()) {
       try {

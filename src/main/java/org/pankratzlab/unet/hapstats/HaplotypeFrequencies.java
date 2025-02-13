@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
-import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
 import com.google.common.base.Strings;
@@ -97,8 +97,8 @@ public final class HaplotypeFrequencies {
    * @return true if at least one haplotype is read successfully.
    */
   public static boolean doInitialization() {
-    String bcTablePath = HLAProperties.get().getProperty(NMDP_CB_PROP);
-    String drdqTablePath = HLAProperties.get().getProperty(NMDP_DRDQ_PROP);
+    String bcTablePath = DonorCheckProperties.get().getProperty(NMDP_CB_PROP);
+    String drdqTablePath = DonorCheckProperties.get().getProperty(NMDP_DRDQ_PROP);
     return completeDoInitialization(bcTablePath, drdqTablePath);
   }
 

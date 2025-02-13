@@ -308,7 +308,7 @@ public class LandingController {
       Platform.runLater(() -> {
         if (!HaplotypeFrequencies.successfullyInitialized()) {
           Alert alert = new Alert(AlertType.INFORMATION,
-              "Haplotype Frequency Tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
+              "Haplotype frequency tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
                   + "Would you like to set these tables now?\n\n"
                   + "Note: you can adjust these tables any time from the 'Haplotype' menu",
               ButtonType.YES, ButtonType.NO);

@@ -33,7 +33,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
-import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
@@ -66,9 +66,9 @@ public class ValidationTesting {
   private static final String TEST_PROPERTIES = "test.properties";
   private static final String TEST_LOG = "test.log";
 
-  public static final String REL_DIRECTORY = Info.HLA_HOME + "rel_dna_ser_files/";
+  public static final String REL_DIRECTORY = Info.DONOR_CHECK_HOME + "rel_dna_ser_files/";
   public static final String VALIDATION_DIRECTORY =
-      new File(Info.HLA_HOME + "validation/").getAbsolutePath() + File.separator;
+      new File(Info.DONOR_CHECK_HOME + "validation/").getAbsolutePath() + File.separator;
 
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
@@ -141,7 +141,7 @@ public class ValidationTesting {
       relDirFile.mkdir();
     }
 
-    String relDnaSerFile = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+    String relDnaSerFile = DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
     String newRelFileName;
     String newRelDnaSerFile;
     if (!Strings.isNullOrEmpty(relDnaSerFile) && new File(relDnaSerFile).exists()) {
@@ -462,7 +462,7 @@ public class ValidationTesting {
 
   private static TestRun runTest(ValidationTestFileSet test) {
     SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
-    String currentRel = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+    String currentRel = DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
 
     SOURCE source = test.cwdSource.get();
     String rel = test.relDnaSerFile.get();
@@ -474,7 +474,7 @@ public class ValidationTesting {
       changedCWID = true;
     }
     if (!new File(currentRel).equals(new File(rel))) {
-      HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
+      DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
       AntigenDictionary.clearCache();
       changedRel = true;
     }
@@ -493,7 +493,7 @@ public class ValidationTesting {
       CommonWellDocumented.loadCIWDVersion(current);
     }
     if (changedRel) {
-      HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
+      DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
       AntigenDictionary.clearCache();
     }
 

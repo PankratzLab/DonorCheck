@@ -33,8 +33,8 @@ import java.util.Properties;
  * get the application-specific property values for the HLA suite. These will automatically be
  * updated on app shutdown.
  */
-public final class HLAProperties {
-  private static final String PROP_FILE = Info.HLA_HOME + "hla.properties";
+public final class DonorCheckProperties {
+  private static final String PROP_FILE = Info.DONOR_CHECK_HOME + "hla.properties";
   private static Properties hlaProps;
 
   public static Properties get() {
