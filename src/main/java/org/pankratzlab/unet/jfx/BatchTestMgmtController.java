@@ -243,7 +243,10 @@ public class BatchTestMgmtController {
           return Bindings.createStringBinding(
               () -> {
                 String ver = value.donorCheckVersion.getValueSafe();
-                String date = format.format(value.lastRunDate.getValue());
+                String date =
+                    value.lastRunDate.getValue() == null
+                        ? "---"
+                        : format.format(value.lastRunDate.getValue());
                 return date + (ver.isBlank() ? "" : " (" + ver + ")");
               },
               value.donorCheckVersion,
@@ -255,6 +258,9 @@ public class BatchTestMgmtController {
           return Bindings.createStringBinding(
               () -> {
                 TEST_RESULT testResult = p.getValue().lastTestResult.get();
+                if (testResult == null) {
+                  return "---";
+                }
 
                 String v = "";
                 switch (p.getValue().expectedResult.get()) {

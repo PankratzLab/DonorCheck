@@ -91,7 +91,9 @@ public class ValidationTesting {
         .collect(Collectors.toList());
   }
 
-  public static boolean addToValidationSet(TestInfo file1, TestInfo file2) {
+  public static boolean addToValidationSet(TestInfo file11, TestInfo file21) {
+    TestInfo file1 = file11;
+    TestInfo file2 = file21;
     // Tests can only be added from the validation results screen, which
     // means that we know the test set has exactly two files, and therefore
     // we don't have to check that the ID's match (if they don't match, the result
@@ -105,12 +107,19 @@ public class ValidationTesting {
     String reldir = REL_DIRECTORY;
     String subdir = getTestDirectory(file1.label);
 
-    final File testDir = new File(subdir);
+    File testDir = new File(subdir);
 
     // first check if test already exists
     if (testDir.exists()) {
-      AlertHelper.showMessage_TestAlreadyExists(file1, subdir);
-      return false;
+      Optional<String> newLbl = AlertHelper.showMessage_TestAlreadyExists(file1, subdir);
+      if (newLbl.isEmpty()) {
+        return false;
+      } else {
+        file1 = new TestInfo(newLbl.get(), file1.file, file1.remappings, file1.sourceType);
+        file2 = new TestInfo(newLbl.get(), file2.file, file2.remappings, file2.sourceType);
+        subdir = getTestDirectory(file1.label);
+        testDir = new File(subdir);
+      }
     }
 
     // show dialog with warning about avoiding PII
