@@ -37,15 +37,21 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.NullType;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ChangeListener;
 
 /**
  * Static utility class for accessing haplotype frequencies for B-C and DR-DQ haplotypes. Uses
@@ -64,17 +70,23 @@ public final class HaplotypeFrequencies {
   public static final String NMDP_DRDQ_PROP = "hla.nmdp.haplotype.drdq";
 
   private static Map<Haplotype, HaplotypeFrequency> TABLES;
-  private static Boolean initialized = null;
+  private static BooleanProperty initializedProperty = new SimpleBooleanProperty(false);
   private static String missingTableMsg;
 
   private HaplotypeFrequencies() {}
 
-  /** @return True if {@link #doInitialization()} succeeded. */
-  public static boolean successfullyInitialized() {
-    if (Objects.isNull(initialized)) {
-      initialized = doInitialization();
+  public static void addListener(ChangeListener<? super Boolean> listener) {
+    initializedProperty.addListener(listener);
+  }
+
+  /**
+   * @return True if {@link #doInitialization()} succeeded.
+   */
+  public static BooleanProperty successfullyInitialized() {
+    if (Objects.isNull(TABLES)) {
+      initializedProperty = doInitialization();
     }
-    return initialized;
+    return initializedProperty;
   }
 
   /**
@@ -84,19 +96,18 @@ public final class HaplotypeFrequencies {
    * @param drdqTablePath file path for DRDQ haplotype frequency file
    * @return true if at least one haplotype is read successfully
    */
-  public static boolean doInitialization(String bcTablePath, String drdqTablePath) {
+  public static BooleanProperty doInitialization(String bcTablePath, String drdqTablePath) {
     return completeDoInitialization(bcTablePath, drdqTablePath);
   }
 
   /**
    * Update the haplotype frequency tables.
    *
-   * <p>
-   * NOTE: This should always be run off the JFX application thread
+   * <p>NOTE: This should always be run off the JFX application thread
    *
    * @return true if at least one haplotype is read successfully.
    */
-  public static boolean doInitialization() {
+  public static BooleanProperty doInitialization() {
     String bcTablePath = DonorCheckProperties.get().getProperty(NMDP_CB_PROP);
     String drdqTablePath = DonorCheckProperties.get().getProperty(NMDP_DRDQ_PROP);
     return completeDoInitialization(bcTablePath, drdqTablePath);
@@ -109,7 +120,8 @@ public final class HaplotypeFrequencies {
    * @param drdqTablePath file path for DRDQ haplotype frequency file
    * @return true if at least one haplotype is read successfully
    */
-  private static boolean completeDoInitialization(String bcTablePath, String drdqTablePath) {
+  private static BooleanProperty completeDoInitialization(
+      String bcTablePath, String drdqTablePath) {
     Builder<Haplotype, HaplotypeFrequency> frequencyMapBuilder = ImmutableMap.builder();
     StringJoiner noTable = new StringJoiner("\n");
     ImmutableMap<Haplotype, HaplotypeFrequency> table = ImmutableMap.of();
@@ -145,24 +157,27 @@ public final class HaplotypeFrequencies {
     if (!noTable.toString().isEmpty()) {
       missingTableMsg =
           "The following frequency table(s) are missing. Corresponding haplotype frequencies will not be used.\n"
-              + noTable.toString() + "\n\nYou can edit the table paths via the 'Haplotypes' menu.";
+              + noTable.toString()
+              + "\n\nYou can edit the table paths via the 'Haplotypes' menu.";
     }
 
-    initialized = !TABLES.isEmpty();
-    return initialized;
+    initializedProperty.set(!TABLES.isEmpty());
+    return initializedProperty;
   }
 
   /**
    * @return A description of any tables that failed to load in the last {@link #doInitialization()}
-   *         call. Empty if no missing tables.
+   *     call. Empty if no missing tables.
    */
   public static String getMissingTableMessage() {
     return missingTableMsg;
   }
 
   /** Helper method to build a haplotype table from a CSV file from NMDP */
-  private static void buildTable(Builder<Haplotype, HaplotypeFrequency> frequencyTableBuilder,
-      File frequencyFile, String... loci) {
+  private static void buildTable(
+      Builder<Haplotype, HaplotypeFrequency> frequencyTableBuilder,
+      File frequencyFile,
+      String... loci) {
 
     try (InputStream is = new FileInputStream(frequencyFile);
         HSSFWorkbook workbook = new HSSFWorkbook(is)) {
@@ -250,7 +265,7 @@ public final class HaplotypeFrequencies {
    * @param typeOne First type of target haplotype (order is arbitrary)
    * @param typeTwo Second type of target haplotype (order is arbitrary)
    * @return The population frequency in the specified ethnicity of the haplotype containing these
-   *         two types
+   *     two types
    */
   public static BigDecimal getFrequency(RaceGroup ethnicity, HLAType typeOne, HLAType typeTwo) {
     return getFrequency(ethnicity, new Haplotype(typeOne, typeTwo));
@@ -260,13 +275,17 @@ public final class HaplotypeFrequencies {
    * @param ethnicity Target ethnicity
    * @param haplotype Target haplotype
    * @return The population frequency in the specified ethnicity of the haplotype containing these
-   *         two types
+   *     two types
    */
   public static BigDecimal getFrequency(RaceGroup ethnicity, Haplotype haplotype) {
     BigDecimal freq = BigDecimal.ZERO;
-    Haplotype equivHaplotype = new Haplotype(haplotype.getTypes().stream()
-        .map(AlleleGroups::getGGroup).map(HaplotypeFrequencies::adjustNulls)
-        .map(HaplotypeFrequencies::truncateFields).collect(Collectors.toSet()));
+    Haplotype equivHaplotype =
+        new Haplotype(
+            haplotype.getTypes().stream()
+                .map(AlleleGroups::getGGroup)
+                .map(HaplotypeFrequencies::adjustNulls)
+                .map(HaplotypeFrequencies::truncateFields)
+                .collect(Collectors.toSet()));
     if (Objects.nonNull(TABLES) && TABLES.containsKey(equivHaplotype)) {
       freq = TABLES.get(equivHaplotype).getFrequencyForEthnicity(ethnicity);
     }

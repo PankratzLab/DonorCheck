@@ -577,7 +577,7 @@ public class BatchTestMgmtController {
           // Don't actually run this as an event, though - make it a runnable on the JFX App thread
           Platform.runLater(
               () -> {
-                if (!HaplotypeFrequencies.successfullyInitialized()) {
+                if (!HaplotypeFrequencies.successfullyInitialized().get()) {
                   Alert alert =
                       new Alert(
                           AlertType.INFORMATION,
