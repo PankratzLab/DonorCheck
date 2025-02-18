@@ -34,7 +34,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import org.apache.logging.log4j.util.TriConsumer;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -61,6 +60,11 @@ import com.google.common.collect.Multiset;
 
 /** Parses SCORE6 QType format to donor model */
 public class XmlScore6Parser {
+
+  @FunctionalInterface
+  public static interface TriConsumer<T, U, V> {
+    public void accept(T t, U u, V v);
+  }
 
   // -- Type assignment requires assessing allele frequencies, which are read from an HTML doc --
   private static final String LOCUS_SEPARATOR = "*";
