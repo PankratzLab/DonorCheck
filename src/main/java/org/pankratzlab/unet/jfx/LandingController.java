@@ -29,9 +29,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutionException;
-
 import javax.annotation.Nullable;
-
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
@@ -50,11 +48,9 @@ import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
 import org.pankratzlab.unet.validation.ValidationTesting.TestLoadingResults;
-
 import com.dlsc.preferencesfx.PreferencesFx;
 import com.google.common.base.Strings;
 import com.google.common.collect.Table;
-
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
@@ -77,10 +73,8 @@ import javafx.stage.Window;
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
 public class LandingController {
 
-  private static final String WEBSITE_DONORCHECK_GITHUB =
-      "https://github.com/PankratzLab/DonorCheck";
-  private static final String WEBSITE_COMP_PATH =
-      "https://med.umn.edu/pathology/research/computational-pathology";
+  private static final String WEBSITE_DONORCHECK_GITHUB = "https://github.com/PankratzLab/DonorCheck";
+  private static final String WEBSITE_COMP_PATH = "https://med.umn.edu/pathology/research/computational-pathology";
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String MACUI_ENTRY = "/MACUIConversionPanel.fxml";
 
@@ -88,22 +82,26 @@ public class LandingController {
   static final String RESULTS_STEP = "/ValidationResults.fxml";
   private static final String TESTING_MGMT = "/ValidationTestMgmt.fxml";
 
-  @FXML private ResourceBundle resources;
+  @FXML
+  private ResourceBundle resources;
 
-  @FXML private URL location;
+  @FXML
+  private URL location;
 
-  @FXML private BorderPane rootPane;
+  @FXML
+  private BorderPane rootPane;
 
-  @FXML private Label versionLabel;
+  @FXML
+  private Label versionLabel;
 
-  @FXML private Label menuVersionLabel;
+  @FXML
+  private Label menuVersionLabel;
 
   private String version;
 
   @FXML
   void editPreferences() {
-    PreferencesFx.of(new DCProperty.PropertiesStorageHandler(), DCProperty.getTopLevelCategories())
-        .show(true);
+    PreferencesFx.of(new DCProperty.PropertiesStorageHandler(), DCProperty.getTopLevelCategories()).show(true);
   }
 
   @FXML
@@ -134,104 +132,82 @@ public class LandingController {
 
   @FXML
   void manageTestingFiles(ActionEvent event) {
-    Task<TestLoadingResults> manageValidationTask =
-        JFXUtilHelper.createProgressTask(
-            () -> {
-              // first, load the test data
-              try {
-                TestLoadingResults validationDirectory =
-                    ValidationTesting.loadValidationDirectory();
+    Task<TestLoadingResults> manageValidationTask = JFXUtilHelper.createProgressTask(() -> {
+      // first, load the test data
+      try {
+        TestLoadingResults validationDirectory = ValidationTesting.loadValidationDirectory();
 
-                return validationDirectory;
-              } catch (Exception e1) {
-                e1.printStackTrace();
-                Alert alert1 =
-                    new Alert(
-                        AlertType.ERROR,
-                        "Error loading test data: " + e1.getMessage(),
-                        ButtonType.CLOSE);
-                alert1.setTitle("Error");
-                alert1.setHeaderText("");
-                alert1.showAndWait();
-                throw new IllegalStateException("Error loading test data: " + e1.getMessage());
-              }
-            });
+        return validationDirectory;
+      } catch (Exception e1) {
+        e1.printStackTrace();
+        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+        alert1.setTitle("Error");
+        alert1.setHeaderText("");
+        alert1.showAndWait();
+        throw new IllegalStateException("Error loading test data: " + e1.getMessage());
+      }
+    });
 
-    EventHandler<WorkerStateEvent> doValidation =
-        e -> {
-          Platform.runLater(
-              () -> {
-                TestLoadingResults testLoad;
-                try {
-                  testLoad = manageValidationTask.get();
-                } catch (Exception e1) {
-                  e1.printStackTrace();
-                  Alert alert1 =
-                      new Alert(
-                          AlertType.ERROR,
-                          "Error loading test data: " + e1.getMessage(),
-                          ButtonType.CLOSE);
-                  alert1.setTitle("Error");
-                  alert1.setHeaderText("");
-                  alert1.showAndWait();
-                  return;
-                }
+    EventHandler<WorkerStateEvent> doValidation = e -> {
+      Platform.runLater(() -> {
+        TestLoadingResults testLoad;
+        try {
+          testLoad = manageValidationTask.get();
+        } catch (Exception e1) {
+          e1.printStackTrace();
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
+          return;
+        }
 
-                if (testLoad.invalidTests.size() > 0) {
-                  Alert alert1 = new Alert(AlertType.ERROR);
-                  alert1.getButtonTypes().add(ButtonType.CLOSE);
+        if (testLoad.invalidTests.size() > 0) {
+          Alert alert1 = new Alert(AlertType.ERROR);
+          alert1.getButtonTypes().add(ButtonType.CLOSE);
 
-                  String content =
-                      "Please remove the listed tests manually from this directory: \n\n"
-                          + ValidationTesting.VALIDATION_DIRECTORY
-                          + "\n";
-                  for (String invalidTest : testLoad.invalidTests) {
-                    content += "\n" + invalidTest;
-                  }
-                  TextArea textArea = new TextArea(content);
-                  textArea.setEditable(false);
-                  textArea.setWrapText(true);
+          String content = "Please remove the listed tests manually from this directory: \n\n" + ValidationTesting.VALIDATION_DIRECTORY + "\n";
+          for (String invalidTest : testLoad.invalidTests) {
+            content += "\n" + invalidTest;
+          }
+          TextArea textArea = new TextArea(content);
+          textArea.setEditable(false);
+          textArea.setWrapText(true);
 
-                  alert1.setTitle("Error loading tests");
-                  alert1.setHeaderText("Failed to Load " + testLoad.invalidTests.size() + " Tests");
-                  alert1.getDialogPane().setContent(textArea);
-                  alert1.setResizable(true);
-                  alert1.showAndWait();
-                }
+          alert1.setTitle("Error loading tests");
+          alert1.setHeaderText("Failed to Load " + testLoad.invalidTests.size() + " Tests");
+          alert1.getDialogPane().setContent(textArea);
+          alert1.setResizable(true);
+          alert1.showAndWait();
+        }
 
-                Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
+        Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
 
-                BatchTestMgmtController controller = new BatchTestMgmtController();
+        BatchTestMgmtController controller = new BatchTestMgmtController();
 
-                FXMLLoader loader =
-                    new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
-                loader.setController(controller);
+        FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
+        loader.setController(controller);
 
-                Scene newScene;
-                try {
-                  newScene = new Scene(loader.load());
-                  Stage inputStage = new Stage();
-                  inputStage.initOwner(rootPane.getScene().getWindow());
-                  inputStage.initModality(Modality.APPLICATION_MODAL);
-                  inputStage.setTitle(
-                      "DonorCheck " + (version.isEmpty() ? "" : version) + ": batch validation");
-                  inputStage.setResizable(true);
-                  inputStage.setScene(newScene);
-                  controller.setTable(testData);
-                  inputStage.showAndWait();
-                } catch (IOException e1) {
-                  e1.printStackTrace();
-                  Alert alert1 =
-                      new Alert(
-                          AlertType.ERROR,
-                          "Error loading test data: " + e1.getMessage(),
-                          ButtonType.CLOSE);
-                  alert1.setTitle("Error");
-                  alert1.setHeaderText("");
-                  alert1.showAndWait();
-                }
-              });
-        };
+        Scene newScene;
+        try {
+          newScene = new Scene(loader.load());
+          Stage inputStage = new Stage();
+          inputStage.initOwner(rootPane.getScene().getWindow());
+          inputStage.initModality(Modality.APPLICATION_MODAL);
+          inputStage.setTitle("DonorCheck " + (version.isEmpty() ? "" : version) + ": batch validation");
+          inputStage.setResizable(true);
+          inputStage.setScene(newScene);
+          controller.setTable(testData);
+          inputStage.showAndWait();
+        } catch (IOException e1) {
+          e1.printStackTrace();
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
+        }
+      });
+    };
 
     manageValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
@@ -240,43 +216,36 @@ public class LandingController {
 
   @FXML
   void runTesting(ActionEvent event) {
-    Task<List<ValidationTestFileSet>> loadTestsTask =
-        JFXUtilHelper.createProgressTask(
-            () -> {
-              TestLoadingResults tests = ValidationTesting.loadValidationDirectory();
+    Task<List<ValidationTestFileSet>> loadTestsTask = JFXUtilHelper.createProgressTask(() -> {
+      TestLoadingResults tests = ValidationTesting.loadValidationDirectory();
 
-              List<ValidationTestFileSet> allTests = new ArrayList<>();
-              for (String relFile : tests.testSets.columnKeySet()) {
-                for (SOURCE cwd : tests.testSets.column(relFile).keySet()) {
-                  allTests.addAll(tests.testSets.get(cwd, relFile));
-                }
-              }
+      List<ValidationTestFileSet> allTests = new ArrayList<>();
+      for (String relFile : tests.testSets.columnKeySet()) {
+        for (SOURCE cwd : tests.testSets.column(relFile).keySet()) {
+          allTests.addAll(tests.testSets.get(cwd, relFile));
+        }
+      }
 
-              allTests = ValidationTesting.sortTests(allTests);
+      allTests = ValidationTesting.sortTests(allTests);
 
-              return allTests;
-            });
+      return allTests;
+    });
 
-    EventHandler<WorkerStateEvent> doValidation =
-        e -> {
-          List<ValidationTestFileSet> allTests;
-          try {
-            allTests = loadTestsTask.get();
-          } catch (InterruptedException | ExecutionException e1) {
-            e1.printStackTrace();
-            Alert alert1 =
-                new Alert(
-                    AlertType.ERROR,
-                    "Error loading test data: " + e1.getMessage(),
-                    ButtonType.CLOSE);
-            alert1.setTitle("Error");
-            alert1.setHeaderText("");
-            alert1.showAndWait();
-            return;
-          }
+    EventHandler<WorkerStateEvent> doValidation = e -> {
+      List<ValidationTestFileSet> allTests;
+      try {
+        allTests = loadTestsTask.get();
+      } catch (InterruptedException | ExecutionException e1) {
+        e1.printStackTrace();
+        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+        alert1.setTitle("Error");
+        alert1.setHeaderText("");
+        alert1.showAndWait();
+        return;
+      }
 
-          ValidationTesting.runTests(allTests);
-        };
+      ValidationTesting.runTests(rootPane, allTests);
+    };
 
     loadTestsTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
@@ -325,72 +294,59 @@ public class LandingController {
     // The way DonorCheck is set up, "validation" is run in two parts
 
     // The first is the actual task we're running, which is to check/initialize the haplotype freqs
-    Task<Void> runValidationTask =
-        JFXUtilHelper.createProgressTask(
-            () -> {
-              HaplotypeFrequencies.successfullyInitialized();
-            });
+    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
+      HaplotypeFrequencies.successfullyInitialized();
+    });
 
     // Then we set up the actual file validation as an event that triggers
     // in response to the success of the haplotypes initialization task above
-    EventHandler<WorkerStateEvent> doValidation =
-        (w) -> {
+    EventHandler<WorkerStateEvent> doValidation = (w) -> {
 
-          // Don't actually run this as an event, though - make it a runnable on the JFX App thread
-          Platform.runLater(
-              () -> {
-                if (!HaplotypeFrequencies.successfullyInitialized().get()) {
-                  Alert alert =
-                      new Alert(
-                          AlertType.INFORMATION,
-                          "Haplotype frequency tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
-                              + "Would you like to set these tables now?\n\n"
-                              + "Note: you can adjust these tables any time from the 'Haplotype' menu",
-                          ButtonType.YES,
-                          ButtonType.NO);
-                  alert.setTitle("No haplotype frequencies");
-                  alert.setHeaderText("");
-                  alert
-                      .showAndWait()
-                      .filter(response -> response == ButtonType.YES)
-                      .ifPresent(response -> chooseFreqTables(event));
-                } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
-                  Alert alert =
-                      new Alert(
-                          AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
-                  alert.setTitle("Missing haplotype table(s)");
-                  alert.setHeaderText("");
-                  alert.showAndWait();
-                }
+      // Don't actually run this as an event, though - make it a runnable on the JFX App thread
+      Platform.runLater(() -> {
+        if (!HaplotypeFrequencies.successfullyInitialized().get()) {
+          Alert alert = new Alert(AlertType.INFORMATION,
+              "Haplotype frequency tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
+                  + "Would you like to set these tables now?\n\n" + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+              ButtonType.YES, ButtonType.NO);
+          alert.setTitle("No haplotype frequencies");
+          alert.setHeaderText("");
+          alert.showAndWait().filter(response -> response == ButtonType.YES).ifPresent(response -> chooseFreqTables(event));
+        } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
+          Alert alert = new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
+          alert.setTitle("Missing haplotype table(s)");
+          alert.setHeaderText("");
+          alert.showAndWait();
+        }
 
-                CommonWellDocumented.initFromProperty();
+        CommonWellDocumented.initFromProperty();
 
-                ValidationTable table = new ValidationTable();
-                final Scene scene = ((Node) event.getSource()).getScene();
+        ValidationTable table = new ValidationTable();
+        final Scene scene = ((Node) event.getSource()).getScene();
 
-                final Window window = scene.getWindow();
-                Wizard validationWizard = new Wizard(window);
-                validationWizard.setTitle("DonorCheck " + (version.isEmpty() ? "" : version));
+        final Window window = scene.getWindow();
+        Wizard validationWizard = new Wizard(window);
+        validationWizard.setTitle("DonorCheck " + (version.isEmpty() ? "" : version));
 
-                List<WizardPane> pages = new ArrayList<>();
-                try {
-                  makePage(pages, table, INPUT_STEP, new FileInputController());
-                  makePage(pages, table, RESULTS_STEP, new ValidationResultsController());
-                } catch (IOException e) {
-                  e.printStackTrace();
-                  throw new IllegalStateException(e);
-                }
+        List<WizardPane> pages = new ArrayList<>();
+        try {
+          makePage(pages, table, INPUT_STEP, new FileInputController());
+          makePage(pages, table, RESULTS_STEP, new ValidationResultsController());
+        } catch (IOException e) {
+          e.printStackTrace();
+          throw new IllegalStateException(e);
+        }
 
-                pages.get(0).getButtonTypes();
+        pages.get(0).getButtonTypes();
 
-                Wizard.Flow pageFlow = new LinearFlow(pages);
+        Wizard.Flow pageFlow = new LinearFlow(pages);
 
-                validationWizard.setFlow(pageFlow);
+        validationWizard.setFlow(pageFlow);
 
-                // show wizard and wait for response
-                validationWizard.showAndWait();
-              });
-        };
+        // show wizard and wait for response
+        validationWizard.showAndWait();
+      });
+    };
 
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
@@ -404,9 +360,7 @@ public class LandingController {
    * @param controller Controller instance to attach to this page
    * @throws IOException If errors during FXML reading
    */
-  public static void makePage(
-      List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML, Object controller)
-      throws IOException {
+  public static void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML, Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems
@@ -426,8 +380,7 @@ public class LandingController {
 
   @FXML
   void initialize() {
-    assert rootPane != null
-        : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
+    assert rootPane != null : "fx:id=\"rootPane\" was not injected: check your FXML file 'TypeValidationLanding.fxml'.";
 
     version = Info.getVersion();
     versionLabel.setText("Version: " + version + " ");

@@ -1,11 +1,14 @@
 package org.pankratzlab.unet.validation;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -26,9 +29,13 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -40,38 +47,48 @@ import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
+import org.pankratzlab.unet.jfx.LandingController;
+import org.pankratzlab.unet.jfx.wizard.OutputCSVConfig;
 import org.pankratzlab.unet.model.ValidationModel;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
+import org.pankratzlab.unet.model.ValidationModelBuilder.TypePair;
 import org.pankratzlab.unet.model.ValidationModelBuilder.ValidationResult;
 import org.pankratzlab.unet.model.ValidationTable;
+import org.pankratzlab.unet.model.ValidationTable.TableData;
+import org.pankratzlab.unet.model.ValidationTable.ValidationKey;
 import org.pankratzlab.unet.model.remap.RemapProcessor;
 import org.pankratzlab.unet.validation.TestExceptions.SourceFileParsingException;
 import org.pankratzlab.unet.validation.TestExceptions.XMLRemapFileException;
 import org.pankratzlab.unet.validation.ValidationTestFileSet.ValidationTestFileSetBuilder;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
-
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
 
 public class ValidationTesting {
 
+  private static final String CSV_CONFIG_FXML = "/csvConfig.fxml";
   private static final String REMAP_XML = "remap.xml";
   private static final String TEST_PROPERTIES = "test.properties";
   private static final String TEST_LOG = "test.log";
 
   public static final String REL_DIRECTORY = Info.DONOR_CHECK_HOME + "rel_dna_ser_files/";
-  public static final String VALIDATION_DIRECTORY =
-      new File(Info.DONOR_CHECK_HOME + "validation/").getAbsolutePath() + File.separator;
+  public static final String VALIDATION_DIRECTORY = new File(Info.DONOR_CHECK_HOME + "validation/").getAbsolutePath() + File.separator;
 
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
@@ -81,14 +98,12 @@ public class ValidationTesting {
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
-    return tests.stream()
-        .sorted(
-            (t1, t2) -> {
-              int c = t1.cwdSource.get().compareTo(t2.cwdSource.get());
-              if (c != 0) return c;
-              return t1.relDnaSerFile.get().compareTo(t2.relDnaSerFile.get());
-            })
-        .collect(Collectors.toList());
+    return tests.stream().sorted((t1, t2) -> {
+      int c = t1.cwdSource.get().compareTo(t2.cwdSource.get());
+      if (c != 0)
+        return c;
+      return t1.relDnaSerFile.get().compareTo(t2.relDnaSerFile.get());
+    }).collect(Collectors.toList());
   }
 
   public static boolean addToValidationSet(TestInfo file11, TestInfo file21) {
@@ -155,8 +170,7 @@ public class ValidationTesting {
       relDirFile.mkdir();
     }
 
-    String relDnaSerFile =
-        DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+    String relDnaSerFile = DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
     String newRelFileName;
     String newRelDnaSerFile;
     if (!Strings.isNullOrEmpty(relDnaSerFile) && new File(relDnaSerFile).exists()) {
@@ -198,10 +212,7 @@ public class ValidationTesting {
       // Copy internal file to testDir
       File newRelFile = new File(reldir + newRelFileName);
       if (!newRelFile.exists()) {
-        try (InputStream is =
-            AntigenDictionary.class
-                .getClassLoader()
-                .getResourceAsStream(AntigenDictionary.MASTER_MAP_RECORDS)) {
+        try (InputStream is = AntigenDictionary.class.getClassLoader().getResourceAsStream(AntigenDictionary.MASTER_MAP_RECORDS)) {
           java.nio.file.Files.copy(is, newRelFile.toPath());
         } catch (Exception e) {
           AlertHelper.showMessage_ErrorCopyingRelFile(newRelFileName);
@@ -261,65 +272,214 @@ public class ValidationTesting {
     return true;
   }
 
-  public static void runTests(List<ValidationTestFileSet> tests) {
+  public static void runTests(Pane root, List<ValidationTestFileSet> tests) {
     List<ValidationTestFileSet> sorted = ValidationTesting.sortTests(tests);
 
+    Map<ValidationTestFileSet, TableData> dataResults = new HashMap<>();
     Set<ValidationTestFileSet> successfulTests = Collections.synchronizedSet(new HashSet<>());
     Set<ValidationTestFileSet> failedTests = Collections.synchronizedSet(new HashSet<>());
     Map<ValidationTestFileSet, Exception> exceptionTests = new ConcurrentHashMap<>();
-    List<Runnable> tasks =
-        sorted.stream()
-            .map(
-                t ->
-                    new Runnable() {
-                      @Override
-                      public void run() {
-                        try {
-                          TestRun result = ValidationTesting.runTest(t);
-                          if (result.error.isPresent()) {
-                            exceptionTests.put(t, result.error.get());
-                          } else {
-                            if (result.result.isPassing) {
-                              successfulTests.add(t);
-                            } else {
-                              failedTests.add(t);
-                            }
-                          }
-                        } catch (Exception e) {
-                          e.printStackTrace();
-                          exceptionTests.put(t, e);
-                        }
-                      }
-                    })
-            .collect(Collectors.toList());
+    List<Runnable> tasks = sorted.stream().map(t -> new Runnable() {
+      @Override
+      public void run() {
+        try {
+          TestRun result = ValidationTesting.runTest(t);
+          if (result.error.isPresent()) {
+            exceptionTests.put(t, result.error.get());
+          } else {
+            if (result.data.isPresent()) {
+              dataResults.put(t, result.data.get());
+            }
+            if (result.result.isPassing) {
+              successfulTests.add(t);
+            } else {
+              failedTests.add(t);
+            }
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+          exceptionTests.put(t, e);
+        }
+      }
+    }).collect(Collectors.toList());
 
     Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(tasks);
 
-    EventHandler<WorkerStateEvent> showResults =
-        e -> {
-          String contentText =
-              "Test Results:\n\nPassing: "
-                  + successfulTests.size()
-                  + "\n\nFailing: "
-                  + failedTests.size()
-                  + "\n\nExceptions: "
-                  + exceptionTests.size()
-                  + "\n\n(Please report any exceptions to the developers)";
-          if (!exceptionTests.isEmpty()) {
-            for (Exception e1 : exceptionTests.values()) {
-              contentText += "\n\n" + e1.getClass().getSimpleName() + ": " + e1.getMessage();
-            }
-          }
-          Alert alert1 = new Alert(AlertType.INFORMATION, contentText, ButtonType.CLOSE);
-          alert1.setTitle("Test results");
-          alert1.setHeaderText("");
-          alert1.showAndWait();
-        };
+    EventHandler<WorkerStateEvent> showResults = e -> {
+      String contentText = "Test results:\n\nPassing: " + successfulTests.size() + "\n\nFailing: " + failedTests.size() + "\n\nExceptions: "
+          + exceptionTests.size() + "\n\n(Please report any exceptions to the developers)";
+      if (!exceptionTests.isEmpty()) {
+        for (Exception e1 : exceptionTests.values()) {
+          contentText += "\n\n" + e1.getClass().getSimpleName() + ": " + e1.getMessage();
+        }
+      }
+      ButtonType writeCSVType = new ButtonType("Write results to file", ButtonData.APPLY);
+      Alert alert1 = new Alert(AlertType.INFORMATION, contentText, ButtonType.CLOSE, writeCSVType);
+      alert1.setTitle("Test results");
+      alert1.setHeaderText("");
+      Optional<ButtonType> sel = alert1.showAndWait();
+      if (sel.isPresent() && sel.get().equals(writeCSVType)) {
+        OutputConfig oc = promptConfig(root);
+        if (oc != null) {
+          writeCSV(oc, tests, dataResults, exceptionTests);
+        }
+      }
+    };
 
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, showResults);
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, showResults);
 
     new Thread(runValidationTask).start();
+  }
+
+  private static OutputConfig promptConfig(Pane root) {
+    OutputCSVConfig controller = new OutputCSVConfig();
+
+    try {
+      FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(CSV_CONFIG_FXML));
+      loader.setController(controller);
+      GridPane gridPane = loader.load();
+      Dialog<ButtonType> inputDialog = new Dialog<>();
+      inputDialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
+      inputDialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+      Button okBtn = (Button) inputDialog.getDialogPane().lookupButton(ButtonType.OK);
+      controller.setOKButton(okBtn);
+      inputDialog.initOwner(root.getScene().getWindow());
+      inputDialog.initModality(Modality.APPLICATION_MODAL);
+      inputDialog.setTitle("DonorCheck " + Info.getVersion());
+      inputDialog.setResizable(true);
+      inputDialog.getDialogPane().setContent(gridPane);
+      Optional<ButtonType> btn = inputDialog.showAndWait();
+      if (btn.isPresent() && btn.get() == ButtonType.OK) {
+        return controller.getConfig();
+      }
+    } catch (IOException e1) {
+      e1.printStackTrace();
+      Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+      alert1.setTitle("Error");
+      alert1.setHeaderText("");
+      alert1.showAndWait();
+    }
+    return null;
+  }
+
+  public static record OutputConfig(String filePath, boolean includeID, boolean maskID) {
+  }
+
+  private static void writeCSV(OutputConfig config, List<ValidationTestFileSet> tests, Map<ValidationTestFileSet, TableData> dataResults,
+      Map<ValidationTestFileSet, Exception> exceptionTests) {
+
+    File fileOut = new File(config.filePath);
+
+    // Write the output
+    try (OutputStream output = new BufferedOutputStream(new FileOutputStream(fileOut)); XSSFWorkbook wb = new XSSFWorkbook();) {
+
+      for (ValidationTestFileSet t : tests) {
+        TableData data = dataResults.get(t);
+        Exception e = exceptionTests.get(t);
+        writeSheet(config, wb, t, data, e);
+      }
+
+      wb.write(output);
+    } catch (FileNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
+  }
+
+  private static void writeSheet(OutputConfig config, XSSFWorkbook wb, ValidationTestFileSet t, TableData data, Exception e) {
+    XSSFSheet sheet = wb.createSheet(t.id.get());
+    int rowNum = 0;
+
+    // TODO create header row?
+
+    if (data != null) {
+      for (ValidationKey key : ValidationKey.values()) {
+        if (key == ValidationKey.DONORID && !config.includeID) {
+          continue;
+        }
+        XSSFRow row = sheet.createRow(rowNum++);
+
+        XSSFCell cell0 = row.createCell(0);
+        cell0.setCellValue(key.fieldName);
+
+        XSSFCell cell1 = row.createCell(1);
+        cell1.setCellValue((key == ValidationKey.DONORID && config.maskID) ? "*****" : data.getFirst(key));
+
+        XSSFCell cell2 = row.createCell(2);
+        cell2.setCellValue((key == ValidationKey.DONORID && config.maskID) ? "*****" : data.getSecond(key));
+
+        if (key == ValidationKey.SOURCE)
+          continue;
+        XSSFCell cell3 = row.createCell(3);
+        cell3.setCellValue(data.getFirst(key).equals(data.getSecond(key)) ? "" : "mismatched");
+
+      }
+
+      sheet.createRow(rowNum++);
+      sheet.createRow(rowNum++);
+      XSSFRow row = sheet.createRow(rowNum++);
+      XSSFCell cell0 = row.createCell(0);
+      cell0.setCellValue(data.isValid() ? "Validation Succeeded" : "Validation Failed");
+
+      String[] remap1 = data.getFirstRemaps().entrySet().stream().filter(ent -> {
+        final String collectFrom =
+            ent.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
+        final String collectTo =
+            ent.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
+        return !collectFrom.equals(collectTo);
+      }).map(ent -> {
+        final String collectFrom =
+            ent.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
+        final String collectTo =
+            ent.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
+        return "HLA-" + ent.getKey().name() + " was remapped from { " + collectFrom + " } to { " + collectTo + " } in "
+            + data.getFirst(ValidationKey.SOURCE);
+      }).sorted().distinct().toArray(String[]::new);
+      String[] remap2 = data.getSecondRemaps().entrySet().stream().filter(ent -> {
+        final String collectFrom =
+            ent.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
+        final String collectTo =
+            ent.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
+        return !collectFrom.equals(collectTo);
+      }).map(ent -> {
+        final String collectFrom =
+            ent.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
+        final String collectTo =
+            ent.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
+        return "HLA-" + ent.getKey().name() + " was remapped from { " + collectFrom + " } to { " + collectTo + " } in "
+            + data.getSecond(ValidationKey.SOURCE);
+      }).sorted().distinct().toArray(String[]::new);
+
+      for (String r1 : remap1) {
+        row = sheet.createRow(rowNum++);
+        cell0 = row.createCell(0);
+        cell0.setCellValue(r1);
+      }
+
+      for (String r2 : remap2) {
+        row = sheet.createRow(rowNum++);
+        cell0 = row.createCell(0);
+        cell0.setCellValue(r2);
+      }
+
+    }
+
+    if (e != null) {
+      XSSFRow row = sheet.createRow(rowNum++);
+      XSSFCell cell0 = row.createCell(0);
+      cell0.setCellValue("Validation Exception: " + e.getClass().getSimpleName());
+      String[] f = ExceptionUtils.getStackFrames(e);
+      for (String frame : f) {
+        row = sheet.createRow(rowNum++);
+        cell0 = row.createCell(0);
+        cell0.setCellValue(frame);
+      }
+    }
   }
 
   public static void updateTestResults(Map<ValidationTestFileSet, TestRun> newResults) {
@@ -339,11 +499,7 @@ public class ValidationTesting {
       String logStr = sj.toString() + System.lineSeparator();
 
       try {
-        java.nio.file.Files.writeString(
-            Path.of(subdir, TEST_LOG),
-            logStr,
-            StandardOpenOption.CREATE,
-            StandardOpenOption.APPEND);
+        java.nio.file.Files.writeString(Path.of(subdir, TEST_LOG), logStr, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
       } catch (IOException e) {
         // TODO handle exceptions appropriately;
         // notify user of inability to write properties file, and cleanup appropriately
@@ -383,11 +539,9 @@ public class ValidationTesting {
     }
 
     String prevComment = Objects.toString(props.setProperty(COMMENT_PROP, test.comment.get()), "");
-    String prevVersion =
-        Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
+    String prevVersion = Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
 
-    String prevExpectStr =
-        Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.get().name()));
+    String prevExpectStr = Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.get().name()));
 
     TEST_EXPECTATION prevExpect = TEST_EXPECTATION.Pass;
     if (prevExpectStr != null && !prevExpectStr.isEmpty()) {
@@ -419,8 +573,7 @@ public class ValidationTesting {
   }
 
   public static TestLoadingResults loadValidationDirectory() {
-    Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets =
-        HashBasedTable.create();
+    Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets = HashBasedTable.create();
 
     List<String> invalidTests = new ArrayList<>();
     File dir = new File(VALIDATION_DIRECTORY);
@@ -477,8 +630,7 @@ public class ValidationTesting {
     return builder.build();
   }
 
-  public static Map<ValidationTestFileSet, Boolean> deleteTests(
-      List<ValidationTestFileSet> toRemove) {
+  public static Map<ValidationTestFileSet, Boolean> deleteTests(List<ValidationTestFileSet> toRemove) {
     Map<ValidationTestFileSet, Boolean> success = new HashMap<>();
     for (ValidationTestFileSet testSet : toRemove) {
       String dir = getTestDirectory(testSet);
@@ -509,21 +661,19 @@ public class ValidationTesting {
 
     TestRun returnVal;
     try {
-      TEST_RESULT result = runTestInternal(test);
-      returnVal = new TestRun(test, result, new Date(), Optional.empty());
+      TestResultWithData result = runTestInternal(test);
+      returnVal = new TestRun(test, result.testResult(), new Date(), Optional.empty(), result.data);
     } catch (XMLRemapFileException e) {
-      returnVal = new TestRun(test, TEST_RESULT.INVALID_REMAP_FILE, new Date(), Optional.of(e));
+      returnVal = new TestRun(test, TEST_RESULT.INVALID_REMAP_FILE, new Date(), Optional.of(e), Optional.empty());
     } catch (SourceFileParsingException e) {
-      returnVal = new TestRun(test, TEST_RESULT.INVALID_TEST_FILE, new Date(), Optional.of(e));
+      returnVal = new TestRun(test, TEST_RESULT.INVALID_TEST_FILE, new Date(), Optional.of(e), Optional.empty());
     }
 
     if (changedCWID) {
       CommonWellDocumented.loadCIWDVersion(current);
     }
     if (changedRel) {
-      DonorCheckProperties.get()
-          .setProperty(
-              AntigenDictionary.REL_DNA_SER_PROP, Optional.ofNullable(currentRel).orElse(""));
+      DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, Optional.ofNullable(currentRel).orElse(""));
       AntigenDictionary.clearCache();
     }
 
@@ -532,12 +682,12 @@ public class ValidationTesting {
     return returnVal;
   }
 
-  private static TEST_RESULT runTestInternal(ValidationTestFileSet test) {
+  private static TestResultWithData runTestInternal(ValidationTestFileSet test) {
     List<ValidationModelBuilder> modelBuilders = new ArrayList<>();
     XMLRemapProcessor remapProcessor = null;
 
     if (test.filePaths.size() == 1) {
-      return TEST_RESULT.NOT_ENOUGH_TEST_FILES;
+      return new TestResultWithData(TEST_RESULT.NOT_ENOUGH_TEST_FILES);
     }
 
     for (String filePath : test.filePaths) {
@@ -547,13 +697,12 @@ public class ValidationTesting {
       try {
         SourceType.parseFile(builder, file);
       } catch (Exception e) {
-        throw new TestExceptions.SourceFileParsingException(
-            "Error parsing file: " + file.getAbsolutePath(), e);
+        throw new TestExceptions.SourceFileParsingException("Error parsing file: " + file.getAbsolutePath(), e);
       }
 
       ValidationResult validationResult = builder.validate(false);
       if (!validationResult.valid) {
-        return TEST_RESULT.INVALID_TEST_FILE;
+        return new TestResultWithData(TEST_RESULT.INVALID_TEST_FILE);
       }
 
       modelBuilders.add(builder);
@@ -563,14 +712,13 @@ public class ValidationTesting {
 
       // check to make sure remap file exists
       if (!new File(test.remapFile.get()).exists()) {
-        return TEST_RESULT.MISSING_REMAP_FILE;
+        return new TestResultWithData(TEST_RESULT.MISSING_REMAP_FILE);
       }
 
       try {
         remapProcessor = new XMLRemapProcessor(test.remapFile.get());
       } catch (IllegalStateException e) {
-        throw new TestExceptions.XMLRemapFileException(
-            "Error reading XML remappings file: " + test.remapFile.get(), e);
+        throw new TestExceptions.XMLRemapFileException("Error reading XML remappings file: " + test.remapFile.get(), e);
       }
     }
 
@@ -585,7 +733,7 @@ public class ValidationTesting {
           if (!remapProcessor.hasRemappings(builder.getSourceType())) {
             // builder is expecting remappings for this file, but
             // the remapping file doesn't have the expected remappings
-            return TEST_RESULT.INVALID_REMAPPINGS;
+            return new TestResultWithData(TEST_RESULT.INVALID_REMAPPINGS);
           }
           // assertTrue();
           remapper = remapProcessor;
@@ -597,18 +745,24 @@ public class ValidationTesting {
       } else {
         if (remapProcessor != null && remapProcessor.hasRemappings(builder.getSourceType())) {
           // builder says no remappings, but remap file says remappings do exist
-          return TEST_RESULT.INVALID_REMAPPINGS;
+          return new TestResultWithData(TEST_RESULT.INVALID_REMAPPINGS);
         }
       }
 
       models.add(builder.build());
     }
 
-    boolean valid = testIfModelsAgree(models);
-    return valid ? TEST_RESULT.TEST_SUCCESS : TEST_RESULT.TEST_FAILURE;
+    TestResultWithData valid = testIfModelsAgree(models);
+    return valid;
   }
 
-  private static boolean testIfModelsAgree(List<ValidationModel> individualModels) {
+  private static record TestResultWithData(TEST_RESULT testResult, Optional<TableData> data) {
+    public TestResultWithData(TEST_RESULT testResult) {
+      this(testResult, Optional.empty());
+    }
+  }
+
+  private static TestResultWithData testIfModelsAgree(List<ValidationModel> individualModels) {
     ValidationModel base = individualModels.get(0);
     ValidationTable table = new ValidationTable();
     table.setFirstModel(base);
@@ -626,7 +780,7 @@ public class ValidationTesting {
       table.getValidationRows();
       valid &= table.isValidProperty().get();
     }
-    return valid;
+    return new TestResultWithData(valid ? TEST_RESULT.TEST_SUCCESS : TEST_RESULT.TEST_FAILURE, Optional.of(table.getTableData()));
   }
 
   private static String safeFilename(String newRelFileName) {
@@ -640,34 +794,24 @@ public class ValidationTesting {
     // Add <sourceType>Score6</sourceType> under <remap>
     remap.appendElement("sourceType").text(file.sourceType.name());
 
-    file.remappings
-        .entrySet()
-        .forEach(
-            e -> {
-              // Create <remapLocus> under <remap>
-              Element remapLocus = remap.appendElement("remapLocus");
-              remapLocus.appendElement("locus").text(e.getKey().name());
+    file.remappings.entrySet().forEach(e -> {
+      // Create <remapLocus> under <remap>
+      Element remapLocus = remap.appendElement("remapLocus");
+      remapLocus.appendElement("locus").text(e.getKey().name());
 
-              // Add multiple <fromAllele> elements under <remapLocus>
-              e.getValue().getLeft().stream()
-                  .forEach(
-                      allele -> {
-                        remapLocus
-                            .appendElement("fromAllele")
-                            .text(allele.getHlaType().specString());
-                      });
+      // Add multiple <fromAllele> elements under <remapLocus>
+      e.getValue().getLeft().stream().forEach(allele -> {
+        remapLocus.appendElement("fromAllele").text(allele.getHlaType().specString());
+      });
 
-              // Add multiple <toAllele> elements under <remapLocus>
-              e.getValue().getRight().stream()
-                  .forEach(
-                      allele -> {
-                        remapLocus.appendElement("toAllele").text(allele.getHlaType().specString());
-                      });
-            });
+      // Add multiple <toAllele> elements under <remapLocus>
+      e.getValue().getRight().stream().forEach(allele -> {
+        remapLocus.appendElement("toAllele").text(allele.getHlaType().specString());
+      });
+    });
   }
 
-  private static void addTestSetToTable(
-      Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets,
+  private static void addTestSetToTable(Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets,
       ValidationTestFileSet testSet) {
     if (!testSets.contains(testSet.cwdSource.get(), testSet.relDnaSerFile.get())) {
       testSets.put(testSet.cwdSource.get(), testSet.relDnaSerFile.get(), new ArrayList<>());
@@ -682,8 +826,7 @@ public class ValidationTesting {
       try (FileInputStream fis = new FileInputStream(testPropertiesFile)) {
         props.load(fis);
       } catch (Exception e) {
-        throw new IllegalStateException(
-            "Unable to load test properties file: " + testPropertiesFile.getAbsolutePath(), e);
+        throw new IllegalStateException("Unable to load test properties file: " + testPropertiesFile.getAbsolutePath(), e);
       }
     }
     String cwdStr = props.getProperty(CWD_PROP);
@@ -716,12 +859,11 @@ public class ValidationTesting {
     builder.relDnaSerFile(relPath);
   }
 
-  private static void loadTestLastRunLog(
-      File individualFile, ValidationTestFileSetBuilder builder) {
+  private static void loadTestLastRunLog(File individualFile, ValidationTestFileSetBuilder builder) {
     File file = new File(individualFile, TEST_LOG);
-    if (!file.exists()) return;
-    try (ReversedLinesFileReader reader =
-        new ReversedLinesFileReader(file, Charset.defaultCharset())) {
+    if (!file.exists())
+      return;
+    try (ReversedLinesFileReader reader = new ReversedLinesFileReader(file, Charset.defaultCharset())) {
       String lastRunLog = reader.readLine();
       String[] parts = lastRunLog.split("\t");
 
@@ -771,8 +913,7 @@ public class ValidationTesting {
       java.nio.file.Files.move(Path.of(oldSubdir), Path.of(newSubdir));
     } catch (IOException e) {
       test.id.set(oldId);
-      throw new IllegalStateException(
-          "Unable to move test directory: " + oldSubdir + " -> " + newSubdir, e);
+      throw new IllegalStateException("Unable to move test directory: " + oldSubdir + " -> " + newSubdir, e);
     }
 
     return loadIndividualTest(new File(newSubdir));
@@ -782,8 +923,7 @@ public class ValidationTesting {
     public final Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets;
     public final List<String> invalidTests;
 
-    public TestLoadingResults(
-        Table<SOURCE, String, List<ValidationTestFileSet>> testSets, List<String> invalidTests) {
+    public TestLoadingResults(Table<SOURCE, String, List<ValidationTestFileSet>> testSets, List<String> invalidTests) {
       this.testSets = testSets;
       this.invalidTests = invalidTests;
     }
