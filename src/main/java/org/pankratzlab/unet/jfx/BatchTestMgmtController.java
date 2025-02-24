@@ -286,7 +286,7 @@ public class BatchTestMgmtController {
         protected void updateItem(String value, boolean empty) {
           super.updateItem(value, empty);
           if (value == null) {
-            setText(null);
+            setText("");
             setStyle("");
           } else {
             String color = null;
@@ -320,7 +320,7 @@ public class BatchTestMgmtController {
         protected void updateItem(ObservableSet<SourceType> value, boolean empty) {
           super.updateItem(value, empty);
           if (value == null) {
-            setText(null);
+            setText("");
           } else {
             setText(value.stream().sorted().map(SourceType::getDisplayName).collect(Collectors.joining(", ")));
           }
@@ -409,7 +409,7 @@ public class BatchTestMgmtController {
       @Override
       protected void updateItem(T value, boolean empty) {
         super.updateItem(value, empty);
-        setText(Objects.toString(value).trim());
+        setText(value == null ? "" : Objects.toString(value).trim());
       }
     });
   }
