@@ -22,14 +22,14 @@
   </rowConstraints>
    <children>
       <TextField fx:id="outputFileField" GridPane.columnIndex="1" />
-      <Label text="Output File:" GridPane.halignment="RIGHT" />
-      <Button fx:id="selectFileBtn" mnemonicParsing="false" text="Select File" GridPane.columnIndex="2" />
-      <CheckBox fx:id="includeIDs" mnemonicParsing="false" text="Include Donor IDs" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1">
+      <Label text="Output file:" GridPane.halignment="RIGHT" />
+      <Button fx:id="selectFileBtn" mnemonicParsing="false" text="Select file" GridPane.columnIndex="2" />
+      <CheckBox fx:id="includeIDs" mnemonicParsing="false" text="Include donor ids" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1">
          <GridPane.margin>
             <Insets left="20.0" />
          </GridPane.margin>
       </CheckBox>
-      <CheckBox fx:id="maskIDs" mnemonicParsing="false" text="Mask Donor IDs" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
+      <CheckBox fx:id="maskIDs" mnemonicParsing="false" text="Mask donor ids" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
          <GridPane.margin>
             <Insets right="20.0" />
          </GridPane.margin>
