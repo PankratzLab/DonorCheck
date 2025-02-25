@@ -374,10 +374,12 @@ public class ValidationTesting {
     // Write the output
     try (OutputStream output = new BufferedOutputStream(new FileOutputStream(fileOut)); XSSFWorkbook wb = new XSSFWorkbook();) {
 
+      int index = 0;
       for (ValidationTestFileSet t : tests) {
+        index++;
         TableData data = dataResults.get(t);
         Exception e = exceptionTests.get(t);
-        writeSheet(config, wb, t, data, e);
+        writeSheet(index, config, wb, t, data, e);
       }
 
       wb.write(output);
@@ -391,8 +393,8 @@ public class ValidationTesting {
 
   }
 
-  private static void writeSheet(OutputConfig config, XSSFWorkbook wb, ValidationTestFileSet t, TableData data, Exception e) {
-    XSSFSheet sheet = wb.createSheet(t.id.get());
+  private static void writeSheet(int donorIndex, OutputConfig config, XSSFWorkbook wb, ValidationTestFileSet t, TableData data, Exception e) {
+    XSSFSheet sheet = wb.createSheet(!config.includeID() || config.maskID() ? "Donor_" + donorIndex : t.id.get());
     int rowNum = 0;
 
     // TODO create header row?
