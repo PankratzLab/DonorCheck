@@ -70,13 +70,10 @@ public class ValidationModel {
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
   private final ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping;
 
-  public ValidationModel(String donorId, String filepath, String source, SourceType sourceType,
-      Collection<SeroType> a, Collection<SeroType> b, Collection<SeroType> c,
-      Collection<SeroType> drb, Collection<SeroType> dqb, Collection<SeroType> dqa,
-      Collection<SeroType> dpa, Collection<HLAType> dpb, boolean bw4, boolean bw6,
-      List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
-      Multimap<RaceGroup, Haplotype> bcCwdHaplotypes,
-      Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes,
+  public ValidationModel(String donorId, String filepath, String source, SourceType sourceType, Collection<SeroType> a, Collection<SeroType> b,
+      Collection<SeroType> c, Collection<SeroType> drb, Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<SeroType> dpa,
+      Collection<HLAType> dpb, boolean bw4, boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
+      Multimap<RaceGroup, Haplotype> bcCwdHaplotypes, Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes,
       Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping) {
     this.donorId = donorId;
     this.filepath = filepath;
@@ -385,13 +382,11 @@ public class ValidationModel {
     return sj.toString();
   }
 
-  private void addHaplotypes(StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes,
-      String title) {
+  private void addHaplotypes(StringJoiner sj, ImmutableMultimap<RaceGroup, Haplotype> haplotypes, String title) {
     sj.add(title);
     for (RaceGroup e : RaceGroup.values()) {
       sj.add("\t" + e.toString());
-      List<String> hapStrings =
-          haplotypes.get(e).stream().map(Haplotype::toString).sorted().collect(Collectors.toList());
+      List<String> hapStrings = haplotypes.get(e).stream().map(Haplotype::toString).sorted().collect(Collectors.toList());
       hapStrings.forEach(s -> sj.add("\t" + s));
     }
   }

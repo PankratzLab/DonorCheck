@@ -396,10 +396,13 @@ public class ValidationTable {
   public String generateCSV() {
     StringBuilder builder = new StringBuilder();
 
+    SourceType st = getFirstField(ValidationModel::getSourceType);
+    SourceType st1 = getSecondField(ValidationModel::getSourceType);
+    String sourceType = st == null ? "" : st.getDisplayName();
+    String sourceType2 = st1 == null ? "" : st1.getDisplayName();
     builder.append("Donor ID" + "," + Objects.toString(getFirstField(ValidationModel::getDonorId), "") + ","
         + Objects.toString(getSecondField(ValidationModel::getDonorId), "") + "\n");
-    builder.append("Source" + "," + Objects.toString(getFirstField(ValidationModel::getSourceType), "") + ","
-        + Objects.toString(getSecondField(ValidationModel::getSourceType), "") + "\n");
+    builder.append("Source" + "," + sourceType + "," + sourceType2 + "\n");
     builder.append("A" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getA1) + "\n");
     builder.append("A" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getA2) + "\n");
     builder.append("B" + "," + getComaSeperatedFieldSpecStrings(ValidationModel::getB1) + "\n");
@@ -436,7 +439,7 @@ public class ValidationTable {
 
   public enum ValidationKey {
     DONORID("Donor ID", Optional.empty(), ValidationModel::getDonorId, Objects::toString), //
-    SOURCE("Source", Optional.empty(), ValidationModel::getSourceType, Objects::toString), //
+    SOURCE("Source", Optional.empty(), ValidationModel::getSourceType, (o) -> ((SourceType) o).getDisplayName()), //
     A1("A", Optional.of(HLALocus.A), ValidationModel::getA1, ValidationTable::antigenToString), //
     A2("A", Optional.of(HLALocus.A), ValidationModel::getA2, ValidationTable::antigenToString), //
     B1("B", Optional.of(HLALocus.B), ValidationModel::getB1, ValidationTable::antigenToString), //
@@ -572,7 +575,8 @@ public class ValidationTable {
           e.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
       final String collectTo =
           e.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
-      return "HLA-" + e.getKey().name() + " was remapped from { " + collectFrom + " } to { " + collectTo + " } in " + model.getSourceType();
+      return "HLA-" + e.getKey().name() + " was remapped from { " + collectFrom + " } to { " + collectTo + " } in "
+          + model.getSourceType().getDisplayName();
     }).sorted().distinct().toArray(String[]::new);
   }
 

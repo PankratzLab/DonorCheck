@@ -552,7 +552,9 @@ public class ValidationTesting {
     cell0.setCellValue("Last validated on:");
     cell1.setCellValue(format.format(t.lastRunDate.getValue()));
 
-
+    sheet.autoSizeColumn(0);
+    sheet.autoSizeColumn(1);
+    sheet.autoSizeColumn(2);
   }
 
   public static void updateTestResults(Map<ValidationTestFileSet, TestRun> newResults) {
