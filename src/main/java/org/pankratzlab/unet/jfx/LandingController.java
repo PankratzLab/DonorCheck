@@ -138,12 +138,14 @@ public class LandingController {
         TestLoadingResults validationDirectory = ValidationTesting.loadValidationDirectory();
 
         return validationDirectory;
-      } catch (Exception e1) {
+      } catch (Throwable e1) {
         e1.printStackTrace();
-        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
-        alert1.setTitle("Error");
-        alert1.setHeaderText("");
-        alert1.showAndWait();
+        Platform.runLater(() -> {
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
+        });
         throw new IllegalStateException("Error loading test data: " + e1.getMessage());
       }
     });
@@ -153,12 +155,14 @@ public class LandingController {
         TestLoadingResults testLoad;
         try {
           testLoad = manageValidationTask.get();
-        } catch (Exception e1) {
+        } catch (Throwable e1) {
           e1.printStackTrace();
-          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
-          alert1.setTitle("Error");
-          alert1.setHeaderText("");
-          alert1.showAndWait();
+          Platform.runLater(() -> {
+            Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+            alert1.setTitle("Error");
+            alert1.setHeaderText("");
+            alert1.showAndWait();
+          });
           return;
         }
 
@@ -181,15 +185,15 @@ public class LandingController {
           alert1.showAndWait();
         }
 
-        Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
-
-        BatchTestMgmtController controller = new BatchTestMgmtController();
-
-        FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
-        loader.setController(controller);
-
-        Scene newScene;
         try {
+          Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
+
+          BatchTestMgmtController controller = new BatchTestMgmtController();
+
+          FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
+          loader.setController(controller);
+
+          Scene newScene;
           newScene = new Scene(loader.load());
           Stage inputStage = new Stage();
           inputStage.initOwner(rootPane.getScene().getWindow());
@@ -199,12 +203,14 @@ public class LandingController {
           inputStage.setScene(newScene);
           controller.setTable(testData);
           inputStage.showAndWait();
-        } catch (IOException e1) {
+        } catch (Throwable e1) {
           e1.printStackTrace();
-          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
-          alert1.setTitle("Error");
-          alert1.setHeaderText("");
-          alert1.showAndWait();
+          Platform.runLater(() -> {
+            Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+            alert1.setTitle("Error");
+            alert1.setHeaderText("");
+            alert1.showAndWait();
+          });
         }
       });
     };

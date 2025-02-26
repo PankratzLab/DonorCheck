@@ -97,6 +97,14 @@ public class ValidationTesting {
   private static final String DC_VER_PROP = "version";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+  private static final String PASS = "Pass";
+  private static final String EXPECTED_FAILURE = "Expected failure";
+  private static final String UNEXPECTED_PASS = "Unexpected pass";
+  private static final String UNEXPECTED_FAILURE = "Unexpected failure";
+  private static final String UNEXPECTED_ERROR = "Unexpected error";
+  private static final String EXPECTED_ERROR = "Expected error";
+  private static final SimpleDateFormat format = new SimpleDateFormat("ddMMMyyyy' at 'HH:mm:ss");
+
   public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
     return tests.stream().sorted((t1, t2) -> {
       int c = t1.cwdSource.get().compareTo(t2.cwdSource.get());
@@ -394,7 +402,7 @@ public class ValidationTesting {
   }
 
   private static void writeSheet(int donorIndex, OutputConfig config, XSSFWorkbook wb, ValidationTestFileSet t, TableData data, Exception e) {
-    XSSFSheet sheet = wb.createSheet(!config.includeID() || config.maskID() ? "Donor_" + donorIndex : t.id.get());
+    XSSFSheet sheet = wb.createSheet(!config.includeID() || config.maskID() ? "" + donorIndex : t.id.get());
     int rowNum = 0;
 
     // TODO create header row?
@@ -482,6 +490,69 @@ public class ValidationTesting {
         cell0.setCellValue(frame);
       }
     }
+
+    sheet.createRow(rowNum++);
+    sheet.createRow(rowNum++);
+
+    XSSFCell cell0;
+    XSSFCell cell1;
+    XSSFRow row;
+
+    // DonorCheck version
+    row = sheet.createRow(rowNum++);
+    cell0 = row.createCell(0);
+    cell1 = row.createCell(1);
+    cell0.setCellValue("DonorCheck version:");
+    cell1.setCellValue(t.donorCheckVersion.getValue());
+
+    // rel_dna_ser file version
+    row = sheet.createRow(rowNum++);
+    cell0 = row.createCell(0);
+    cell1 = row.createCell(1);
+    cell0.setCellValue("Serotype lookup version:");
+    String v = "Unknown";
+    v = AntigenDictionary.getVersion(t.relDnaSerFile.get());
+    if (v == null) {
+      v = "File missing (" + t.relDnaSerFile.get() + ")";
+    }
+    cell1.setCellValue(v);
+
+    // CIWD version
+    row = sheet.createRow(rowNum++);
+    cell0 = row.createCell(0);
+    cell1 = row.createCell(1);
+    cell0.setCellValue("Frequency lookup version:");
+    cell1.setCellValue(t.cwdSource.get().toString());
+
+    // expected result
+    row = sheet.createRow(rowNum++);
+    cell0 = row.createCell(0);
+    cell1 = row.createCell(1);
+    cell0.setCellValue("Expected result:");
+    cell1.setCellValue(t.expectedResult.get().name());
+
+    // interpretation
+    row = sheet.createRow(rowNum++);
+    cell0 = row.createCell(0);
+    cell1 = row.createCell(1);
+    cell0.setCellValue("Interpretation:");
+    cell1.setCellValue(computeInterpretation(t));
+
+    // comment
+    row = sheet.createRow(rowNum++);
+    cell0 = row.createCell(0);
+    cell1 = row.createCell(1);
+    cell0.setCellValue("Comment from user:");
+    cell1.setCellValue(t.comment.get());
+
+    // date of last run
+    row = sheet.createRow(rowNum++);
+    cell0 = row.createCell(0);
+    cell1 = row.createCell(1);
+    cell0.setCellValue("Last validated on:");
+    cell1.setCellValue(format.format(t.lastRunDate.getValue()));
+
+
   }
 
   public static void updateTestResults(Map<ValidationTestFileSet, TestRun> newResults) {
@@ -811,6 +882,71 @@ public class ValidationTesting {
         remapLocus.appendElement("toAllele").text(allele.getHlaType().specString());
       });
     });
+  }
+
+  public static String computeInterpretation(ValidationTestFileSet value) {
+    TEST_RESULT testResult = value.lastTestResult.get();
+    if (testResult == null) {
+      return "---";
+    }
+
+    String v = "";
+    switch (value.expectedResult.get()) {
+      case Error:
+        // expecting an error
+        if (testResult != TEST_RESULT.TEST_SUCCESS && testResult != TEST_RESULT.TEST_FAILURE) {
+          // got an error
+          v = EXPECTED_ERROR;
+        } else {
+          if (testResult == TEST_RESULT.TEST_SUCCESS) {
+            // didn't get an error
+            v = UNEXPECTED_PASS;
+          } else if (testResult == TEST_RESULT.TEST_FAILURE) {
+            // didn't get an error
+            v = UNEXPECTED_FAILURE;
+          }
+        }
+        break;
+      case Pass:
+        if (testResult == TEST_RESULT.TEST_SUCCESS) {
+          v = PASS;
+        } else if (testResult == TEST_RESULT.TEST_FAILURE) {
+          v = UNEXPECTED_FAILURE;
+        } else {
+          v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
+        }
+        break;
+      case Fail:
+        if (testResult == TEST_RESULT.TEST_SUCCESS) {
+          v = UNEXPECTED_PASS;
+        } else if (testResult == TEST_RESULT.TEST_FAILURE) {
+          v = EXPECTED_FAILURE;
+        } else {
+          v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
+        }
+        break;
+    };
+    return v;
+  }
+
+  private static String convert(String s) {
+    String v = s.replace('_', ' ').toLowerCase();
+    v = v.substring(0, 1).toUpperCase() + v.substring(1);
+    return v;
+  }
+
+  public static String computeColor(String value) {
+    String color = null;
+    if (value.startsWith(PASS) || value.startsWith(EXPECTED_FAILURE) || value.startsWith(EXPECTED_ERROR)) {
+      color = "LimeGreen";
+    } else if (value.startsWith(UNEXPECTED_FAILURE)) {
+      color = "Orange";
+    } else if (value.startsWith(UNEXPECTED_PASS)) {
+      color = "Lime";
+    } else if (value.startsWith(UNEXPECTED_ERROR)) {
+      color = "OrangeRed";
+    }
+    return color;
   }
 
   private static void addTestSetToTable(Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets,

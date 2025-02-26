@@ -30,7 +30,6 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.AlertHelper;
 import org.pankratzlab.unet.validation.TEST_EXPECTATION;
-import org.pankratzlab.unet.validation.TEST_RESULT;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
 import org.pankratzlab.unet.validation.XMLRemapProcessor;
@@ -66,12 +65,6 @@ import javafx.util.converter.DefaultStringConverter;
 
 public class BatchTestMgmtController {
 
-  private static final String PASS = "Pass";
-  private static final String EXPECTED_FAILURE = "Expected failure";
-  private static final String UNEXPECTED_PASS = "Unexpected pass";
-  private static final String UNEXPECTED_FAILURE = "Unexpected failure";
-  private static final String UNEXPECTED_ERROR = "Unexpected error";
-  private static final String EXPECTED_ERROR = "Expected error";
 
   @FXML
   private ResourceBundle resources;
@@ -235,47 +228,8 @@ public class BatchTestMgmtController {
 
     lastRunResultColumn.setCellValueFactory(p -> {
       return Bindings.createStringBinding(() -> {
-        TEST_RESULT testResult = p.getValue().lastTestResult.get();
-        if (testResult == null) {
-          return "---";
-        }
-
-        String v = "";
-        switch (p.getValue().expectedResult.get()) {
-          case Error:
-            // expecting an error
-            if (testResult != TEST_RESULT.TEST_SUCCESS && testResult != TEST_RESULT.TEST_FAILURE) {
-              // got an error
-              v = EXPECTED_ERROR;
-            } else {
-              if (testResult == TEST_RESULT.TEST_SUCCESS) {
-                // didn't get an error
-                v = UNEXPECTED_PASS;
-              } else if (testResult == TEST_RESULT.TEST_FAILURE) {
-                // didn't get an error
-                v = UNEXPECTED_FAILURE;
-              }
-            }
-            break;
-          case Pass:
-            if (testResult == TEST_RESULT.TEST_SUCCESS) {
-              v = PASS;
-            } else if (testResult == TEST_RESULT.TEST_FAILURE) {
-              v = UNEXPECTED_FAILURE;
-            } else {
-              v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
-            }
-            break;
-          case Fail:
-            if (testResult == TEST_RESULT.TEST_SUCCESS) {
-              v = UNEXPECTED_PASS;
-            } else if (testResult == TEST_RESULT.TEST_FAILURE) {
-              v = EXPECTED_FAILURE;
-            } else {
-              v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
-            }
-            break;
-        };
+        ValidationTestFileSet value = p.getValue();
+        String v = ValidationTesting.computeInterpretation(value);
         return v;
       }, p.getValue().expectedResult, p.getValue().lastTestResult);
     });
@@ -289,16 +243,7 @@ public class BatchTestMgmtController {
             setText("");
             setStyle("");
           } else {
-            String color = null;
-            if (value.startsWith(PASS) || value.startsWith(EXPECTED_FAILURE) || value.startsWith(EXPECTED_ERROR)) {
-              color = "LimeGreen";
-            } else if (value.startsWith(UNEXPECTED_FAILURE)) {
-              color = "Orange";
-            } else if (value.startsWith(UNEXPECTED_PASS)) {
-              color = "Lime";
-            } else if (value.startsWith(UNEXPECTED_ERROR)) {
-              color = "OrangeRed";
-            }
+            String color = ValidationTesting.computeColor(value);
             if (color != null) {
               setStyle("-fx-background-color: " + color + "; -fx-text-fill: black");
             } else {
@@ -412,12 +357,6 @@ public class BatchTestMgmtController {
         setText(value == null ? "" : Objects.toString(value).trim());
       }
     });
-  }
-
-  private String convert(String s) {
-    String v = s.replace('_', ' ').toLowerCase();
-    v = v.substring(0, 1).toUpperCase() + v.substring(1);
-    return v;
   }
 
   public void setTable(Table<SOURCE, String, List<ValidationTestFileSet>> testData) {
@@ -591,4 +530,5 @@ public class BatchTestMgmtController {
   private void runTasks(List<ValidationTestFileSet> tests) {
     ValidationTesting.runTests(rootPane, tests);
   }
+
 }
