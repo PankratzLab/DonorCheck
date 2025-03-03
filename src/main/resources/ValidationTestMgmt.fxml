@@ -39,6 +39,7 @@
 				<TableView fx:id="testTable" prefHeight="200.0" prefWidth="200.0">
 					<columns>
 						<TableColumn id="testIdColumn" fx:id="testIDColumn" editable="true" minWidth="30.0" prefWidth="75.0" text="Test ID" />
+<<<<<<< HEAD
 						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="124.0" text="Test file types" />
 						<TableColumn id="manualEditsColumn" fx:id="manualEditsColumn" editable="false" minWidth="30.0" prefWidth="120.0" text="Manual edits" />
                   		<TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" editable="false" prefWidth="105.0" text="CIWD version" />
@@ -47,6 +48,16 @@
 						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="25.0" prefWidth="148.0" text="Most recent run result" />
 						<TableColumn id="testCommentColumn" fx:id="testCommentColumn" editable="true" minWidth="30.0" prefWidth="226.0" text="Comment" />
 						<TableColumn id="lastRunDetailsColumn" fx:id="lastRunDetailsColumn" editable="false" minWidth="30.0" prefWidth="175.0" text="Details of most recent run" />
+=======
+						<TableColumn id="testCommentColumn" fx:id="testCommentColumn" editable="true" minWidth="30.0" prefWidth="150.0" text="Comment" />
+						<TableColumn id="lastRunColumn" fx:id="lastRunColumn" editable="false" minWidth="30.0" prefWidth="185.0" text="Last Run" />
+						<TableColumn id="passingStatusColumn" fx:id="passingStatusColumn" editable="false" minWidth="30.0" prefWidth="65.0" text="Passed?" />
+						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="30.0" prefWidth="75.0" text="Result" />
+						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="140.0" text="Test File Types" />
+                  		<TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" editable="false" prefWidth="100.0" text="CIWD Version" />
+                  		<TableColumn id="relDnaSerVersion" fx:id="relDnaSerVersion" editable="false" prefWidth="125.0" text="Serotype Version" />
+                  		<TableColumn id="donorCheckVersion" fx:id="donorCheckVersion" editable="false" prefWidth="125.0" text="DonorCheck Version" />
+>>>>>>> stash
 					</columns>
 				</TableView>
 			</content>

@@ -123,9 +123,8 @@ public class ValidationTestFileSet {
     }
 
     public ValidationTestFileSet build() {
-      return new ValidationTestFileSet(id, comment, expectedResult, filePaths, remapFile,
-          remappedLoci, cwdSource, relDnaSerFile, donorCheckVersion, lastRunDate,
-          lastPassingResult);
+      return new ValidationTestFileSet(id, comment, expectedResult, filePaths, remapFile, remappedLoci, cwdSource, relDnaSerFile, donorCheckVersion,
+          lastRunDate, lastPassingResult);
     }
 
   }
@@ -134,23 +133,21 @@ public class ValidationTestFileSet {
     return new ValidationTestFileSetBuilder();
   }
 
-  private ValidationTestFileSet(String id, String comment, TEST_EXPECTATION expectedResult,
-      List<String> filePaths, String remapFile, Set<HLALocus> remappedLoci,
-      CommonWellDocumented.SOURCE cwdSource, String relDnaSerFile, String donorCheckVersion,
-      Date lastRunDate, TEST_RESULT lastTestResult) {
+  private ValidationTestFileSet(String id, String comment, TEST_EXPECTATION expectedResult, List<String> filePaths, String remapFile,
+      Set<HLALocus> remappedLoci, CommonWellDocumented.SOURCE cwdSource, String relDnaSerFile, String donorCheckVersion, Date lastRunDate,
+      TEST_RESULT lastTestResult) {
     this.id = new SimpleStringProperty(id);
     this.comment = new SimpleStringProperty(comment);
     this.expectedResult = new SimpleObjectProperty<>(expectedResult);
     this.filePaths = new ReadOnlyListWrapper<>(FXCollections.observableList(filePaths));
-    final ObservableSet<SourceType> observableSet =
-        FXCollections.observableSet(filePaths.stream().map(s -> {
-          try {
-            return SourceType.parseType(new File(s));
-          } catch (IllegalArgumentException e) {
-            // TODO should deal with nulls somehow?
-            return null;
-          }
-        }).collect(Collectors.toSet()));
+    final ObservableSet<SourceType> observableSet = FXCollections.observableSet(filePaths.stream().map(s -> {
+      try {
+        return SourceType.parseType(new File(s));
+      } catch (IllegalArgumentException e) {
+        // TODO should deal with nulls somehow?
+        return null;
+      }
+    }).collect(Collectors.toSet()));
     this.sourceTypes = new ReadOnlySetWrapper<>(observableSet);
     this.remapFile = new ReadOnlyStringWrapper(remapFile);
     this.remappedLoci = new ReadOnlySetWrapper<>(FXCollections.observableSet(remappedLoci));

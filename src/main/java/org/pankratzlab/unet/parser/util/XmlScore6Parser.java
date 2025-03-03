@@ -507,34 +507,28 @@ public class XmlScore6Parser {
 
       // if alleleCall values are present, short-circuit the rest of the processing and just use
       // those
-      if (alleleCall1 != null && alleleCall2 != null) {
-        if (alleleCall1.startsWith(hlaLocus.name() + "*")) {
-          alleleCall1 = alleleCall1.substring(hlaLocus.name().length() + 1);
+      if (hlaLocus == HLALocus.DPB1) {
+        if (alleleCall1 != null && alleleCall2 != null) {
+          if (alleleCall1.startsWith(hlaLocus.name() + "*")) {
+            alleleCall1 = alleleCall1.substring(hlaLocus.name().length() + 1);
+          }
+          if (alleleCall2.startsWith(hlaLocus.name() + "*")) {
+            alleleCall2 = alleleCall2.substring(hlaLocus.name().length() + 1);
+          }
+          HLAType h1 = new HLAType(hlaLocus, alleleCall1);
+          HLAType h2 = new HLAType(hlaLocus, alleleCall2);
+          String sero1 = null;
+          String sero2 = null;
+          sero1 = convertToSerotype(locus, h1);
+          sero2 = convertToSerotype(locus, h2);
+          metadataMap.get(locus).accept(builder, sero1);
+          metadataMap.get(locus).accept(builder, sero2);
+          if (metadataTypeMap.containsKey(locus)) {
+            metadataTypeMap.get(locus).accept(builder, h1);
+            metadataTypeMap.get(locus).accept(builder, h2);
+          }
+          return;
         }
-        if (alleleCall2.startsWith(hlaLocus.name() + "*")) {
-          alleleCall2 = alleleCall2.substring(hlaLocus.name().length() + 1);
-        }
-        HLAType h1 = new HLAType(hlaLocus, alleleCall1);
-        HLAType h2 = new HLAType(hlaLocus, alleleCall2);
-        String sero1 = null;
-        String sero2 = null;
-        if (specStringGeneratorMap1.containsKey(locus)) {
-          sero1 = specStringGeneratorMap1.get(locus).apply(h1);
-          sero2 = specStringGeneratorMap1.get(locus).apply(h2);
-        } else if (specStringGeneratorMap2.containsKey(locus)) {
-          sero1 = specStringGeneratorMap2.get(locus).apply(SerotypeEquivalence.get(h1), h1);
-          sero2 = specStringGeneratorMap2.get(locus).apply(SerotypeEquivalence.get(h2), h2);
-        } else {
-          sero1 = h1.equivSafe().specString();
-          sero2 = h2.equivSafe().specString();
-        }
-        metadataMap.get(locus).accept(builder, sero1);
-        metadataMap.get(locus).accept(builder, sero2);
-        if (metadataTypeMap.containsKey(locus)) {
-          metadataTypeMap.get(locus).accept(builder, h1);
-          metadataTypeMap.get(locus).accept(builder, h2);
-        }
-        return;
       }
 
       // Finally, add the types to the model builder

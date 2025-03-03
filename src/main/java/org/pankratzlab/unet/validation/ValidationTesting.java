@@ -973,8 +973,10 @@ public class ValidationTesting {
     String relStr = props.getProperty(REL);
     String commentStr = props.getProperty(COMMENT_PROP, "");
     String expectationStr = props.getProperty(EXPECTED_PROP, "");
+    String donorCheckVersionStr = props.getProperty(DC_VER_PROP, "");
 
     builder.comment(commentStr);
+    builder.donorCheckVersion(donorCheckVersionStr);
 
     TEST_EXPECTATION expectation = TEST_EXPECTATION.Pass;
     if (expectationStr != null && !expectationStr.isEmpty()) {
