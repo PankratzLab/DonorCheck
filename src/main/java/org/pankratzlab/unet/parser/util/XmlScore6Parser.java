@@ -38,6 +38,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
@@ -81,6 +82,7 @@ public class XmlScore6Parser {
   public static final String ROOT_ELEMENT = "batchsubmission";
   private static final String PATIENT_ID_TAG = "patientId";
   private static final String ALLELE_CALL_TAG = "alleleCall";
+  private static final String BW4_BW6_TAG = "Bw4Bw6";
   private static final String ALLELE_RESULTS_TAG = "alleleResults";
   private static final String RESULT_COMBINATION_TAG = "resultCombination";
   private static final String SERO_COMBINATION_TAG = "serologicalCombination";
@@ -289,25 +291,30 @@ public class XmlScore6Parser {
         return;
       }
 
+      boolean useAlleleCallIfPresent = Boolean
+          .parseBoolean(DonorCheckProperties.get().getProperty(DonorCheckProperties.USE_ALLELE_CALL, DonorCheckProperties.USE_ALLELE_CALL_DEFAULT));
       String alleleCall1 = null;
       String alleleCall2 = null;
-      Elements alleleCalls = typedLocus.getElementsByTag(ALLELE_CALL_TAG);
-      if (alleleCalls.size() >= 2) {
-        Element a1 = alleleCalls.get(0);
-        Element a2 = alleleCalls.get(1);
-        if (a1.childNodeSize() > 0 && a2.childNodeSize() > 0) {
-          TextNode e1 = (TextNode) a1.childNode(0);
-          TextNode e2 = (TextNode) a2.childNode(0);
-          alleleCall1 = e1.text();
-          alleleCall2 = e2.text();
+      if (useAlleleCallIfPresent) {
+        Elements alleleCalls = typedLocus.getElementsByTag(ALLELE_CALL_TAG);
+        if (alleleCalls.size() >= 2) {
+          Element a1 = alleleCalls.get(0);
+          Element a2 = alleleCalls.get(1);
+          if (a1.childNodeSize() > 0 && a2.childNodeSize() > 0) {
+            TextNode e1 = (TextNode) a1.childNode(0);
+            TextNode e2 = (TextNode) a2.childNode(0);
+            alleleCall1 = e1.text();
+            alleleCall2 = e2.text();
+          }
         }
       }
 
+
       // Each locus has one allele results block which contains potential allele pairs
-      Elements resultCombinations = typedLocus.getElementsByTag(ALLELE_RESULTS_TAG).get(0).getElementsByTag(RESULT_COMBINATION_TAG);
+      Elements resultCombinationSets = typedLocus.getElementsByTag(ALLELE_RESULTS_TAG).get(0).getElementsByTag(RESULT_COMBINATION_TAG);
 
       // each locus has one allele combination block which contains possible allele pairs
-      Elements alleleCombinations = typedLocus.getElementsByTag(ALLELE_COMBINATIONS_TAG).get(0).getElementsByTag(RESULT_COMBINATION_TAG);
+      Elements alleleCombinationSets = typedLocus.getElementsByTag(ALLELE_COMBINATIONS_TAG).get(0).getElementsByTag(RESULT_COMBINATION_TAG);
 
       Elements pairs = typedLocus.getElementsByTag("resultPairs").get(0).getElementsByTag(RESULT_COMBINATION_TAG);
 
@@ -350,8 +357,8 @@ public class XmlScore6Parser {
        * TODO clarify how/why these are different
        */
 
-      for (int currentResult = 0; currentResult < alleleCombinations.size(); currentResult++) {
-        Element currentCombination = alleleCombinations.get(currentResult);
+      for (int currentSet = 0; currentSet < alleleCombinationSets.size(); currentSet++) {
+        Element currentCombination = alleleCombinationSets.get(currentSet);
         HLALocus locusType = null;
 
         // The DRB345 combinations are grouped into a single "DRB" header with DRB1
@@ -371,20 +378,117 @@ public class XmlScore6Parser {
           locusType = HLALocus.safeValueOf(locus.substring(locus.indexOf("-") + 1));
         }
 
+        if (hlaLocus == null) {
+          hlaLocus = locusType;
+        } else if (hlaLocus.compareTo(locusType) != 0) {
+          /*
+           * This seems to only happen when parsing the DRB3/4/5 loci, as the original locus is DRB1
+           */
+        }
+
         // Each combination is an allele/antigen pair
         parseAlleleCombinations(currentCombination, locusType, donorAllelePairs);
       }
+
+
+
+      HLAType h1 = null;
+      HLAType h2 = null;
+      if (useAlleleCallIfPresent) {
+        if (alleleCall1 != null && alleleCall2 != null) {
+          if (alleleCall1.startsWith(hlaLocus.name() + "*")) {
+            alleleCall1 = alleleCall1.substring(hlaLocus.name().length() + 1);
+          }
+          if (alleleCall2.startsWith(hlaLocus.name() + "*")) {
+            alleleCall2 = alleleCall2.substring(hlaLocus.name().length() + 1);
+          }
+
+          String failureStrategy = DonorCheckProperties.get().getProperty(DonorCheckProperties.FAIL_OR_DISCARD_IF_AC_INVALID,
+              DonorCheckProperties.FAIL_OR_DISCARD_IF_AC_INVALID_DEFAULT);
+
+          // check for single-fields, meaning the value is an allele group, which we can't use / is invalid
+          boolean invalidAC1 = alleleCall1.indexOf(':') == -1;
+          boolean invalidAC2 = alleleCall2.indexOf(':') == -1;
+
+          if (invalidAC1 || invalidAC2) {
+            if (failureStrategy.equalsIgnoreCase(DonorCheckProperties.AC_INVALID_FAIL)) {
+              String msg =
+                  "DonorCheck does not support SCORE 6 assigned alleles that are only allele groups (first field). Please remove these assignments or replace ["
+                      + hlaLocus.name() + "*" + alleleCall1 + " / " + hlaLocus.name() + "*" + alleleCall2 + "] with two-field typings.";
+              // ", or configure DonorCheck to skip these values by opening the Preferences and changing the value
+              // of [Data Sources -> SCORE 6 -> How to handle invalid alleles ...] from "
+              // + DonorCheckProperties.AC_INVALID_FAIL + " to " + DonorCheckProperties.AC_INVALID_DISCARD + ".";
+              throw new IllegalArgumentException(msg);
+            } else {
+              // } else if (failureStrategy.equalsIgnoreCase(DonorCheckProperties.AC_INVALID_DISCARD)) {
+              String msg = "DonorCheck does not support SCORE 6 assigned alleles that are only allele groups (first field). Found: ["
+                  + hlaLocus.name() + "*" + alleleCall1 + " / " + hlaLocus.name() + "*" + alleleCall2
+                  + "]. Please remove these assignments or replace them with two-field (or more) typings.";
+              builder.addAuditMessage(msg);
+            }
+          } else {
+            try {
+              h1 = new HLAType(hlaLocus, alleleCall1);
+            } catch (Exception e) {
+              if (failureStrategy.equalsIgnoreCase(DonorCheckProperties.AC_INVALID_FAIL)) {
+                throw new IllegalArgumentException("Invalid allele assignment in SCORE 6 for locus " + hlaLocus.name() + ": " + alleleCall1);
+              } else {
+                builder
+                    .addAuditMessage("SCORE 6: Invalid allele assignment for locus " + locus + ": " + alleleCall1 + ". This data has been ignored.");
+              }
+            }
+            try {
+              h2 = new HLAType(hlaLocus, alleleCall2);
+            } catch (Exception e) {
+              if (failureStrategy.equalsIgnoreCase(DonorCheckProperties.AC_INVALID_FAIL)) {
+                throw new IllegalArgumentException("Invalid allele assignment in SCORE 6 for locus " + hlaLocus.name() + ": " + alleleCall2);
+              } else {
+                builder.addAuditMessage(
+                    "SCORE 6: Invalid allele assignment for locus " + hlaLocus.name() + ": " + alleleCall2 + ". This data has been ignored.");
+              }
+            }
+          }
+        } else {
+          String ac = alleleCall1 == null ? alleleCall2 : alleleCall1;
+          // one or both alleleCall tags didn't have data in it
+          builder.addAuditMessage("SCORE 6: Only one allele assignment found for " + hlaLocus.name() + ": " + ac + ". This data has been ignored.");
+        }
+      }
+
+      boolean hasValidAlleleCall = h1 != null && h2 != null; // TODO do we need more of a validity check than just non-null?
+
+      boolean assignedBw4 = false;
+      boolean assignedBw6 = false;
+      if (hasValidAlleleCall && B_HEADER.equals(locus)) {
+        Elements bws = typedLocus.getElementsByTag(BW4_BW6_TAG);
+        if (bws.size() > 0) {
+          Element bw = bws.get(0);
+          if (bw.childNodeSize() > 0) {
+            TextNode e1 = (TextNode) bw.childNode(0);
+            String bwStr = e1.text();
+            if (bwStr.indexOf('/') != -1) { // has both
+              assignedBw4 = true;
+              assignedBw6 = true;
+            } else if (bwStr.length() > 1) { // not a dash (has one)
+              assignedBw4 = bwStr.charAt(bwStr.length() - 1) == '4';
+              assignedBw6 = !assignedBw4;
+            }
+          }
+        }
+      }
+
 
       // Parse the allele lists in the result section
       // the first allele in each list goes into the "firstResultPairs" list
       // the first **CIWD allele** goes into the "actualResultPairs" list
 
+      Set<Integer> acMatchIndices = new HashSet<>();
       /*
        * if we're parsing a Class-2 locus, we find the "best" pair to use for the "actualResultPairs"
        * list, and then use the first pairing from that pair for the "firstResultPairs" list
        */
-      for (int currentResult = 0; currentResult < resultCombinations.size(); currentResult++) {
-        Element currentCombination = resultCombinations.get(currentResult);
+      for (int currentResult = 0; currentResult < resultCombinationSets.size(); currentResult++) {
+        Element currentCombination = resultCombinationSets.get(currentResult);
         HLALocus locusType = null;
 
         // The DRB345 combinations are grouped into a single "DRB" header with DRB1
@@ -415,6 +519,13 @@ public class XmlScore6Parser {
         // Each combination is an allele/antigen pair
         List<ResultCombination> comboCIWD = parseResultCombinations(currentCombination, locusType, true);
         List<ResultCombination> comboFirst = parseResultCombinations(currentCombination, locusType, false);
+
+        if (hasValidAlleleCall) {
+          boolean acMatch = testIfAlleleCallPresent(h1, h2, currentCombination, hlaLocus);
+          if (acMatch) {
+            acMatchIndices.add(currentResult);
+          }
+        }
 
         List<ResultCombination> toUpdateCIWD = ciwdResultPairs;
         List<ResultCombination> toUpdateFirst = firstResultPairs;
@@ -455,6 +566,8 @@ public class XmlScore6Parser {
         }
       }
 
+
+
       // -- Locus-specific processing of the individual types --
       if (!Objects.isNull(drb345PairsFirst) && !drb345PairsFirst.isEmpty()) {
         // Set the DRB345 types
@@ -462,73 +575,107 @@ public class XmlScore6Parser {
           HLAType drbAllele = drbType.getAlleleCombination();
           if (drbMap.containsKey(drbAllele.locus())) {
             String drbString = String.valueOf(drbAllele.spec().get(0));
+            String drbString1 = drbAllele.equivSafe().specString();
             drbMap.get(drbAllele.locus()).accept(builder, drbString);
           }
         }
       }
 
+      if (hasValidAlleleCall && acMatchIndices.isEmpty()) {
+        builder.addAuditMessage("Could not find a matching haplotype for assigned alleles [" + hlaLocus.name() + "*" + alleleCall1 + " / "
+            + hlaLocus.name() + "*" + alleleCall2 + "]. Using best haplotypes instead.");
+      }
+
+      Element selectedResultCombination = resultCombinationSets.get(selectedResultIndex);
+
       // Parse haplotypes
       if (C_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex), identityLocusMap(HLALocus.C), ValidationModelBuilder::cHaplotype);
+        addHaplotypes(builder, selectedResultCombination, identityLocusMap(HLALocus.C), ValidationModelBuilder::cHaplotype);
       } else if (DQB_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex), identityLocusMap(HLALocus.DQB1), ValidationModelBuilder::dqHaplotype);
+        addHaplotypes(builder, selectedResultCombination, identityLocusMap(HLALocus.DQB1), ValidationModelBuilder::dqHaplotype);
       } else if (DRB_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex), identityLocusMap(HLALocus.DRB1), ValidationModelBuilder::drHaplotype);
+        addHaplotypes(builder, selectedResultCombination, identityLocusMap(HLALocus.DRB1), ValidationModelBuilder::drHaplotype);
         if (selectedDRB345Index > 0) {
-          addHaplotypes(builder, resultCombinations.get(selectedDRB345Index), drb345Map(ciwdResultPairs), ValidationModelBuilder::dr345Haplotype);
+          addHaplotypes(builder, resultCombinationSets.get(selectedDRB345Index), drb345Map(ciwdResultPairs), ValidationModelBuilder::dr345Haplotype);
         } else {
           builder.dr345Haplotype(ArrayListMultimap.create());
         }
       } else if (B_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex), identityLocusMap(HLALocus.B), ValidationModelBuilder::bHaplotype);
+        addHaplotypes(builder, selectedResultCombination, identityLocusMap(HLALocus.B), ValidationModelBuilder::bHaplotype);
 
-        for (int strandIdx = 0; strandIdx < ciwdResultPairs.size(); strandIdx++) {
-          // B*47:03 is considered BW6 despite B47 antigen being considered BW4
-          if (ciwdResultPairs.get(strandIdx).alleleCombination.toString().contains("B*47:03")) {
-            builder.bw6(true);
-            break;
+        if (hasValidAlleleCall) {
+          BwGroup known1 = BwSerotypes.getBwGroup(h1);
+          BwGroup known2 = BwSerotypes.getBwGroup(h2);
+          boolean known4 = known1 == BwGroup.Bw4 || known2 == BwGroup.Bw4;
+          boolean known6 = known1 == BwGroup.Bw6 || known2 == BwGroup.Bw6;
+          if (assignedBw4) {
+            builder.bw4(true);
+            if (!known4) {
+              // assigned Bw4 but not known to be Bw4
+              builder.addAuditMessage("HLA-B was assigned Bw4 but neither of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1 + " / "
+                  + hlaLocus.name() + "*" + alleleCall2 + "] are known by DonorCheck to be Bw4");
+            }
+          } else if (known4) {
+            // not assigned Bw4 but known to be Bw4
+            builder.addAuditMessage("HLA-B was not assigned Bw4 but at least one of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1
+                + " / " + hlaLocus.name() + "*" + alleleCall2 + "] is known by DonorCheck to be Bw4");
           }
-          // Update the appropriate builder flags
-          BwGroup bw = BwSerotypes.getBwGroup(ciwdResultPairs.get(strandIdx).getAntigenCombination());
-          switch (bw) {
-            case Bw4:
-              builder.bw4(true);
-              break;
-            case Bw6:
+          if (assignedBw6) {
+            builder.bw6(true);
+            if (!known6) {
+              // assigned Bw6 but not known to be Bw6
+              builder.addAuditMessage("HLA-B was assigned Bw6 but neither of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1 + " / "
+                  + hlaLocus.name() + "*" + alleleCall2 + "] are known by DonorCheck to be Bw6");
+            }
+          } else if (known6) {
+            // not assigned Bw6 but known to be Bw6
+            builder.addAuditMessage("HLA-B was not assigned Bw6 but at least one of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1
+                + " / " + hlaLocus.name() + "*" + alleleCall2 + "] is known by DonorCheck to be Bw6");
+          }
+        } else {
+          for (int strandIdx = 0; strandIdx < ciwdResultPairs.size(); strandIdx++) {
+            // B*47:03 is considered BW6 despite B47 antigen being considered BW4
+            if (ciwdResultPairs.get(strandIdx).alleleCombination.toString().contains("B*47:03")) {
               builder.bw6(true);
               break;
-            default:
-              break;
+            }
+            // Update the appropriate builder flags
+            BwGroup bw = BwSerotypes.getBwGroup(ciwdResultPairs.get(strandIdx).getAntigenCombination());
+            BwGroup bw1 = BwSerotypes.getBwGroup(ciwdResultPairs.get(strandIdx).getAlleleCombination());
+            if (bw != bw1) {
+              // discrepancy between allele status and antigen status
+            }
+            switch (bw) {
+              case Bw4:
+                builder.bw4(true);
+                break;
+              case Bw6:
+                builder.bw6(true);
+                break;
+              default:
+                break;
+            }
           }
         }
       } else if (DPB_HEADER.equals(locus)) {
-        addHaplotypes(builder, resultCombinations.get(selectedResultIndex), identityLocusMap(HLALocus.DPB1), ValidationModelBuilder::dpHaplotype);
+        addHaplotypes(builder, selectedResultCombination, identityLocusMap(HLALocus.DPB1), ValidationModelBuilder::dpHaplotype);
       }
 
-      // if alleleCall values are present, short-circuit the rest of the processing and just use
-      // those
-      if (hlaLocus == HLALocus.DPB1) {
-        if (alleleCall1 != null && alleleCall2 != null) {
-          if (alleleCall1.startsWith(hlaLocus.name() + "*")) {
-            alleleCall1 = alleleCall1.substring(hlaLocus.name().length() + 1);
-          }
-          if (alleleCall2.startsWith(hlaLocus.name() + "*")) {
-            alleleCall2 = alleleCall2.substring(hlaLocus.name().length() + 1);
-          }
-          HLAType h1 = new HLAType(hlaLocus, alleleCall1);
-          HLAType h2 = new HLAType(hlaLocus, alleleCall2);
-          String sero1 = null;
-          String sero2 = null;
-          sero1 = convertToSerotype(locus, h1);
-          sero2 = convertToSerotype(locus, h2);
-          metadataMap.get(locus).accept(builder, sero1);
-          metadataMap.get(locus).accept(builder, sero2);
-          if (metadataTypeMap.containsKey(locus)) {
-            metadataTypeMap.get(locus).accept(builder, h1);
-            metadataTypeMap.get(locus).accept(builder, h2);
-          }
-          return;
+      // if we don't have both, but we haven't thrown an error, fall back to using the default behavior
+      // we would use if the allele call value wasn't there in the first place
+      if (h1 != null && h2 != null) {
+        String sero1 = null;
+        String sero2 = null;
+        sero1 = convertToSerotype(locus, h1);
+        sero2 = convertToSerotype(locus, h2);
+        metadataMap.get(locus).accept(builder, sero1);
+        metadataMap.get(locus).accept(builder, sero2);
+        if (metadataTypeMap.containsKey(locus)) {
+          metadataTypeMap.get(locus).accept(builder, h1);
+          metadataTypeMap.get(locus).accept(builder, h2);
         }
+        builder.setLocusAssigned(hlaLocus);
+        return;
       }
 
       // Finally, add the types to the model builder
@@ -731,6 +878,54 @@ public class XmlScore6Parser {
       }
     }
     return combinations;
+  }
+
+
+  /** Parse the allele + antigen pairs from a result combination */
+  private static boolean testIfAlleleCallPresent(HLAType ac1, HLAType ac2, Element currentCombination, HLALocus locus) {
+    Set<Integer> ac1FoundIn = new HashSet<>();
+    Set<Integer> ac2FoundIn = new HashSet<>();
+
+    for (int combination = 1; combination <= 4; combination++) {
+      try {
+        boolean[] found = testIfAlleleCallPresent(ac1, ac2, currentCombination, combination, ALLELE_COMBINATION_TAG);
+        if (found[0])
+          ac1FoundIn.add(combination);
+        if (found[1])
+          ac2FoundIn.add(combination);
+      } catch (Exception e) {
+        e.printStackTrace(System.err);
+      }
+    }
+
+    // Both alleles need to be found in at least one combination
+    boolean bothFound = !ac1FoundIn.isEmpty() && !ac2FoundIn.isEmpty();
+
+    // Check if they are both found ONLY in the same single combination
+    boolean foundInSameSingleCombinationOnly = ac1FoundIn.equals(ac2FoundIn) && ac1FoundIn.size() == 1;
+
+    // Return true if both alleles are found and they are not exclusively in the same single combination
+    return bothFound && !foundInSameSingleCombinationOnly;
+  }
+
+  private static boolean[] testIfAlleleCallPresent(HLAType ac1, HLAType ac2, Element resultCombinations, int combinationIndex,
+      String alleleComboTag) {
+    List<String> alleles = getAllValidTypes(resultCombinations.getElementsByTag(alleleComboTag + combinationIndex), ac1.locus());
+    boolean foundAC1 = false;
+    boolean foundAC2 = false;
+    for (String s : alleles) {
+      HLAType h = HLAType.valueOf(s);
+      if (HLAType.permissiveEquals(ac1, h)) {
+        foundAC1 = true;
+      }
+      if (HLAType.permissiveEquals(ac2, h)) {
+        foundAC2 = true;
+      }
+      if (foundAC1 && foundAC2) {
+        break;
+      }
+    }
+    return new boolean[] {foundAC1, foundAC2};
   }
 
   /** Parse a particular allele + antigen pair from a single result combination */

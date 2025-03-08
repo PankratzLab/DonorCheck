@@ -551,10 +551,21 @@ public class ValidationTable {
 
   private void generateAuditLogLines() {
     auditLogLines.clear();
-    if (firstModelWrapper.isNotNull().get())
+    if (firstModelWrapper.isNotNull().get()) {
       auditLogLines.addAll(generateRemappings(firstModelWrapper.get()));
-    if (secondModelWrapper.isNotNull().get())
+      auditLogLines.addAll(firstModelWrapper.get().getAuditMessages());
+      auditLogLines.addAll(generateManualAssignments(firstModelWrapper.get()));
+    }
+    if (secondModelWrapper.isNotNull().get()) {
       auditLogLines.addAll(generateRemappings(secondModelWrapper.get()));
+      auditLogLines.addAll(secondModelWrapper.get().getAuditMessages());
+      auditLogLines.addAll(generateManualAssignments(secondModelWrapper.get()));
+    }
+  }
+
+  private String[] generateManualAssignments(ValidationModel validationModel) {
+    return validationModel.getManuallyAssignedLoci().stream().sorted()
+        .map(l -> "HLA-" + l.name() + " was manually assigned in " + validationModel.getSourceType().getDisplayName()).toArray(String[]::new);
   }
 
   public ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> getFirstRemappings() {

@@ -47,8 +47,8 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
    * Matches string representations of {@link HLAType}s
    *
    * <p>
-   * Group 1 is the {@link HLALocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
-   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the
+   * Group 1 is the {@link HLALocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and group
+   * 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the
    * {@link Matcher#group(int)} api)
    */
   public static final Pattern TYPE_PATTERN;
@@ -178,8 +178,8 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
 
   /**
    * @param equivType Input type to reduce
-   * @return The input {@link HLAType} with its tailing "01" field removed, or null if the allele
-   *         can not be reduced
+   * @return The input {@link HLAType} with its tailing "01" field removed, or null if the allele can
+   *         not be reduced
    */
   public static HLAType reduceSpec(HLAType equivType) {
     List<Integer> spec = equivType.spec();
@@ -195,8 +195,8 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
 
   /**
    * @param equivType Input type to expand
-   * @return The input {@link HLAType} with an additional "01" field, or null if the allele can not
-   *         be further expanded
+   * @return The input {@link HLAType} with an additional "01" field, or null if the allele can not be
+   *         further expanded
    */
   public static HLAType growSpec(HLAType equivType) {
     List<Integer> spec = new ArrayList<>(equivType.spec());
@@ -260,27 +260,86 @@ public class HLAType extends Antigen<HLALocus, HLAType> {
   }
 
   /** @see Antigen#parseTypes(String, java.util.regex.Pattern, Function) */
-  public static <T extends Antigen<?, T>> List<T> parseTypes(String text,
-      Function<String, T> typeFunction) {
+  public static <T extends Antigen<?, T>> List<T> parseTypes(String text, Function<String, T> typeFunction) {
     return Antigen.parseTypes(text, LOCI_PATTERN, typeFunction);
+  }
+
+  /**
+   * Compares two HLAType objects in a permissive manner, allowing for different resolution levels.
+   * Two HLA types are considered permissively equal if they have the same locus and either: 1. They
+   * match exactly up to the resolution of the shorter one, or 2. They differ only by trailing "01"
+   * fields (value 1)
+   *
+   * Special case: Single-field alleles (e.g., A*01) are treated as allele groups and will only match
+   * other identical single-field alleles.
+   *
+   * @param allele1 First HLAType to compare
+   * @param allele2 Second HLAType to compare
+   * @return true if the alleles match under permissive comparison rules, false otherwise
+   */
+  public static boolean permissiveEquals(HLAType allele1, HLAType allele2) {
+    // Null checks
+    if (allele1 == null || allele2 == null) {
+      return allele1 == allele2;
+    }
+
+    // Check for exact equality first (optimization)
+    if (allele1.equals(allele2)) {
+      return true;
+    }
+
+    // Loci must match
+    if (!allele1.locus().equals(allele2.locus())) {
+      return false;
+    }
+
+    List<Integer> spec1 = allele1.spec();
+    List<Integer> spec2 = allele2.spec();
+
+    // Special case: Single-field alleles (allele groups) only match exact single-field alleles
+    if (spec1.size() == 1 || spec2.size() == 1) {
+      return spec1.size() == 1 && spec2.size() == 1 && spec1.get(0).equals(spec2.get(0));
+    }
+
+    int minLength = Math.min(spec1.size(), spec2.size());
+
+    // Compare up to the shortest length
+    for (int i = 0; i < minLength; i++) {
+      if (!spec1.get(i).equals(spec2.get(i))) {
+        return false; // Early mismatch
+      }
+    }
+
+    // Check if remaining fields are only "01", allowing permissiveness
+    if (spec1.size() > spec2.size()) {
+      for (int i = minLength; i < spec1.size(); i++) {
+        if (spec1.get(i) != 1)
+          return false;
+      }
+    } else if (spec2.size() > spec1.size()) {
+      for (int i = minLength; i < spec2.size(); i++) {
+        if (spec2.get(i) != 1)
+          return false;
+      }
+    }
+
+    return true;
   }
 
   static {
     // Static initializer to create patterns
     // See also SeroType
 
-    LOCI_PATTERN = makePattern(
-        Arrays.stream(HLALocus.values()).map(HLALocus::name).collect(Collectors.toList()));
+    LOCI_PATTERN = makePattern(Arrays.stream(HLALocus.values()).map(HLALocus::name).collect(Collectors.toList()));
 
     TYPE_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + SPEC_PATTERN.pattern());
-    PARTIAL_PATTERN =
-        Pattern.compile(LOCI_PATTERN.pattern() + "(?:" + SPEC_PATTERN.pattern() + ")?");
+    PARTIAL_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + "(?:" + SPEC_PATTERN.pattern() + ")?");
 
     /*
      * --- WARNING --- Changing the patterns in a way that affects the number of groups can have
-     * terrible/unexpected reprecussions. Currently we do not have a way to guarantee compliance
-     * with a particular group count, etc. It would be safer to refactor these patterns into an
-     * Object with proper accessors that can be updated to expose the underlying groups.
+     * terrible/unexpected reprecussions. Currently we do not have a way to guarantee compliance with a
+     * particular group count, etc. It would be safer to refactor these patterns into an Object with
+     * proper accessors that can be updated to expose the underlying groups.
      */
   }
 }
