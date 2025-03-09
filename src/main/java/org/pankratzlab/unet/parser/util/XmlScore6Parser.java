@@ -448,7 +448,7 @@ public class XmlScore6Parser {
               }
             }
           }
-        } else {
+        } else if (alleleCall1 != null || alleleCall2 != null) {
           String ac = alleleCall1 == null ? alleleCall2 : alleleCall1;
           // one or both alleleCall tags didn't have data in it
           builder.addAuditMessage("SCORE 6: Only one allele assignment found for " + hlaLocus.name() + ": " + ac + ". This data has been ignored.");
@@ -674,7 +674,7 @@ public class XmlScore6Parser {
           metadataTypeMap.get(locus).accept(builder, h1);
           metadataTypeMap.get(locus).accept(builder, h2);
         }
-        builder.setLocusAssigned(hlaLocus);
+        builder.setLocusAssigned(hlaLocus, h1, h2);
         return;
       }
 

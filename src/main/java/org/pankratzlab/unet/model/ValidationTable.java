@@ -21,13 +21,11 @@
  */
 package org.pankratzlab.unet.model;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -433,10 +431,6 @@ public class ValidationTable {
     return builder.toString();
   }
 
-  public TableData getTableData() {
-    return new TableData(this);
-  }
-
   public enum ValidationKey {
     DONORID("Donor ID", Optional.empty(), ValidationModel::getDonorId, Objects::toString), //
     SOURCE("Source", Optional.empty(), ValidationModel::getSourceType, (o) -> ((SourceType) o).getDisplayName()), //
@@ -478,62 +472,16 @@ public class ValidationTable {
       this.toString = toString;
     }
 
+    public String get(ValidationModel model) {
+      return toString.apply(getter.apply(model));
+    }
+
     public String getFirst(ValidationTable table) {
       return toString.apply(table.getFirstField(getter));
     }
 
     public String getSecond(ValidationTable table) {
       return toString.apply(table.getSecondField(getter));
-    }
-
-  }
-
-  public static class TableData {
-    private final Map<ValidationKey, String> first = new HashMap<>();
-    private final Map<ValidationKey, String> second = new HashMap<>();
-    private final ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> firstRemaps;
-    private final ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> secondRemaps;
-
-    public TableData(ValidationTable t) {
-      for (ValidationKey k : ValidationKey.values()) {
-        first.put(k, k.getFirst(t));
-        second.put(k, k.getSecond(t));
-      }
-      this.firstRemaps = t.getFirstRemappings();
-      this.secondRemaps = t.getSecondRemappings();
-    }
-
-    public String getCSVLine(ValidationKey k) {
-      StringJoiner sj = new StringJoiner(",");
-      sj.add(k.fieldName).add(first.get(k)).add(second.get(k)).add(Boolean.toString(first.getOrDefault(k, "").equals(second.getOrDefault(k, ""))));
-      return sj.toString();
-    }
-
-    public boolean isValid() {
-      for (ValidationKey k : ValidationKey.values()) {
-        if (k == ValidationKey.SOURCE)
-          continue;
-        if (!getFirst(k).equals(getSecond(k))) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    public String getFirst(ValidationKey key) {
-      return first.getOrDefault(key, "");
-    }
-
-    public String getSecond(ValidationKey key) {
-      return second.getOrDefault(key, "");
-    }
-
-    public ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> getFirstRemaps() {
-      return firstRemaps;
-    }
-
-    public ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> getSecondRemaps() {
-      return secondRemaps;
     }
 
   }
@@ -564,8 +512,39 @@ public class ValidationTable {
   }
 
   private String[] generateManualAssignments(ValidationModel validationModel) {
-    return validationModel.getManuallyAssignedLoci().stream().sorted()
-        .map(l -> "HLA-" + l.name() + " was manually assigned in " + validationModel.getSourceType().getDisplayName()).toArray(String[]::new);
+    return validationModel.getManuallyAssignedLoci().entrySet().stream().sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
+        .map(e -> "HLA-" + e.getKey().name() + " was manually assigned to ["
+            + e.getValue().stream().sorted().map(HLAType::toString).collect(Collectors.joining(" / ")) + "] in "
+            + validationModel.getSourceType().getDisplayName())
+        .toArray(String[]::new);
+  }
+
+  public List<String> getFirstModelAuditLog() {
+    List<String> log = new ArrayList<>();
+    if (firstModelWrapper.isNotNull().get()) {
+      for (String s : generateRemappings(firstModelWrapper.get())) {
+        log.add(s);
+      }
+      log.addAll(firstModelWrapper.get().getAuditMessages());
+      for (String s : generateManualAssignments(firstModelWrapper.get())) {
+        log.add(s);
+      }
+    }
+    return log;
+  }
+
+  public List<String> getSecondModelAuditLog() {
+    List<String> log = new ArrayList<>();
+    if (secondModelWrapper.isNotNull().get()) {
+      for (String s : generateRemappings(secondModelWrapper.get())) {
+        log.add(s);
+      }
+      log.addAll(firstModelWrapper.get().getAuditMessages());
+      for (String s : generateManualAssignments(secondModelWrapper.get())) {
+        log.add(s);
+      }
+    }
+    return log;
   }
 
   public ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> getFirstRemappings() {

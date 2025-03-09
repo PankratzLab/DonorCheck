@@ -127,7 +127,7 @@ public class ValidationModelBuilder {
 
   private Set<HLALocus> nonCWDLoci = new TreeSet<>();
   private Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping = new HashMap<>();
-  private Set<HLALocus> manualAssignments = new HashSet<>();
+  private Map<HLALocus, Set<HLAType>> manualAssignments = new HashMap<>();
   private List<String> auditMessages = new ArrayList<>();
 
   private Set<SeroType> drbLocus;
@@ -199,8 +199,11 @@ public class ValidationModelBuilder {
     return this;
   }
 
-  public ValidationModelBuilder setLocusAssigned(HLALocus locus) {
-    this.manualAssignments.add(locus);
+  public ValidationModelBuilder setLocusAssigned(HLALocus locus, HLAType... types) {
+    Set<HLAType> manual = manualAssignments.computeIfAbsent(locus, k -> new HashSet<>());
+    for (HLAType t : types) {
+      manual.add(t);
+    }
     return this;
   }
 

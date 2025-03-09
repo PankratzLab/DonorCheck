@@ -181,11 +181,11 @@ public abstract class DCProperty<T> {
 
   public static final DCStringListProperty FIRST_TYPE =
       new DCStringListProperty(DonorCheckProperties.FIRST_TYPE, "First source type dropdown default", DCCATEGORY.INPUT_OPTIONS, null,
-          PdfDonorParser.getTypeString(), PdfDonorParser.getTypeString(), XmlDonorParser.getTypeString(), HtmlDonorParser.getTypeString());
+          DonorCheckProperties.FIRST_TYPE_DEFAULT, PdfDonorParser.getTypeString(), XmlDonorParser.getTypeString(), HtmlDonorParser.getTypeString());
 
   public static final DCStringListProperty SECOND_TYPE =
       new DCStringListProperty(DonorCheckProperties.SECOND_TYPE, "Second source type dropdown default", DCCATEGORY.INPUT_OPTIONS, null,
-          XmlDonorParser.getTypeString(), PdfDonorParser.getTypeString(), XmlDonorParser.getTypeString(), HtmlDonorParser.getTypeString());
+          DonorCheckProperties.SECOND_TYPE_DEFAULT, PdfDonorParser.getTypeString(), XmlDonorParser.getTypeString(), HtmlDonorParser.getTypeString());
 
   public static final DCBooleanProperty USE_ALLELE_CALL =
       new DCBooleanProperty(DonorCheckProperties.USE_ALLELE_CALL, "Use manual allele assignments (<alleleCall>) value if present",
