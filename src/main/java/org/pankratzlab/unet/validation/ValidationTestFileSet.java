@@ -2,8 +2,10 @@ package org.pankratzlab.unet.validation;
 
 import java.io.File;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
@@ -51,6 +53,8 @@ public class ValidationTestFileSet {
 
   public final ObjectProperty<TEST_RESULT> lastTestResult;
 
+  public final Map<String, String> dcProperties;
+
   public static class ValidationTestFileSetBuilder {
     private String id;
     private String comment;
@@ -63,6 +67,7 @@ public class ValidationTestFileSet {
     private String donorCheckVersion;
     private Date lastRunDate;
     private TEST_RESULT lastPassingResult;
+    private Map<String, String> dcProperties;
 
     public ValidationTestFileSetBuilder id(String id) {
       this.id = id;
@@ -122,10 +127,15 @@ public class ValidationTestFileSet {
       return this;
     }
 
+    public ValidationTestFileSetBuilder setDonorCheckProperty(String key, String value) {
+      dcProperties = dcProperties == null ? new HashMap<>() : dcProperties;
+      dcProperties.put(key, value);
+      return this;
+    }
+
     public ValidationTestFileSet build() {
-      return new ValidationTestFileSet(id, comment, expectedResult, filePaths, remapFile,
-          remappedLoci, cwdSource, relDnaSerFile, donorCheckVersion, lastRunDate,
-          lastPassingResult);
+      return new ValidationTestFileSet(id, comment, expectedResult, filePaths, remapFile, remappedLoci, cwdSource, relDnaSerFile, donorCheckVersion,
+          lastRunDate, lastPassingResult, dcProperties);
     }
 
   }
@@ -134,23 +144,21 @@ public class ValidationTestFileSet {
     return new ValidationTestFileSetBuilder();
   }
 
-  private ValidationTestFileSet(String id, String comment, TEST_EXPECTATION expectedResult,
-      List<String> filePaths, String remapFile, Set<HLALocus> remappedLoci,
-      CommonWellDocumented.SOURCE cwdSource, String relDnaSerFile, String donorCheckVersion,
-      Date lastRunDate, TEST_RESULT lastTestResult) {
+  private ValidationTestFileSet(String id, String comment, TEST_EXPECTATION expectedResult, List<String> filePaths, String remapFile,
+      Set<HLALocus> remappedLoci, CommonWellDocumented.SOURCE cwdSource, String relDnaSerFile, String donorCheckVersion, Date lastRunDate,
+      TEST_RESULT lastTestResult, Map<String, String> dcProps) {
     this.id = new SimpleStringProperty(id);
     this.comment = new SimpleStringProperty(comment);
     this.expectedResult = new SimpleObjectProperty<>(expectedResult);
     this.filePaths = new ReadOnlyListWrapper<>(FXCollections.observableList(filePaths));
-    final ObservableSet<SourceType> observableSet =
-        FXCollections.observableSet(filePaths.stream().map(s -> {
-          try {
-            return SourceType.parseType(new File(s));
-          } catch (IllegalArgumentException e) {
-            // TODO should deal with nulls somehow?
-            return null;
-          }
-        }).collect(Collectors.toSet()));
+    final ObservableSet<SourceType> observableSet = FXCollections.observableSet(filePaths.stream().map(s -> {
+      try {
+        return SourceType.parseType(new File(s));
+      } catch (IllegalArgumentException e) {
+        // TODO should deal with nulls somehow?
+        return null;
+      }
+    }).collect(Collectors.toSet()));
     this.sourceTypes = new ReadOnlySetWrapper<>(observableSet);
     this.remapFile = new ReadOnlyStringWrapper(remapFile);
     this.remappedLoci = new ReadOnlySetWrapper<>(FXCollections.observableSet(remappedLoci));
@@ -159,6 +167,7 @@ public class ValidationTestFileSet {
     this.donorCheckVersion = new SimpleStringProperty(donorCheckVersion);
     this.lastRunDate = new SimpleObjectProperty<>(lastRunDate);
     this.lastTestResult = new SimpleObjectProperty<>(lastTestResult);
+    this.dcProperties = dcProps == null ? new HashMap<>() : dcProps;
   }
 
 }

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
 import org.pankratzlab.unet.hapstats.HaplotypeUtils;
@@ -35,6 +36,29 @@ public class XmlSureTyperParser {
   private static final String HLA_A = "HLA-A";
   private static final String BW = "Bw";
 
+  private static String getDQARegexStrict() {
+    return "DQA1\\*";
+  }
+
+  private static String getDQARegexPermissive() {
+    return "DQA1?\\*?";
+  }
+
+  private static boolean allowPermissive() {
+    return Boolean.parseBoolean(DonorCheckProperties.get().getProperty(DonorCheckProperties.SURETYPER_ALLOW_INVALID_DQA_ALLELES,
+        DonorCheckProperties.SURETYPER_ALLOW_INVALID_DQA_ALLELES_DEFAULT));
+  }
+
+  private static String getDQARegex() {
+
+
+    if (allowPermissive()) {
+      return getDQARegexPermissive();
+    }
+
+    return getDQARegexStrict();
+  }
+
   /**
    * Method to parse XML to ValidationModelBuilder builder to allow for uniformity
    *
@@ -46,26 +70,20 @@ public class XmlSureTyperParser {
     // Parse assigned typing
     builder.donorId(doc.getElementsByAttributeValue(NAME_TAG, PATIENT_ID_TAG).text().toUpperCase());
     Element labAssignmentSection = doc.getElementsByTag("labAssignmentSection").get(0);
-    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_A).text()
-        .replaceAll("A", "").split("\\s")).forEach(builder::a);
-    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_B).text()
-        .replaceAll("B", "").split("\\s")).forEach(builder::b);
-    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_C).text()
-        .replaceAll("Cw", "").split("\\s")).forEach(builder::c);
-    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DRB1).text()
-        .replaceAll("DR", "").split("\\s")).forEach(builder::drb);
-    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQB1).text()
-        .replaceAll("DQ", "").split("\\s")).forEach(builder::dqbSerotype);
-    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQA1).text()
-        .replaceAll("DQA1?\\*?", "").split("\\s")).forEach(builder::dqaSerotype);
-    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPA1).text()
-        .replaceAll("DPA1\\*", "").split("\\s")).forEach(builder::dpaSerotype);
-    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPB1).text()
-        .replaceAll("DPB1\\*", "").split("\\s")).forEach(builder::dpbSerotype);
-    builder
-        .bw4(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw4"));
-    builder
-        .bw6(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw6"));
+    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_A).text().replaceAll("A", "").split("\\s")).forEach(builder::a);
+    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_B).text().replaceAll("B", "").split("\\s")).forEach(builder::b);
+    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_C).text().replaceAll("Cw", "").split("\\s")).forEach(builder::c);
+    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DRB1).text().replaceAll("DR", "").split("\\s"))
+        .forEach(builder::drb);
+    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQB1).text().replaceAll("DQ", "").split("\\s"))
+        .forEach(builder::dqbSerotype);
+    parseDQA(labAssignmentSection, builder);
+    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPA1).text().replaceAll("DPA1\\*", "").split("\\s"))
+        .forEach(builder::dpaSerotype);
+    Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPB1).text().replaceAll("DPB1\\*", "").split("\\s"))
+        .forEach(builder::dpbSerotype);
+    builder.bw4(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw4"));
+    builder.bw6(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw6"));
 
     // Parse haplotypes
     Map<String, Multimap<Strand, HLAType>> haplotypeMap = new HashMap<>();
@@ -75,21 +93,11 @@ public class XmlSureTyperParser {
     haplotypeMap.put(HLA_DQB1, ArrayListMultimap.create());
     haplotypeMap.put(HLA_DRB345, ArrayListMultimap.create());
     Element haplotypeSection = doc.getElementsByTag("testResultsSection").get(0);
-    parseHaplotype(builder,
-        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_B).get(0),
-        haplotypeMap.get(HLA_B));
-    parseHaplotype(builder,
-        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_C).get(0),
-        haplotypeMap.get(HLA_C));
-    parseHaplotype(builder,
-        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DRB1).get(0),
-        haplotypeMap.get(HLA_DRB1));
-    parseHaplotype(builder,
-        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DQB1).get(0),
-        haplotypeMap.get(HLA_DQB1));
-    parseHaplotype(builder,
-        haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DRB345).get(0),
-        haplotypeMap.get(HLA_DRB345));
+    parseHaplotype(builder, haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_B).get(0), haplotypeMap.get(HLA_B));
+    parseHaplotype(builder, haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_C).get(0), haplotypeMap.get(HLA_C));
+    parseHaplotype(builder, haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DRB1).get(0), haplotypeMap.get(HLA_DRB1));
+    parseHaplotype(builder, haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DQB1).get(0), haplotypeMap.get(HLA_DQB1));
+    parseHaplotype(builder, haplotypeSection.getElementsByAttributeValue(TEST_NAME_TAG, HLA_DRB345).get(0), haplotypeMap.get(HLA_DRB345));
 
     // Map haplotypes collected to ValidationModelBuilder
     builder.bHaplotype(haplotypeMap.get(HLA_B));
@@ -97,6 +105,29 @@ public class XmlSureTyperParser {
     builder.dqHaplotype(haplotypeMap.get(HLA_DQB1));
     builder.drHaplotype(haplotypeMap.get(HLA_DRB1));
     builder.dr345Haplotype(haplotypeMap.get(HLA_DRB345));
+  }
+
+  private static void parseDQA(Element labAssignmentSection, ValidationModelBuilder builder) {
+    String[] split = labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DQA1).text().trim().split("\\s");
+    boolean invalidFormat = false;
+    for (String s : split) {
+      boolean b1 = s.replaceAll(getDQARegexStrict(), "").equals(s);
+      boolean b2 = s.replaceAll(getDQARegexPermissive(), "").equals(s);
+      if (b1 && !b2) {
+        invalidFormat = true;
+        break;
+      }
+    }
+    if (invalidFormat && !allowPermissive()) {
+      throw new IllegalArgumentException("Invalid DQA allele(s) [" + split[0] + " " + split[1]
+          + "] found in Suretyper report - check allele name format, or allow permissive naming in the preferences menu.");
+    } else if (invalidFormat) {
+      builder.addAuditMessage("Invalid DQA allele(s) [" + split[0] + " " + split[1] + "] found in Suretyper report. Expected format like 'DQA1*01'.");
+    }
+    String[] dqa = Arrays.stream(split).map(s -> s.replaceAll(getDQARegex(), "")).toArray(String[]::new);
+    for (String dq : dqa) {
+      builder.dqaSerotype(dq);
+    }
   }
 
   /**
@@ -107,15 +138,13 @@ public class XmlSureTyperParser {
    * @param haplotypeXmlSection Current haplotype section in doc being parsed
    * @param strandMap Multimap created for specific haplotype for parsing alleles onto.
    */
-  private static void parseHaplotype(ValidationModelBuilder builder, Element haplotypeXmlSection,
-      Multimap<Strand, HLAType> strandMap) {
+  private static void parseHaplotype(ValidationModelBuilder builder, Element haplotypeXmlSection, Multimap<Strand, HLAType> strandMap) {
     boolean flag = false;
     // Check for if there are more than one hlaTestCall section
     // If there is more than one only parse the one that has been manually selected.
     if (haplotypeXmlSection.getElementsByTag("hlaTestCall").size() == 1) {
       String alleles = haplotypeXmlSection.getElementsByTag("alleles").text();
-      String[] loci =
-          haplotypeXmlSection.getElementsByTag("hlaTestCall").attr("callName").split("\\s+");
+      String[] loci = haplotypeXmlSection.getElementsByTag("hlaTestCall").attr("callName").split("\\s+");
       parseAlleles(alleles, builder, strandMap, loci);
     } else if (haplotypeXmlSection.getElementsByTag("hlaTestCall").size() > 1) {
       for (Element e : haplotypeXmlSection.getElementsByTag("hlaTestCall")) {
@@ -137,9 +166,7 @@ public class XmlSureTyperParser {
         }
       }
       if (flag == false) {
-        System.err.println(
-            "Error: Could not find either manually or automatically selected haplotype for: "
-                + haplotypeXmlSection);
+        System.err.println("Error: Could not find either manually or automatically selected haplotype for: " + haplotypeXmlSection);
       }
     } else {
       System.err.println("Error: can not find haplotype section for: " + haplotypeXmlSection);
@@ -156,8 +183,7 @@ public class XmlSureTyperParser {
    * @param strandMap Multimap created for specific haplotype for parsing alleles onto.
    * @param loci String array with locus value(s)
    */
-  private static void parseAlleles(String allelesXmlSection, ValidationModelBuilder builder,
-      Multimap<Strand, HLAType> strandMap, String[] loci) {
+  private static void parseAlleles(String allelesXmlSection, ValidationModelBuilder builder, Multimap<Strand, HLAType> strandMap, String[] loci) {
     String[] tokens = allelesXmlSection.split("\\s+");
     // flag for being on a new strand.
     boolean newStrand = true;
@@ -170,14 +196,13 @@ public class XmlSureTyperParser {
         continue;
       }
       // Check to see if on second strand
-      if (loci.length > 1 && token.contains(sanitizeLocus(loci[1]))
-          && !token.contains(sanitizeLocus(loci[0])) && strandIndex == 0) {
+      if (loci.length > 1 && token.contains(sanitizeLocus(loci[1])) && !token.contains(sanitizeLocus(loci[0])) && strandIndex == 0) {
         strandIndex = 1;
         locus = sanitizeLocus(loci[1].split("\\*")[0]);
         newStrand = true;
       }
-      if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*")
-          || token.contains(HLALocus.DRB5 + "*")) && !token.contains("N") && newStrand) {
+      if ((token.contains(HLALocus.DRB3 + "*") || token.contains(HLALocus.DRB4 + "*") || token.contains(HLALocus.DRB5 + "*")) && !token.contains("N")
+          && newStrand) {
         String type = token.substring(token.indexOf("*"), token.indexOf(":"));
         if (token.contains(HLALocus.DRB3 + "*")) {
           builder.dr52(type);

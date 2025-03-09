@@ -32,8 +32,7 @@ import org.pankratzlab.unet.jfx.LandingController;
  */
 public class Info {
   public static final String MANIFEST_MAIN = "Main-Class";
-  public static final String DONOR_CHECK_HOME =
-      System.getProperty("user.home") + File.separator + ".donor_check" + File.separator;
+  public static final String DONOR_CHECK_HOME = System.getProperty("user.home") + File.separator + ".donor_check" + File.separator;
   /** Filename of the last requested version */
   public static final String VERSION_TO_LOAD = DONOR_CHECK_HOME + ".version.load.ser";
 
@@ -51,8 +50,7 @@ public class Info {
     if (version == null) {
       try {
         final Properties properties = new Properties();
-        properties.load(
-            LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
+        properties.load(LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
         version = properties.getProperty("version");
       } catch (IOException e) {
         throw new RuntimeException(e);

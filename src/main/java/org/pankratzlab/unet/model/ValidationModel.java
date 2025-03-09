@@ -69,12 +69,14 @@ public class ValidationModel {
   private final ImmutableMultimap<RaceGroup, Haplotype> bcHaplotypes;
   private final ImmutableMultimap<RaceGroup, Haplotype> drdqHaplotypes;
   private final ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping;
+  private final ImmutableMap<HLALocus, Set<HLAType>> manualAssignments;
+  private final ImmutableList<String> auditMessages;
 
   public ValidationModel(String donorId, String filepath, String source, SourceType sourceType, Collection<SeroType> a, Collection<SeroType> b,
       Collection<SeroType> c, Collection<SeroType> drb, Collection<SeroType> dqb, Collection<SeroType> dqa, Collection<SeroType> dpa,
       Collection<HLAType> dpb, boolean bw4, boolean bw6, List<HLAType> dr51, List<HLAType> dr52, List<HLAType> dr53,
       Multimap<RaceGroup, Haplotype> bcCwdHaplotypes, Multimap<RaceGroup, Haplotype> drdqCwdHaplotypes,
-      Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping) {
+      Map<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> remapping, Map<HLALocus, Set<HLAType>> manualAssignments, List<String> auditMessages) {
     this.donorId = donorId;
     this.filepath = filepath;
     this.source = source;
@@ -102,6 +104,8 @@ public class ValidationModel {
     drdqHaplotypes = ImmutableMultimap.copyOf(drdqCwdHaplotypes);
 
     this.remapping = ImmutableMap.copyOf(remapping);
+    this.manualAssignments = ImmutableMap.copyOf(manualAssignments);
+    this.auditMessages = ImmutableList.copyOf(auditMessages);
   }
 
   public String getDonorId() {
@@ -190,6 +194,14 @@ public class ValidationModel {
 
   public String isBw6() {
     return inGroupString(bw6);
+  }
+
+  public boolean getBw4() {
+    return bw4;
+  }
+
+  public boolean getBw6() {
+    return bw6;
   }
 
   public HLAType getDR51_1() {
@@ -423,4 +435,13 @@ public class ValidationModel {
   public ImmutableMap<HLALocus, Pair<Set<TypePair>, Set<TypePair>>> getRemappings() {
     return remapping;
   }
+
+  public ImmutableMap<HLALocus, Set<HLAType>> getManuallyAssignedLoci() {
+    return manualAssignments;
+  }
+
+  public ImmutableList<String> getAuditMessages() {
+    return auditMessages;
+  }
+
 }
