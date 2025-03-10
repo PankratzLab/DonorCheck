@@ -174,7 +174,11 @@ public class BatchTestMgmtController {
         testTable.itemsProperty().get().set(testTable.itemsProperty().get().indexOf(oldTest), newTest);
         testTable.refresh();
       } catch (IllegalStateException e) {
-        AlertHelper.showMessage_ErrorUpdatingTestID(ev.getNewValue(), oldId, e.getCause());
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+          cause = cause.getCause();
+        }
+        AlertHelper.showMessage_ErrorUpdatingTestID(ev.getNewValue(), oldId, cause);
         testTable.refresh();
       }
     });
@@ -191,7 +195,11 @@ public class BatchTestMgmtController {
         ValidationTesting.updateTestProperties(ev.getRowValue());
         testTable.refresh();
       } catch (IllegalStateException e) {
-        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+          cause = cause.getCause();
+        }
+        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), cause);
         testTable.refresh();
       }
     });
@@ -210,7 +218,11 @@ public class BatchTestMgmtController {
         ValidationTesting.updateTestProperties(ev.getRowValue());
         testTable.refresh();
       } catch (Throwable e) {
-        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+          cause = cause.getCause();
+        }
+        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), cause);
         testTable.refresh();
       }
     });

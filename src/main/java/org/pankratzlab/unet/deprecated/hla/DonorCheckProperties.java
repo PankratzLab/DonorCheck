@@ -65,6 +65,7 @@ public final class DonorCheckProperties {
   }
 
   public static String getOrDefault(String key) {
+    get();
     switch (key) {
       case FIRST_TYPE:
         return hlaProps.getProperty(FIRST_TYPE, FIRST_TYPE_DEFAULT);

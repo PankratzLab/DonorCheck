@@ -98,7 +98,7 @@ public class ValidationTesting {
   private static final String DC_VER_PROP = "version";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-  private static final String EXPECTED_PASS = "Expected Pass";
+  private static final String EXPECTED_PASS = "Expected pass";
   private static final String EXPECTED_FAILURE = "Expected failure";
   private static final String UNEXPECTED_PASS = "Unexpected pass";
   private static final String UNEXPECTED_FAILURE = "Unexpected failure";
@@ -474,7 +474,11 @@ public class ValidationTesting {
     sheet.createRow(rowNum++);
     XSSFRow row = sheet.createRow(rowNum++);
     XSSFCell cell0 = row.createCell(0);
-    cell0.setCellValue(result.isPassing ? "Validation Succeeded" : "Validation Failed");
+    if (e != null) {
+      cell0.setCellValue("Validation could not be attempted due to the following error: " + convert(result.name()));
+    } else {
+      cell0.setCellValue(result.isPassing ? "Validation Succeeded" : "Validation Failed");
+    }
 
     sheet.autoSizeColumn(0);
     sheet.autoSizeColumn(1);

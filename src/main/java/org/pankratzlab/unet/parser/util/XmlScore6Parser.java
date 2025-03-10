@@ -309,6 +309,11 @@ public class XmlScore6Parser {
         }
       }
 
+      // we use this flag to determine if we should use the Bw4/Bw6 value, which is only
+      // present if the HLA-B locus has been manually assigned. If it hasn't, the Bw4/Bw6
+      // tag will contain a dash '-' value, which is *also* how Score6 represents "not bw4/bw6",
+      // meaning we can't just blindly use that tag-value
+      boolean hasAlleleCallUnparsed = alleleCall1 != null && alleleCall2 != null;
 
       // Each locus has one allele results block which contains potential allele pairs
       Elements resultCombinationSets = typedLocus.getElementsByTag(ALLELE_RESULTS_TAG).get(0).getElementsByTag(RESULT_COMBINATION_TAG);
@@ -459,7 +464,7 @@ public class XmlScore6Parser {
 
       boolean assignedBw4 = false;
       boolean assignedBw6 = false;
-      if (hasValidAlleleCall && B_HEADER.equals(locus)) {
+      if (hasAlleleCallUnparsed && B_HEADER.equals(locus)) {
         Elements bws = typedLocus.getElementsByTag(BW4_BW6_TAG);
         if (bws.size() > 0) {
           Element bw = bws.get(0);
@@ -603,34 +608,42 @@ public class XmlScore6Parser {
       } else if (B_HEADER.equals(locus)) {
         addHaplotypes(builder, selectedResultCombination, identityLocusMap(HLALocus.B), ValidationModelBuilder::bHaplotype);
 
-        if (hasValidAlleleCall) {
-          BwGroup known1 = BwSerotypes.getBwGroup(h1);
-          BwGroup known2 = BwSerotypes.getBwGroup(h2);
-          boolean known4 = known1 == BwGroup.Bw4 || known2 == BwGroup.Bw4;
-          boolean known6 = known1 == BwGroup.Bw6 || known2 == BwGroup.Bw6;
+        if (hasAlleleCallUnparsed) {
+          builder.addAuditMessage("Using Bw4/Bw6 status directly from SCORE 6 file.");
           if (assignedBw4) {
             builder.bw4(true);
-            if (!known4) {
-              // assigned Bw4 but not known to be Bw4
-              builder.addAuditMessage("HLA-B was assigned Bw4 but neither of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1 + " / "
-                  + hlaLocus.name() + "*" + alleleCall2 + "] are known by DonorCheck to be Bw4");
-            }
-          } else if (known4) {
-            // not assigned Bw4 but known to be Bw4
-            builder.addAuditMessage("HLA-B was not assigned Bw4 but at least one of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1
-                + " / " + hlaLocus.name() + "*" + alleleCall2 + "] is known by DonorCheck to be Bw4");
           }
           if (assignedBw6) {
             builder.bw6(true);
-            if (!known6) {
-              // assigned Bw6 but not known to be Bw6
-              builder.addAuditMessage("HLA-B was assigned Bw6 but neither of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1 + " / "
-                  + hlaLocus.name() + "*" + alleleCall2 + "] are known by DonorCheck to be Bw6");
+          }
+
+          if (hasValidAlleleCall) {
+            BwGroup known1 = h1 != null ? BwSerotypes.getBwGroup(h1) : null;
+            BwGroup known2 = h2 != null ? BwSerotypes.getBwGroup(h2) : null;
+            boolean known4 = known1 == BwGroup.Bw4 || known2 == BwGroup.Bw4;
+            boolean known6 = known1 == BwGroup.Bw6 || known2 == BwGroup.Bw6;
+            if (assignedBw4) {
+              if (!known4) {
+                // assigned Bw4 but not known to be Bw4
+                builder.addAuditMessage("HLA-B was assigned Bw4 but neither of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1 + " / "
+                    + hlaLocus.name() + "*" + alleleCall2 + "] are known by DonorCheck to be Bw4.");
+              }
+            } else if (known4) {
+              // not assigned Bw4 but known to be Bw4
+              builder.addAuditMessage("HLA-B was not assigned Bw4 but at least one of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1
+                  + " / " + hlaLocus.name() + "*" + alleleCall2 + "] is known by DonorCheck to be Bw4.");
             }
-          } else if (known6) {
-            // not assigned Bw6 but known to be Bw6
-            builder.addAuditMessage("HLA-B was not assigned Bw6 but at least one of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1
-                + " / " + hlaLocus.name() + "*" + alleleCall2 + "] is known by DonorCheck to be Bw6");
+            if (assignedBw6) {
+              if (!known6) {
+                // assigned Bw6 but not known to be Bw6
+                builder.addAuditMessage("HLA-B was assigned Bw6 but neither of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1 + " / "
+                    + hlaLocus.name() + "*" + alleleCall2 + "] are known by DonorCheck to be Bw6.");
+              }
+            } else if (known6) {
+              // not assigned Bw6 but known to be Bw6
+              builder.addAuditMessage("HLA-B was not assigned Bw6 but at least one of the assigned alleles [" + hlaLocus.name() + "*" + alleleCall1
+                  + " / " + hlaLocus.name() + "*" + alleleCall2 + "] is known by DonorCheck to be Bw6.");
+            }
           }
         } else {
           for (int strandIdx = 0; strandIdx < ciwdResultPairs.size(); strandIdx++) {
