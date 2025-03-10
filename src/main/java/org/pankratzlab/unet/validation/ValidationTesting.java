@@ -480,10 +480,6 @@ public class ValidationTesting {
       cell0.setCellValue(result.isPassing ? "Validation Succeeded" : "Validation Failed");
     }
 
-    sheet.autoSizeColumn(0);
-    sheet.autoSizeColumn(1);
-    sheet.autoSizeColumn(2);
-
     if (data != null && !data.isEmpty()) {
       sheet.createRow(rowNum++);
 
@@ -604,6 +600,10 @@ public class ValidationTesting {
       }
     }
 
+    sheet.setColumnWidth(0, 24 * 256);
+    sheet.setColumnWidth(1, 21 * 256);
+    sheet.setColumnWidth(2, 21 * 256);
+    sheet.setColumnWidth(3, 12 * 256);
 
   }
 
