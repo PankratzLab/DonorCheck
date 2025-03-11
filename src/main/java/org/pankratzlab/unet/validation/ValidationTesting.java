@@ -781,7 +781,12 @@ public class ValidationTesting {
       } else if (testFile.getName().equals(TEST_LOG)) {
         // skip
       } else {
-        inputFilesBuilder.add(testFile.getAbsolutePath());
+        try {
+          SourceType.parseType(testFile);
+          inputFilesBuilder.add(testFile.getAbsolutePath());
+        } catch (IllegalArgumentException e) {
+          // not a valid source file
+        }
       }
     }
     builder.filePaths(inputFilesBuilder.build());
