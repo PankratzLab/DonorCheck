@@ -13,10 +13,12 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
 <?import org.pankratzlab.unet.jfx.wizard.ValidatingWizardPane?>
 <?import javafx.scene.layout.StackPane?>
 
@@ -31,12 +33,12 @@
 						<Menu mnemonicParsing="false" text="File">
 							<items>
 								<MenuItem fx:id="saveOption" mnemonicParsing="false"
-									onAction="#savePNGResults" text="Save to Image" />
+									onAction="#savePNGResults" text="Save to image" />
 								<MenuItem fx:id="saveCSVOption" mnemonicParsing="false"
 									onAction="#saveCSVResults" text="Save to CSV" />
 								<MenuItem fx:id="addToValidationOption"
 									mnemonicParsing="false" onAction="#addInputsToValidationSet"
-									text="Add Input Files to Testing Suite" />
+									text="Add input files to testing suite" />
 								<MenuItem fx:id="printOption" mnemonicParsing="false"
 									onAction="#printResults" text="Print..." />
 							</items>
@@ -101,12 +103,17 @@
 								<Insets top="15.0" />
 							</VBox.margin>
 						</Label>
-						<Label fx:id="auditLog" minWidth="200" wrapText="false"
-							focusTraversable="false" GridPane.columnIndex="0"
+						<ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="0"
 							GridPane.rowIndex="2" GridPane.columnSpan="1"
 							GridPane.halignment="CENTER" GridPane.valignment="TOP"
-							GridPane.fillHeight="true" GridPane.vgrow="ALWAYS"
-							VBox.vgrow="ALWAYS" />
+							GridPane.fillHeight="true" GridPane.vgrow="ALWAYS" VBox.vgrow="ALWAYS">
+						<Text fx:id="auditLog" 
+							focusTraversable="false" 
+							VBox.vgrow="ALWAYS" /><!-- minWidth="200" GridPane.columnIndex="0" wrapText="false"
+							GridPane.rowIndex="2" GridPane.columnSpan="1"
+							GridPane.halignment="CENTER" GridPane.valignment="TOP"
+							GridPane.fillHeight="true" GridPane.vgrow="ALWAYS" -->
+						</ScrollPane>
 					</children>
 				</GridPane>
 				<GridPane GridPane.fillHeight="true"

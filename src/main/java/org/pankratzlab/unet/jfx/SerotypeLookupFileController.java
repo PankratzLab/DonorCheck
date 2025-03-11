@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
-import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import com.google.common.base.Strings;
 import javafx.beans.property.SimpleStringProperty;
@@ -96,7 +96,7 @@ public class SerotypeLookupFileController {
   /** Link together a local property, text display and global property */
   private void init(StringProperty localProp, TextField tableField, String propertyName) {
     tableField.textProperty().bind(localProp);
-    String fileProp = HLAProperties.get().getProperty(propertyName);
+    String fileProp = DonorCheckProperties.get().getProperty(propertyName);
 
     if (!Strings.isNullOrEmpty(fileProp)) {
       if (!new File(fileProp).exists()) {
@@ -108,7 +108,7 @@ public class SerotypeLookupFileController {
 
     localProp.addListener((obs, o, n) -> {
       if (!Strings.isNullOrEmpty(n) && Files.exists(Paths.get(n))) {
-        HLAProperties.get().setProperty(propertyName, n);
+        DonorCheckProperties.get().setProperty(propertyName, n);
         dirty = true;
       }
     });

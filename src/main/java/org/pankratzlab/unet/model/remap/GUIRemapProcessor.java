@@ -196,12 +196,15 @@ public class GUIRemapProcessor implements RemapProcessor {
     SeroType seroType1 = hlaType1.equivSafe();
     SeroType seroType2 = hlaType2.equivSafe();
 
-    boolean a1Match =
-        hlaType1.compareTo(hlaType1_First) == 0 || hlaType1.compareTo(hlaType2_First) == 0;
-    boolean a2Match =
-        hlaType2.compareTo(hlaType1_First) == 0 || hlaType2.compareTo(hlaType2_First) == 0;
+    boolean a1_11_match = hlaType1.compareTo(hlaType1_First) == 0;
+    boolean a1_12_match = hlaType1.compareTo(hlaType2_First) == 0;
+    boolean a2_21_match = hlaType2.compareTo(hlaType1_First) == 0;
+    boolean a2_22_match = hlaType2.compareTo(hlaType2_First) == 0;
 
-    if (!a1Match || !a2Match) {
+    boolean check11 = a1_11_match && a2_22_match;
+    boolean check12 = a1_12_match && a2_21_match;
+
+    if (!(check11 || check12)) {
       // locusSet.clear();
       // locusSet.add(seroType1);
       // locusSet.add(seroType2);

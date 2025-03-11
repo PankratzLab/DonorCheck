@@ -28,7 +28,7 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
-import org.pankratzlab.unet.deprecated.hla.HLAProperties;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import com.google.common.base.Strings;
@@ -130,7 +130,7 @@ public class DownloadNMDPController {
   /** Link together a local property, text display and global property */
   private void init(StringProperty localProp, TextField tableField, String propertyName) {
     tableField.textProperty().bind(localProp);
-    String nmdpProp = HLAProperties.get().getProperty(propertyName);
+    String nmdpProp = DonorCheckProperties.get().getProperty(propertyName);
 
     if (!Strings.isNullOrEmpty(nmdpProp)) {
       if (!new File(nmdpProp).exists()) {
@@ -142,7 +142,7 @@ public class DownloadNMDPController {
 
     localProp.addListener((obs, o, n) -> {
       if (!Strings.isNullOrEmpty(n) && Files.exists(Paths.get(n))) {
-        HLAProperties.get().setProperty(propertyName, n);
+        DonorCheckProperties.get().setProperty(propertyName, n);
         dirty = true;
       }
     });

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.pankratzlab</groupId>
 	<artifactId>donorcheck</artifactId>
 	<!-- if version number changes, be sure to update in project.properties file also -->
-	<version>1.2.5</version>
+	<version>1.2.6</version>
 	<packaging>jar</packaging>
 
 	<description>A stand-alone tool for validating DonorNet typing entries.</description>
@@ -76,6 +76,30 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>2.1.0-alpha1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.5.16</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-core</artifactId>
+			<version>1.5.16</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.12.1</version>
+		</dependency>
+		
+		<dependency>
 			<groupId>org.pankratzlab</groupId>
 			<artifactId>BackgroundDataProcessor-java11</artifactId>
 			<version>1.0-SNAPSHOT</version>
@@ -103,7 +127,7 @@
 		<dependency>
 			<groupId>org.controlsfx</groupId>
 			<artifactId>controlsfx</artifactId>
-			<version>8.40.14</version>
+			<version>11.2.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -131,17 +155,40 @@
 			<groupId>org.apache.poi</groupId>
 			<artifactId>ooxml-schemas</artifactId>
 			<version>1.3</version>
+		</dependency>		
+		
+		<dependency>
+  			<groupId>com.dlsc.preferencesfx</groupId>
+  			<artifactId>preferencesfx-core</artifactId>
+  			<version>11.17.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+			<version>22.0.2</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>2.18.0</version>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-fxml</artifactId>
+			<version>22.0.2</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.18.0</version>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-graphics</artifactId>
+			<version>22.0.2</version>
 		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-base</artifactId>
+			<version>22.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-swing</artifactId>
+			<version>22.0.2</version>
+		</dependency>
+
 		<!-- Test scope dependencies - not included in .jars built with Maven -->
 		<!-- JUnit - http://junit.org/ -->
 		<dependency>
@@ -187,31 +234,7 @@
 			<version>2.27.0</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-controls</artifactId>
-			<version>22.0.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-fxml</artifactId>
-			<version>22.0.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-graphics</artifactId>
-			<version>22.0.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-base</artifactId>
-			<version>22.0.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-swing</artifactId>
-			<version>22.0.2</version>
-		</dependency>
+		
 	</dependencies>
 
 

@@ -71,6 +71,10 @@ public class XmlDonorParser extends AbstractDonorFileParser {
     return EXTENSION_DESC;
   }
 
+  public static String getTypeString() {
+    return DISPLAY_STRING;
+  }
+
   @Override
   protected String getDisplayString() {
     return DISPLAY_STRING;

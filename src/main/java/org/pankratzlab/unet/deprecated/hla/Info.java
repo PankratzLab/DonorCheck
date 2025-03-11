@@ -32,18 +32,17 @@ import org.pankratzlab.unet.jfx.LandingController;
  */
 public class Info {
   public static final String MANIFEST_MAIN = "Main-Class";
-  public static final String HLA_HOME =
-      System.getProperty("user.home") + File.separator + ".donor_check" + File.separator;
+  public static final String DONOR_CHECK_HOME = System.getProperty("user.home") + File.separator + ".donor_check" + File.separator;
   /** Filename of the last requested version */
-  public static final String VERSION_TO_LOAD = HLA_HOME + ".version.load.ser";
+  public static final String VERSION_TO_LOAD = DONOR_CHECK_HOME + ".version.load.ser";
 
   /** List of all available versions */
-  public static final String VERSIONS_KNOWN_LIST = HLA_HOME + ".version.avail.ser";
+  public static final String VERSIONS_KNOWN_LIST = DONOR_CHECK_HOME + ".version.avail.ser";
 
   public static final String REMOTE_URL = "http://www.genvisis.org/";
   public static final String REMOTE_VERSION_FILE = REMOTE_URL + "hla_releases.txt";
 
-  public static final String LOCAL_VERSIONS_DIR = HLA_HOME + ".hlaversions" + File.separator;
+  public static final String LOCAL_VERSIONS_DIR = DONOR_CHECK_HOME + ".hlaversions" + File.separator;
 
   private static String version = null;
 
@@ -51,8 +50,7 @@ public class Info {
     if (version == null) {
       try {
         final Properties properties = new Properties();
-        properties.load(
-            LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
+        properties.load(LandingController.class.getClassLoader().getResourceAsStream("project.properties"));
         version = properties.getProperty("version");
       } catch (IOException e) {
         throw new RuntimeException(e);

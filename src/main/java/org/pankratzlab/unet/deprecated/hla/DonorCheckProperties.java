@@ -27,14 +27,34 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+import org.pankratzlab.unet.parser.PdfDonorParser;
+import org.pankratzlab.unet.parser.XmlDonorParser;
 
 /**
  * Helper class for managing persistent properties from a central location. Use {@link #get()} to
  * get the application-specific property values for the HLA suite. These will automatically be
  * updated on app shutdown.
  */
-public final class HLAProperties {
-  private static final String PROP_FILE = Info.HLA_HOME + "hla.properties";
+public final class DonorCheckProperties {
+  private static final String PROP_FILE = Info.DONOR_CHECK_HOME + "hla.properties";
+
+  public static final String FIRST_TYPE = "FIRST_TYPE";
+  public static final String FIRST_TYPE_DEFAULT = PdfDonorParser.getTypeString();
+
+  public static final String SECOND_TYPE = "SECOND_TYPE";
+  public static final String SECOND_TYPE_DEFAULT = XmlDonorParser.getTypeString();
+
+  public static final String USE_ALLELE_CALL = "USE_ALLELE_CALL";
+  public static final String USE_ALLELE_CALL_DEFAULT = "true";
+
+  public static final String SURETYPER_ALLOW_INVALID_DQA_ALLELES = "ALLOW_INVALID_SURETYPER_ALLELES";
+  public static final String SURETYPER_ALLOW_INVALID_DQA_ALLELES_DEFAULT = "true";
+
+  public static final String FAIL_OR_DISCARD_IF_AC_INVALID = "FAIL_OR_DISCARD_IF_AC_INVALID";
+  public static final String AC_INVALID_FAIL = "Fail";
+  public static final String AC_INVALID_DISCARD = "Discard";
+  public static final String FAIL_OR_DISCARD_IF_AC_INVALID_DEFAULT = AC_INVALID_FAIL;
+
   private static Properties hlaProps;
 
   public static Properties get() {
@@ -42,6 +62,24 @@ public final class HLAProperties {
       loadProps();
     }
     return hlaProps;
+  }
+
+  public static String getOrDefault(String key) {
+    get();
+    switch (key) {
+      case FIRST_TYPE:
+        return hlaProps.getProperty(FIRST_TYPE, FIRST_TYPE_DEFAULT);
+      case SECOND_TYPE:
+        return hlaProps.getProperty(SECOND_TYPE, SECOND_TYPE_DEFAULT);
+      case USE_ALLELE_CALL:
+        return hlaProps.getProperty(USE_ALLELE_CALL, USE_ALLELE_CALL_DEFAULT);
+      case SURETYPER_ALLOW_INVALID_DQA_ALLELES:
+        return hlaProps.getProperty(SURETYPER_ALLOW_INVALID_DQA_ALLELES, SURETYPER_ALLOW_INVALID_DQA_ALLELES_DEFAULT);
+      case FAIL_OR_DISCARD_IF_AC_INVALID:
+        return hlaProps.getProperty(FAIL_OR_DISCARD_IF_AC_INVALID, FAIL_OR_DISCARD_IF_AC_INVALID_DEFAULT);
+      default:
+        return null;
+    }
   }
 
   /**

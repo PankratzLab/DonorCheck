@@ -40,6 +40,7 @@ import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
 import org.pankratzlab.unet.jfx.macui.MACUIController;
+import org.pankratzlab.unet.jfx.prop.DCProperty;
 import org.pankratzlab.unet.jfx.wizard.FileInputController;
 import org.pankratzlab.unet.jfx.wizard.ValidatingWizardController;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
@@ -47,6 +48,7 @@ import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
 import org.pankratzlab.unet.validation.ValidationTesting.TestLoadingResults;
+import com.dlsc.preferencesfx.PreferencesFx;
 import com.google.common.base.Strings;
 import com.google.common.collect.Table;
 import javafx.application.Platform;
@@ -71,10 +73,8 @@ import javafx.stage.Window;
 /** Controller instance for the main user page. Validation wizards can be launched from here. */
 public class LandingController {
 
-  private static final String WEBSITE_DONORCHECK_GITHUB =
-      "https://github.com/PankratzLab/DonorCheck";
-  private static final String WEBSITE_COMP_PATH =
-      "https://med.umn.edu/pathology/research/computational-pathology";
+  private static final String WEBSITE_DONORCHECK_GITHUB = "https://github.com/PankratzLab/DonorCheck";
+  private static final String WEBSITE_COMP_PATH = "https://med.umn.edu/pathology/research/computational-pathology";
   private static final String UNET_BASE_DIR_PROP = "unet.base.dir";
   private static final String MACUI_ENTRY = "/MACUIConversionPanel.fxml";
 
@@ -98,6 +98,11 @@ public class LandingController {
   private Label menuVersionLabel;
 
   private String version;
+
+  @FXML
+  void editPreferences() {
+    PreferencesFx.of(new DCProperty.PropertiesStorageHandler(), DCProperty.getTopLevelCategories()).show(true);
+  }
 
   @FXML
   void fileQuitAction(ActionEvent event) {
@@ -133,13 +138,14 @@ public class LandingController {
         TestLoadingResults validationDirectory = ValidationTesting.loadValidationDirectory();
 
         return validationDirectory;
-      } catch (Exception e1) {
+      } catch (Throwable e1) {
         e1.printStackTrace();
-        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
-            ButtonType.CLOSE);
-        alert1.setTitle("Error");
-        alert1.setHeaderText("");
-        alert1.showAndWait();
+        Platform.runLater(() -> {
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+          alert1.setTitle("Error");
+          alert1.setHeaderText("");
+          alert1.showAndWait();
+        });
         throw new IllegalStateException("Error loading test data: " + e1.getMessage());
       }
     });
@@ -149,13 +155,14 @@ public class LandingController {
         TestLoadingResults testLoad;
         try {
           testLoad = manageValidationTask.get();
-        } catch (Exception e1) {
+        } catch (Throwable e1) {
           e1.printStackTrace();
-          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
-              ButtonType.CLOSE);
-          alert1.setTitle("Error");
-          alert1.setHeaderText("");
-          alert1.showAndWait();
+          Platform.runLater(() -> {
+            Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+            alert1.setTitle("Error");
+            alert1.setHeaderText("");
+            alert1.showAndWait();
+          });
           return;
         }
 
@@ -163,8 +170,7 @@ public class LandingController {
           Alert alert1 = new Alert(AlertType.ERROR);
           alert1.getButtonTypes().add(ButtonType.CLOSE);
 
-          String content = "Please remove the listed tests manually from this directory: \n\n"
-              + ValidationTesting.VALIDATION_DIRECTORY + "\n";
+          String content = "Please remove the listed tests manually from this directory: \n\n" + ValidationTesting.VALIDATION_DIRECTORY + "\n";
           for (String invalidTest : testLoad.invalidTests) {
             content += "\n" + invalidTest;
           }
@@ -179,38 +185,37 @@ public class LandingController {
           alert1.showAndWait();
         }
 
-        Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
-
-        BatchTestMgmtController controller = new BatchTestMgmtController();
-
-        FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
-        loader.setController(controller);
-
-        Scene newScene;
         try {
+          Table<SOURCE, String, List<ValidationTestFileSet>> testData = testLoad.testSets;
+
+          BatchTestMgmtController controller = new BatchTestMgmtController();
+
+          FXMLLoader loader = new FXMLLoader(LandingController.class.getResource(TESTING_MGMT));
+          loader.setController(controller);
+
+          Scene newScene;
           newScene = new Scene(loader.load());
           Stage inputStage = new Stage();
           inputStage.initOwner(rootPane.getScene().getWindow());
           inputStage.initModality(Modality.APPLICATION_MODAL);
-          inputStage
-              .setTitle("DonorCheck " + (version.isEmpty() ? "" : version) + ": batch validation");
+          inputStage.setTitle("DonorCheck " + (version.isEmpty() ? "" : version) + ": batch validation");
           inputStage.setResizable(true);
           inputStage.setScene(newScene);
           controller.setTable(testData);
           inputStage.showAndWait();
-        } catch (IOException e1) {
+        } catch (Throwable e1) {
           e1.printStackTrace();
-          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
-              ButtonType.CLOSE);
-          alert1.setTitle("Error");
-          alert1.setHeaderText("");
-          alert1.showAndWait();
+          Platform.runLater(() -> {
+            Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+            alert1.setTitle("Error");
+            alert1.setHeaderText("");
+            alert1.showAndWait();
+          });
         }
       });
     };
 
     manageValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
-
 
     new Thread(manageValidationTask).start();
   }
@@ -238,15 +243,14 @@ public class LandingController {
         allTests = loadTestsTask.get();
       } catch (InterruptedException | ExecutionException e1) {
         e1.printStackTrace();
-        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(),
-            ButtonType.CLOSE);
+        Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
         alert1.setTitle("Error");
         alert1.setHeaderText("");
         alert1.showAndWait();
         return;
       }
 
-      ValidationTesting.runTests(allTests);
+      ValidationTesting.runTests(rootPane, allTests);
     };
 
     loadTestsTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
@@ -306,19 +310,16 @@ public class LandingController {
 
       // Don't actually run this as an event, though - make it a runnable on the JFX App thread
       Platform.runLater(() -> {
-        if (!HaplotypeFrequencies.successfullyInitialized()) {
+        if (!HaplotypeFrequencies.successfullyInitialized().get()) {
           Alert alert = new Alert(AlertType.INFORMATION,
-              "Haplotype Frequency Tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
-                  + "Would you like to set these tables now?\n\n"
-                  + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+              "Haplotype frequency tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
+                  + "Would you like to set these tables now?\n\n" + "Note: you can adjust these tables any time from the 'Haplotype' menu",
               ButtonType.YES, ButtonType.NO);
           alert.setTitle("No haplotype frequencies");
           alert.setHeaderText("");
-          alert.showAndWait().filter(response -> response == ButtonType.YES)
-              .ifPresent(response -> chooseFreqTables(event));
+          alert.showAndWait().filter(response -> response == ButtonType.YES).ifPresent(response -> chooseFreqTables(event));
         } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
-          Alert alert =
-              new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
+          Alert alert = new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
           alert.setTitle("Missing haplotype table(s)");
           alert.setHeaderText("");
           alert.showAndWait();
@@ -365,8 +366,7 @@ public class LandingController {
    * @param controller Controller instance to attach to this page
    * @throws IOException If errors during FXML reading
    */
-  public static void makePage(List<WizardPane> pages, @Nullable ValidationTable table,
-      String pageFXML, Object controller) throws IOException {
+  public static void makePage(List<WizardPane> pages, @Nullable ValidationTable table, String pageFXML, Object controller) throws IOException {
     try (InputStream is = TypeValidationApp.class.getResourceAsStream(pageFXML)) {
       FXMLLoader loader = new FXMLLoader();
       // NB: reading the controller from FMXL can cause problems

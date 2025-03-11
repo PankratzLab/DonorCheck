@@ -47,7 +47,7 @@ public final class AntigenDictionary implements Serializable {
 
   public static final String REL_DNA_SER_PROP = "rel.dna.ser.file";
 
-  public static final String SERIALIZED_MAP = Info.HLA_HOME + ".hla/map.ser";
+  public static final String SERIALIZED_MAP = Info.DONOR_CHECK_HOME + ".hla/map.ser";
   public static final String MASTER_MAP_RECORDS = "rel_dna_ser.txt";
   private static final String COMMENT = "#";
   private static final String COL_DELIM = ";";
@@ -151,7 +151,7 @@ public final class AntigenDictionary implements Serializable {
 
   /** Build the dictionaries. Synchronized to ensured they are initialized only once */
   private static synchronized void loadDictionaries() {
-    String filePath = HLAProperties.get().getProperty(REL_DNA_SER_PROP);
+    String filePath = DonorCheckProperties.get().getProperty(REL_DNA_SER_PROP);
     if (map == null) {
       if (!Strings.isNullOrEmpty(filePath) && (new File(filePath)).exists()) {
         parseDictionaries(() -> new FileReader(filePath));
@@ -291,7 +291,7 @@ public final class AntigenDictionary implements Serializable {
   }
 
   public static String getVersion() {
-    String filePath = HLAProperties.get().getProperty(REL_DNA_SER_PROP);
+    String filePath = DonorCheckProperties.get().getProperty(REL_DNA_SER_PROP);
     if (filePath == null || Strings.isNullOrEmpty(filePath) || !(new File(filePath)).exists()) {
       return getBundledVersion() + " (bundled)";
     }

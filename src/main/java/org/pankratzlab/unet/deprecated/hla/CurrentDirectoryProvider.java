@@ -49,7 +49,7 @@ public final class CurrentDirectoryProvider {
   public static FileChooser getFileChooser() {
     FileChooser fc = new FileChooser();
 
-    File baseDir = new File(HLAProperties.get().getProperty(baseDirProp(), DEFAULT_BASE_DIR));
+    File baseDir = new File(DonorCheckProperties.get().getProperty(baseDirProp(), DEFAULT_BASE_DIR));
     if (baseDir.exists() && baseDir.isDirectory()) {
       fc.setInitialDirectory(baseDir);
     }
@@ -59,7 +59,7 @@ public final class CurrentDirectoryProvider {
   }
 
   public static void setBaseDir(File dir) {
-    HLAProperties.get().put(baseDirProp(), dir.getAbsolutePath());
+    DonorCheckProperties.get().put(baseDirProp(), dir.getAbsolutePath());
   }
 
   public static void setInitialFileName(String name) {

@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import org.pankratzlab.BackgroundDataProcessor;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.LoggingPlaceholder;
 import org.pankratzlab.unet.deprecated.jfx.JFXPropertyHelper;
@@ -89,12 +90,26 @@ public class FileInputController extends AbstractValidatingWizardController {
     invalidBinding = Bindings.createBooleanBinding(() -> selectedFileProperties.isEmpty(),
         selectedFileProperties);
 
-    inputFiles_VBox.getChildren()
-        .add(createFileBox(PdfDonorParser.class, ValidationTable::setFirstModel));
-    inputFiles_VBox.getChildren()
-        .add(createFileBox(XmlDonorParser.class, ValidationTable::setSecondModel));
+    DonorFileParser f = getParser(DonorCheckProperties.get()
+        .getProperty(DonorCheckProperties.FIRST_TYPE, PdfDonorParser.getTypeString()));
+    DonorFileParser s = getParser(DonorCheckProperties.get()
+        .getProperty(DonorCheckProperties.SECOND_TYPE, XmlDonorParser.getTypeString()));
+
+    inputFiles_VBox.getChildren().add(createFileBox(f.getClass(), ValidationTable::setFirstModel));
+    inputFiles_VBox.getChildren().add(createFileBox(s.getClass(), ValidationTable::setSecondModel));
 
     rootPane().setInvalidBinding(invalidBinding);
+  }
+
+  private DonorFileParser getParser(String type) {
+    if (Objects.equals(type, PdfDonorParser.getTypeString())) {
+      return new PdfDonorParser();
+    } else if (Objects.equals(type, XmlDonorParser.getTypeString())) {
+      return new XmlDonorParser();
+    } else if (Objects.equals(type, HtmlDonorParser.getTypeString())) {
+      return new HtmlDonorParser();
+    }
+    return null;
   }
 
   @FXML

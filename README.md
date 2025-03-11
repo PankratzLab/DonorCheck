@@ -45,7 +45,7 @@ This project is open source, distributed under the GPL v2 license. The applicati
 
 ## Code Style
 
-We use Google's java code format. Current version: [1.6](https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-eclipse-plugin_1.6.0.jar)
+We use Google's java code format. Current version: [1.25.2](https://github.com/google/google-java-format/releases/download/v1.25.2/google-java-format-eclipse-plugin-1.25.2.jar)
 
 
 # Building DonorCheck

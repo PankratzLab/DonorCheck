@@ -17,8 +17,8 @@ import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
 import org.pankratzlab.unet.deprecated.hla.AntigenDictionary;
+import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
-import org.pankratzlab.unet.deprecated.hla.HLAProperties;
 import org.pankratzlab.unet.deprecated.hla.Info;
 import org.pankratzlab.unet.deprecated.hla.SourceType;
 import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
@@ -30,7 +30,6 @@ import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
 import org.pankratzlab.unet.validation.AlertHelper;
 import org.pankratzlab.unet.validation.TEST_EXPECTATION;
-import org.pankratzlab.unet.validation.TEST_RESULT;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
 import org.pankratzlab.unet.validation.XMLRemapProcessor;
@@ -58,6 +57,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Callback;
@@ -65,18 +65,15 @@ import javafx.util.converter.DefaultStringConverter;
 
 public class BatchTestMgmtController {
 
-  private static final String PASS = "Pass";
-  private static final String EXPECTED_FAILURE = "Expected failure";
-  private static final String UNEXPECTED_PASS = "Unexpected pass";
-  private static final String UNEXPECTED_FAILURE = "Unexpected failure";
-  private static final String UNEXPECTED_ERROR = "Unexpected error";
-  private static final String EXPECTED_ERROR = "Expected error";
 
   @FXML
   private ResourceBundle resources;
 
   @FXML
   private URL location;
+
+  @FXML
+  private VBox rootPane;
 
   @FXML
   TableView<ValidationTestFileSet> testTable;
@@ -130,8 +127,7 @@ public class BatchTestMgmtController {
 
   private <V> Callback<TableColumn<ValidationTestFileSet, String>, TableCell<ValidationTestFileSet, String>> getEditableCellFactory() {
     Callback<TableColumn<ValidationTestFileSet, String>, TableCell<ValidationTestFileSet, String>> c1 =
-        list -> configureTableCell(
-            new TextFieldTableCell<ValidationTestFileSet, String>(new DefaultStringConverter()));
+        list -> configureTableCell(new TextFieldTableCell<ValidationTestFileSet, String>(new DefaultStringConverter()));
     return c1;
   }
 
@@ -160,6 +156,7 @@ public class BatchTestMgmtController {
     assert testIDColumn != null : "fx:id=\"testIDColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
     assert testTable != null : "fx:id=\"testTable\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
 
+
     testTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     testTable.setEditable(true);
 
@@ -174,11 +171,14 @@ public class BatchTestMgmtController {
       try {
         oldTest.id.set(ev.getNewValue());
         newTest = ValidationTesting.updateTestID(oldId, oldTest);
-        testTable.itemsProperty().get().set(testTable.itemsProperty().get().indexOf(oldTest),
-            newTest);
+        testTable.itemsProperty().get().set(testTable.itemsProperty().get().indexOf(oldTest), newTest);
         testTable.refresh();
       } catch (IllegalStateException e) {
-        AlertHelper.showMessage_ErrorUpdatingTestID(ev.getNewValue(), oldId, e.getCause());
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+          cause = cause.getCause();
+        }
+        AlertHelper.showMessage_ErrorUpdatingTestID(ev.getNewValue(), oldId, cause);
         testTable.refresh();
       }
     });
@@ -195,7 +195,11 @@ public class BatchTestMgmtController {
         ValidationTesting.updateTestProperties(ev.getRowValue());
         testTable.refresh();
       } catch (IllegalStateException e) {
-        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+          cause = cause.getCause();
+        }
+        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), cause);
         testTable.refresh();
       }
     });
@@ -214,7 +218,11 @@ public class BatchTestMgmtController {
         ValidationTesting.updateTestProperties(ev.getRowValue());
         testTable.refresh();
       } catch (Throwable e) {
-        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), e.getCause());
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+          cause = cause.getCause();
+        }
+        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), cause);
         testTable.refresh();
       }
     });
@@ -225,51 +233,15 @@ public class BatchTestMgmtController {
       ValidationTestFileSet value = p.getValue();
       return Bindings.createStringBinding(() -> {
         String ver = value.donorCheckVersion.getValueSafe();
-        String date = format.format(value.lastRunDate.getValue());
+        String date = value.lastRunDate.getValue() == null ? "---" : format.format(value.lastRunDate.getValue());
         return date + (ver.isBlank() ? "" : " (" + ver + ")");
       }, value.donorCheckVersion, value.lastRunDate);
     });
 
     lastRunResultColumn.setCellValueFactory(p -> {
       return Bindings.createStringBinding(() -> {
-        TEST_RESULT testResult = p.getValue().lastTestResult.get();
-
-        String v = "";
-        switch (p.getValue().expectedResult.get()) {
-          case Error:
-            // expecting an error
-            if (testResult != TEST_RESULT.TEST_SUCCESS && testResult != TEST_RESULT.TEST_FAILURE) {
-              // got an error
-              v = EXPECTED_ERROR;
-            } else {
-              if (testResult == TEST_RESULT.TEST_SUCCESS) {
-                // didn't get an error
-                v = UNEXPECTED_PASS;
-              } else if (testResult == TEST_RESULT.TEST_FAILURE) {
-                // didn't get an error
-                v = UNEXPECTED_FAILURE;
-              }
-            }
-            break;
-          case Pass:
-            if (testResult == TEST_RESULT.TEST_SUCCESS) {
-              v = PASS;
-            } else if (testResult == TEST_RESULT.TEST_FAILURE) {
-              v = UNEXPECTED_FAILURE;
-            } else {
-              v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
-            }
-            break;
-          case Fail:
-            if (testResult == TEST_RESULT.TEST_SUCCESS) {
-              v = UNEXPECTED_PASS;
-            } else if (testResult == TEST_RESULT.TEST_FAILURE) {
-              v = EXPECTED_FAILURE;
-            } else {
-              v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
-            }
-            break;
-        };
+        ValidationTestFileSet value = p.getValue();
+        String v = ValidationTesting.computeInterpretation(value);
         return v;
       }, p.getValue().expectedResult, p.getValue().lastTestResult);
     });
@@ -280,20 +252,10 @@ public class BatchTestMgmtController {
         protected void updateItem(String value, boolean empty) {
           super.updateItem(value, empty);
           if (value == null) {
-            setText(null);
+            setText("");
             setStyle("");
           } else {
-            String color = null;
-            if (value.startsWith(PASS) || value.startsWith(EXPECTED_FAILURE)
-                || value.startsWith(EXPECTED_ERROR)) {
-              color = "LimeGreen";
-            } else if (value.startsWith(UNEXPECTED_FAILURE)) {
-              color = "Orange";
-            } else if (value.startsWith(UNEXPECTED_PASS)) {
-              color = "Lime";
-            } else if (value.startsWith(UNEXPECTED_ERROR)) {
-              color = "OrangeRed";
-            }
+            String color = ValidationTesting.computeColor(value);
             if (color != null) {
               setStyle("-fx-background-color: " + color + "; -fx-text-fill: black");
             } else {
@@ -315,10 +277,9 @@ public class BatchTestMgmtController {
         protected void updateItem(ObservableSet<SourceType> value, boolean empty) {
           super.updateItem(value, empty);
           if (value == null) {
-            setText(null);
+            setText("");
           } else {
-            setText(value.stream().sorted().map(SourceType::getDisplayName)
-                .collect(Collectors.joining(", ")));
+            setText(value.stream().sorted().map(SourceType::getDisplayName).collect(Collectors.joining(", ")));
           }
         }
       });
@@ -326,10 +287,8 @@ public class BatchTestMgmtController {
 
     manualEditsColumn.setCellValueFactory(p -> {
       ReadOnlyStringProperty valueSafe = p.getValue().remapFile;
-      if (valueSafe != null && valueSafe.get() != null && !valueSafe.get().isBlank()
-          && new File(valueSafe.get()).exists()) {
-        return new SimpleStringProperty(p.getValue().remappedLoci.get().stream().map(HLALocus::name)
-            .collect(Collectors.joining(", ")));
+      if (valueSafe != null && valueSafe.get() != null && !valueSafe.get().isBlank() && new File(valueSafe.get()).exists()) {
+        return new SimpleStringProperty(p.getValue().remappedLoci.get().stream().map(HLALocus::name).collect(Collectors.joining(", ")));
       } else {
         return new SimpleStringProperty("");
       }
@@ -341,20 +300,34 @@ public class BatchTestMgmtController {
       return p.getValue().cwdSource;
     });
 
-    ciwdVersionColumn
-        .setCellFactory(param -> configureTableCell(new TableCell<ValidationTestFileSet, SOURCE>() {
-          @Override
-          protected void updateItem(SOURCE value, boolean empty) {
-            super.updateItem(value, empty);
-            setText(value == null ? "" : value.getVersion());
-          }
-        }));
+    ciwdVersionColumn.setCellFactory(param -> configureTableCell(new TableCell<ValidationTestFileSet, SOURCE>() {
+      @Override
+      protected void updateItem(SOURCE value, boolean empty) {
+        super.updateItem(value, empty);
+        setText(value == null ? "" : value.getVersion());
+      }
+    }));
 
     relDnaSerVersion.setCellValueFactory(p -> {
-      return p.getValue().relDnaSerFile.map(AntigenDictionary::getVersion).orElse("");
+      return p.getValue().relDnaSerFile.map(os -> {
+        String v = "Unknown";
+        v = AntigenDictionary.getVersion(os);
+        if (v == null) {
+          v = "File missing (" + os + ")";
+        }
+        return v;
+      }).orElse("");
     });
 
     relDnaSerVersion.setCellFactory(getDefaultTextTableCellFactory());
+
+    removeSelectedButton.textProperty().bind(Bindings.createStringBinding(() -> {
+      int t = testTable.getSelectionModel().getSelectedIndices().size();
+      if (t == 0) {
+        return "Remove selected tests";
+      }
+      return "Remove " + t + " selected test" + (t > 1 ? "s" : "");
+    }, testTable.getSelectionModel().selectedIndexProperty()));
 
     // Any selection enable/disable
     removeSelectedButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
@@ -363,6 +336,14 @@ public class BatchTestMgmtController {
 
     runSelectedButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
       return testTable.getSelectionModel().getSelectedIndices().isEmpty();
+    }, testTable.getSelectionModel().selectedIndexProperty()));
+
+    runSelectedButton.textProperty().bind(Bindings.createStringBinding(() -> {
+      int t = testTable.getSelectionModel().getSelectedIndices().size();
+      if (t == 0) {
+        return "Run selected tests";
+      }
+      return "Run " + t + " selected test" + (t > 1 ? "s" : "");
     }, testTable.getSelectionModel().selectedIndexProperty()));
 
     // Table not empty enable/disable
@@ -378,7 +359,6 @@ public class BatchTestMgmtController {
     openTestButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
       return testTable.getSelectionModel().getSelectedIndices().size() != 1;
     }, testTable.getSelectionModel().selectedIndexProperty()));
-
   }
 
   public <T> Callback<TableColumn<ValidationTestFileSet, T>, TableCell<ValidationTestFileSet, T>> getDefaultTextTableCellFactory() {
@@ -386,63 +366,48 @@ public class BatchTestMgmtController {
       @Override
       protected void updateItem(T value, boolean empty) {
         super.updateItem(value, empty);
-        setText(Objects.toString(value).trim());
+        setText(value == null ? "" : Objects.toString(value).trim());
       }
     });
   }
 
-  private String convert(String s) {
-    String v = s.replace('_', ' ').toLowerCase();
-    v = v.substring(0, 1).toUpperCase() + v.substring(1);
-    return v;
-  }
-
   public void setTable(Table<SOURCE, String, List<ValidationTestFileSet>> testData) {
-    ObservableList<ValidationTestFileSet> testList = FXCollections.observableArrayList(
-        testData.values().stream().flatMap(List::stream).collect(Collectors.toList()));
+    ObservableList<ValidationTestFileSet> testList =
+        FXCollections.observableArrayList(testData.values().stream().flatMap(List::stream).collect(Collectors.toList()));
     testTable.setItems(testList);
   }
 
   @FXML
   void removeSelected() {
-    List<ValidationTestFileSet> toRemove =
-        testTable.selectionModelProperty().get().getSelectedItems();
+    List<ValidationTestFileSet> toRemove = testTable.selectionModelProperty().get().getSelectedItems();
 
-    Alert alert =
-        new Alert(AlertType.CONFIRMATION, "Are you sure you'd like to remove " + toRemove.size()
-            + " test" + (toRemove.size() > 1 ? "s" : "") + "?", ButtonType.OK, ButtonType.CANCEL);
+    Alert alert = new Alert(AlertType.CONFIRMATION,
+        "Are you sure you'd like to remove " + toRemove.size() + " test" + (toRemove.size() > 1 ? "s" : "") + "?", ButtonType.OK, ButtonType.CANCEL);
     alert.setTitle("Remove tests");
     alert.setHeaderText("");
     Optional<ButtonType> selVal = alert.showAndWait();
 
     if (selVal.isPresent() && selVal.get() == ButtonType.OK) {
       Map<ValidationTestFileSet, Boolean> results = ValidationTesting.deleteTests(toRemove);
-      Set<ValidationTestFileSet> removed = results.entrySet().stream().filter(e -> e.getValue())
-          .map(Map.Entry::getKey).collect(Collectors.toSet());
-      Set<ValidationTestFileSet> notRemoved = results.entrySet().stream().filter(e -> !e.getValue())
-          .map(Map.Entry::getKey).collect(Collectors.toSet());
+      Set<ValidationTestFileSet> removed = results.entrySet().stream().filter(e -> e.getValue()).map(Map.Entry::getKey).collect(Collectors.toSet());
+      Set<ValidationTestFileSet> notRemoved =
+          results.entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).collect(Collectors.toSet());
       testTable.getItems().removeAll(toRemove);
 
       if (removed.size() == toRemove.size()) {
-        Alert alert1 = new Alert(AlertType.INFORMATION,
-            "Successfully removed " + toRemove.size() + " test" + (toRemove.size() > 1 ? "s" : ""),
+        Alert alert1 = new Alert(AlertType.INFORMATION, "Successfully removed " + toRemove.size() + " test" + (toRemove.size() > 1 ? "s" : ""),
             ButtonType.CLOSE);
         alert1.setTitle("Successfully removed tests");
         alert1.setHeaderText("");
         alert1.showAndWait();
       } else {
-        Alert alert1 = new Alert(AlertType.WARNING,
-            "Failed to remove " + notRemoved.size() + " test" + (notRemoved.size() > 1 ? "s" : "")
-                + "\n\nSuccessfully removed " + removed.size() + " test"
-                + (removed.size() > 1 ? "s" : ""),
-            ButtonType.CLOSE);
+        Alert alert1 = new Alert(AlertType.WARNING, "Failed to remove " + notRemoved.size() + " test" + (notRemoved.size() > 1 ? "s" : "")
+            + "\n\nSuccessfully removed " + removed.size() + " test" + (removed.size() > 1 ? "s" : ""), ButtonType.CLOSE);
         alert1.setTitle("Failed to remove tests");
         alert1.setHeaderText("");
         alert1.showAndWait();
       }
-
     }
-
   }
 
   @FXML
@@ -466,26 +431,23 @@ public class BatchTestMgmtController {
 
       // Don't actually run this as an event, though - make it a runnable on the JFX App thread
       Platform.runLater(() -> {
-        if (!HaplotypeFrequencies.successfullyInitialized()) {
+        if (!HaplotypeFrequencies.successfullyInitialized().get()) {
           Alert alert = new Alert(AlertType.INFORMATION,
               "Haplotype Frequency Tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
-                  + "Would you like to set these tables now?\n\n"
-                  + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+                  + "Would you like to set these tables now?\n\n" + "Note: you can adjust these tables any time from the 'Haplotype' menu",
               ButtonType.YES, ButtonType.NO);
           alert.setTitle("No haplotype frequencies");
           alert.setHeaderText("");
-          alert.showAndWait().filter(response -> response == ButtonType.YES)
-              .ifPresent(response -> TutorialHelper.chooseFreqTables(null));
+          alert.showAndWait().filter(response -> response == ButtonType.YES).ifPresent(response -> TutorialHelper.chooseFreqTables(null));
         } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
-          Alert alert =
-              new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
+          Alert alert = new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
           alert.setTitle("Missing haplotype frequency table(s)");
           alert.setHeaderText("");
           alert.showAndWait();
         }
 
         SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
-        String currentRel = HLAProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+        String currentRel = DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
 
         SOURCE source = selectedItem.cwdSource.get();
         String rel = selectedItem.relDnaSerFile.get();
@@ -497,7 +459,7 @@ public class BatchTestMgmtController {
           changedCWID = true;
         }
         if (!new File(currentRel).equals(new File(rel))) {
-          HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
+          DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
           AntigenDictionary.clearCache();
           changedRel = true;
         }
@@ -514,8 +476,7 @@ public class BatchTestMgmtController {
         SourceType.parseFile(builder2, new File(f2));
         builder1.validate(false);
         builder2.validate(false);
-        if (selectedItem.remapFile != null && selectedItem.remapFile.get() != null
-            && new File(selectedItem.remapFile.get()).exists()) {
+        if (selectedItem.remapFile != null && selectedItem.remapFile.get() != null && new File(selectedItem.remapFile.get()).exists()) {
           XMLRemapProcessor processor = new XMLRemapProcessor(selectedItem.remapFile.get());
           if (builder1.hasCorrections() && processor.hasRemappings(builder1.getSourceType())) {
             builder1.processCorrections(processor);
@@ -526,8 +487,7 @@ public class BatchTestMgmtController {
         }
 
         try {
-          LandingController.makePage(pages, table, LandingController.RESULTS_STEP,
-              new ValidationResultsController());
+          LandingController.makePage(pages, table, LandingController.RESULTS_STEP, new ValidationResultsController());
           Wizard.Flow pageFlow = new LinearFlow(pages);
 
           pages.get(0).getButtonTypes();
@@ -549,13 +509,12 @@ public class BatchTestMgmtController {
             CommonWellDocumented.loadCIWDVersion(current);
           }
           if (changedRel) {
-            HLAProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
+            DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
             AntigenDictionary.clearCache();
           }
         } catch (IOException e) {
           e.printStackTrace();
-          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e.getMessage(),
-              ButtonType.CLOSE);
+          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e.getMessage(), ButtonType.CLOSE);
           alert1.setTitle("Error");
           alert1.setHeaderText("");
           alert1.showAndWait();
@@ -575,15 +534,13 @@ public class BatchTestMgmtController {
       Desktop.getDesktop().open(new File(dir));
     } catch (IOException e) {
       e.printStackTrace();
-      new Alert(AlertType.ERROR,
-          "Error opening directory for test " + selectedItem.id.get() + ":\n" + e.getMessage(),
-          ButtonType.CLOSE).showAndWait();
+      new Alert(AlertType.ERROR, "Error opening directory for test " + selectedItem.id.get() + ":\n" + e.getMessage(), ButtonType.CLOSE)
+          .showAndWait();
     }
   }
 
   private void runTasks(List<ValidationTestFileSet> tests) {
-    ValidationTesting.runTests(tests);
+    ValidationTesting.runTests(rootPane, tests);
   }
-
 
 }
