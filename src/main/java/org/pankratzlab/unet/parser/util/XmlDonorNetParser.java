@@ -90,8 +90,8 @@ public class XmlDonorNetParser {
     getXMLTagVal(donorRoot, "dqa2").ifPresent(s -> builder.dqaSerotype(decodeValue(dqaMap, s)));
     getXMLTagVal(donorRoot, "dpa1").ifPresent(s -> builder.dpaSerotype(decodeValue(dpaMap, s)));
     getXMLTagVal(donorRoot, "dpa2").ifPresent(s -> builder.dpaSerotype(decodeValue(dpaMap, s)));
-    getXMLTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpbSerotype(decodeValue(dpbMap, s)));
-    getXMLTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpbSerotype(decodeValue(dpbMap, s)));
+    getXMLTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
+    getXMLTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
 
     getXMLTagVal(donorRoot, "bw4").ifPresent(s -> builder.bw4(decodeXMLBoolean(s)));
     getXMLTagVal(donorRoot, "bw6").ifPresent(s -> builder.bw6(decodeXMLBoolean(s)));
@@ -151,9 +151,8 @@ public class XmlDonorNetParser {
   }
 
   /**
-   * @param donorNetMapPath File containing {@link #XML_TAG} elements, each having a
-   *        {@link #XML_ATTR} attribute which needs to be mapped to the corresponding string value
-   *        of that tag.
+   * @param donorNetMapPath File containing {@link #XML_TAG} elements, each having a {@link #XML_ATTR}
+   *        attribute which needs to be mapped to the corresponding string value of that tag.
    * @return The mapping defined in the input file
    */
   private static ImmutableMap<String, String> populateFromFile(String donorNetMapPath) {

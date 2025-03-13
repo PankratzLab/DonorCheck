@@ -42,8 +42,8 @@ public class SeroType extends Antigen<SeroLocus, SeroType> {
    * Matches string representations of {@link SeroType}s
    *
    * <p>
-   * Group 1 is the {@link SeroLocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and
-   * group 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the
+   * Group 1 is the {@link SeroLocus}, group 2 is the {@link #SPEC_DELIM}ited specification, and group
+   * 3 is the parent specification e.g. 2(5) (NB: group 0 is the complete match in the
    * {@link Matcher#group(int)} api)
    */
   public static final Pattern TYPE_PATTERN;
@@ -81,8 +81,10 @@ public class SeroType extends Antigen<SeroLocus, SeroType> {
   protected List<Integer> parse(int[] p) {
     List<Integer> values = new ArrayList<>();
 
+    int ind = 0;
     for (int i = 0; i < p.length; i++) {
       int v = p[i];
+      int iter = 0;
       while (v > 200) {
         // Divide by 100, extracting the rightmost two digits
         // ones column 4013 > 401, 3
@@ -91,9 +93,11 @@ public class SeroType extends Antigen<SeroLocus, SeroType> {
         // 10s column 401, 3 > 40, 13
         split += (10 * (v % 10));
         v /= 10;
-        values.add(i, split);
+        values.add(ind, split);
+        iter++;
       }
-      values.add(i, v);
+      values.add(ind, v);
+      ind += iter + 1;
     }
 
     return values;
@@ -132,14 +136,13 @@ public class SeroType extends Antigen<SeroLocus, SeroType> {
     LOCI_PATTERN = makePattern(SeroLocus.valuesWithAliases());
 
     TYPE_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + SPEC_PATTERN.pattern());
-    PARTIAL_PATTERN =
-        Pattern.compile(LOCI_PATTERN.pattern() + "(?:" + SPEC_PATTERN.pattern() + ")?");
+    PARTIAL_PATTERN = Pattern.compile(LOCI_PATTERN.pattern() + "(?:" + SPEC_PATTERN.pattern() + ")?");
 
     /*
      * --- WARNING --- Changing the patterns in a way that affects the number of groups can have
-     * terrible/unexpected reprecussions. Currently we do not have a way to guarantee compliance
-     * with a particular group count, etc. It would be safer to refactor these patterns into an
-     * Object with proper accessors that can be updated to expose the underlying groups.
+     * terrible/unexpected reprecussions. Currently we do not have a way to guarantee compliance with a
+     * particular group count, etc. It would be safer to refactor these patterns into an Object with
+     * proper accessors that can be updated to expose the underlying groups.
      */
   }
 }
