@@ -32,21 +32,21 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="rootPane" prefHeight="600.0" prefWidth="1210.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+<VBox fx:id="rootPane" prefHeight="600.0" prefWidth="1335.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
 	<children>
 		<ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
 			<content>
 				<TableView fx:id="testTable" prefHeight="200.0" prefWidth="200.0">
 					<columns>
-						<TableColumn id="testIdColumn" fx:id="testIDColumn" editable="true" minWidth="30.0" prefWidth="75.0" text="Test ID" />
-						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="124.0" text="Test file types" />
-						<TableColumn id="manualEditsColumn" fx:id="manualEditsColumn" editable="false" minWidth="30.0" prefWidth="120.0" text="Manual edits" />
-                  		<TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" editable="false" prefWidth="105.0" text="CIWD version" />
+						<TableColumn id="testIdColumn" fx:id="testIDColumn" editable="true" minWidth="30.0" prefWidth="135" text="Test ID" />
+						<TableColumn id="testFileTypesColumn" fx:id="testFileTypesColumn" editable="false" minWidth="30.0" prefWidth="121.0" text="Test file types" />
+						<TableColumn id="manualEditsColumn" fx:id="manualEditsColumn" editable="false" minWidth="30.0" prefWidth="97.0" text="Manual edits" />
+                  		<TableColumn id="ciwdVersionColumn" fx:id="ciwdVersionColumn" editable="false" prefWidth="101.0" text="CIWD version" />
                   		<TableColumn id="relDnaSerVersion" fx:id="relDnaSerVersion" editable="false" prefWidth="119.0" text="Serotype version" />
-						<TableColumn id="expectingPassFailColumn" fx:id="expectingPassFailColumn" editable="true" minWidth="30.0" prefWidth="100.0" text="Expected result" />
-						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="25.0" prefWidth="148.0" text="Most recent run result" />
+						<TableColumn id="expectingPassFailColumn" fx:id="expectingPassFailColumn" editable="true" minWidth="30.0" prefWidth="111.0" text="Expected result" />
+						<TableColumn id="lastRunResultColumn" fx:id="lastRunResultColumn" editable="false" minWidth="25.0" prefWidth="230.0" text="Most recent run result" />
 						<TableColumn id="testCommentColumn" fx:id="testCommentColumn" editable="true" minWidth="30.0" prefWidth="226.0" text="Comment" />
-						<TableColumn id="lastRunDetailsColumn" fx:id="lastRunDetailsColumn" editable="false" minWidth="30.0" prefWidth="175.0" text="Details of most recent run" />
+						<TableColumn id="lastRunDetailsColumn" fx:id="lastRunDetailsColumn" editable="false" minWidth="30.0" prefWidth="170.0" text="Details of most recent run" />
 					</columns>
 				</TableView>
 			</content>

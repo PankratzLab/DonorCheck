@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.Wizard.LinearFlow;
 import org.controlsfx.dialog.WizardPane;
@@ -25,6 +26,7 @@ import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
 import org.pankratzlab.unet.hapstats.HaplotypeFrequencies;
+import org.pankratzlab.unet.jfx.prop.DCProperty;
 import org.pankratzlab.unet.jfx.wizard.ValidationResultsController;
 import org.pankratzlab.unet.model.ValidationModelBuilder;
 import org.pankratzlab.unet.model.ValidationTable;
@@ -33,12 +35,15 @@ import org.pankratzlab.unet.validation.TEST_EXPECTATION;
 import org.pankratzlab.unet.validation.ValidationTestFileSet;
 import org.pankratzlab.unet.validation.ValidationTesting;
 import org.pankratzlab.unet.validation.XMLRemapProcessor;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.Table;
+
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
@@ -65,74 +70,65 @@ import javafx.util.converter.DefaultStringConverter;
 
 public class BatchTestMgmtController {
 
+  @FXML private ResourceBundle resources;
 
-  @FXML
-  private ResourceBundle resources;
+  @FXML private URL location;
 
-  @FXML
-  private URL location;
+  @FXML private VBox rootPane;
 
-  @FXML
-  private VBox rootPane;
+  @FXML TableView<ValidationTestFileSet> testTable;
 
-  @FXML
-  TableView<ValidationTestFileSet> testTable;
+  @FXML TableColumn<ValidationTestFileSet, String> testIDColumn;
 
-  @FXML
-  TableColumn<ValidationTestFileSet, String> testIDColumn;
+  @FXML TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> testFileTypesColumn;
 
-  @FXML
-  TableColumn<ValidationTestFileSet, ObservableSet<SourceType>> testFileTypesColumn;
+  @FXML TableColumn<ValidationTestFileSet, String> manualEditsColumn;
 
-  @FXML
-  TableColumn<ValidationTestFileSet, String> manualEditsColumn;
+  @FXML TableColumn<ValidationTestFileSet, CommonWellDocumented.SOURCE> ciwdVersionColumn;
 
-  @FXML
-  TableColumn<ValidationTestFileSet, CommonWellDocumented.SOURCE> ciwdVersionColumn;
+  @FXML TableColumn<ValidationTestFileSet, String> relDnaSerVersion;
 
-  @FXML
-  TableColumn<ValidationTestFileSet, String> relDnaSerVersion;
+  @FXML TableColumn<ValidationTestFileSet, TEST_EXPECTATION> expectingPassFailColumn;
 
-  @FXML
-  TableColumn<ValidationTestFileSet, TEST_EXPECTATION> expectingPassFailColumn;
+  @FXML TableColumn<ValidationTestFileSet, String> lastRunResultColumn;
 
-  @FXML
-  TableColumn<ValidationTestFileSet, String> lastRunResultColumn;
-
-  @FXML
-  TableColumn<ValidationTestFileSet, String> testCommentColumn;
+  @FXML TableColumn<ValidationTestFileSet, String> testCommentColumn;
 
   @FXML
   TableColumn<ValidationTestFileSet, String> lastRunDetailsColumn; // date and version of last run
 
-  @FXML
-  Button openDirectoryButton;
+  @FXML Button openDirectoryButton;
 
-  @FXML
-  Button openTestButton;
+  @FXML Button openTestButton;
 
-  @FXML
-  Button removeSelectedButton;
+  @FXML Button removeSelectedButton;
 
-  @FXML
-  Button runSelectedButton;
+  @FXML Button runSelectedButton;
 
-  @FXML
-  Button runAllButton;
+  @FXML Button runAllButton;
+
+  private Map<DCProperty<?>, TableColumn<ValidationTestFileSet, ?>> propCols;
 
   private <K, V> TableCell<K, V> configureTableCell(TableCell<K, V> cell) {
     cell.setAlignment(Pos.CENTER);
     return cell;
   }
 
-  private <V> Callback<TableColumn<ValidationTestFileSet, String>, TableCell<ValidationTestFileSet, String>> getEditableCellFactory() {
-    Callback<TableColumn<ValidationTestFileSet, String>, TableCell<ValidationTestFileSet, String>> c1 =
-        list -> configureTableCell(new TextFieldTableCell<ValidationTestFileSet, String>(new DefaultStringConverter()));
+  private <V>
+      Callback<TableColumn<ValidationTestFileSet, String>, TableCell<ValidationTestFileSet, String>>
+          getEditableCellFactory() {
+    Callback<TableColumn<ValidationTestFileSet, String>, TableCell<ValidationTestFileSet, String>>
+        c1 =
+            list ->
+                configureTableCell(
+                    new TextFieldTableCell<ValidationTestFileSet, String>(
+                        new DefaultStringConverter()));
     return c1;
   }
 
-  private <T> Callback<TableColumn<ValidationTestFileSet, T>, TableCell<ValidationTestFileSet, T>> getComboBoxCellFactory(
-      @SuppressWarnings("unchecked") T... values) {
+  private <T>
+      Callback<TableColumn<ValidationTestFileSet, T>, TableCell<ValidationTestFileSet, T>>
+          getComboBoxCellFactory(@SuppressWarnings("unchecked") T... values) {
     return list -> configureTableCell(new ComboBoxTableCell<>(values));
   }
 
@@ -140,269 +136,436 @@ public class BatchTestMgmtController {
 
   @FXML
   void initialize() {
-    assert ciwdVersionColumn != null : "fx:id=\"ciwdVersionColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert expectingPassFailColumn != null : "fx:id=\"expectingPassFailColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert lastRunDetailsColumn != null : "fx:id=\"lastRunDetailsColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert lastRunResultColumn != null : "fx:id=\"lastRunResultColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert manualEditsColumn != null : "fx:id=\"manualEditsColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert openDirectoryButton != null : "fx:id=\"openDirectoryButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert openTestButton != null : "fx:id=\"openTestButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert relDnaSerVersion != null : "fx:id=\"relDnaSerVersion\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert removeSelectedButton != null : "fx:id=\"removeSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert runAllButton != null : "fx:id=\"runAllButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert runSelectedButton != null : "fx:id=\"runSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert testCommentColumn != null : "fx:id=\"testCommentColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert testFileTypesColumn != null : "fx:id=\"testFileTypesColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert testIDColumn != null : "fx:id=\"testIDColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-    assert testTable != null : "fx:id=\"testTable\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
-
+    assert ciwdVersionColumn != null
+        : "fx:id=\"ciwdVersionColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert expectingPassFailColumn != null
+        : "fx:id=\"expectingPassFailColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert lastRunDetailsColumn != null
+        : "fx:id=\"lastRunDetailsColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert lastRunResultColumn != null
+        : "fx:id=\"lastRunResultColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert manualEditsColumn != null
+        : "fx:id=\"manualEditsColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert openDirectoryButton != null
+        : "fx:id=\"openDirectoryButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert openTestButton != null
+        : "fx:id=\"openTestButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert relDnaSerVersion != null
+        : "fx:id=\"relDnaSerVersion\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert removeSelectedButton != null
+        : "fx:id=\"removeSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert runAllButton != null
+        : "fx:id=\"runAllButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert runSelectedButton != null
+        : "fx:id=\"runSelectedButton\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert testCommentColumn != null
+        : "fx:id=\"testCommentColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert testFileTypesColumn != null
+        : "fx:id=\"testFileTypesColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert testIDColumn != null
+        : "fx:id=\"testIDColumn\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
+    assert testTable != null
+        : "fx:id=\"testTable\" was not injected: check your FXML file 'ValidationTestMgmt.fxml'.";
 
     testTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     testTable.setEditable(true);
 
-    testIDColumn.setCellValueFactory(p -> {
-      return p.getValue().id;
-    });
+    testIDColumn.setCellValueFactory(
+        p -> {
+          return p.getValue().id;
+        });
 
-    testIDColumn.setOnEditCommit(ev -> {
-      String oldId = ev.getOldValue();
-      ValidationTestFileSet oldTest = ev.getRowValue();
-      ValidationTestFileSet newTest;
-      try {
-        oldTest.id.set(ev.getNewValue());
-        newTest = ValidationTesting.updateTestID(oldId, oldTest);
-        testTable.itemsProperty().get().set(testTable.itemsProperty().get().indexOf(oldTest), newTest);
-        testTable.refresh();
-      } catch (IllegalStateException e) {
-        Throwable cause = e;
-        while (cause.getCause() != null) {
-          cause = cause.getCause();
-        }
-        AlertHelper.showMessage_ErrorUpdatingTestID(ev.getNewValue(), oldId, cause);
-        testTable.refresh();
-      }
-    });
+    testIDColumn.setOnEditCommit(
+        ev -> {
+          String oldId = ev.getOldValue();
+          ValidationTestFileSet oldTest = ev.getRowValue();
+          ValidationTestFileSet newTest;
+          try {
+            oldTest.id.set(ev.getNewValue());
+            newTest = ValidationTesting.updateTestID(oldId, oldTest);
+            testTable
+                .itemsProperty()
+                .get()
+                .set(testTable.itemsProperty().get().indexOf(oldTest), newTest);
+            testTable.refresh();
+          } catch (IllegalStateException e) {
+            Throwable cause = e;
+            while (cause.getCause() != null) {
+              cause = cause.getCause();
+            }
+            AlertHelper.showMessage_ErrorUpdatingTestID(ev.getNewValue(), oldId, cause);
+            testTable.refresh();
+          }
+        });
 
     testIDColumn.setCellFactory(getEditableCellFactory());
 
-    testCommentColumn.setCellValueFactory(cdf -> {
-      return cdf.getValue().comment;
-    });
+    testCommentColumn.setCellValueFactory(
+        cdf -> {
+          return cdf.getValue().comment;
+        });
 
-    testCommentColumn.setOnEditCommit(ev -> {
-      try {
-        ev.getRowValue().comment.set(ev.getNewValue());
-        ValidationTesting.updateTestProperties(ev.getRowValue());
-        testTable.refresh();
-      } catch (IllegalStateException e) {
-        Throwable cause = e;
-        while (cause.getCause() != null) {
-          cause = cause.getCause();
-        }
-        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), cause);
-        testTable.refresh();
-      }
-    });
+    testCommentColumn.setOnEditCommit(
+        ev -> {
+          try {
+            ev.getRowValue().comment.set(ev.getNewValue());
+            ValidationTesting.updateTestProperties(ev.getRowValue());
+            testTable.refresh();
+          } catch (IllegalStateException e) {
+            Throwable cause = e;
+            while (cause.getCause() != null) {
+              cause = cause.getCause();
+            }
+            AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), cause);
+            testTable.refresh();
+          }
+        });
 
     testCommentColumn.setCellFactory(getEditableCellFactory());
 
     expectingPassFailColumn.setCellFactory(getComboBoxCellFactory(TEST_EXPECTATION.values()));
 
-    expectingPassFailColumn.setCellValueFactory(p -> {
-      return p.getValue().expectedResult;
-    });
+    expectingPassFailColumn.setCellValueFactory(
+        p -> {
+          return p.getValue().expectedResult;
+        });
 
-    expectingPassFailColumn.setOnEditCommit(ev -> {
-      try {
-        ev.getRowValue().expectedResult.set(ev.getNewValue());
-        ValidationTesting.updateTestProperties(ev.getRowValue());
-        testTable.refresh();
-      } catch (Throwable e) {
-        Throwable cause = e;
-        while (cause.getCause() != null) {
-          cause = cause.getCause();
-        }
-        AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), cause);
-        testTable.refresh();
-      }
-    });
+    expectingPassFailColumn.setOnEditCommit(
+        ev -> {
+          try {
+            ev.getRowValue().expectedResult.set(ev.getNewValue());
+            ValidationTesting.updateTestProperties(ev.getRowValue());
+            testTable.refresh();
+          } catch (Throwable e) {
+            Throwable cause = e;
+            while (cause.getCause() != null) {
+              cause = cause.getCause();
+            }
+            AlertHelper.showMessage_ErrorUpdatingTestProperties(ev.getRowValue(), cause);
+            testTable.refresh();
+          }
+        });
 
     lastRunDetailsColumn.setCellFactory(getDefaultTextTableCellFactory());
 
-    lastRunDetailsColumn.setCellValueFactory(p -> {
-      ValidationTestFileSet value = p.getValue();
-      return Bindings.createStringBinding(() -> {
-        String ver = value.donorCheckVersion.getValueSafe();
-        String date = value.lastRunDate.getValue() == null ? "---" : format.format(value.lastRunDate.getValue());
-        return date + (ver.isBlank() ? "" : " (" + ver + ")");
-      }, value.donorCheckVersion, value.lastRunDate);
-    });
+    lastRunDetailsColumn.setCellValueFactory(
+        p -> {
+          ValidationTestFileSet value = p.getValue();
+          return Bindings.createStringBinding(
+              () -> {
+                String ver = value.donorCheckVersion.getValueSafe();
+                String date =
+                    value.lastRunDate.getValue() == null
+                        ? "---"
+                        : format.format(value.lastRunDate.getValue());
+                return date + (ver.isBlank() ? "" : " (" + ver + ")");
+              },
+              value.donorCheckVersion,
+              value.lastRunDate);
+        });
 
-    lastRunResultColumn.setCellValueFactory(p -> {
-      return Bindings.createStringBinding(() -> {
-        ValidationTestFileSet value = p.getValue();
-        String v = ValidationTesting.computeInterpretation(value);
-        return v;
-      }, p.getValue().expectedResult, p.getValue().lastTestResult);
-    });
+    lastRunResultColumn.setCellValueFactory(
+        p -> {
+          return Bindings.createStringBinding(
+              () -> {
+                ValidationTestFileSet value = p.getValue();
+                String v = ValidationTesting.computeInterpretation(value);
+                return v;
+              },
+              p.getValue().expectedResult,
+              p.getValue().lastTestResult);
+        });
 
-    lastRunResultColumn.setCellFactory(param -> {
-      return configureTableCell(new TableCell<ValidationTestFileSet, String>() {
-        @Override
-        protected void updateItem(String value, boolean empty) {
-          super.updateItem(value, empty);
-          if (value == null) {
-            setText("");
-            setStyle("");
+    lastRunResultColumn.setCellFactory(
+        param -> {
+          return configureTableCell(
+              new TableCell<ValidationTestFileSet, String>() {
+                @Override
+                protected void updateItem(String value, boolean empty) {
+                  super.updateItem(value, empty);
+                  if (value == null) {
+                    setText("");
+                    setStyle("");
+                  } else {
+                    String color = ValidationTesting.computeColor(value);
+                    if (color != null) {
+                      setStyle("-fx-background-color: " + color + "; -fx-text-fill: black");
+                    } else {
+                      setStyle("");
+                    }
+                    setText(value);
+                  }
+                }
+              });
+        });
+
+    testFileTypesColumn.setCellValueFactory(
+        p -> {
+          return p.getValue().sourceTypes;
+        });
+
+    testFileTypesColumn.setCellFactory(
+        param -> {
+          return configureTableCell(
+              new TableCell<ValidationTestFileSet, ObservableSet<SourceType>>() {
+                @Override
+                protected void updateItem(ObservableSet<SourceType> value, boolean empty) {
+                  super.updateItem(value, empty);
+                  if (value == null) {
+                    setText("");
+                  } else {
+                    setText(
+                        value.stream()
+                            .sorted()
+                            .map(SourceType::getDisplayName)
+                            .collect(Collectors.joining(", ")));
+                  }
+                }
+              });
+        });
+
+    manualEditsColumn.setCellValueFactory(
+        p -> {
+          ReadOnlyStringProperty valueSafe = p.getValue().remapFile;
+          if (valueSafe != null
+              && valueSafe.get() != null
+              && !valueSafe.get().isBlank()
+              && new File(valueSafe.get()).exists()) {
+            return new SimpleStringProperty(
+                p.getValue().remappedLoci.get().stream()
+                    .map(HLALocus::name)
+                    .collect(Collectors.joining(", ")));
           } else {
-            String color = ValidationTesting.computeColor(value);
-            if (color != null) {
-              setStyle("-fx-background-color: " + color + "; -fx-text-fill: black");
-            } else {
-              setStyle("");
-            }
-            setText(value);
+            return new SimpleStringProperty("");
           }
-        }
-      });
-    });
-
-    testFileTypesColumn.setCellValueFactory(p -> {
-      return p.getValue().sourceTypes;
-    });
-
-    testFileTypesColumn.setCellFactory(param -> {
-      return configureTableCell(new TableCell<ValidationTestFileSet, ObservableSet<SourceType>>() {
-        @Override
-        protected void updateItem(ObservableSet<SourceType> value, boolean empty) {
-          super.updateItem(value, empty);
-          if (value == null) {
-            setText("");
-          } else {
-            setText(value.stream().sorted().map(SourceType::getDisplayName).collect(Collectors.joining(", ")));
-          }
-        }
-      });
-    });
-
-    manualEditsColumn.setCellValueFactory(p -> {
-      ReadOnlyStringProperty valueSafe = p.getValue().remapFile;
-      if (valueSafe != null && valueSafe.get() != null && !valueSafe.get().isBlank() && new File(valueSafe.get()).exists()) {
-        return new SimpleStringProperty(p.getValue().remappedLoci.get().stream().map(HLALocus::name).collect(Collectors.joining(", ")));
-      } else {
-        return new SimpleStringProperty("");
-      }
-    });
+        });
 
     manualEditsColumn.setCellFactory(getDefaultTextTableCellFactory());
 
-    ciwdVersionColumn.setCellValueFactory(p -> {
-      return p.getValue().cwdSource;
-    });
+    ciwdVersionColumn.setCellValueFactory(
+        p -> {
+          return p.getValue().cwdSource;
+        });
 
-    ciwdVersionColumn.setCellFactory(param -> configureTableCell(new TableCell<ValidationTestFileSet, SOURCE>() {
-      @Override
-      protected void updateItem(SOURCE value, boolean empty) {
-        super.updateItem(value, empty);
-        setText(value == null ? "" : value.getVersion());
-      }
-    }));
+    ciwdVersionColumn.setCellFactory(
+        param ->
+            configureTableCell(
+                new TableCell<ValidationTestFileSet, SOURCE>() {
+                  @Override
+                  protected void updateItem(SOURCE value, boolean empty) {
+                    super.updateItem(value, empty);
+                    setText(value == null ? "" : value.getVersion());
+                  }
+                }));
 
-    relDnaSerVersion.setCellValueFactory(p -> {
-      return p.getValue().relDnaSerFile.map(os -> {
-        String v = "Unknown";
-        v = AntigenDictionary.getVersion(os);
-        if (v == null) {
-          v = "File missing (" + os + ")";
-        }
-        return v;
-      }).orElse("");
-    });
+    relDnaSerVersion.setCellValueFactory(
+        p -> {
+          return p.getValue()
+              .relDnaSerFile
+              .map(
+                  os -> {
+                    String v = "Unknown";
+                    v = AntigenDictionary.getVersion(os);
+                    if (v == null) {
+                      v = "File missing (" + os + ")";
+                    }
+                    return v;
+                  })
+              .orElse("");
+        });
 
     relDnaSerVersion.setCellFactory(getDefaultTextTableCellFactory());
 
-    removeSelectedButton.textProperty().bind(Bindings.createStringBinding(() -> {
-      int t = testTable.getSelectionModel().getSelectedIndices().size();
-      if (t == 0) {
-        return "Remove selected tests";
-      }
-      return "Remove " + t + " selected test" + (t > 1 ? "s" : "");
-    }, testTable.getSelectionModel().selectedIndexProperty()));
+    removeSelectedButton
+        .textProperty()
+        .bind(
+            Bindings.createStringBinding(
+                () -> {
+                  int t = testTable.getSelectionModel().getSelectedIndices().size();
+                  if (t == 0) {
+                    return "Remove selected tests";
+                  }
+                  return "Remove " + t + " selected test" + (t > 1 ? "s" : "");
+                },
+                testTable.getSelectionModel().selectedIndexProperty()));
 
     // Any selection enable/disable
-    removeSelectedButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
-      return testTable.getSelectionModel().getSelectedIndices().isEmpty();
-    }, testTable.getSelectionModel().selectedIndexProperty()));
+    removeSelectedButton
+        .disableProperty()
+        .bind(
+            Bindings.createBooleanBinding(
+                () -> {
+                  return testTable.getSelectionModel().getSelectedIndices().isEmpty();
+                },
+                testTable.getSelectionModel().selectedIndexProperty()));
 
-    runSelectedButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
-      return testTable.getSelectionModel().getSelectedIndices().isEmpty();
-    }, testTable.getSelectionModel().selectedIndexProperty()));
+    runSelectedButton
+        .disableProperty()
+        .bind(
+            Bindings.createBooleanBinding(
+                () -> {
+                  return testTable.getSelectionModel().getSelectedIndices().isEmpty();
+                },
+                testTable.getSelectionModel().selectedIndexProperty()));
 
-    runSelectedButton.textProperty().bind(Bindings.createStringBinding(() -> {
-      int t = testTable.getSelectionModel().getSelectedIndices().size();
-      if (t == 0) {
-        return "Run selected tests";
-      }
-      return "Run " + t + " selected test" + (t > 1 ? "s" : "");
-    }, testTable.getSelectionModel().selectedIndexProperty()));
+    runSelectedButton
+        .textProperty()
+        .bind(
+            Bindings.createStringBinding(
+                () -> {
+                  int t = testTable.getSelectionModel().getSelectedIndices().size();
+                  if (t == 0) {
+                    return "Run selected tests";
+                  }
+                  return "Run " + t + " selected test" + (t > 1 ? "s" : "");
+                },
+                testTable.getSelectionModel().selectedIndexProperty()));
 
     // Table not empty enable/disable
-    runAllButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
-      return testTable.getItems().isEmpty();
-    }, testTable.itemsProperty()));
+    runAllButton
+        .disableProperty()
+        .bind(
+            Bindings.createBooleanBinding(
+                () -> {
+                  return testTable.getItems().isEmpty();
+                },
+                testTable.itemsProperty()));
 
     // Single selection enable/disable
-    openDirectoryButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
-      return testTable.getSelectionModel().getSelectedIndices().size() != 1;
-    }, testTable.getSelectionModel().selectedIndexProperty()));
+    openDirectoryButton
+        .disableProperty()
+        .bind(
+            Bindings.createBooleanBinding(
+                () -> {
+                  return testTable.getSelectionModel().getSelectedIndices().size() != 1;
+                },
+                testTable.getSelectionModel().selectedIndexProperty()));
 
-    openTestButton.disableProperty().bind(Bindings.createBooleanBinding(() -> {
-      return testTable.getSelectionModel().getSelectedIndices().size() != 1;
-    }, testTable.getSelectionModel().selectedIndexProperty()));
+    openTestButton
+        .disableProperty()
+        .bind(
+            Bindings.createBooleanBinding(
+                () -> {
+                  return testTable.getSelectionModel().getSelectedIndices().size() != 1;
+                },
+                testTable.getSelectionModel().selectedIndexProperty()));
+
+    for (String pKey : ValidationTesting.DC_PERSISTED_PROPS) {
+      DCProperty<?> prop = DCProperty.get(pKey);
+      if (prop == null) {
+        System.out.println("No property for " + pKey);
+        continue; // TODO error
+      }
+
+      TableColumn<ValidationTestFileSet, ?> tc = prop.getTableColumn();
+
+      tc.setCellValueFactory(
+          p -> {
+            ObservableValue obsVal;
+            if (p.getValue() != null) {
+              if (p.getValue().dcProperties.containsKey(pKey)) {
+                obsVal = prop.wrap(prop.fromString(p.getValue().dcProperties.get(pKey)));
+              } else {
+                obsVal = prop.wrap(prop.fromString(DonorCheckProperties.getOrDefault(pKey)));
+              }
+              obsVal.addListener(
+                  (obs, oldVal, newVal) -> {
+                    p.getValue().dcProperties.put(pKey, prop.toString(newVal));
+                    ValidationTesting.updateTestProperties(p.getValue());
+                  });
+            } else {
+              obsVal = prop.wrap(prop.fromString(DonorCheckProperties.getOrDefault(pKey)));
+            }
+            return obsVal;
+          });
+
+      testTable.getColumns().add(tc);
+    }
   }
 
-  public <T> Callback<TableColumn<ValidationTestFileSet, T>, TableCell<ValidationTestFileSet, T>> getDefaultTextTableCellFactory() {
-    return param -> configureTableCell(new TableCell<ValidationTestFileSet, T>() {
-      @Override
-      protected void updateItem(T value, boolean empty) {
-        super.updateItem(value, empty);
-        setText(value == null ? "" : Objects.toString(value).trim());
-      }
-    });
+  public <T>
+      Callback<TableColumn<ValidationTestFileSet, T>, TableCell<ValidationTestFileSet, T>>
+          getDefaultTextTableCellFactory() {
+    return param ->
+        configureTableCell(
+            new TableCell<ValidationTestFileSet, T>() {
+              @Override
+              protected void updateItem(T value, boolean empty) {
+                super.updateItem(value, empty);
+                setText(value == null ? "" : Objects.toString(value).trim());
+              }
+            });
   }
 
   public void setTable(Table<SOURCE, String, List<ValidationTestFileSet>> testData) {
     ObservableList<ValidationTestFileSet> testList =
-        FXCollections.observableArrayList(testData.values().stream().flatMap(List::stream).collect(Collectors.toList()));
+        FXCollections.observableArrayList(
+            testData.values().stream().flatMap(List::stream).collect(Collectors.toList()));
     testTable.setItems(testList);
+    testTable.getSortOrder().setAll(testIDColumn);
+    testIDColumn.setSortType(TableColumn.SortType.ASCENDING); // or DESCENDING
+    testIDColumn.setSortable(true);
+    testTable.sort();
   }
 
   @FXML
   void removeSelected() {
-    List<ValidationTestFileSet> toRemove = testTable.selectionModelProperty().get().getSelectedItems();
+    List<ValidationTestFileSet> toRemove =
+        testTable.selectionModelProperty().get().getSelectedItems();
 
-    Alert alert = new Alert(AlertType.CONFIRMATION,
-        "Are you sure you'd like to remove " + toRemove.size() + " test" + (toRemove.size() > 1 ? "s" : "") + "?", ButtonType.OK, ButtonType.CANCEL);
+    Alert alert =
+        new Alert(
+            AlertType.CONFIRMATION,
+            "Are you sure you'd like to remove "
+                + toRemove.size()
+                + " test"
+                + (toRemove.size() > 1 ? "s" : "")
+                + "?",
+            ButtonType.OK,
+            ButtonType.CANCEL);
     alert.setTitle("Remove tests");
     alert.setHeaderText("");
     Optional<ButtonType> selVal = alert.showAndWait();
 
     if (selVal.isPresent() && selVal.get() == ButtonType.OK) {
       Map<ValidationTestFileSet, Boolean> results = ValidationTesting.deleteTests(toRemove);
-      Set<ValidationTestFileSet> removed = results.entrySet().stream().filter(e -> e.getValue()).map(Map.Entry::getKey).collect(Collectors.toSet());
+      Set<ValidationTestFileSet> removed =
+          results.entrySet().stream()
+              .filter(e -> e.getValue())
+              .map(Map.Entry::getKey)
+              .collect(Collectors.toSet());
       Set<ValidationTestFileSet> notRemoved =
-          results.entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).collect(Collectors.toSet());
+          results.entrySet().stream()
+              .filter(e -> !e.getValue())
+              .map(Map.Entry::getKey)
+              .collect(Collectors.toSet());
       testTable.getItems().removeAll(toRemove);
 
       if (removed.size() == toRemove.size()) {
-        Alert alert1 = new Alert(AlertType.INFORMATION, "Successfully removed " + toRemove.size() + " test" + (toRemove.size() > 1 ? "s" : ""),
-            ButtonType.CLOSE);
+        Alert alert1 =
+            new Alert(
+                AlertType.INFORMATION,
+                "Successfully removed "
+                    + toRemove.size()
+                    + " test"
+                    + (toRemove.size() > 1 ? "s" : ""),
+                ButtonType.CLOSE);
         alert1.setTitle("Successfully removed tests");
         alert1.setHeaderText("");
         alert1.showAndWait();
       } else {
-        Alert alert1 = new Alert(AlertType.WARNING, "Failed to remove " + notRemoved.size() + " test" + (notRemoved.size() > 1 ? "s" : "")
-            + "\n\nSuccessfully removed " + removed.size() + " test" + (removed.size() > 1 ? "s" : ""), ButtonType.CLOSE);
+        Alert alert1 =
+            new Alert(
+                AlertType.WARNING,
+                "Failed to remove "
+                    + notRemoved.size()
+                    + " test"
+                    + (notRemoved.size() > 1 ? "s" : "")
+                    + "\n\nSuccessfully removed "
+                    + removed.size()
+                    + " test"
+                    + (removed.size() > 1 ? "s" : ""),
+                ButtonType.CLOSE);
         alert1.setTitle("Failed to remove tests");
         alert1.setHeaderText("");
         alert1.showAndWait();
@@ -424,103 +587,130 @@ public class BatchTestMgmtController {
   void openSelectedTest() {
     final ValidationTestFileSet selectedItem = testTable.getSelectionModel().getSelectedItem();
 
-    Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(() -> {
-      HaplotypeFrequencies.successfullyInitialized();
-    });
-    EventHandler<WorkerStateEvent> doValidation = (w) -> {
+    Task<Void> runValidationTask =
+        JFXUtilHelper.createProgressTask(
+            () -> {
+              HaplotypeFrequencies.successfullyInitialized();
+            });
+    EventHandler<WorkerStateEvent> doValidation =
+        (w) -> {
 
-      // Don't actually run this as an event, though - make it a runnable on the JFX App thread
-      Platform.runLater(() -> {
-        if (!HaplotypeFrequencies.successfullyInitialized().get()) {
-          Alert alert = new Alert(AlertType.INFORMATION,
-              "Haplotype Frequency Tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
-                  + "Would you like to set these tables now?\n\n" + "Note: you can adjust these tables any time from the 'Haplotype' menu",
-              ButtonType.YES, ButtonType.NO);
-          alert.setTitle("No haplotype frequencies");
-          alert.setHeaderText("");
-          alert.showAndWait().filter(response -> response == ButtonType.YES).ifPresent(response -> TutorialHelper.chooseFreqTables(null));
-        } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
-          Alert alert = new Alert(AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
-          alert.setTitle("Missing haplotype frequency table(s)");
-          alert.setHeaderText("");
-          alert.showAndWait();
-        }
+          // Don't actually run this as an event, though - make it a runnable on the JFX App thread
+          Platform.runLater(
+              () -> {
+                if (!HaplotypeFrequencies.successfullyInitialized().get()) {
+                  Alert alert =
+                      new Alert(
+                          AlertType.INFORMATION,
+                          "Haplotype Frequency Tables are not found or are invalid, and thus frequency data will not be displayed.\n\n"
+                              + "Would you like to set these tables now?\n\n"
+                              + "Note: you can adjust these tables any time from the 'Haplotype' menu",
+                          ButtonType.YES,
+                          ButtonType.NO);
+                  alert.setTitle("No haplotype frequencies");
+                  alert.setHeaderText("");
+                  alert
+                      .showAndWait()
+                      .filter(response -> response == ButtonType.YES)
+                      .ifPresent(response -> TutorialHelper.chooseFreqTables(null));
+                } else if (!Strings.isNullOrEmpty(HaplotypeFrequencies.getMissingTableMessage())) {
+                  Alert alert =
+                      new Alert(
+                          AlertType.INFORMATION, HaplotypeFrequencies.getMissingTableMessage());
+                  alert.setTitle("Missing haplotype frequency table(s)");
+                  alert.setHeaderText("");
+                  alert.showAndWait();
+                }
 
-        SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
-        String currentRel = DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+                SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
+                String currentRel =
+                    DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
 
-        SOURCE source = selectedItem.cwdSource.get();
-        String rel = selectedItem.relDnaSerFile.get();
-        boolean changedCWID = false;
-        boolean changedRel = false;
+                SOURCE source = selectedItem.cwdSource.get();
+                String rel = selectedItem.relDnaSerFile.get();
+                boolean changedCWID = false;
+                boolean changedRel = false;
 
-        if (current != source || !CommonWellDocumented.isLoaded()) {
-          CommonWellDocumented.loadCIWDVersion(source);
-          changedCWID = true;
-        }
-        if (!new File(currentRel).equals(new File(rel))) {
-          DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
-          AntigenDictionary.clearCache();
-          changedRel = true;
-        }
+                if (current != source || !CommonWellDocumented.isLoaded()) {
+                  CommonWellDocumented.loadCIWDVersion(source);
+                  changedCWID = true;
+                }
+                if (!new File(currentRel).equals(new File(rel))) {
+                  DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, rel);
+                  AntigenDictionary.clearCache();
+                  changedRel = true;
+                }
 
-        ValidationTable table = new ValidationTable();
+                ValidationTable table = new ValidationTable();
 
-        List<WizardPane> pages = new ArrayList<>();
+                List<WizardPane> pages = new ArrayList<>();
 
-        String f1 = selectedItem.filePaths.get().get(0);
-        String f2 = selectedItem.filePaths.get().get(1);
-        ValidationModelBuilder builder1 = new ValidationModelBuilder();
-        ValidationModelBuilder builder2 = new ValidationModelBuilder();
-        SourceType.parseFile(builder1, new File(f1));
-        SourceType.parseFile(builder2, new File(f2));
-        builder1.validate(false);
-        builder2.validate(false);
-        if (selectedItem.remapFile != null && selectedItem.remapFile.get() != null && new File(selectedItem.remapFile.get()).exists()) {
-          XMLRemapProcessor processor = new XMLRemapProcessor(selectedItem.remapFile.get());
-          if (builder1.hasCorrections() && processor.hasRemappings(builder1.getSourceType())) {
-            builder1.processCorrections(processor);
-          }
-          if (builder2.hasCorrections() && processor.hasRemappings(builder2.getSourceType())) {
-            builder2.processCorrections(processor);
-          }
-        }
+                String f1 = selectedItem.filePaths.get().get(0);
+                String f2 = selectedItem.filePaths.get().get(1);
+                ValidationModelBuilder builder1 = new ValidationModelBuilder();
+                ValidationModelBuilder builder2 = new ValidationModelBuilder();
+                SourceType.parseFile(builder1, new File(f1));
+                SourceType.parseFile(builder2, new File(f2));
+                builder1.validate(false);
+                builder2.validate(false);
+                if (selectedItem.remapFile != null
+                    && selectedItem.remapFile.get() != null
+                    && new File(selectedItem.remapFile.get()).exists()) {
+                  XMLRemapProcessor processor = new XMLRemapProcessor(selectedItem.remapFile.get());
+                  if (builder1.hasCorrections()
+                      && processor.hasRemappings(builder1.getSourceType())) {
+                    builder1.processCorrections(processor);
+                  }
+                  if (builder2.hasCorrections()
+                      && processor.hasRemappings(builder2.getSourceType())) {
+                    builder2.processCorrections(processor);
+                  }
+                }
 
-        try {
-          LandingController.makePage(pages, table, LandingController.RESULTS_STEP, new ValidationResultsController());
-          Wizard.Flow pageFlow = new LinearFlow(pages);
+                try {
+                  LandingController.makePage(
+                      pages,
+                      table,
+                      LandingController.RESULTS_STEP,
+                      new ValidationResultsController());
+                  Wizard.Flow pageFlow = new LinearFlow(pages);
 
-          pages.get(0).getButtonTypes();
+                  pages.get(0).getButtonTypes();
 
-          Stage stage = new Stage();
-          final Window window = stage.getOwner();
-          Wizard validationWizard = new Wizard(window);
-          final String string = Info.getVersion();
-          validationWizard.setTitle("DonorCheck " + string);
-          validationWizard.setFlow(pageFlow);
+                  Stage stage = new Stage();
+                  final Window window = stage.getOwner();
+                  Wizard validationWizard = new Wizard(window);
+                  final String string = Info.getVersion();
+                  validationWizard.setTitle("DonorCheck " + string);
+                  validationWizard.setFlow(pageFlow);
 
-          table.setFirstModel(builder1.build());
-          table.setSecondModel(builder2.build());
+                  table.setFirstModel(builder1.build());
+                  table.setSecondModel(builder2.build());
 
-          // show wizard and wait for response
-          validationWizard.showAndWait();
+                  // show wizard and wait for response
+                  validationWizard.showAndWait();
 
-          if (changedCWID) {
-            CommonWellDocumented.loadCIWDVersion(current);
-          }
-          if (changedRel) {
-            DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
-            AntigenDictionary.clearCache();
-          }
-        } catch (IOException e) {
-          e.printStackTrace();
-          Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e.getMessage(), ButtonType.CLOSE);
-          alert1.setTitle("Error");
-          alert1.setHeaderText("");
-          alert1.showAndWait();
-        }
-      });
-    };
+                  if (changedCWID) {
+                    CommonWellDocumented.loadCIWDVersion(current);
+                  }
+                  if (changedRel) {
+                    DonorCheckProperties.get()
+                        .setProperty(AntigenDictionary.REL_DNA_SER_PROP, currentRel);
+                    AntigenDictionary.clearCache();
+                  }
+                } catch (IOException e) {
+                  e.printStackTrace();
+                  Alert alert1 =
+                      new Alert(
+                          AlertType.ERROR,
+                          "Error loading test data: " + e.getMessage(),
+                          ButtonType.CLOSE);
+                  alert1.setTitle("Error");
+                  alert1.setHeaderText("");
+                  alert1.showAndWait();
+                }
+              });
+        };
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, doValidation);
 
     new Thread(runValidationTask).start();
@@ -534,7 +724,10 @@ public class BatchTestMgmtController {
       Desktop.getDesktop().open(new File(dir));
     } catch (IOException e) {
       e.printStackTrace();
-      new Alert(AlertType.ERROR, "Error opening directory for test " + selectedItem.id.get() + ":\n" + e.getMessage(), ButtonType.CLOSE)
+      new Alert(
+              AlertType.ERROR,
+              "Error opening directory for test " + selectedItem.id.get() + ":\n" + e.getMessage(),
+              ButtonType.CLOSE)
           .showAndWait();
     }
   }
@@ -542,5 +735,4 @@ public class BatchTestMgmtController {
   private void runTasks(List<ValidationTestFileSet> tests) {
     ValidationTesting.runTests(rootPane, tests);
   }
-
 }

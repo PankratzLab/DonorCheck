@@ -30,6 +30,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -50,6 +51,7 @@ import org.pankratzlab.unet.deprecated.jfx.JFXUtilHelper;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.SOURCE;
 import org.pankratzlab.unet.jfx.LandingController;
+import org.pankratzlab.unet.jfx.prop.DCProperty;
 import org.pankratzlab.unet.jfx.wizard.OutputCSVConfig;
 import org.pankratzlab.unet.model.ModelData;
 import org.pankratzlab.unet.model.ValidationModel;
@@ -61,12 +63,14 @@ import org.pankratzlab.unet.model.ValidationTable.ValidationKey;
 import org.pankratzlab.unet.model.remap.RemapProcessor;
 import org.pankratzlab.unet.validation.TestRun.TestRunMetadata;
 import org.pankratzlab.unet.validation.ValidationTestFileSet.ValidationTestFileSetBuilder;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
+
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
@@ -89,7 +93,8 @@ public class ValidationTesting {
   private static final String TEST_LOG = "test.log";
 
   public static final String REL_DIRECTORY = Info.DONOR_CHECK_HOME + "rel_dna_ser_files/";
-  public static final String VALIDATION_DIRECTORY = new File(Info.DONOR_CHECK_HOME + "validation/").getAbsolutePath() + File.separator;
+  public static final String VALIDATION_DIRECTORY =
+      new File(Info.DONOR_CHECK_HOME + "validation/").getAbsolutePath() + File.separator;
 
   private static final String CWD_PROP = "cwd";
   private static final String REL = "rel";
@@ -107,12 +112,14 @@ public class ValidationTesting {
   private static final SimpleDateFormat format = new SimpleDateFormat("ddMMMyyyy' at 'HH:mm:ss");
 
   public static List<ValidationTestFileSet> sortTests(List<ValidationTestFileSet> tests) {
-    return tests.stream().sorted((t1, t2) -> {
-      int c = t1.cwdSource.get().compareTo(t2.cwdSource.get());
-      if (c != 0)
-        return c;
-      return t1.relDnaSerFile.get().compareTo(t2.relDnaSerFile.get());
-    }).collect(Collectors.toList());
+    return tests.stream()
+        .sorted(
+            (t1, t2) -> {
+              int c = t1.cwdSource.get().compareTo(t2.cwdSource.get());
+              if (c != 0) return c;
+              return t1.relDnaSerFile.get().compareTo(t2.relDnaSerFile.get());
+            })
+        .collect(Collectors.toList());
   }
 
   public static boolean addToValidationSet(TestInfo file11, TestInfo file21) {
@@ -179,7 +186,8 @@ public class ValidationTesting {
       relDirFile.mkdir();
     }
 
-    String relDnaSerFile = DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
+    String relDnaSerFile =
+        DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
     String newRelFileName;
     String newRelDnaSerFile;
     if (!Strings.isNullOrEmpty(relDnaSerFile) && new File(relDnaSerFile).exists()) {
@@ -221,7 +229,10 @@ public class ValidationTesting {
       // Copy internal file to testDir
       File newRelFile = new File(reldir + newRelFileName);
       if (!newRelFile.exists()) {
-        try (InputStream is = AntigenDictionary.class.getClassLoader().getResourceAsStream(AntigenDictionary.MASTER_MAP_RECORDS)) {
+        try (InputStream is =
+            AntigenDictionary.class
+                .getClassLoader()
+                .getResourceAsStream(AntigenDictionary.MASTER_MAP_RECORDS)) {
           java.nio.file.Files.copy(is, newRelFile.toPath());
         } catch (Exception e) {
           AlertHelper.showMessage_ErrorCopyingRelFile(newRelFileName);
@@ -292,51 +303,64 @@ public class ValidationTesting {
     Set<ValidationTestFileSet> failedTests = Collections.synchronizedSet(new HashSet<>());
     Map<ValidationTestFileSet, Exception> exceptionTests = new ConcurrentHashMap<>();
     Map<ValidationTestFileSet, TEST_RESULT> testResults = new ConcurrentHashMap<>();
-    List<Runnable> tasks = sorted.stream().map(t -> new Runnable() {
-      @Override
-      public void run() {
-        try {
-          TestRun result = ValidationTesting.runTest(t);
-          testResults.put(t, result.testRunMetadata.result);
-          dataResults.put(t, result.data);
-          if (result.error.isPresent()) {
-            exceptionTests.put(t, result.error.get());
-          } else {
-            if (result.testRunMetadata.result.isPassing) {
-              successfulTests.add(t);
-            } else {
-              failedTests.add(t);
-            }
-          }
-        } catch (Exception e) {
-          e.printStackTrace();
-          exceptionTests.put(t, e);
-        }
-      }
-    }).collect(Collectors.toList());
+    List<Runnable> tasks =
+        sorted.stream()
+            .map(
+                t ->
+                    new Runnable() {
+                      @Override
+                      public void run() {
+                        try {
+                          TestRun result = ValidationTesting.runTest(t);
+                          testResults.put(t, result.testRunMetadata.result);
+                          dataResults.put(t, result.data);
+                          if (result.error.isPresent()) {
+                            exceptionTests.put(t, result.error.get());
+                          } else {
+                            if (result.testRunMetadata.result.isPassing) {
+                              successfulTests.add(t);
+                            } else {
+                              failedTests.add(t);
+                            }
+                          }
+                        } catch (Exception e) {
+                          e.printStackTrace();
+                          exceptionTests.put(t, e);
+                        }
+                      }
+                    })
+            .collect(Collectors.toList());
 
     Task<Void> runValidationTask = JFXUtilHelper.createProgressTask(tasks);
 
-    EventHandler<WorkerStateEvent> showResults = e -> {
-      String contentText = "Test results:\n\nPassing: " + successfulTests.size() + "\n\nFailing: " + failedTests.size() + "\n\nExceptions: "
-          + exceptionTests.size() + "\n\n(Please report any exceptions to the developers)";
-      if (!exceptionTests.isEmpty()) {
-        for (Exception e1 : exceptionTests.values()) {
-          contentText += "\n\n" + e1.getClass().getSimpleName() + ": " + e1.getMessage();
-        }
-      }
-      ButtonType writeCSVType = new ButtonType("Write results to file", ButtonData.APPLY);
-      Alert alert1 = new Alert(AlertType.INFORMATION, contentText, ButtonType.CLOSE, writeCSVType);
-      alert1.setTitle("Test results");
-      alert1.setHeaderText("");
-      Optional<ButtonType> sel = alert1.showAndWait();
-      if (sel.isPresent() && sel.get().equals(writeCSVType)) {
-        OutputConfig oc = promptConfig(root);
-        if (oc != null) {
-          writeCSV(oc, tests, dataResults, exceptionTests, testResults);
-        }
-      }
-    };
+    EventHandler<WorkerStateEvent> showResults =
+        e -> {
+          String contentText =
+              "Test results:\n\nPassing: "
+                  + successfulTests.size()
+                  + "\n\nFailing: "
+                  + failedTests.size()
+                  + "\n\nExceptions: "
+                  + exceptionTests.size()
+                  + "\n\n(Please report any exceptions to the developers)";
+          if (!exceptionTests.isEmpty()) {
+            for (Exception e1 : exceptionTests.values()) {
+              contentText += "\n\n" + e1.getClass().getSimpleName() + ": " + e1.getMessage();
+            }
+          }
+          ButtonType writeCSVType = new ButtonType("Write results to file", ButtonData.APPLY);
+          Alert alert1 =
+              new Alert(AlertType.INFORMATION, contentText, ButtonType.CLOSE, writeCSVType);
+          alert1.setTitle("Test results");
+          alert1.setHeaderText("");
+          Optional<ButtonType> sel = alert1.showAndWait();
+          if (sel.isPresent() && sel.get().equals(writeCSVType)) {
+            OutputConfig oc = promptConfig(root);
+            if (oc != null) {
+              writeCSV(oc, tests, dataResults, exceptionTests, testResults);
+            }
+          }
+        };
 
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, showResults);
     runValidationTask.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, showResults);
@@ -367,7 +391,9 @@ public class ValidationTesting {
       }
     } catch (IOException e1) {
       e1.printStackTrace();
-      Alert alert1 = new Alert(AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
+      Alert alert1 =
+          new Alert(
+              AlertType.ERROR, "Error loading test data: " + e1.getMessage(), ButtonType.CLOSE);
       alert1.setTitle("Error");
       alert1.setHeaderText("");
       alert1.showAndWait();
@@ -375,16 +401,20 @@ public class ValidationTesting {
     return null;
   }
 
-  public static record OutputConfig(String filePath, boolean includeID, boolean maskID) {
-  }
+  public static record OutputConfig(String filePath, boolean includeID, boolean maskID) {}
 
-  private static void writeCSV(OutputConfig config, List<ValidationTestFileSet> tests, Map<ValidationTestFileSet, Map<String, ModelData>> dataResults,
-      Map<ValidationTestFileSet, Exception> exceptionTests, Map<ValidationTestFileSet, TEST_RESULT> testResults) {
+  private static void writeCSV(
+      OutputConfig config,
+      List<ValidationTestFileSet> tests,
+      Map<ValidationTestFileSet, Map<String, ModelData>> dataResults,
+      Map<ValidationTestFileSet, Exception> exceptionTests,
+      Map<ValidationTestFileSet, TEST_RESULT> testResults) {
 
     File fileOut = new File(config.filePath);
 
     // Write the output
-    try (OutputStream output = new BufferedOutputStream(new FileOutputStream(fileOut)); XSSFWorkbook wb = new XSSFWorkbook();) {
+    try (OutputStream output = new BufferedOutputStream(new FileOutputStream(fileOut));
+        XSSFWorkbook wb = new XSSFWorkbook(); ) {
 
       int index = 0;
       for (ValidationTestFileSet t : tests) {
@@ -403,7 +433,6 @@ public class ValidationTesting {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-
   }
 
   private static String getData(String filePath, ValidationKey key, Map<String, ModelData> data) {
@@ -418,9 +447,16 @@ public class ValidationTesting {
     return data.containsKey(filePath1) && data.containsKey(filePath2);
   }
 
-  private static void writeSheet(int donorIndex, OutputConfig config, XSSFWorkbook wb, ValidationTestFileSet t, Map<String, ModelData> data,
-      Exception e, TEST_RESULT result) {
-    XSSFSheet sheet = wb.createSheet(!config.includeID() || config.maskID() ? "" + donorIndex : t.id.get());
+  private static void writeSheet(
+      int donorIndex,
+      OutputConfig config,
+      XSSFWorkbook wb,
+      ValidationTestFileSet t,
+      Map<String, ModelData> data,
+      Exception e,
+      TEST_RESULT result) {
+    XSSFSheet sheet =
+        wb.createSheet(!config.includeID() || config.maskID() ? "" + donorIndex : t.id.get());
     int rowNum = 0;
 
     if (data != null && !data.isEmpty()) {
@@ -457,15 +493,13 @@ public class ValidationTesting {
         }
         cell2.setCellValue(v);
 
-        if (key == ValidationKey.SOURCE)
-          continue;
+        if (key == ValidationKey.SOURCE) continue;
         XSSFCell cell3 = row.createCell(3);
         String m = "";
         if (check(first, second, data)) {
           m = getData(first, key, data).equals(getData(second, key, data)) ? "" : "mismatched";
         }
         cell3.setCellValue(m);
-
       }
 
       sheet.createRow(rowNum++);
@@ -475,7 +509,9 @@ public class ValidationTesting {
     XSSFRow row = sheet.createRow(rowNum++);
     XSSFCell cell0 = row.createCell(0);
     if (e != null) {
-      cell0.setCellValue("Validation could not be attempted due to the following error: " + convert(result.name()));
+      cell0.setCellValue(
+          "Validation could not be attempted due to the following error: "
+              + DCProperty.convert(result.name()));
     } else {
       cell0.setCellValue(result.isPassing ? "Validation Succeeded" : "Validation Failed");
     }
@@ -503,7 +539,6 @@ public class ValidationTesting {
           cell0.setCellValue(r1);
         }
       }
-
     }
 
     sheet.createRow(rowNum++);
@@ -580,8 +615,7 @@ public class ValidationTesting {
         for (Entry<String, ModelData> mdEntry : data.entrySet()) {
           ModelData md = mdEntry.getValue();
           donorId = md.get(ValidationKey.DONORID);
-          if (donorId != null && !donorId.isEmpty())
-            break;
+          if (donorId != null && !donorId.isEmpty()) break;
         }
       }
 
@@ -604,7 +638,6 @@ public class ValidationTesting {
     sheet.setColumnWidth(1, 21 * 256);
     sheet.setColumnWidth(2, 21 * 256);
     sheet.setColumnWidth(3, 12 * 256);
-
   }
 
   private static String findSourceType(String first) {
@@ -616,26 +649,66 @@ public class ValidationTesting {
   }
 
   private static String[] generateManualAssignments(ModelData md) {
-    return md.getManuallyAssignedLoci().entrySet().stream().sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
-        .map(e -> "HLA-" + e.getKey().name() + " was manually assigned to ["
-            + e.getValue().stream().sorted().map(HLAType::toString).collect(Collectors.joining(" / ")) + "] in " + md.get(ValidationKey.SOURCE))
+    return md.getManuallyAssignedLoci().entrySet().stream()
+        .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
+        .map(
+            e ->
+                "HLA-"
+                    + e.getKey().name()
+                    + " was manually assigned to ["
+                    + e.getValue().stream()
+                        .sorted()
+                        .map(HLAType::toString)
+                        .collect(Collectors.joining(" / "))
+                    + "] in "
+                    + md.get(ValidationKey.SOURCE))
         .toArray(String[]::new);
   }
 
   private static String[] getRemapLog(ModelData md) {
-    return md.getRemaps().entrySet().stream().filter(ent -> {
-      final String collectFrom =
-          ent.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
-      final String collectTo =
-          ent.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
-      return !collectFrom.equals(collectTo);
-    }).map(ent -> {
-      final String collectFrom =
-          ent.getValue().getLeft().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
-      final String collectTo =
-          ent.getValue().getRight().stream().sorted().map(TypePair::getHlaType).map((h) -> h.specString()).collect(Collectors.joining(" / "));
-      return "HLA-" + ent.getKey().name() + " was remapped from { " + collectFrom + " } to { " + collectTo + " } in " + md.get(ValidationKey.SOURCE);
-    }).sorted().distinct().toArray(String[]::new);
+    return md.getRemaps().entrySet().stream()
+        .filter(
+            ent -> {
+              final String collectFrom =
+                  ent.getValue().getLeft().stream()
+                      .sorted()
+                      .map(TypePair::getHlaType)
+                      .map((h) -> h.specString())
+                      .collect(Collectors.joining(" / "));
+              final String collectTo =
+                  ent.getValue().getRight().stream()
+                      .sorted()
+                      .map(TypePair::getHlaType)
+                      .map((h) -> h.specString())
+                      .collect(Collectors.joining(" / "));
+              return !collectFrom.equals(collectTo);
+            })
+        .map(
+            ent -> {
+              final String collectFrom =
+                  ent.getValue().getLeft().stream()
+                      .sorted()
+                      .map(TypePair::getHlaType)
+                      .map((h) -> h.specString())
+                      .collect(Collectors.joining(" / "));
+              final String collectTo =
+                  ent.getValue().getRight().stream()
+                      .sorted()
+                      .map(TypePair::getHlaType)
+                      .map((h) -> h.specString())
+                      .collect(Collectors.joining(" / "));
+              return "HLA-"
+                  + ent.getKey().name()
+                  + " was remapped from { "
+                  + collectFrom
+                  + " } to { "
+                  + collectTo
+                  + " } in "
+                  + md.get(ValidationKey.SOURCE);
+            })
+        .sorted()
+        .distinct()
+        .toArray(String[]::new);
   }
 
   public static void updateTestResults(Map<ValidationTestFileSet, TestRunMetadata> newResults) {
@@ -655,7 +728,11 @@ public class ValidationTesting {
       String logStr = sj.toString() + System.lineSeparator();
 
       try {
-        java.nio.file.Files.writeString(Path.of(subdir, TEST_LOG), logStr, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        java.nio.file.Files.writeString(
+            Path.of(subdir, TEST_LOG),
+            logStr,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.APPEND);
       } catch (IOException e) {
         // TODO handle exceptions appropriately;
         // notify user of inability to write properties file, and cleanup appropriately
@@ -692,12 +769,17 @@ public class ValidationTesting {
         relName = relName.substring(REL_DIRECTORY.length());
       }
       props.setProperty(REL, relName);
+      for (String p : DC_PERSISTED_PROPS) {
+        props.setProperty(p, DonorCheckProperties.getOrDefault(p));
+      }
     }
 
     String prevComment = Objects.toString(props.setProperty(COMMENT_PROP, test.comment.get()), "");
-    String prevVersion = Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
+    String prevVersion =
+        Objects.toString(props.setProperty(DC_VER_PROP, test.donorCheckVersion.getValueSafe()), "");
 
-    String prevExpectStr = Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.get().name()));
+    String prevExpectStr =
+        Objects.toString(props.setProperty(EXPECTED_PROP, test.expectedResult.get().name()));
     TEST_EXPECTATION prevExpect = TEST_EXPECTATION.Pass;
     if (prevExpectStr != null && !prevExpectStr.isEmpty()) {
       try {
@@ -708,10 +790,11 @@ public class ValidationTesting {
     }
 
     Map<String, String> prevProps = new HashMap<>();
-    prevProps.putAll(test.dcProperties);
-    test.dcProperties.clear();
     for (String p : DC_PERSISTED_PROPS) {
-      test.dcProperties.put(p, DonorCheckProperties.getOrDefault(p));
+      if (!test.dcProperties.containsKey(p)) {
+        test.dcProperties.put(p, DonorCheckProperties.getOrDefault(p));
+      }
+      prevProps.put(p, Objects.toString(props.setProperty(p, test.dcProperties.get(p))));
     }
 
     try (FileOutputStream fos = new FileOutputStream(new File(subdir + TEST_PROPERTIES))) {
@@ -737,7 +820,8 @@ public class ValidationTesting {
   }
 
   public static TestLoadingResults loadValidationDirectory() {
-    Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets = HashBasedTable.create();
+    Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets =
+        HashBasedTable.create();
 
     List<String> invalidTests = new ArrayList<>();
     File dir = new File(VALIDATION_DIRECTORY);
@@ -799,7 +883,8 @@ public class ValidationTesting {
     return builder.build();
   }
 
-  public static Map<ValidationTestFileSet, Boolean> deleteTests(List<ValidationTestFileSet> toRemove) {
+  public static Map<ValidationTestFileSet, Boolean> deleteTests(
+      List<ValidationTestFileSet> toRemove) {
     Map<ValidationTestFileSet, Boolean> success = new HashMap<>();
     for (ValidationTestFileSet testSet : toRemove) {
       String dir = getTestDirectory(testSet);
@@ -812,7 +897,9 @@ public class ValidationTesting {
   private static TestRun runTest(ValidationTestFileSet test) {
     SOURCE current = CommonWellDocumented.loadPropertyCWDSource();
     String currentRel = DonorCheckProperties.get().getProperty(AntigenDictionary.REL_DNA_SER_PROP);
-    Map<String, String> currentProps = DC_PERSISTED_PROPS.stream().collect(Collectors.toMap(k -> k, v -> DonorCheckProperties.getOrDefault(v)));
+    Map<String, String> currentProps =
+        DC_PERSISTED_PROPS.stream()
+            .collect(Collectors.toMap(k -> k, v -> DonorCheckProperties.getOrDefault(v)));
 
     SOURCE source = test.cwdSource.get();
     String rel = test.relDnaSerFile.get();
@@ -831,20 +918,29 @@ public class ValidationTesting {
     }
 
     for (String p : DC_PERSISTED_PROPS) {
-      if (test.dcProperties.containsKey(p) && !currentProps.get(p).equals(test.dcProperties.get(p))) {
+      if (test.dcProperties.containsKey(p)
+          && !currentProps.get(p).equals(test.dcProperties.get(p))) {
         changedProps = true;
         DonorCheckProperties.get().put(p, test.dcProperties.get(p));
       }
     }
 
     TestResultWithMultiData resultM = runTestInternal(test);
-    TestRun returnVal = new TestRun(test, resultM.testResult(), new Date(), resultM.getException(), resultM.getValidModels());
+    TestRun returnVal =
+        new TestRun(
+            test,
+            resultM.testResult(),
+            new Date(),
+            resultM.getException(),
+            resultM.getValidModels());
 
     if (changedCWID) {
       CommonWellDocumented.loadCIWDVersion(current);
     }
     if (changedRel) {
-      DonorCheckProperties.get().setProperty(AntigenDictionary.REL_DNA_SER_PROP, Optional.ofNullable(currentRel).orElse(""));
+      DonorCheckProperties.get()
+          .setProperty(
+              AntigenDictionary.REL_DNA_SER_PROP, Optional.ofNullable(currentRel).orElse(""));
       AntigenDictionary.clearCache();
     }
 
@@ -885,7 +981,6 @@ public class ValidationTesting {
       } catch (Exception e) {
         fileExceptions.put(filePath, e);
       }
-
     }
 
     XMLRemapProcessor remapProcessor = null;
@@ -929,7 +1024,8 @@ public class ValidationTesting {
 
         builderEntry.getValue().processCorrections(remapper);
       } else {
-        if (remapProcessor != null && remapProcessor.hasRemappings(builderEntry.getValue().getSourceType())) {
+        if (remapProcessor != null
+            && remapProcessor.hasRemappings(builderEntry.getValue().getSourceType())) {
           // builder says no remappings, but remap file says remappings do exist
           invalidRemappings.add(builderEntry.getKey());
         }
@@ -979,12 +1075,19 @@ public class ValidationTesting {
         result = TEST_RESULT.TEST_FAILURE;
       }
 
-      return new TestResultWithMultiData(result, errorFiles, invalidRemapFiles, invalidModels, validModels, missingRemapFile, remapException);
-
+      return new TestResultWithMultiData(
+          result,
+          errorFiles,
+          invalidRemapFiles,
+          invalidModels,
+          validModels,
+          missingRemapFile,
+          remapException);
     }
   }
 
-  private static TestResultWithMultiData testIfModelsAgree2(Map<String, ValidationModel> individualModels) {
+  private static TestResultWithMultiData testIfModelsAgree2(
+      Map<String, ValidationModel> individualModels) {
     Map<String, ModelData> modelData = new HashMap<>();
 
     List<String> keys = new ArrayList<>(individualModels.keySet());
@@ -1009,7 +1112,8 @@ public class ValidationTesting {
       valid &= table.isValidProperty().get();
     }
 
-    return new TestResultWithMultiData(valid ? TEST_RESULT.TEST_SUCCESS : TEST_RESULT.TEST_FAILURE, modelData);
+    return new TestResultWithMultiData(
+        valid ? TEST_RESULT.TEST_SUCCESS : TEST_RESULT.TEST_FAILURE, modelData);
   }
 
   private static String safeFilename(String newRelFileName) {
@@ -1023,21 +1127,30 @@ public class ValidationTesting {
     // Add <sourceType>Score6</sourceType> under <remap>
     remap.appendElement("sourceType").text(file.sourceType.name());
 
-    file.remappings.entrySet().forEach(e -> {
-      // Create <remapLocus> under <remap>
-      Element remapLocus = remap.appendElement("remapLocus");
-      remapLocus.appendElement("locus").text(e.getKey().name());
+    file.remappings
+        .entrySet()
+        .forEach(
+            e -> {
+              // Create <remapLocus> under <remap>
+              Element remapLocus = remap.appendElement("remapLocus");
+              remapLocus.appendElement("locus").text(e.getKey().name());
 
-      // Add multiple <fromAllele> elements under <remapLocus>
-      e.getValue().getLeft().stream().forEach(allele -> {
-        remapLocus.appendElement("fromAllele").text(allele.getHlaType().specString());
-      });
+              // Add multiple <fromAllele> elements under <remapLocus>
+              e.getValue().getLeft().stream()
+                  .forEach(
+                      allele -> {
+                        remapLocus
+                            .appendElement("fromAllele")
+                            .text(allele.getHlaType().specString());
+                      });
 
-      // Add multiple <toAllele> elements under <remapLocus>
-      e.getValue().getRight().stream().forEach(allele -> {
-        remapLocus.appendElement("toAllele").text(allele.getHlaType().specString());
-      });
-    });
+              // Add multiple <toAllele> elements under <remapLocus>
+              e.getValue().getRight().stream()
+                  .forEach(
+                      allele -> {
+                        remapLocus.appendElement("toAllele").text(allele.getHlaType().specString());
+                      });
+            });
   }
 
   public static String computeInterpretation(ValidationTestFileSet value) {
@@ -1069,7 +1182,7 @@ public class ValidationTesting {
         } else if (testResult == TEST_RESULT.TEST_FAILURE) {
           v = UNEXPECTED_FAILURE;
         } else {
-          v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
+          v = UNEXPECTED_ERROR + " (" + DCProperty.convert(testResult.name()) + ")";
         }
         break;
       case Fail:
@@ -1078,22 +1191,19 @@ public class ValidationTesting {
         } else if (testResult == TEST_RESULT.TEST_FAILURE) {
           v = EXPECTED_FAILURE;
         } else {
-          v = UNEXPECTED_ERROR + " (" + convert(testResult.name()) + ")";
+          v = UNEXPECTED_ERROR + " (" + DCProperty.convert(testResult.name()) + ")";
         }
         break;
-    };
-    return v;
-  }
-
-  private static String convert(String s) {
-    String v = s.replace('_', ' ').toLowerCase();
-    v = v.substring(0, 1).toUpperCase() + v.substring(1);
+    }
+    ;
     return v;
   }
 
   public static String computeColor(String value) {
     String color = null;
-    if (value.startsWith(EXPECTED_PASS) || value.startsWith(EXPECTED_FAILURE) || value.startsWith(EXPECTED_ERROR)) {
+    if (value.startsWith(EXPECTED_PASS)
+        || value.startsWith(EXPECTED_FAILURE)
+        || value.startsWith(EXPECTED_ERROR)) {
       color = "LimeGreen";
     } else if (value.startsWith(UNEXPECTED_FAILURE)) {
       color = "Orange";
@@ -1105,7 +1215,8 @@ public class ValidationTesting {
     return color;
   }
 
-  private static void addTestSetToTable(Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets,
+  private static void addTestSetToTable(
+      Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets,
       ValidationTestFileSet testSet) {
     if (!testSets.contains(testSet.cwdSource.get(), testSet.relDnaSerFile.get())) {
       testSets.put(testSet.cwdSource.get(), testSet.relDnaSerFile.get(), new ArrayList<>());
@@ -1113,8 +1224,10 @@ public class ValidationTesting {
     testSets.get(testSet.cwdSource.get(), testSet.relDnaSerFile.get()).add(testSet);
   }
 
-  private static final List<String> DC_PERSISTED_PROPS =
-      List.of(DonorCheckProperties.USE_ALLELE_CALL, DonorCheckProperties.SURETYPER_ALLOW_INVALID_DQA_ALLELES);
+  public static final List<String> DC_PERSISTED_PROPS =
+      List.of(
+          DonorCheckProperties.USE_SCORE_6_ALLELE_CALL,
+          DonorCheckProperties.SURETYPER_ALLOW_INVALID_DQA_ALLELES);
 
   private static void loadTestMetadata(File individualFile, ValidationTestFileSetBuilder builder) {
     File testPropertiesFile = new File(individualFile, TEST_PROPERTIES);
@@ -1123,7 +1236,8 @@ public class ValidationTesting {
       try (FileInputStream fis = new FileInputStream(testPropertiesFile)) {
         props.load(fis);
       } catch (Exception e) {
-        throw new IllegalStateException("Unable to load test properties file: " + testPropertiesFile.getAbsolutePath(), e);
+        throw new IllegalStateException(
+            "Unable to load test properties file: " + testPropertiesFile.getAbsolutePath(), e);
       }
     }
     String cwdStr = props.getProperty(CWD_PROP);
@@ -1164,11 +1278,12 @@ public class ValidationTesting {
     builder.relDnaSerFile(relPath);
   }
 
-  private static void loadTestLastRunLog(File individualFile, ValidationTestFileSetBuilder builder) {
+  private static void loadTestLastRunLog(
+      File individualFile, ValidationTestFileSetBuilder builder) {
     File file = new File(individualFile, TEST_LOG);
-    if (!file.exists())
-      return;
-    try (ReversedLinesFileReader reader = new ReversedLinesFileReader(file, Charset.defaultCharset())) {
+    if (!file.exists()) return;
+    try (ReversedLinesFileReader reader =
+        new ReversedLinesFileReader(file, Charset.defaultCharset())) {
       String lastRunLog = reader.readLine();
       String[] parts = lastRunLog.split("\t");
 
@@ -1218,7 +1333,8 @@ public class ValidationTesting {
       java.nio.file.Files.move(Path.of(oldSubdir), Path.of(newSubdir));
     } catch (IOException e) {
       test.id.set(oldId);
-      throw new IllegalStateException("Unable to move test directory: " + oldSubdir + " -> " + newSubdir, e);
+      throw new IllegalStateException(
+          "Unable to move test directory: " + oldSubdir + " -> " + newSubdir, e);
     }
 
     return loadIndividualTest(new File(newSubdir));
@@ -1228,7 +1344,8 @@ public class ValidationTesting {
     public final Table<CommonWellDocumented.SOURCE, String, List<ValidationTestFileSet>> testSets;
     public final List<String> invalidTests;
 
-    public TestLoadingResults(Table<SOURCE, String, List<ValidationTestFileSet>> testSets, List<String> invalidTests) {
+    public TestLoadingResults(
+        Table<SOURCE, String, List<ValidationTestFileSet>> testSets, List<String> invalidTests) {
       this.testSets = testSets;
       this.invalidTests = invalidTests;
     }
