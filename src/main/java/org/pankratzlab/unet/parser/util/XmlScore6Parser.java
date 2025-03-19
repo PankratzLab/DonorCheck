@@ -292,7 +292,7 @@ public class XmlScore6Parser {
       }
 
       boolean useAlleleCallIfPresent = Boolean
-          .parseBoolean(DonorCheckProperties.get().getProperty(DonorCheckProperties.USE_ALLELE_CALL, DonorCheckProperties.USE_ALLELE_CALL_DEFAULT));
+          .parseBoolean(DonorCheckProperties.get().getProperty(DonorCheckProperties.USE_SCORE_6_ALLELE_CALL, DonorCheckProperties.USE_SCORE_6_ALLELE_CALL_DEFAULT));
       String alleleCall1 = null;
       String alleleCall2 = null;
       if (useAlleleCallIfPresent) {

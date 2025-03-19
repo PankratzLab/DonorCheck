@@ -1,25 +1,25 @@
 /*-
 
- * #%L
- * DonorCheck
- * %%
- * Copyright (C) 2018 - 2019 Computational Pathology - University of Minnesota
- * %%
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation, either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public
- * License along with this program.  If not, see
- * <http://www.gnu.org/licenses/gpl-2.0.html>.
- * #L%
- */
+* #%L
+* DonorCheck
+* %%
+* Copyright (C) 2018 - 2019 Computational Pathology - University of Minnesota
+* %%
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as
+* published by the Free Software Foundation, either version 2 of the
+* License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program.  If not, see
+* <http://www.gnu.org/licenses/gpl-2.0.html>.
+* #L%
+*/
 package org.pankratzlab.unet.deprecated.hla;
 
 import java.io.File;
@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
 
@@ -44,16 +45,17 @@ public final class DonorCheckProperties {
   public static final String SECOND_TYPE = "SECOND_TYPE";
   public static final String SECOND_TYPE_DEFAULT = XmlDonorParser.getTypeString();
 
-  public static final String USE_ALLELE_CALL = "USE_ALLELE_CALL";
-  public static final String USE_ALLELE_CALL_DEFAULT = "true";
+  public static final String USE_SCORE_6_ALLELE_CALL = "USE_SCORE_6_ALLELE_CALL";
+  public static final String USE_SCORE_6_ALLELE_CALL_DEFAULT = "true";
 
-  public static final String SURETYPER_ALLOW_INVALID_DQA_ALLELES = "ALLOW_INVALID_SURETYPER_ALLELES";
+  public static final String SURETYPER_ALLOW_INVALID_DQA_ALLELES =
+      "ALLOW_INVALID_SURETYPER_ALLELES";
   public static final String SURETYPER_ALLOW_INVALID_DQA_ALLELES_DEFAULT = "true";
 
   public static final String FAIL_OR_DISCARD_IF_AC_INVALID = "FAIL_OR_DISCARD_IF_AC_INVALID";
   public static final String AC_INVALID_FAIL = "Fail";
   public static final String AC_INVALID_DISCARD = "Discard";
-  public static final String FAIL_OR_DISCARD_IF_AC_INVALID_DEFAULT = AC_INVALID_FAIL;
+  public static final String FAIL_OR_DISCARD_IF_AC_INVALID_DEFAULT = AC_INVALID_DISCARD;
 
   private static Properties hlaProps;
 
@@ -71,12 +73,14 @@ public final class DonorCheckProperties {
         return hlaProps.getProperty(FIRST_TYPE, FIRST_TYPE_DEFAULT);
       case SECOND_TYPE:
         return hlaProps.getProperty(SECOND_TYPE, SECOND_TYPE_DEFAULT);
-      case USE_ALLELE_CALL:
-        return hlaProps.getProperty(USE_ALLELE_CALL, USE_ALLELE_CALL_DEFAULT);
+      case USE_SCORE_6_ALLELE_CALL:
+        return hlaProps.getProperty(USE_SCORE_6_ALLELE_CALL, USE_SCORE_6_ALLELE_CALL_DEFAULT);
       case SURETYPER_ALLOW_INVALID_DQA_ALLELES:
-        return hlaProps.getProperty(SURETYPER_ALLOW_INVALID_DQA_ALLELES, SURETYPER_ALLOW_INVALID_DQA_ALLELES_DEFAULT);
+        return hlaProps.getProperty(
+            SURETYPER_ALLOW_INVALID_DQA_ALLELES, SURETYPER_ALLOW_INVALID_DQA_ALLELES_DEFAULT);
       case FAIL_OR_DISCARD_IF_AC_INVALID:
-        return hlaProps.getProperty(FAIL_OR_DISCARD_IF_AC_INVALID, FAIL_OR_DISCARD_IF_AC_INVALID_DEFAULT);
+        return hlaProps.getProperty(
+            FAIL_OR_DISCARD_IF_AC_INVALID, FAIL_OR_DISCARD_IF_AC_INVALID_DEFAULT);
       default:
         return null;
     }

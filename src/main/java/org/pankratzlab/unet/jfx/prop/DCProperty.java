@@ -11,6 +11,7 @@ import static com.dlsc.preferencesfx.util.Constants.WINDOW_HEIGHT;
 import static com.dlsc.preferencesfx.util.Constants.WINDOW_POS_X;
 import static com.dlsc.preferencesfx.util.Constants.WINDOW_POS_Y;
 import static com.dlsc.preferencesfx.util.Constants.WINDOW_WIDTH;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -19,25 +20,34 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.parser.HtmlDonorParser;
 import org.pankratzlab.unet.parser.PdfDonorParser;
 import org.pankratzlab.unet.parser.XmlDonorParser;
+
 import com.dlsc.preferencesfx.model.Category;
 import com.dlsc.preferencesfx.model.Setting;
 import com.dlsc.preferencesfx.util.StorageHandler;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.ComboBoxTableCell;
 
 public abstract class DCProperty<T> {
 
   public enum DCCATEGORY {
-    INPUT_OPTIONS("Input Options"), DATA_SOURCE_OPTIONS("Data Sources");
+    INPUT_OPTIONS("Input Options"),
+    DATA_SOURCE_OPTIONS("Data Sources");
 
     private final String categoryName;
 
@@ -48,12 +58,11 @@ public abstract class DCProperty<T> {
     public String getCategoryName() {
       return categoryName;
     }
-
   }
 
   public enum DCSUBCATEGORY {
-
-    SCORE6("SCORE 6"), SURETYPER("SureTyper");
+    SCORE6("SCORE 6"),
+    SURETYPER("SureTyper");
 
     private final String groupName;
 
@@ -64,24 +73,31 @@ public abstract class DCProperty<T> {
     public String getGroupName() {
       return groupName;
     }
-
   }
 
   private final String key;
   private final String name;
   private final DCCATEGORY category;
   private final DCSUBCATEGORY group;
-  private final Function<String, Object> fromConverter;
-  private final Function<Object, String> toConverter;
+  private final Function<String, T> fromConverter;
+  private final Function<T, String> toConverter;
+  private final Class<T> clazz;
 
-  DCProperty(String key, String name, DCCATEGORY category, DCSUBCATEGORY group, Function<String, Object> fromConverter,
-      Function<Object, String> toConverter) {
+  DCProperty(
+      String key,
+      String name,
+      DCCATEGORY category,
+      DCSUBCATEGORY group,
+      Class<T> clz,
+      Function<String, T> fromConverter,
+      Function<T, String> toConverter) {
     this.key = key;
     this.name = name;
     this.category = category;
     this.group = group;
     this.fromConverter = fromConverter;
     this.toConverter = toConverter;
+    this.clazz = clz;
   }
 
   public String getKey() {
@@ -106,27 +122,66 @@ public abstract class DCProperty<T> {
     return s;
   }
 
+  public Class<T> getGClass() {
+    return clazz;
+  }
+
+  public <K> TableColumn<K, T> getTableColumn() {
+    TableColumn<K, T> tc = new TableColumn<K, T>(DCProperty.convert(getKey()));
+
+    configureTableColumn(tc);
+
+    return tc;
+  }
+
+  public abstract <K> ObservableValue<K> wrap(Object value);
+
+  protected abstract <K> void configureTableColumn(TableColumn<K, T> tc);
+
   // abstract methods
 
   @SuppressWarnings("rawtypes")
   protected abstract Setting buildSetting();
 
   public void setStringValue(String value) {
-    setValue((T) fromConverter.apply(value));
+    setValue(fromString(value));
+  }
+
+  public T fromString(String value) {
+    return (T) fromConverter.apply(value);
+  }
+
+  public String toString(Object newVal) {
+    return toConverter.apply((T) newVal);
   }
 
   public abstract void setValue(T value);
 
+  public static String convert(String s) {
+    String v = s.replace('_', ' ').toLowerCase();
+    v = v.substring(0, 1).toUpperCase() + v.substring(1);
+    v = v.replaceAll("score 6", "SCORE 6");
+    v = v.replaceAll("suretyper", "SureTyper");
+    return v;
+  }
 
-  public static class DCListProperty<T> extends DCProperty<T> {
+  public abstract static class DCListProperty<T> extends DCProperty<T> {
 
     T defaultSelection;
     T[] possibleValues;
 
     @SafeVarargs
-    public DCListProperty(String key, String name, DCCATEGORY category, DCSUBCATEGORY group, Function<String, Object> fromConverter,
-        Function<Object, String> toConverter, T value, T... values) {
-      super(key, name, category, group, fromConverter, toConverter);
+    public DCListProperty(
+        String key,
+        String name,
+        DCCATEGORY category,
+        DCSUBCATEGORY group,
+        Class<T> clz,
+        Function<String, T> fromConverter,
+        Function<T, String> toConverter,
+        T value,
+        T... values) {
+      super(key, name, category, group, clz, fromConverter, toConverter);
       this.defaultSelection = value;
       this.possibleValues = values;
     }
@@ -143,23 +198,38 @@ public abstract class DCProperty<T> {
     public void setValue(T value) {
       this.defaultSelection = value;
     }
-
   }
 
-  public final static class DCStringListProperty extends DCListProperty<String> {
+  public static final class DCStringListProperty extends DCListProperty<String> {
 
-    public DCStringListProperty(String key, String name, DCCATEGORY category, DCSUBCATEGORY group, String value, String... values) {
-      super(key, name, category, group, s -> s, s -> s.toString(), value, values);
+    public DCStringListProperty(
+        String key,
+        String name,
+        DCCATEGORY category,
+        DCSUBCATEGORY group,
+        String value,
+        String... values) {
+      super(key, name, category, group, String.class, s -> s, s -> s.toString(), value, values);
     }
 
+    @Override
+    protected <K> void configureTableColumn(TableColumn<K, String> tc) {
+      tc.setCellFactory(param -> new ComboBoxTableCell<>(possibleValues));
+    }
+
+    @Override
+    public ObservableValue<?> wrap(Object value) {
+      return new SimpleStringProperty((String) value);
+    }
   }
 
-  public final static class DCBooleanProperty extends DCProperty<Boolean> {
+  public static final class DCBooleanProperty extends DCProperty<Boolean> {
 
     boolean defaultValue;
 
-    public DCBooleanProperty(String key, String name, DCCATEGORY category, DCSUBCATEGORY group, boolean value) {
-      super(key, name, category, group, Boolean::parseBoolean, b -> b.toString());
+    public DCBooleanProperty(
+        String key, String name, DCCATEGORY category, DCSUBCATEGORY group, boolean value) {
+      super(key, name, category, group, Boolean.class, Boolean::parseBoolean, b -> b.toString());
       this.defaultValue = value;
     }
 
@@ -177,49 +247,91 @@ public abstract class DCProperty<T> {
       this.defaultValue = value;
     }
 
+    @Override
+    protected <K> void configureTableColumn(TableColumn<K, Boolean> tc) {
+      tc.setCellFactory(param -> new CheckBoxTableCell<>());
+    }
+
+    @Override
+    public ObservableValue<?> wrap(Object value) {
+      return new SimpleBooleanProperty((Boolean) value);
+    }
   }
 
   public static final DCStringListProperty FIRST_TYPE =
-      new DCStringListProperty(DonorCheckProperties.FIRST_TYPE, "First source type dropdown default", DCCATEGORY.INPUT_OPTIONS, null,
-          DonorCheckProperties.FIRST_TYPE_DEFAULT, PdfDonorParser.getTypeString(), XmlDonorParser.getTypeString(), HtmlDonorParser.getTypeString());
+      new DCStringListProperty(
+          DonorCheckProperties.FIRST_TYPE,
+          "First source type dropdown default",
+          DCCATEGORY.INPUT_OPTIONS,
+          null,
+          DonorCheckProperties.FIRST_TYPE_DEFAULT,
+          PdfDonorParser.getTypeString(),
+          XmlDonorParser.getTypeString(),
+          HtmlDonorParser.getTypeString());
 
   public static final DCStringListProperty SECOND_TYPE =
-      new DCStringListProperty(DonorCheckProperties.SECOND_TYPE, "Second source type dropdown default", DCCATEGORY.INPUT_OPTIONS, null,
-          DonorCheckProperties.SECOND_TYPE_DEFAULT, PdfDonorParser.getTypeString(), XmlDonorParser.getTypeString(), HtmlDonorParser.getTypeString());
+      new DCStringListProperty(
+          DonorCheckProperties.SECOND_TYPE,
+          "Second source type dropdown default",
+          DCCATEGORY.INPUT_OPTIONS,
+          null,
+          DonorCheckProperties.SECOND_TYPE_DEFAULT,
+          PdfDonorParser.getTypeString(),
+          XmlDonorParser.getTypeString(),
+          HtmlDonorParser.getTypeString());
 
   public static final DCBooleanProperty USE_ALLELE_CALL =
-      new DCBooleanProperty(DonorCheckProperties.USE_ALLELE_CALL, "Use manual allele assignments (<alleleCall>) value if present",
-          DCCATEGORY.DATA_SOURCE_OPTIONS, DCSUBCATEGORY.SCORE6, Boolean.valueOf(DonorCheckProperties.USE_ALLELE_CALL_DEFAULT));
+      new DCBooleanProperty(
+          DonorCheckProperties.USE_SCORE_6_ALLELE_CALL,
+          "Use manual allele assignments (<alleleCall>) value if present",
+          DCCATEGORY.DATA_SOURCE_OPTIONS,
+          DCSUBCATEGORY.SCORE6,
+          Boolean.valueOf(DonorCheckProperties.USE_SCORE_6_ALLELE_CALL_DEFAULT));
 
   public static final DCStringListProperty FAIL_OR_DISCARD_IF_AC_INVALID =
-      new DCStringListProperty(DonorCheckProperties.FAIL_OR_DISCARD_IF_AC_INVALID,
-          "How to handle invalid alleles in SCORE 6 manual allele assignments (<alleleCall>)", DCCATEGORY.DATA_SOURCE_OPTIONS, DCSUBCATEGORY.SCORE6,
-          DonorCheckProperties.AC_INVALID_DISCARD, DonorCheckProperties.AC_INVALID_FAIL, DonorCheckProperties.AC_INVALID_DISCARD);
+      new DCStringListProperty(
+          DonorCheckProperties.FAIL_OR_DISCARD_IF_AC_INVALID,
+          "How to handle invalid alleles in SCORE 6 manual allele assignments (<alleleCall>)",
+          DCCATEGORY.DATA_SOURCE_OPTIONS,
+          DCSUBCATEGORY.SCORE6,
+          DonorCheckProperties.AC_INVALID_DISCARD,
+          DonorCheckProperties.AC_INVALID_FAIL,
+          DonorCheckProperties.AC_INVALID_DISCARD);
 
   public static final DCBooleanProperty SURETYPER_ALLOW_INVALID_DQA_ALLELES =
-      new DCBooleanProperty(DonorCheckProperties.SURETYPER_ALLOW_INVALID_DQA_ALLELES,
-          "XML Files: Allow non-official (invalid) allele group names in DQA locus (e.g. DQA06 instead of DQA1*06)", DCCATEGORY.DATA_SOURCE_OPTIONS,
-          DCSUBCATEGORY.SURETYPER, Boolean.valueOf(DonorCheckProperties.SURETYPER_ALLOW_INVALID_DQA_ALLELES_DEFAULT));
+      new DCBooleanProperty(
+          DonorCheckProperties.SURETYPER_ALLOW_INVALID_DQA_ALLELES,
+          "XML Files: Allow non-official (invalid) allele group names in DQA locus (e.g. DQA06 instead of DQA1*06)",
+          DCCATEGORY.DATA_SOURCE_OPTIONS,
+          DCSUBCATEGORY.SURETYPER,
+          Boolean.valueOf(DonorCheckProperties.SURETYPER_ALLOW_INVALID_DQA_ALLELES_DEFAULT));
 
-  private static final List<DCProperty<?>> ALL_PROPS = new ArrayList<>() {
-    {
-      add(FIRST_TYPE);
-      add(SECOND_TYPE);
-      add(USE_ALLELE_CALL);
-      // add(FAIL_OR_DISCARD_IF_AC_INVALID); // not currently allowing as an option
-      add(SURETYPER_ALLOW_INVALID_DQA_ALLELES);
-    }
-  };
+  private static final List<DCProperty<?>> ALL_PROPS =
+      new ArrayList<>() {
+        {
+          add(FIRST_TYPE);
+          add(SECOND_TYPE);
+          add(USE_ALLELE_CALL);
+          // add(FAIL_OR_DISCARD_IF_AC_INVALID); // not currently allowing as an option
+          add(SURETYPER_ALLOW_INVALID_DQA_ALLELES);
+        }
+      };
 
   private static final Map<String, DCProperty<?>> KEY_MAP = new HashMap<>();
 
+  public static DCProperty<?> get(String key) {
+    return ALL_PROPS.stream().filter(p -> p.getKey().equals(key)).findFirst().orElse(null);
+  }
+
   private static Setting register(Setting s, DCProperty p) {
-    s.breadcrumbProperty().addListener((observable, oldValue, newValue) -> {
-      if (oldValue != null && !oldValue.isBlank()) {
-        KEY_MAP.remove(oldValue);
-      }
-      KEY_MAP.put(newValue, p);
-    });
+    s.breadcrumbProperty()
+        .addListener(
+            (observable, oldValue, newValue) -> {
+              if (oldValue != null && !oldValue.isBlank()) {
+                KEY_MAP.remove(oldValue);
+              }
+              KEY_MAP.put(newValue, p);
+            });
     KEY_MAP.put(p.getKey(), p);
     return s;
   }
@@ -230,21 +342,33 @@ public abstract class DCProperty<T> {
 
     for (DCCATEGORY c : DCCATEGORY.values()) {
       // find all properties with this category
-      List<DCProperty<?>> catProps = ALL_PROPS.stream().filter(dcp -> dcp.getCategory() == c).collect(Collectors.toList());
+      List<DCProperty<?>> catProps =
+          ALL_PROPS.stream().filter(dcp -> dcp.getCategory() == c).collect(Collectors.toList());
 
       // find all "top-level" properties for this category
-      List<DCProperty<?>> noSubProps = catProps.stream().filter(dcp -> dcp.getGroup() == null).collect(Collectors.toList());
+      List<DCProperty<?>> noSubProps =
+          catProps.stream().filter(dcp -> dcp.getGroup() == null).collect(Collectors.toList());
 
       // final all sub-category properties and group together in-order
       Multimap<DCSUBCATEGORY, DCProperty<?>> subMap = ArrayListMultimap.create();
-      catProps.stream().filter(dcp -> dcp.getGroup() != null).forEach(dcp -> subMap.put(dcp.getGroup(), dcp));
+      catProps.stream()
+          .filter(dcp -> dcp.getGroup() != null)
+          .forEach(dcp -> subMap.put(dcp.getGroup(), dcp));
 
       Setting[] topLevel = noSubProps.stream().map(DCProperty::getSetting).toArray(Setting[]::new);
 
-      Category[] subCats = subMap.keySet().stream().sorted().map(subCat -> {
-        Setting[] catLevel = subMap.get(subCat).stream().map(DCProperty::getSetting).toArray(Setting[]::new);
-        return Category.of(subCat.getGroupName(), catLevel);
-      }).toArray(Category[]::new);
+      Category[] subCats =
+          subMap.keySet().stream()
+              .sorted()
+              .map(
+                  subCat -> {
+                    Setting[] catLevel =
+                        subMap.get(subCat).stream()
+                            .map(DCProperty::getSetting)
+                            .toArray(Setting[]::new);
+                    return Category.of(subCat.getGroupName(), catLevel);
+                  })
+              .toArray(Category[]::new);
 
       all.add(Category.of(c.getCategoryName(), topLevel).subCategories(subCats));
     }
@@ -391,8 +515,7 @@ public abstract class DCProperty<T> {
       DCProperty dcp = KEY_MAP.get(breadcrumb);
       Function<String, Object> fromF = dcp.fromConverter;
       String p = preferences.getProperty(dcp.getKey());
-      if (p == null)
-        return defaultObject;
+      if (p == null) return defaultObject;
       return fromF.apply(p);
     }
 
@@ -401,27 +524,33 @@ public abstract class DCProperty<T> {
       DCProperty dcp = KEY_MAP.get(breadcrumb);
       Function<String, Object> fromF = dcp.fromConverter;
       String p = preferences.getProperty(dcp.getKey());
-      if (p == null)
-        return defaultObject;
+      if (p == null) return defaultObject;
       return (T) fromF.apply(p);
     }
 
     private static final String listSeparator = ";";
 
     @Override
-    public ObservableList loadObservableList(String breadcrumb, ObservableList defaultObservableList) {
+    public ObservableList loadObservableList(
+        String breadcrumb, ObservableList defaultObservableList) {
       DCProperty dcp = KEY_MAP.get(breadcrumb);
       String p = preferences.getProperty(dcp.getKey());
       String[] pts = p.split(listSeparator);
-      return FXCollections.observableArrayList(Arrays.stream(pts).map(dcp.fromConverter).collect(Collectors.toList()));
+      return FXCollections.observableArrayList(
+          Arrays.stream(pts).map(dcp.fromConverter).collect(Collectors.toList()));
     }
 
     @Override
-    public <T> ObservableList<T> loadObservableList(String breadcrumb, Class<T> type, ObservableList<T> defaultObservableList) {
+    public <T> ObservableList<T> loadObservableList(
+        String breadcrumb, Class<T> type, ObservableList<T> defaultObservableList) {
       DCProperty dcp = KEY_MAP.get(breadcrumb);
       String p = preferences.getProperty(dcp.getKey());
       String[] pts = p.split(listSeparator);
-      List<T> cL = Arrays.stream(pts).map(pt -> dcp.fromConverter.apply(pt)).map(o -> type.cast(o)).collect(Collectors.toList());
+      List<T> cL =
+          Arrays.stream(pts)
+              .map(pt -> dcp.fromConverter.apply(pt))
+              .map(o -> type.cast(o))
+              .collect(Collectors.toList());
       return FXCollections.observableArrayList(cL);
     }
 
@@ -430,8 +559,5 @@ public abstract class DCProperty<T> {
       preferences.clear();
       return true;
     }
-
   }
-
-
 }
