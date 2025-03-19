@@ -132,7 +132,7 @@ public class XmlScore6Parser {
     setterBuilder.put(DQB_HEADER, ValidationModelBuilder::dqbSerotype);
 
     // Reported as allele types
-    setterBuilder.put(DPB_HEADER, ValidationModelBuilder::dpbSerotype);
+    setterBuilder.put(DPB_HEADER, ValidationModelBuilder::dpb);
     setterBuilder.put(DQA_HEADER, ValidationModelBuilder::dqaSerotype);
     setterBuilder.put(DPA_HEADER, ValidationModelBuilder::dpaSerotype);
 

@@ -81,7 +81,7 @@ public class XmlSureTyperParser {
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPA1).text().replaceAll("DPA1\\*", "").split("\\s"))
         .forEach(builder::dpaSerotype);
     Arrays.stream(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, HLA_DPB1).text().replaceAll("DPB1\\*", "").split("\\s"))
-        .forEach(builder::dpbSerotype);
+        .forEach(builder::dpb);
     builder.bw4(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw4"));
     builder.bw6(labAssignmentSection.getElementsByAttributeValue(NAME_TAG, BW).text().contains("Bw6"));
 
