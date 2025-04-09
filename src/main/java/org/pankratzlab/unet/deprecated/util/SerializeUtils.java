@@ -23,6 +23,7 @@ package org.pankratzlab.unet.deprecated.util;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -42,10 +43,11 @@ public final class SerializeUtils {
   public static <T extends Serializable> T read(String path, Class<T> dest) {
     File f = new File(path);
     if (f.exists()) {
-      try (BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(f));
-          ObjectInputStream in = new ObjectInputStream(fileIn)) {
+      try (BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(f)); ObjectInputStream in = new ObjectInputStream(fileIn)) {
         T cached = dest.cast(in.readObject());
         return cached;
+      } catch (EOFException exc) {
+        exc.printStackTrace();
       } catch (IOException exc) {
         exc.printStackTrace();
       } catch (ClassNotFoundException exc) {
