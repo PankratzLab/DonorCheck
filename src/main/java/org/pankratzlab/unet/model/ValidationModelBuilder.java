@@ -1091,6 +1091,10 @@ public class ValidationModelBuilder {
     return new ValidationResult(true, Optional.empty());
   }
 
+  public String getDonorId() {
+    return donorId;
+  }
+
   public Set<SeroType> getCWDSeroTypesForLocus(HLALocus locus) {
 
     switch (locus) {

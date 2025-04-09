@@ -65,6 +65,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
+import javafx.stage.Screen;
 import javafx.util.Callback;
 
 /** Controller for viewing the final results status. */
@@ -264,6 +265,11 @@ public class ValidationResultsController extends AbstractValidatingWizardControl
     assert haplotypeDQB1AlleleColumn != null : "fx:id=\"haplotypeDQB1Column\" was not injected: check your FXML file 'ValidationResults.fxml'.";
 
     rootPane.setAutosize(Bindings.createBooleanBinding(() -> true));
+    double scrH1 = Screen.getPrimary().getVisualBounds().getHeight();
+    int pad = (int) (scrH1 * 0.10);
+    pad = Math.max(pad, 10);
+    System.out.println(scrH1 - pad);
+    rootPane.setPrefHeight(scrH1 - pad);
 
     // Configure validation results table columns
     rowLabelCol.setCellValueFactory(new PropertyValueFactory<>(ValidationRow.ID_PROP));
