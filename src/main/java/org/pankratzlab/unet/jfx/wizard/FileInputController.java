@@ -24,6 +24,9 @@ package org.pankratzlab.unet.jfx.wizard;
 import java.io.File;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import org.pankratzlab.BackgroundDataProcessor;
 import org.pankratzlab.unet.deprecated.hla.CurrentDirectoryProvider;
@@ -52,13 +55,18 @@ import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
@@ -74,11 +82,10 @@ public class FileInputController extends AbstractValidatingWizardController {
 
   private static final String FILE_DISPLAY_CLASS = "file-display";
 
-  private ObservableList<ReadOnlyObjectWrapper<File>> selectedFileProperties =
-      FXCollections.observableArrayList();
+  private ObservableList<ReadOnlyObjectWrapper<File>> selectedFileProperties = FXCollections.observableArrayList();
 
-  private ObservableList<DonorFileParser> availableFileTypes = FXCollections.observableArrayList(
-      ImmutableList.of(new PdfDonorParser(), new XmlDonorParser(), new HtmlDonorParser()));
+  private ObservableList<DonorFileParser> availableFileTypes =
+      FXCollections.observableArrayList(ImmutableList.of(new PdfDonorParser(), new XmlDonorParser(), new HtmlDonorParser()));
 
   private ObservableBooleanValue invalidBinding;
 
@@ -87,13 +94,10 @@ public class FileInputController extends AbstractValidatingWizardController {
 
   @FXML
   void initialize() {
-    invalidBinding = Bindings.createBooleanBinding(() -> selectedFileProperties.isEmpty(),
-        selectedFileProperties);
+    invalidBinding = Bindings.createBooleanBinding(() -> selectedFileProperties.isEmpty(), selectedFileProperties);
 
-    DonorFileParser f = getParser(DonorCheckProperties.get()
-        .getProperty(DonorCheckProperties.FIRST_TYPE, PdfDonorParser.getTypeString()));
-    DonorFileParser s = getParser(DonorCheckProperties.get()
-        .getProperty(DonorCheckProperties.SECOND_TYPE, XmlDonorParser.getTypeString()));
+    DonorFileParser f = getParser(DonorCheckProperties.get().getProperty(DonorCheckProperties.FIRST_TYPE, PdfDonorParser.getTypeString()));
+    DonorFileParser s = getParser(DonorCheckProperties.get().getProperty(DonorCheckProperties.SECOND_TYPE, XmlDonorParser.getTypeString()));
 
     inputFiles_VBox.getChildren().add(createFileBox(f.getClass(), ValidationTable::setFirstModel));
     inputFiles_VBox.getChildren().add(createFileBox(s.getClass(), ValidationTable::setSecondModel));
@@ -122,13 +126,11 @@ public class FileInputController extends AbstractValidatingWizardController {
     TutorialHelper.tutorialXMLDownload(event);
   }
 
-  private HBox createFileBox(Class<? extends DonorFileParser> defaultSelected,
-      BiConsumer<ValidationTable, ValidationModel> setter) {
+  private HBox createFileBox(Class<? extends DonorFileParser> defaultSelected, BiConsumer<ValidationTable, ValidationModel> setter) {
     ReadOnlyObjectWrapper<File> linkedFile = new ReadOnlyObjectWrapper<>();
 
     // Update the invalidation binding
-    invalidBinding = JFXPropertyHelper.orHelper(invalidBinding,
-        Bindings.createBooleanBinding(() -> Objects.isNull(linkedFile.get()), linkedFile));
+    invalidBinding = JFXPropertyHelper.orHelper(invalidBinding, Bindings.createBooleanBinding(() -> Objects.isNull(linkedFile.get()), linkedFile));
 
     rootPane().setInvalidBinding(invalidBinding);
 
@@ -144,8 +146,7 @@ public class FileInputController extends AbstractValidatingWizardController {
         break;
       }
     }
-    comboBox.getSelectionModel().selectedItemProperty()
-        .addListener((v, o, n) -> linkedFile.set(null));
+    comboBox.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> linkedFile.set(null));
     comboBox.setPrefWidth(100);
 
     hbox.getChildren().add(comboBox);
@@ -157,25 +158,22 @@ public class FileInputController extends AbstractValidatingWizardController {
     fileDisplay.setPromptText("no file selected");
 
     // Link text field and file
-    linkedFile.getReadOnlyProperty()
-        .addListener((b, o, n) -> updateFileDisplay(fileDisplay, linkedFile.get()));
+    linkedFile.getReadOnlyProperty().addListener((b, o, n) -> updateFileDisplay(fileDisplay, linkedFile.get()));
 
     hbox.getChildren().add(fileDisplay);
 
     Button chooseFileButton = new Button("Choose file");
     chooseFileButton.setFont(Font.font(16.0));
-    chooseFileButton.setOnAction(e -> selectDonorFile(e,
-        comboBox.getSelectionModel().getSelectedItem(), setter, linkedFile));
+    chooseFileButton.setOnAction(e -> selectDonorFile(e, comboBox.getSelectionModel().getSelectedItem(), setter, linkedFile));
     hbox.getChildren().add(chooseFileButton);
 
     return hbox;
   }
 
-  private void selectDonorFile(ActionEvent event, DonorFileParser donorParser,
-      BiConsumer<ValidationTable, ValidationModel> setter, ReadOnlyObjectWrapper<File> linkedFile) {
+  private void selectDonorFile(ActionEvent event, DonorFileParser donorParser, BiConsumer<ValidationTable, ValidationModel> setter,
+      ReadOnlyObjectWrapper<File> linkedFile) {
 
-    Optional<File> optionalFile = DonorNetUtils.getFile(((Node) event.getSource()),
-        donorParser.fileChooserHeader(), donorParser.initialName(),
+    Optional<File> optionalFile = DonorNetUtils.getFile(((Node) event.getSource()), donorParser.fileChooserHeader(), donorParser.initialName(),
         donorParser.extensionDescription(), donorParser.extensionFilter(), true);
 
     if (optionalFile.isPresent()) {
@@ -201,14 +199,11 @@ public class FileInputController extends AbstractValidatingWizardController {
           // check for corrections
           if (builder.hasCorrections()) {
 
-            BackgroundDataProcessor<HLALocus, PresentableAlleleChoices> choiceSupplier =
-                new BackgroundDataProcessor<>(builder.getNonCWDLoci(),
-                    (locus) -> PresentableAlleleChoices.create(locus,
-                        builder.getAllelePairs(locus)),
-                    (t) -> {
-                      t.printStackTrace();
-                      return null;
-                    });
+            BackgroundDataProcessor<HLALocus, PresentableAlleleChoices> choiceSupplier = new BackgroundDataProcessor<>(builder.getNonCWDLoci(),
+                (locus) -> PresentableAlleleChoices.create(locus, builder.getAllelePairs(locus)), (t) -> {
+                  t.printStackTrace();
+                  return null;
+                });
             GUIRemapProcessor processor = new GUIRemapProcessor(choiceSupplier);
 
             Platform.runLater(() -> {
@@ -245,42 +240,88 @@ public class FileInputController extends AbstractValidatingWizardController {
     }
   }
 
-  private void alertInvalid(DonorFileParser donorParser, File selectedFile,
-      ValidationResult validationResult) {
+  private void alertInvalid(DonorFileParser donorParser, File selectedFile, ValidationResult validationResult) {
     if (validationResult.validationMessage.isPresent()) {
       Platform.runLater(() -> {
         Alert alert = new Alert(AlertType.ERROR);
-        alert.setHeaderText(
-            donorParser.getErrorText() + "\nOffending file: " + selectedFile.getName()
-                + "\nValidation message: " + validationResult.validationMessage.get());
+        alert.setHeaderText(donorParser.getErrorText() + "\nOffending file: " + selectedFile.getName() + "\nValidation message: "
+            + validationResult.validationMessage.get());
         alert.showAndWait();
       });
     }
   }
 
-  private void finish(DonorFileParser donorParser,
-      BiConsumer<ValidationTable, ValidationModel> setter, ReadOnlyObjectWrapper<File> linkedFile,
+  private void finish(DonorFileParser donorParser, BiConsumer<ValidationTable, ValidationModel> setter, ReadOnlyObjectWrapper<File> linkedFile,
       File selectedFile, ValidationModelBuilder builder) {
+
+    ScheduledExecutorService dialogScheduler = Executors.newSingleThreadScheduledExecutor();
+
     Task<Void> buildModelText = JFXUtilHelper.createProgressTask(() -> {
       // valid model, build and set
-      try {
-        setter.accept(getTable(), builder.build());
+      setter.accept(getTable(), builder.build());
+    });
+
+    EventHandler<WorkerStateEvent> succeededHandler = buildModelText.getOnSucceeded();
+    EventHandler<WorkerStateEvent> failedHandler = buildModelText.getOnFailed();
+
+    buildModelText.setOnSucceeded(event -> {
+      Platform.runLater(() -> {
+        linkedFile.set(selectedFile);
+        succeededHandler.handle(event);
+      });
+    });
+
+    buildModelText.setOnFailed(event -> {
+      Throwable t = buildModelText.getException();
+      Platform.runLater(() -> {
+        failedHandler.handle(event);
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setHeaderText(donorParser.getErrorText() + "\nPlease notify the developers as this may indicate the data has changed."
+            + "\nOffending file: " + selectedFile.getName());
+        alert.showAndWait();
+        t.printStackTrace();
+      });
+    });
+
+
+    Thread backgroundThread = new Thread(buildModelText);
+
+    long timeoutThreshold = 2;
+    TimeUnit timeoutUnit = TimeUnit.MINUTES;
+
+    // Schedule the dialog to appear after the timeout
+    dialogScheduler.schedule(() -> {
+      if (backgroundThread.isAlive()) {
         Platform.runLater(() -> {
-          linkedFile.set(selectedFile);
-        });
-      } catch (Throwable e) {
-        Platform.runLater(() -> {
-          Alert alert = new Alert(AlertType.ERROR);
-          alert.setHeaderText(donorParser.getErrorText()
-              + "\nPlease notify the developers as this may indicate the data has changed."
-              + "\nOffending file: " + selectedFile.getName());
-          alert.showAndWait();
-          e.printStackTrace();
+          Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+          alert.setTitle("Calculation in Progress");
+          alert.setHeaderText("Haplotype computation is taking longer than expected.");
+          alert.setContentText(
+              "This is an optional calculation. You can skip this step to finish building the model now. Primary file data will be present, but some haplotype information may be incomplete.");
+
+          ButtonType skipButton = new ButtonType("Skip This Step", ButtonBar.ButtonData.CANCEL_CLOSE);
+          ButtonType waitButton = new ButtonType("Keep Waiting", ButtonBar.ButtonData.OK_DONE);
+          alert.getButtonTypes().setAll(waitButton, skipButton);
+
+          alert.showAndWait().ifPresent(response -> {
+            if (response == skipButton) {
+              // We interrupt the thread directly, not the task.
+              backgroundThread.interrupt();
+            }
+          });
         });
       }
+    }, timeoutThreshold, timeoutUnit);
 
+    // Now, start the background thread
+    backgroundThread.start();
+
+    // Finally, ensure the scheduler is shut down when the task finishes for any reason.
+    buildModelText.stateProperty().addListener((obs, oldState, newState) -> {
+      if (newState == Worker.State.SUCCEEDED || newState == Worker.State.FAILED || newState == Worker.State.CANCELLED) {
+        dialogScheduler.shutdownNow();
+      }
     });
-    new Thread(buildModelText).start();
   }
 
   /**
