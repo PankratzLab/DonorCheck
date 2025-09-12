@@ -23,7 +23,6 @@ package org.pankratzlab.unet.model;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -674,9 +673,21 @@ public class ValidationModelBuilder {
 
   /** @return The immutable {@link ValidationModel} based on the current builder state. */
   public ValidationModel build() {
-    Multimap<RaceGroup, Haplotype> bcCwdHaplotypes = buildBCHaplotypes(bHaplotypes, cHaplotypes);
+    Multimap<RaceGroup, Haplotype> bcCwdHaplotypes = ArrayListMultimap.create();
+    Multimap<RaceGroup, Haplotype> drDqDR345Haplotypes = ArrayListMultimap.create();
+    try {
+      bcCwdHaplotypes = buildBCHaplotypes(bHaplotypes, cHaplotypes);
+    } catch (InterruptedException ie) {
+      // skip
+    }
 
-    Multimap<RaceGroup, Haplotype> drDqDR345Haplotypes = buildHaplotypes(ImmutableList.of(drb1Haplotypes, dqb1Haplotypes, dr345Haplotypes));
+    if (!Thread.interrupted()) {
+      try {
+        drDqDR345Haplotypes = buildHaplotypes(ImmutableList.of(drb1Haplotypes, dqb1Haplotypes, dr345Haplotypes));
+      } catch (InterruptedException ie) {
+        Thread.interrupted();
+      }
+    }
 
     frequencyTable.clear();
 
@@ -724,7 +735,8 @@ public class ValidationModelBuilder {
   /**
    * Helper method to build the B/C haplotypes. Extra filtering is needed based on the Bw groups.
    */
-  private Multimap<RaceGroup, Haplotype> buildBCHaplotypes(Multimap<Strand, HLAType> bHaps, Multimap<Strand, HLAType> cHaps) {
+  private Multimap<RaceGroup, Haplotype> buildBCHaplotypes(Multimap<Strand, HLAType> bHaps, Multimap<Strand, HLAType> cHaps)
+      throws InterruptedException {
     if (bw4 && bw6) {
       // One strand is Bw4 and one is Bw6, but we can't know for sure which. So we try both
       Multimap<Strand, HLAType> s4s6 = enforceBws(BwGroup.Bw4, BwGroup.Bw6, bHaps);
@@ -797,7 +809,7 @@ public class ValidationModelBuilder {
   }
 
   /** @return A table of the highest-probability haplotypes for each ethnicity */
-  private Multimap<RaceGroup, Haplotype> buildHaplotypes(List<Multimap<Strand, HLAType>> typesByLocus) {
+  private Multimap<RaceGroup, Haplotype> buildHaplotypes(List<Multimap<Strand, HLAType>> typesByLocus) throws InterruptedException {
     Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity = new HashMap<>();
     Multimap<RaceGroup, Haplotype> haplotypesByEthnicity = MultimapBuilder.enumKeys(RaceGroup.class).arrayListValues().build();
 
@@ -824,8 +836,10 @@ public class ValidationModelBuilder {
    * @param maxScorePairsByEthnicity Collection to populate with possible haplotype pairs
    * @param typesByLocus List of mappings, one per locus, of {@link Strand} to possible alleles for
    *        that strand.
+   * @throws InterruptedException
    */
-  private void generateHaplotypePairs(Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity, List<Multimap<Strand, HLAType>> typesByLocus) {
+  private void generateHaplotypePairs(Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity, List<Multimap<Strand, HLAType>> typesByLocus)
+      throws InterruptedException {
     // Overview:
     // 1. Recurse through strand 1 sets - for each locus, record the possible complementary options
     // 2. At the terminal strand 1 step, start recursing through the possible strand 2 options
@@ -846,7 +860,12 @@ public class ValidationModelBuilder {
    * @param locusIndex Current locus index in the {@code strandTwoOptionsByLocus} list
    */
   private void generateStrandOneHaplotypes(Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity, List<Multimap<Strand, HLAType>> typesByLocus,
-      List<HLAType> currentHaplotypeAlleles, List<List<HLAType>> strandTwoOptionsByLocus, int locusIndex) {
+      List<HLAType> currentHaplotypeAlleles, List<List<HLAType>> strandTwoOptionsByLocus, int locusIndex) throws InterruptedException {
+
+    if (Thread.currentThread().isInterrupted()) {
+      throw new InterruptedException();
+    }
+
     if (locusIndex == typesByLocus.size()) {
       // Terminal step - we now have one haplotype; recursively generate the second
       Haplotype firstHaplotype = new Haplotype(currentHaplotypeAlleles);
@@ -863,6 +882,11 @@ public class ValidationModelBuilder {
 
       // Build the combinations of strand1 + strand2 alleles at this locus
       for (Strand strandOne : firstStrandsSet) {
+
+        if (Thread.currentThread().isInterrupted()) {
+          throw new InterruptedException();
+        }
+
         List<HLAType> firstStrandTypes = Lists.newArrayList(currentLocus.get(strandOne));
         List<HLAType> secondStrandTypes = Lists.newArrayList(currentLocus.get(strandOne.flip()));
         if (secondStrandTypes.isEmpty()) {
@@ -909,6 +933,9 @@ public class ValidationModelBuilder {
 
         // Try each possible strand one allele
         for (HLAType currentType : firstStrandTypes) {
+          if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedException();
+          }
           setOrAdd(currentHaplotypeAlleles, currentType, locusIndex);
 
           // Recurse to the next locus
@@ -927,9 +954,13 @@ public class ValidationModelBuilder {
    *        haplotypes
    * @param currentHaplotypeAlleles Current alleles of the second haplotype
    * @param locusIndex Current locus index in the {@code strandTwoOptionsByLocus} list
+   * @throws InterruptedException
    */
   private void generateStrandTwoHaplotypes(Map<RaceGroup, ScoredHaplotypes> maxScorePairsByEthnicity, Haplotype firstHaplotype,
-      List<List<HLAType>> strandTwoOptionsByLocus, List<HLAType> currentHaplotypeAlleles, int locusIndex) {
+      List<List<HLAType>> strandTwoOptionsByLocus, List<HLAType> currentHaplotypeAlleles, int locusIndex) throws InterruptedException {
+    if (Thread.currentThread().isInterrupted()) {
+      throw new InterruptedException();
+    }
     if (locusIndex == strandTwoOptionsByLocus.size()) {
       // Terminal step - we now have two haplotypes so we score them and compare
       final Haplotype e2 = new Haplotype(currentHaplotypeAlleles);
@@ -947,6 +978,9 @@ public class ValidationModelBuilder {
         }
       } else {
         for (RaceGroup ethnicity : RaceGroup.values()) {
+          if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedException();
+          }
           // if the map doesn't have a value yet
           // or if the current value is less than the new value
           // put the value into the map
@@ -961,6 +995,9 @@ public class ValidationModelBuilder {
       // Recursive step - iterate through the possible alleles for this locus, building up the
       // current haplotype
       for (HLAType currentType : strandTwoOptionsByLocus.get(locusIndex)) {
+        if (Thread.currentThread().isInterrupted()) {
+          throw new InterruptedException();
+        }
         setOrAdd(currentHaplotypeAlleles, currentType, locusIndex);
         generateStrandTwoHaplotypes(maxScorePairsByEthnicity, firstHaplotype, strandTwoOptionsByLocus, currentHaplotypeAlleles, locusIndex + 1);
       }
@@ -1335,11 +1372,17 @@ public class ValidationModelBuilder {
     private static final int NO_MISSING_WEIGHT = 10;
     private final Map<RaceGroup, Double> scoresByEthnicity = new HashMap<>();
 
-    private ScoredHaplotypes(Collection<Haplotype> initialHaplotypes) {
+    private ScoredHaplotypes(Collection<Haplotype> initialHaplotypes) throws InterruptedException {
       super();
+      if (Thread.currentThread().isInterrupted()) {
+        throw new InterruptedException();
+      }
       BigDecimal cwdScore1 = BigDecimal.ZERO;
 
       for (Haplotype haplotype : initialHaplotypes) {
+        if (Thread.currentThread().isInterrupted()) {
+          throw new InterruptedException();
+        }
         add(haplotype);
 
         for (RaceGroup e : RaceGroup.values()) {
@@ -1356,31 +1399,59 @@ public class ValidationModelBuilder {
       }
       BigDecimal cwdScore = cwdScore1;
 
+      for (RaceGroup e : RaceGroup.values()) {
+        if (Thread.currentThread().isInterrupted()) {
+          throw new InterruptedException();
+        }
+        int noMissingCount = 0;
+
+        // starting from 1
+        BigDecimal frequency = new BigDecimal(1.0);
+
+        for (Haplotype haplotype : this) {
+          if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedException();
+          }
+          BigDecimal f = frequencyTable.get(haplotype, e);
+
+          if (f.compareTo(BigDecimal.ZERO) > 0) {
+            frequency = frequency.multiply(f);
+            noMissingCount++;
+          }
+        }
+
+        BigDecimal weights = cwdScore.add(BigDecimal.valueOf(NO_MISSING_WEIGHT * noMissingCount));
+
+        double s = weights.add(frequency).doubleValue();
+        scoresByEthnicity.put(e, s);
+      }
+
+
       // TODO - document walk-through
-      scoresByEthnicity
-          // calculate the score for each ethnicity
-          .putAll(Arrays.stream(RaceGroup.values()).collect(Collectors.toMap(e -> e, e -> {
-
-            int noMissingCount = 0;
-
-            // starting from 1
-            BigDecimal frequency = new BigDecimal(1.0);
-
-            for (Haplotype haplotype : this) {
-              BigDecimal f = frequencyTable.get(haplotype, e);
-
-              if (f.compareTo(BigDecimal.ZERO) > 0) {
-                frequency = frequency.multiply(f);
-                noMissingCount++;
-              }
-            }
-
-            BigDecimal weights = cwdScore.add(BigDecimal.valueOf(NO_MISSING_WEIGHT * noMissingCount));
-
-            double s = weights.add(frequency).doubleValue();
-
-            return s;
-          })));
+      // scoresByEthnicity
+      // // calculate the score for each ethnicity
+      // .putAll(Arrays.stream(RaceGroup.values()).collect(Collectors.toMap(e -> e, e -> {
+      //
+      // int noMissingCount = 0;
+      //
+      // // starting from 1
+      // BigDecimal frequency = new BigDecimal(1.0);
+      //
+      // for (Haplotype haplotype : this) {
+      // BigDecimal f = frequencyTable.get(haplotype, e);
+      //
+      // if (f.compareTo(BigDecimal.ZERO) > 0) {
+      // frequency = frequency.multiply(f);
+      // noMissingCount++;
+      // }
+      // }
+      //
+      // BigDecimal weights = cwdScore.add(BigDecimal.valueOf(NO_MISSING_WEIGHT * noMissingCount));
+      //
+      // double s = weights.add(frequency).doubleValue();
+      //
+      // return s;
+      // })));
     }
 
     @Override
