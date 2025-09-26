@@ -286,8 +286,8 @@ public class FileInputController extends AbstractValidatingWizardController {
 
     Thread backgroundThread = new Thread(buildModelText);
 
-    long timeoutThreshold = 2;
-    TimeUnit timeoutUnit = TimeUnit.MINUTES;
+    long timeoutThreshold = 10;
+    TimeUnit timeoutUnit = TimeUnit.SECONDS;
 
     // Schedule the dialog to appear after the timeout
     dialogScheduler.schedule(() -> {
