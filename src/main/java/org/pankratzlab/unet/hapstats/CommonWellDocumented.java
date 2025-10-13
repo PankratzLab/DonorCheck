@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -63,7 +65,7 @@ public final class CommonWellDocumented {
   private static final String COMMON_FLAG = "C";
   private static final String ALLELE_FREQ_PATH = "/ciwd300.txt";
   private static final String ALLELE_FREQ_PATH_200 = "/cwd200.html";
-  private static ImmutableMap<HLAType, Status> ALLELE_FREQS;
+  private static volatile ImmutableMap<HLAType, Status> ALLELE_FREQS;
 
   private static LoadingCache<HLAType, Status> doGetStatusCache =
       CacheBuilder.newBuilder().build(CacheLoader.from(CommonWellDocumented::doGetStatus));
@@ -231,8 +233,7 @@ public final class CommonWellDocumented {
   }
 
   public static void loadCIWD300() {
-    try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(XmlDonorParser.class.getResourceAsStream(ALLELE_FREQ_PATH)))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(XmlDonorParser.class.getResourceAsStream(ALLELE_FREQ_PATH)))) {
       ImmutableMap.Builder<HLAType, Status> freqMapBuilder = ImmutableMap.builder();
       Map<HLAType, Status> cwdMap = new HashMap<>();
       reader.lines().map(s -> s.split("\t", -1)).forEach(s -> {
@@ -281,8 +282,8 @@ public final class CommonWellDocumented {
 
   /**
    * @param type HLA allele
-   * @return Common/Well-documented status of the allele. If the base allele is unknown, we will
-   *         check G-group equivalents.
+   * @return Common/Well-documented status of the allele. If the base allele is unknown, we will check
+   *         G-group equivalents.
    */
   public static Status getEquivStatus(HLAType type) {
     Status status = doGetStatusCache.getUnchecked(type);
@@ -320,7 +321,34 @@ public final class CommonWellDocumented {
 
   }
 
+  private static final AtomicBoolean isInitializing = new AtomicBoolean(false);
+  private static final CountDownLatch initializationLatch = new CountDownLatch(1);
+
   private static Status doGetStatus(HLAType type) {
+    if (ALLELE_FREQS != null) {
+      return doGetStatusActual(type);
+    }
+    if (isInitializing.compareAndSet(false, true)) {
+      try {
+        initFromProperty();
+      } finally {
+        // Signal completion, releasing any waiting threads.
+        initializationLatch.countDown();
+      }
+    } else {
+      // All other threads that arrive while initialization is in progress
+      // will block here efficiently without wasting CPU.
+      try {
+        initializationLatch.await();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    return doGetStatusActual(type);
+  }
+
+  private static Status doGetStatusActual(HLAType type) {
     if (ALLELE_FREQS.containsKey(type)) {
       return ALLELE_FREQS.get(type);
     }
