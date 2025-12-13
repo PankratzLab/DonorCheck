@@ -41,6 +41,7 @@ import org.jsoup.select.Elements;
 import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLALocus;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.deprecated.hla.SeroType;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented;
 import org.pankratzlab.unet.hapstats.CommonWellDocumented.Status;
@@ -291,8 +292,8 @@ public class XmlScore6Parser {
         return;
       }
 
-      boolean useAlleleCallIfPresent = Boolean
-          .parseBoolean(DonorCheckProperties.get().getProperty(DonorCheckProperties.USE_SCORE_6_ALLELE_CALL, DonorCheckProperties.USE_SCORE_6_ALLELE_CALL_DEFAULT));
+      boolean useAlleleCallIfPresent = Boolean.parseBoolean(
+          DonorCheckProperties.get().getProperty(DonorCheckProperties.USE_SCORE_6_ALLELE_CALL, DonorCheckProperties.USE_SCORE_6_ALLELE_CALL_DEFAULT));
       String alleleCall1 = null;
       String alleleCall2 = null;
       if (useAlleleCallIfPresent) {
@@ -952,9 +953,6 @@ public class XmlScore6Parser {
     if (!hasCombination(resultCombinations, combinationIndex, alleleComboTag) && !DISREGARD_SERO.contains(locus.toString())) {
       return null;
     }
-    if (alleleString != null && alleleString.matches(ValidationModelBuilder.NOT_EXPRESSED)) {
-      return null;
-    }
     HLAType allele = null;
     SeroType antigen = null;
 
@@ -962,7 +960,11 @@ public class XmlScore6Parser {
 
       // Ensure this is a recognized allele
       try {
-        allele = HLAType.valueOf(alleleString);
+        if (alleleString.matches(ValidationModelBuilder.NOT_EXPRESSED)) {
+          allele = NullType.valueOf(alleleString);
+        } else {
+          allele = HLAType.valueOf(alleleString);
+        }
         // This type is valid
       } catch (IllegalArgumentException e) {
         // These types are invalid
@@ -971,6 +973,9 @@ public class XmlScore6Parser {
       if (Objects.nonNull(antigenString) || DISREGARD_SERO.contains(locus.toString())) {
         if (NULL_TYPE.equals(antigenString) && !DISREGARD_SERO.contains(locus.toString())) {
           // This combination isn't expressed
+          return null;
+        }
+        if (allele instanceof NullType) {
           return null;
         }
         if (UNDEFINED_TOKENS.contains(antigenString) || DISREGARD_SERO.contains(locus.toString())) {

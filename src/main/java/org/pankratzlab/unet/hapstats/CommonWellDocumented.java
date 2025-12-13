@@ -37,6 +37,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.pankratzlab.unet.deprecated.hla.DonorCheckProperties;
 import org.pankratzlab.unet.deprecated.hla.HLAType;
+import org.pankratzlab.unet.deprecated.hla.NullType;
 import org.pankratzlab.unet.parser.XmlDonorParser;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -218,7 +219,13 @@ public final class CommonWellDocumented {
             freqKey = freqKey.substring(0, freqKey.length() - 1);
           }
           Status freqVal = getCwdWeight(columns.get(1).text());
-          cwdMap.put(HLAType.valueOf(freqKey), freqVal);
+          HLAType type;
+          if (freqKey.charAt(freqKey.length() - 1) == 'N') {
+            type = NullType.valueOf(freqKey);
+          } else {
+            type = HLAType.valueOf(freqKey);
+          }
+          cwdMap.put(type, freqVal);
         }
       }
       cwdMap.entries().forEach(e -> {
@@ -242,7 +249,12 @@ public final class CommonWellDocumented {
         if (s[0].charAt(s[0].length() - 1) == 'P' || s[0].charAt(s[0].length() - 1) == 'G') {
           return;
         }
-        HLAType type = HLAType.valueOf(s[0]);
+        HLAType type;
+        if (s[0].charAt(s[0].length() - 1) == 'N') {
+          type = NullType.valueOf(s[0]);
+        } else {
+          type = HLAType.valueOf(s[0]);
+        }
         Status freqVal = getCwdWeight(s[1]);
 
         cwdMap.put(type, freqVal);
