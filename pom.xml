@@ -72,6 +72,10 @@
 		<maven.compiler.target>21</maven.compiler.target>
 		<app.dir>${project.build.directory}/app</app.dir>
 		<resources.dir>${project.basedir}/src/main/resources/</resources.dir>
+		
+
+		<skipJar>false</skipJar>
+		<dontSkipJar>true</dontSkipJar>
 	</properties>
 
 	<dependencies>
@@ -139,24 +143,23 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.5</version>
 		</dependency>
-		<!-- dependency used for XLSX file format -->
-		<dependency>
-			<groupId>org.apache.poi</groupId>
-			<artifactId>poi-ooxml</artifactId>
-			<version>3.16</version>
-		</dependency>
-		<!-- dependency used for XLS older file format (added for information) -->
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
-			<version>3.16</version>
+			<version>5.4.1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.poi</groupId>
-			<artifactId>ooxml-schemas</artifactId>
-			<version>1.3</version>
-		</dependency>		
-		
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.4.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml-full</artifactId>
+			<version>5.4.1</version>
+		</dependency>
 		<dependency>
   			<groupId>com.dlsc.preferencesfx</groupId>
   			<artifactId>preferencesfx-core</artifactId>
@@ -361,9 +364,16 @@
 	</build>
 	<profiles>
 		<profile>
+			<id>thin</id>
+			<properties>
+				<skipJar>true</skipJar>
+				<dontSkipJar>false</dontSkipJar>
+			</properties>
+		</profile>
+		<profile>
 			<id>jar-with-dependencies</id>
 			<activation>
-				<activeByDefault>true</activeByDefault>
+				<activeByDefault>${dontSkipJar}</activeByDefault>
 			</activation>
 			<build>
 				<resources>
