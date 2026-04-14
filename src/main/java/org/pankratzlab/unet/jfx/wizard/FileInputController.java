@@ -194,6 +194,7 @@ public class FileInputController extends AbstractValidatingWizardController {
           if (!validationResult.valid) {
             // if a value is present, show error message
             alertInvalid(donorParser, selectedFile, validationResult);
+            return;
           }
 
           // check for corrections
@@ -211,6 +212,7 @@ public class FileInputController extends AbstractValidatingWizardController {
                 ValidationResult validationResult1 = builder.processCorrections(processor);
                 if (!validationResult1.valid) {
                   alertInvalid(donorParser, selectedFile, validationResult);
+                  return;
                 } else {
                   finish(donorParser, setter, linkedFile, selectedFile, builder);
                 }
@@ -244,8 +246,8 @@ public class FileInputController extends AbstractValidatingWizardController {
     if (validationResult.validationMessage.isPresent()) {
       Platform.runLater(() -> {
         Alert alert = new Alert(AlertType.ERROR);
-        alert.setHeaderText(donorParser.getErrorText() + "\nOffending file: " + selectedFile.getName() + "\nValidation message: "
-            + validationResult.validationMessage.get());
+        alert.setHeaderText(
+            donorParser.getErrorText() + "\nFile: " + selectedFile.getName() + "\nValidation message: " + validationResult.validationMessage.get());
         alert.showAndWait();
       });
     }

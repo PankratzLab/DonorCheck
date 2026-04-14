@@ -716,7 +716,11 @@ public class ValidationModelBuilder {
       dpbSource = test1(dpbLocusAllelesNonCWD) ? dpbLocusAlleles : dpbLocusAllelesNonCWD;
       Set<SeroType> dpbBackup = test1(dpbLocusNonCWD) ? dpbLocus : trim(dpbLocusNonCWD);
       if (dpbSource == null || dpbSource.isEmpty()) {
-        dpbSource = dpbBackup.stream().map(s -> new HLAType(HLALocus.DPB1, s.spec())).collect(ImmutableSet.toImmutableSet());
+        if (dpbBackup != null && !dpbBackup.isEmpty()) {
+          dpbSource = dpbBackup.stream().map(s -> new HLAType(HLALocus.DPB1, s.spec())).collect(ImmutableSet.toImmutableSet());
+        } else {
+          dpbSource = ImmutableSet.of();
+        }
       }
     }
     for (HLAType dpbType1 : dpbSource) {
