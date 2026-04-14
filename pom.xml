@@ -6,8 +6,19 @@
 
 	<groupId>org.pankratzlab</groupId>
 	<artifactId>donorcheck</artifactId>
-	<!-- if version number changes, be sure to update in project.properties file also -->
+	
+	
+	<!--
+		************************************************************************************
+		*                                                                                  *
+		*              UPDATE project.properties FILE WHEN UPDATING THIS VALUE!            *
+		*                                                                                  *
+		************************************************************************************
+	 -->
 	<version>1.2.9</version>
+	
+	
+	
 	<packaging>jar</packaging>
 
 	<description>A stand-alone tool for validating DonorNet typing entries.</description>
