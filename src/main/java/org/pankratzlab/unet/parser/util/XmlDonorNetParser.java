@@ -82,25 +82,25 @@ public class XmlDonorNetParser {
     getXMLTagVal(donorRoot, "b2").ifPresent(builder::b);
     getXMLTagVal(donorRoot, "c1").ifPresent(builder::c);
     getXMLTagVal(donorRoot, "c2").ifPresent(builder::c);
-    getXMLTagVal(donorRoot, "dr1").ifPresent(s -> builder.drb(decodeValue(drbMap, s)));
-    getXMLTagVal(donorRoot, "dr2").ifPresent(s -> builder.drb(decodeValue(drbMap, s)));
-    getXMLTagVal(donorRoot, "dq1").ifPresent(s -> builder.dqbSerotype(decodeValue(dqbMap, s)));
-    getXMLTagVal(donorRoot, "dq2").ifPresent(s -> builder.dqbSerotype(decodeValue(dqbMap, s)));
-    getXMLTagVal(donorRoot, "dqa1").ifPresent(s -> builder.dqaSerotype(decodeValue(dqaMap, s)));
-    getXMLTagVal(donorRoot, "dqa2").ifPresent(s -> builder.dqaSerotype(decodeValue(dqaMap, s)));
-    getXMLTagVal(donorRoot, "dpa1").ifPresent(s -> builder.dpaSerotype(decodeValue(dpaMap, s)));
-    getXMLTagVal(donorRoot, "dpa2").ifPresent(s -> builder.dpaSerotype(decodeValue(dpaMap, s)));
-    getXMLTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
-    getXMLTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpb(decodeValue(dpbMap, s)));
+    getXMLTagVal(donorRoot, "dr1").ifPresent(s -> builder.drb(decodeValue("dr1", drbMap, s)));
+    getXMLTagVal(donorRoot, "dr2").ifPresent(s -> builder.drb(decodeValue("dr2", drbMap, s)));
+    getXMLTagVal(donorRoot, "dq1").ifPresent(s -> builder.dqbSerotype(decodeValue("dq1", dqbMap, s)));
+    getXMLTagVal(donorRoot, "dq2").ifPresent(s -> builder.dqbSerotype(decodeValue("dq2", dqbMap, s)));
+    getXMLTagVal(donorRoot, "dqa1").ifPresent(s -> builder.dqaSerotype(decodeValue("dqa1", dqaMap, s)));
+    getXMLTagVal(donorRoot, "dqa2").ifPresent(s -> builder.dqaSerotype(decodeValue("dqa2", dqaMap, s)));
+    getXMLTagVal(donorRoot, "dpa1").ifPresent(s -> builder.dpaSerotype(decodeValue("dpa1", dpaMap, s)));
+    getXMLTagVal(donorRoot, "dpa2").ifPresent(s -> builder.dpaSerotype(decodeValue("dpa2", dpaMap, s)));
+    getXMLTagVal(donorRoot, "dp1").ifPresent(s -> builder.dpb(decodeValue("dp1", dpbMap, s)));
+    getXMLTagVal(donorRoot, "dp2").ifPresent(s -> builder.dpb(decodeValue("dp2", dpbMap, s)));
 
     getXMLTagVal(donorRoot, "bw4").ifPresent(s -> builder.bw4(decodeXMLBoolean(s)));
     getXMLTagVal(donorRoot, "bw6").ifPresent(s -> builder.bw6(decodeXMLBoolean(s)));
-    getXMLTagVal(donorRoot, "dr51").ifPresent(s -> builder.dr51(decodeValue(dr51Map, s)));
-    getXMLTagVal(donorRoot, "dr52").ifPresent(s -> builder.dr52(decodeValue(dr52Map, s)));
-    getXMLTagVal(donorRoot, "dr53").ifPresent(s -> builder.dr53(decodeValue(dr53Map, s)));
-    getXMLTagVal(donorRoot, "dr51_2").ifPresent(s -> builder.dr51(decodeValue(dr51Map, s)));
-    getXMLTagVal(donorRoot, "dr52_2").ifPresent(s -> builder.dr52(decodeValue(dr52Map, s)));
-    getXMLTagVal(donorRoot, "dr53_2").ifPresent(s -> builder.dr53(decodeValue(dr53Map, s)));
+    getXMLTagVal(donorRoot, "dr51").ifPresent(s -> builder.dr51(decodeValue("dr51", dr51Map, s)));
+    getXMLTagVal(donorRoot, "dr52").ifPresent(s -> builder.dr52(decodeValue("dr52", dr52Map, s)));
+    getXMLTagVal(donorRoot, "dr53").ifPresent(s -> builder.dr53(decodeValue("dr53", dr53Map, s)));
+    getXMLTagVal(donorRoot, "dr51_2").ifPresent(s -> builder.dr51(decodeValue("dr51_2", dr51Map, s)));
+    getXMLTagVal(donorRoot, "dr52_2").ifPresent(s -> builder.dr52(decodeValue("dr52_2", dr52Map, s)));
+    getXMLTagVal(donorRoot, "dr53_2").ifPresent(s -> builder.dr53(decodeValue("dr53_2", dr53Map, s)));
   }
 
   /** Booleans are exported as a linear value which we have to translate to true/false */
@@ -117,7 +117,10 @@ public class XmlDonorNetParser {
    * For the loci that are stored as linear values, we have to map those values to the corresponding
    * specificity.
    */
-  private static String decodeValue(Map<String, String> valueMap, String valueCode) {
+  private static String decodeValue(String valueName, Map<String, String> valueMap, String valueCode) {
+    if (!valueMap.containsKey(valueCode)) {
+      throw new IllegalArgumentException(String.format("Unrecognized code for %s: %s", valueName, valueCode));
+    }
     return valueMap.get(valueCode);
   }
 
