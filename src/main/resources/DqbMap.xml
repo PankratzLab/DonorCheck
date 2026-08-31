@@ -23,3 +23,4 @@
 	<option value="8">8</option>
 	<option value="9">9</option>
 	<option value="98">No second antigen detected</option>
+    <option value="10000">No second antigen detected</option> <!-- 10000 technically maps to "Null allele", but we only track positive alleles anyway -->

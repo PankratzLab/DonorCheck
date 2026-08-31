@@ -5,3 +5,4 @@
 	<option value="5">02</option>
 	<option value="2">02:02</option>
 	<option value="96">N-Negative</option>
+    <option value="10000">N-Negative</option> <!-- 10000 technically maps to "Null allele", but we only track positive alleles anyway -->

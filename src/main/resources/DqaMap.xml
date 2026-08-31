@@ -37,3 +37,4 @@
 	<option value="37">06</option>
 	<option value="38">06:01</option>
 	<option value="100">06:02</option>
+    <option value="10000">No second antigen detected</option> <!-- 10000 technically maps to "Null allele", but we only track positive alleles anyway -->
