@@ -15,7 +15,7 @@
 		*                                                                                  *
 		************************************************************************************
 	 -->
-	<version>1.2.10</version>
+	<version>1.2.11</version>
 	
 	
 	
@@ -79,8 +79,10 @@
 		<mainClass>org.pankratzlab.unet.jfx.TypeValidationEntry</mainClass>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<!-- Controls the Java and Maven compliance versions -->
-		<maven.compiler.source>21</maven.compiler.source>
-		<maven.compiler.target>21</maven.compiler.target>
+		<java.version>23</java.version>
+		<maven.compiler.source>23</maven.compiler.source>
+		<maven.compiler.source>23</maven.compiler.source>
+		<maven.compiler.target>23</maven.compiler.target>
 		<app.dir>${project.build.directory}/app</app.dir>
 		<resources.dir>${project.basedir}/src/main/resources/</resources.dir>
 		
@@ -179,28 +181,39 @@
 		
 		<dependency>
 			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-web</artifactId>
+			<version>23</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-controls</artifactId>
 			<version>23</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-fxml</artifactId>
 			<version>23</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-graphics</artifactId>
 			<version>23</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-base</artifactId>
 			<version>23</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-swing</artifactId>
 			<version>23</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<!-- Test scope dependencies - not included in .jars built with Maven -->
@@ -261,29 +274,29 @@
 				https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
 				<plugin>
 					<artifactId>maven-clean-plugin</artifactId>
-					<version>3.4.0</version>
+					<version>3.5.0</version>
 				</plugin>
 				<!-- default lifecycle, jar packaging: see
 				https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
 				<plugin>
 					<artifactId>maven-resources-plugin</artifactId>
-					<version>3.3.1</version>
+					<version>3.5.0</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.13.0</version>
+					<version>3.16.0</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.3.1</version>
+					<version>3.6.0</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-install-plugin</artifactId>
-					<version>3.1.2</version>
+					<version>3.2.0</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-deploy-plugin</artifactId>
-					<version>3.1.2</version>
+					<version>3.2.0</version>
 				</plugin>
 				<!-- site lifecycle, see
 				https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
@@ -293,7 +306,7 @@
 				</plugin>
 				<plugin>
 					<artifactId>maven-project-info-reports-plugin</artifactId>
-					<version>3.6.2</version>
+					<version>3.9.0</version>
 				</plugin>
 				<!-- Exec Maven plugin -
 				http://www.mojohaus.org/exec-maven-plugin/ This 
@@ -301,7 +314,7 @@
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>exec-maven-plugin</artifactId>
-					<version>3.3.0</version>
+					<version>3.6.4</version>
 				</plugin>
 				<plugin>
 					<groupId>com.github.akman</groupId>
