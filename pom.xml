@@ -115,10 +115,10 @@
 		<jpackage-maven-plugin.version>0.1.5</jpackage-maven-plugin.version>
 
 		<!-- Controls the Java and Maven compliance versions -->
-		<java.version>23</java.version>
-		<maven.compiler.source>23</maven.compiler.source>
-		<maven.compiler.source>23</maven.compiler.source>
-		<maven.compiler.target>23</maven.compiler.target>
+		<java.version>25</java.version>
+		<maven.compiler.release>${java.version}</maven.compiler.release>
+		<maven.compiler.source>${java.version}</maven.compiler.source>
+		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<app.dir>${project.build.directory}/app</app.dir>
 		<resources.dir>${project.basedir}/src/main/resources/</resources.dir>
 		
